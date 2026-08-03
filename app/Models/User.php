@@ -10,11 +10,23 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
 {
   
     use HasFactory, Notifiable, HasRoles, HasApiTokens, SoftDeletes;
+
+    /**
+     * Role -> ID-number prefix used by generateStaffId(). Students are
+     * intentionally excluded — their student_id is self-chosen at
+     * registration (YYYY-N-NNNNN), not system-generated.
+     */
+    public const STAFF_ID_PREFIXES = [
+        'admin' => 'ADM',
+        'security_officer' => 'SEC',
+        'faculty' => 'FAC',
+    ];
 
     /**
      * The attributes that are mass assignable.
@@ -30,6 +42,7 @@ class User extends Authenticatable
         'address',
         'gender',
         'student_id',
+        'staff_id',
         'course',
         'profile_picture',
         'is_active',
@@ -43,6 +56,7 @@ class User extends Authenticatable
      */
     protected $appends = [
         'profile_picture_url',
+        'display_id',
     ];
 
     /**
@@ -75,6 +89,58 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Generate the next sequential ID number for a staff role
+     * (faculty / security_officer / admin), e.g. "SEC-2026-0001".
+     *
+     * Format: {PREFIX}-{YEAR}-{4-digit sequence, resets every year}.
+     * The sequence is derived from the highest existing number for that
+     * prefix+year (including soft-deleted/disabled accounts, so a
+     * disabled officer's number is never reused), computed inside a
+     * row-locking transaction so two admins creating an account for the
+     * same role at the same moment can't be handed the same number.
+     *
+     * Returns null for roles without a staff prefix (e.g. 'student',
+     * which uses the self-chosen student_id instead).
+     */
+    public static function generateStaffId(string $role): ?string
+    {
+        $prefix = self::STAFF_ID_PREFIXES[$role] ?? null;
+
+        if (!$prefix) {
+            return null;
+        }
+
+        $year = now()->format('Y');
+        $pattern = "{$prefix}-{$year}-";
+
+        return DB::transaction(function () use ($prefix, $year, $pattern) {
+            $last = static::withTrashed()
+                ->where('staff_id', 'like', $pattern . '%')
+                ->lockForUpdate()
+                ->orderByDesc('staff_id')
+                ->value('staff_id');
+
+            $next = 1;
+            if ($last && preg_match('/(\d+)$/', $last, $m)) {
+                $next = ((int) $m[1]) + 1;
+            }
+
+            return sprintf('%s-%s-%04d', $prefix, $year, $next);
+        });
+    }
+
+    /**
+     * The role-appropriate ID number to display, whichever of
+     * student_id / staff_id applies to this account. Used by the
+     * frontend Profile page and Admin user list so each role only
+     * ever sees "its own" ID field instead of every field at once.
+     */
+    public function getDisplayIdAttribute(): ?string
+    {
+        return $this->student_id ?: $this->staff_id;
     }
 
     public function lostItems()

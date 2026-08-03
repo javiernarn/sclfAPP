@@ -89,9 +89,17 @@ body { overflow: hidden; }
     overflow: hidden;
 }
 .ds-sidebar.open { transform: translateX(0); }
+/* Below the desktop breakpoint the sidebar is a slide-over overlay, so it
+   isn't constrained to a fixed 250px column the way the desktop rail is —
+   give it a little extra breathing room on phones (both orientations) so
+   the bigger logo + "Opol Community College" subtitle have space to sit
+   on one line instead of getting squeezed at the fixed 250px width. */
+@media (max-width: 959px) {
+    .ds-sidebar { width: min(84vw, 300px); }
+}
 @media (min-width: 960px) {
     .ds-sidebar { position: sticky; transform: none; height: 100%; }
-    .ds-sidebar.collapsed { width: 78px; }
+    .ds-sidebar.collapsed { width: 68px; }
     .ds-layout { display: flex; }
 }
 .ds-shell.light .ds-sidebar { background: #fff; border-right: 1.5px solid #c3ccdb; }
@@ -106,13 +114,35 @@ body { overflow: hidden; }
     animation: ds-fade-in 0.15s ease both;
 }
 @media (min-width: 960px) { .ds-sidebar-backdrop { display: none; } }
-.ds-brand { display: flex; align-items: center; gap: 10px; min-width: 0; text-decoration: none; color: inherit; padding: 0 8px 18px; flex-shrink: 0; }
-.ds-brand img { width: 34px; height: 34px; object-fit: contain; border-radius: 9px; flex-shrink: 0; }
+/* Brand row shares .ds-nav-link's own left padding (12px) so the logo and
+   every nav icon below it line up on the same left edge when expanded. */
+/* margin-top pulls the logo up so its own center lines up with the
+   header burger button's center (both sit 30px from the very top of
+   the screen) instead of sitting ~7px lower than it. */
+.ds-brand { display: flex; align-items: center; gap: 8px; min-width: 0; text-decoration: none; color: inherit; padding: 2px 8px 16px; margin-top: -3px; flex-shrink: 0; border-radius: 11px; transition: background 0.15s ease; }
+/* Sized to match the 36x36 header burger button (.ds-icon-btn) so the
+   sidebar logo reads as an equally prominent, "same weight" control
+   instead of looking small next to it. */
+.ds-brand img { width: 44px; height: 44px; object-fit: contain; border-radius: 10px; flex-shrink: 0; }
 .ds-brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; overflow: hidden; }
 .ds-brand-name { font-weight: 800; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ds-brand-sub { font-size: 10.5px; opacity: 0.6; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+/* Sized down slightly (and tighter letter-spacing) so the full "Opol
+   Community College" subtitle fits on one line within the sidebar's
+   content width instead of truncating with an ellipsis. overflow/
+   text-overflow stay on as a fallback for extra-narrow widths. */
+.ds-brand-sub {
+    font-size: 9.5px; opacity: 0.6; font-weight: 600; letter-spacing: 0.015em;
+    text-transform: uppercase; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; max-width: 100%; display: block;
+}
 .ds-sidebar.collapsed .ds-brand-text { display: none; }
-.ds-sidebar.collapsed .ds-brand { justify-content: center; padding-left: 0; padding-right: 0; }
+/* Collapsed: the logo becomes just another icon in the rail — same
+   padding/box/centering as .ds-nav-link's collapsed state below it (see
+   the matching `padding: 10px; justify-content: center` there). */
+.ds-sidebar.collapsed .ds-brand { justify-content: center; padding: 8px; margin: -7px 0 6px; }
+.ds-sidebar.collapsed .ds-brand img { width: 40px; height: 40px; border-radius: 10px; }
+.ds-shell.light .ds-sidebar.collapsed .ds-brand:hover { background: #f4f7fb; }
+.ds-shell.dark .ds-sidebar.collapsed .ds-brand:hover { background: #171c26; }
 .ds-nav-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.45; padding: 0 10px; margin: 4px 0 8px; flex-shrink: 0; white-space: nowrap; overflow: hidden; }
 .ds-sidebar.collapsed .ds-nav-label { opacity: 0; height: 0; margin: 0; padding: 0; }
 .ds-nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
@@ -193,7 +223,7 @@ body { overflow: hidden; }
 .ds-topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .ds-hamburger { display: inline-flex; }
 .ds-topbar-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; min-width: 0; }
-.ds-topbar-brand img { width: 26px; height: 26px; object-fit: contain; border-radius: 7px; flex-shrink: 0; }
+.ds-topbar-brand img { width: 36px; height: 36px; object-fit: contain; border-radius: 9px; flex-shrink: 0; }
 .ds-topbar-brand span { font-weight: 800; font-size: 13.5px; white-space: nowrap; }
 @media (min-width: 960px) { .ds-topbar-brand { display: none; } }
 .ds-topbar-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -239,6 +269,9 @@ body { overflow: hidden; }
     font-size: 13px; font-weight: 800; color: #fff;
     background: linear-gradient(135deg, #4f46e5, #7c3aed 50%, #0ea5e9);
 }
+/* Header (top-right) account button only — the sidebar's own avatar
+   keeps the rounded-square shape used everywhere else in the shell. */
+.ds-profile-btn .ds-avatar { border-radius: 50%; }
 .ds-shell.maroon .ds-avatar { background: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); }
 .ds-shell.blue .ds-avatar { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); }
 .ds-shell.yellow .ds-avatar { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); color: #1c1408; }
@@ -545,6 +578,7 @@ body { overflow: hidden; }
     color: #ef4444; font-size: 13px; padding: 10px 14px; border-radius: 12px; margin-bottom: 18px;
 }
 .ds-field-error { color: #ef4444; font-size: 12px; font-weight: 600; margin-top: 6px; }
+.ds-field-hint { opacity: 0.6; font-size: 12px; margin: 6px 0 0; }
 .ds-field input[aria-invalid="true"], .ds-field textarea[aria-invalid="true"] { border-color: #ef4444 !important; }
 .ds-empty { text-align: center; padding: 40px 16px; opacity: 0.6; font-size: 14px; }
 .ds-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
@@ -647,6 +681,22 @@ body { overflow: hidden; }
 .ds-info-text { min-width: 0; }
 .ds-info-label { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.55; margin-bottom: 3px; }
 .ds-info-value { font-size: 13.8px; font-weight: 700; word-break: break-word; }
+
+/* ---------- Admin > Edit User modal ---------- */
+.ds-edit-backdrop {
+    position: fixed; inset: 0; z-index: 60;
+    background: rgba(2,6,23,0.55);
+    backdrop-filter: blur(2px);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 32px 20px;
+    overflow-y: auto;
+    animation: ds-fade-in 0.15s ease both;
+}
+.ds-edit-card {
+    width: 100%; max-width: 560px;
+    margin: auto 0;
+    animation: ds-fade-up 0.18s cubic-bezier(0.22,1,0.36,1) both;
+}
 
 /* ---------- Security card / Change Password ---------- */
 .ds-security-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }

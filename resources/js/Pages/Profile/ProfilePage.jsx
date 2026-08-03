@@ -62,6 +62,22 @@ export default function ProfilePage() {
     };
     const genderLabel = user?.gender ? (genderLabels[user.gender] || user.gender) : '—';
 
+    // Fields shown here are gated by role: a security officer or faculty
+    // account never had a course/student address/student ID to begin
+    // with, so those inputs are hidden entirely for them instead of
+    // showing as empty dashes. Students see their self-chosen student_id;
+    // staff/security/admin see their system-generated staff_id instead,
+    // under a role-appropriate label.
+    const isStudent = primaryRole === 'student';
+    const ID_LABELS = {
+        admin: 'Admin ID',
+        security_officer: 'Security ID',
+        faculty: 'Faculty ID',
+        student: 'Student ID',
+    };
+    const idLabel = ID_LABELS[primaryRole] || 'ID Number';
+    const idValue = isStudent ? user?.student_id : user?.staff_id;
+
     return (
         <DashboardShell
             eyebrow="Account"
@@ -93,8 +109,8 @@ export default function ProfilePage() {
                     <div style={{ fontSize: 13, opacity: 0.6 }}>{user?.email || ''}</div>
                     <div className="ds-chip-row">
                         <span className="ds-chip ds-chip-accent"><ShieldCheck size={12} /> {roleLabel}</span>
-                        {user?.student_id && <span className="ds-chip">ID: {user.student_id}</span>}
-                        {user?.course && <span className="ds-chip">{user.course}</span>}
+                        {idValue && <span className="ds-chip">{idLabel}: {idValue}</span>}
+                        {isStudent && user?.course && <span className="ds-chip">{user.course}</span>}
                     </div>
                 </div>
             </div>
@@ -109,9 +125,9 @@ export default function ProfilePage() {
                     <InfoItem icon={Mail} label="Email" value={user?.email} />
                     <InfoItem icon={Phone} label="Phone number" value={user?.phone_number} />
                     <InfoItem icon={VenetianMask} label="Gender" value={genderLabel} />
-                    <InfoItem icon={IdCard} label="Student ID" value={user?.student_id} />
-                    <InfoItem icon={GraduationCap} label="Course" value={user?.course} />
-                    <InfoItem icon={MapPin} label="Address" value={user?.address} />
+                    <InfoItem icon={IdCard} label={idLabel} value={idValue} />
+                    {isStudent && <InfoItem icon={GraduationCap} label="Course" value={user?.course} />}
+                    {isStudent && <InfoItem icon={MapPin} label="Address" value={user?.address} />}
                     <InfoItem icon={ShieldCheck} label="Role" value={roleLabel} />
                 </div>
             </div>
@@ -124,14 +140,14 @@ export default function ProfilePage() {
             </div>
 
             {/* ---------- Appearance ---------- */}
-            <div className="ds-card">
+            {/* <div className="ds-card">
                 <div className="ds-card-title">Appearance</div>
                 <p className="ds-card-desc">Switch between light and dark mode, or pick a color theme from the account menu.</p>
                 <button type="button" className="ds-btn ds-btn-secondary" onClick={toggleTheme}>
                     {isDark ? <Sun size={16} /> : <Moon size={16} />}
                     {isDark ? 'Switch to light mode' : 'Switch to dark mode'}
                 </button>
-            </div>
+            </div> */}
             </>
             )}
         </DashboardShell>

@@ -120,7 +120,7 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user->only(
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
-                'address', 'gender', 'student_id', 'course', 'profile_picture_url'
+                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course', 'profile_picture_url'
             ),
             'roles' => $user->getRoleNames(),
             'token' => $token,
@@ -180,7 +180,7 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user->only(
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
-                'address', 'gender', 'student_id', 'course', 'profile_picture_url'
+                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course', 'profile_picture_url'
             ),
             'roles' => $user->getRoleNames(),
             'token' => $token,
@@ -203,7 +203,7 @@ class AuthController extends Controller
         return response()->json([
             'user' => $user->only(
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
-                'address', 'gender', 'student_id', 'course', 'profile_picture_url'
+                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course', 'profile_picture_url'
             ),
             'roles' => $user->getRoleNames(),
         ]);
