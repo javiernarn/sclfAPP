@@ -13,12 +13,17 @@
 
 * { box-sizing: border-box; }
 
-body {
+html, body, #app {
     margin: 0;
-    background: var(--parchment);
-    color: var(--navy);
+    min-height: 100%;
     font-family: var(--font-body);
 }
+
+/* html/body background is set inline per-request in app.blade.php so it
+   always matches the active theme (light/dark) with zero flash — every
+   themed screen (AuthLayout, DashboardShell) then paints its own gradient
+   on top. This stops the light "parchment" edge from ever peeking through
+   on overscroll/bounce or before React has mounted. */
 
 .sclf-page {
     min-height: 100vh;

@@ -1,14 +1,50 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import Tooltip from '../../Components/shared/Tooltip';
+import {
+    loadRememberedCredentials,
+    saveRememberedCredentials,
+    clearRememberedCredentials,
+} from '../../hooks/useRememberedCredentials';
+import { normalizeEmailInput } from '../../utils/validators';
+import AuthShell, {
+    LedgerRow,
+    LedgerInput,
+    LedgerPasswordInput,
+    LedgerBanner,
+    LedgerButton,
+} from '../../Components/shared/AuthShell';
+import { Mail, Lock } from 'lucide-react';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [remember, setRemember] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const { login } = useAuth();
+    const toast = useToast();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const sessionExpired = searchParams.get('type') === 'session-expired';
+
+    useEffect(() => {
+        document.title = 'Login | SCLF - Opol Community College';
+    }, []);
+
+    // Prefill from anything previously remembered — only ever written when
+    // the person checked "Keep this session open" on a prior visit.
+    useEffect(() => {
+        const remembered = loadRememberedCredentials();
+        if (remembered) {
+            setEmail(remembered.email || '');
+            setPassword(remembered.password || '');
+            setRemember(true);
+        }
+    }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -16,51 +52,97 @@ export default function LoginPage() {
         setLoading(true);
 
         try {
-            const data = await login(email, password);
-            if (data.roles.includes('admin')) {
-                navigate('/admin/dashboard');
+            await login(email, password, remember);
+
+            // "Keep this session open" checked → store email + password so
+            // this form is prefilled next visit. Unchecked → make sure
+            // nothing lingers from an earlier login.
+            if (remember) {
+                saveRememberedCredentials(email, password);
             } else {
-                navigate('/dashboard');
+                clearRememberedCredentials();
             }
+
+            // Route back through "/" so the branded MainPage loading
+            // screen plays again before landing on the right dashboard —
+            // same behaviour as right after visiting the site fresh.
+            navigate('/', { replace: true });
         } catch (err) {
-            setError(err.response?.data?.message || 'Invalid credentials.');
+            // Validation errors (bad credentials, lockout) carry the real,
+            // specific message under errors.email — the top-level
+            // `message` is just Laravel's generic "The given data was
+            // invalid." wrapper.
+            const message = err.response?.data?.errors?.email?.[0]
+                || err.response?.data?.message
+                || 'Invalid credentials.';
+            setError(message);
+            toast.error(message, { title: 'Sign-in failed' });
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div style={{ maxWidth: 400, margin: '80px auto', fontFamily: 'sans-serif' }}>
-            <h2>Log in to SCLF</h2>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            <form onSubmit={handleSubmit}>
-                <div style={{ marginBottom: 12 }}>
-                    <label>Email</label><br />
-                    <input
+        <AuthShell
+            docType="ACCESS LOG"
+            caseSeed="LOG"
+            title={<>Open your <span className="accent">session</span></>}
+            subtitle="Sign in to check on lost items and everything the campus has found."
+            railHeadline="Welcome back to the registrar's desk."
+            railNote="One record, one login — everything you've reported or claimed lives under a single account."
+            footer={<>No record on file? <Link to="/register">Open a new case file</Link></>}
+        >
+            {sessionExpired && (
+                <LedgerBanner tone="error">Your session expired. Please sign in again.</LedgerBanner>
+            )}
+
+            <form onSubmit={handleSubmit} noValidate>
+                <LedgerRow index={1} label="Email on file" icon={Mail} hint="Format: occ.lastname.firstname@gmail.com">
+                    <LedgerInput
+                        id="email"
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        style={{ width: '100%', padding: 8 }}
+                        onChange={(e) => { setEmail(normalizeEmailInput(e.target.value)); setError(''); }}
+                        autoComplete="email"
+                        placeholder="occ.lastname.firstname@gmail.com"
+                        aria-invalid={!!error}
                         required
+                        autoFocus
                     />
-                </div>
-                <div style={{ marginBottom: 12 }}>
-                    <label>Password</label><br />
-                    <input
-                        type="password"
+                </LedgerRow>
+
+                <LedgerRow index={2} label="Password" icon={Lock}>
+                    <LedgerPasswordInput
+                        id="password"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        style={{ width: '100%', padding: 8 }}
+                        onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                        autoComplete="current-password"
+                        show={showPassword}
+                        onToggle={() => setShowPassword((v) => !v)}
+                        aria-invalid={!!error}
                         required
                     />
+                </LedgerRow>
+
+                <div className="lg-row-checkbox" style={{ margin: '14px 0 18px' }}>
+                    <Tooltip label="Stay signed in on this device, and this form remembers your email/password next time. Uncheck on shared or public computers.">
+                        <label className="lg-remember" htmlFor="remember">
+                            <input
+                                id="remember"
+                                type="checkbox"
+                                checked={remember}
+                                onChange={(e) => setRemember(e.target.checked)}
+                            />
+                            Keep this session open
+                        </label>
+                    </Tooltip>
+                    <Link to="/forgot-password" className="lg-forgot">Forgot password?</Link>
                 </div>
-                <button type="submit" disabled={loading} style={{ padding: '8px 16px' }}>
-                    {loading ? 'Logging in...' : 'Log In'}
-                </button>
+
+                <LedgerButton disabled={loading}>
+                    {loading ? 'Verifying…' : 'Sign In'}
+                </LedgerButton>
             </form>
-            <p style={{ marginTop: 16 }}>
-                No account? <Link to="/register">Register here</Link>
-            </p>
-        </div>
+        </AuthShell>
     );
 }

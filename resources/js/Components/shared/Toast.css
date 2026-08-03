@@ -1,0 +1,89 @@
+.sclf-toast-viewport {
+    position: fixed;
+    z-index: 9999;
+    top: max(12px, env(safe-area-inset-top));
+    right: 12px;
+    left: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    pointer-events: none;
+}
+
+@media (min-width: 560px) {
+    .sclf-toast-viewport {
+        left: auto;
+        right: 20px;
+        top: 20px;
+        width: 380px;
+        align-items: flex-end;
+    }
+}
+
+/*
+ * Plain, colorless box that matches the dashboard shell's `.ds-card` /
+ * ledger `.lg-card` surface: a flat card with a dark-tinted outline, no
+ * per-type accent color anywhere (no colored left border, no colored
+ * icon). Only the light/dark theme changes how it looks — same as every
+ * other surface in the app.
+ */
+.sclf-toast {
+    pointer-events: auto;
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 13px 14px;
+    border-radius: 14px;
+    animation: sclf-toast-in 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+    font-family: var(--font-body, 'Inter', sans-serif);
+    box-sizing: border-box;
+}
+
+.sclf-toast-viewport.light .sclf-toast {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #0b1220;
+    border: 1.5px solid #c3ccdb;
+    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.10);
+}
+.sclf-toast-viewport.dark .sclf-toast {
+    background: rgba(18, 22, 32, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #e7ecf3;
+    border: 1.5px solid #323b4a;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+.sclf-toast-icon { flex-shrink: 0; margin-top: 1px; opacity: 0.75; }
+
+.sclf-toast-body { flex: 1; min-width: 0; }
+.sclf-toast-title { font-weight: 800; font-size: 13.5px; margin-bottom: 2px; }
+.sclf-toast-message { font-size: 12.5px; line-height: 1.45; opacity: 0.8; word-break: break-word; white-space: pre-line; }
+
+.sclf-toast-close {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 3px;
+    border-radius: 6px;
+    display: inline-flex;
+    opacity: 0.6;
+    color: inherit;
+}
+.sclf-toast-close:hover { opacity: 1; }
+.sclf-toast-viewport.light .sclf-toast-close:hover { background: rgba(15, 23, 42, 0.06); }
+.sclf-toast-viewport.dark .sclf-toast-close:hover { background: rgba(255, 255, 255, 0.08); }
+
+@keyframes sclf-toast-in {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sclf-toast { animation: none; }
+}

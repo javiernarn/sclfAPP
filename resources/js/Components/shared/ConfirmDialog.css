@@ -1,0 +1,70 @@
+.sclf-confirm-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(11, 13, 25, 0.55);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: sclf-confirm-fade 0.15s ease both;
+}
+
+.sclf-confirm-card {
+    width: 100%;
+    max-width: 400px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 26px 24px 22px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    text-align: center;
+    animation: sclf-confirm-pop 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+    font-family: var(--font-body, 'Inter', sans-serif);
+    color: #1b1f3b;
+}
+
+.sclf-confirm-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 14px;
+}
+.sclf-confirm-icon-default,
+.sclf-confirm-icon-discard { background: rgba(212, 167, 61, 0.14); color: #b5842e; }
+.sclf-confirm-icon-danger { background: rgba(226, 84, 58, 0.12); color: #e2543a; }
+
+.sclf-confirm-title { font-size: 17px; font-weight: 800; margin: 0 0 8px; }
+.sclf-confirm-message { font-size: 13.5px; line-height: 1.55; opacity: 0.72; margin: 0 0 22px; }
+
+.sclf-confirm-actions { display: flex; gap: 10px; }
+.sclf-confirm-btn {
+    flex: 1;
+    padding: 11px 14px;
+    border-radius: 10px;
+    border: none;
+    font-size: 13.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.sclf-confirm-btn:active { transform: translateY(1px); }
+.sclf-confirm-btn-ghost { background: rgba(27, 31, 59, 0.06); color: #1b1f3b; }
+.sclf-confirm-btn-ghost:hover { background: rgba(27, 31, 59, 0.1); }
+.sclf-confirm-btn-primary { background: #1b1f3b; color: #fff; }
+.sclf-confirm-btn-primary:hover { opacity: 0.9; }
+.sclf-confirm-btn-danger { background: #e2543a; color: #fff; }
+.sclf-confirm-btn-danger:hover { opacity: 0.9; }
+
+@keyframes sclf-confirm-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sclf-confirm-pop {
+    from { opacity: 0; transform: scale(0.94) translateY(6px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sclf-confirm-backdrop, .sclf-confirm-card { animation: none; }
+}

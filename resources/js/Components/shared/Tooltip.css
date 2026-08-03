@@ -1,0 +1,38 @@
+.sclf-tooltip-wrap {
+    position: relative;
+    display: inline-flex;
+    max-width: 100%;
+}
+
+.sclf-tooltip {
+    position: fixed;
+    z-index: 10050;
+    max-width: 220px;
+    width: max-content;
+    background: #1b1f2e;
+    color: #f4f6fb;
+    font-family: var(--font-body, 'Inter', sans-serif);
+    font-size: 12px;
+    line-height: 1.4;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+    pointer-events: none;
+    animation: sclf-tooltip-in 0.12s ease both;
+    text-align: center;
+}
+
+@keyframes sclf-tooltip-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* On very narrow phone widths, keep tooltips from overflowing offscreen. */
+@media (max-width: 420px) {
+    .sclf-tooltip { max-width: 160px; font-size: 11.5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sclf-tooltip { animation: none; }
+}

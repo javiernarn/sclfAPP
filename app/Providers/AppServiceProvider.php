@@ -21,5 +21,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        // Note: the reset-link URL (pointing at the SPA's own
+        // ResetPassword.jsx page — there's no server-rendered
+        // "password.reset" route in this app) and the branded reset
+        // email itself are both built in User::sendPasswordResetNotification()
+        // now, since that email uses SCLF's own blade instead of the
+        // default notification markdown mail.
     }
 }

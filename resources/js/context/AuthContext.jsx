@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios, { refreshAuthToken } from '../config/axiosConfig';
-import secureLocalStorage from 'react-secure-storage';
+import axios, { refreshAuthToken, getStoredToken, clearStoredToken } from '../config/axiosConfig';
 
 const AuthContext = createContext(null);
 
@@ -10,7 +9,7 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const token = secureLocalStorage.getItem('access_token');
+        const token = getStoredToken();
         if (!token) {
             setLoading(false);
             return;
@@ -22,22 +21,27 @@ export function AuthProvider({ children }) {
                 setRoles(res.data.roles);
             })
             .catch(() => {
-                secureLocalStorage.removeItem('access_token');
+                clearStoredToken();
             })
             .finally(() => setLoading(false));
     }, []);
 
-    const login = async (email, password) => {
-        const res = await axios.post('/login', { email, password });
-        refreshAuthToken(res.data.token);
+    const login = async (email, password, remember = false) => {
+        const res = await axios.post('/login', { email, password }, { silent: true });
+        refreshAuthToken(res.data.token, remember);
         setUser(res.data.user);
         setRoles(res.data.roles);
         return res.data;
     };
 
-    const register = async (name, email, password, password_confirmation) => {
-        const res = await axios.post('/register', { name, email, password, password_confirmation });
-        refreshAuthToken(res.data.token);
+    // Accepts either a plain object or a FormData instance (FormData is
+    // required when a profile picture file is attached).
+    const register = async (payload) => {
+        const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
+        const res = await axios.post('/register', payload, isFormData
+            ? { headers: { 'Content-Type': 'multipart/form-data' } }
+            : undefined);
+        refreshAuthToken(res.data.token, true);
         setUser(res.data.user);
         setRoles(res.data.roles);
         return res.data;
@@ -45,7 +49,7 @@ export function AuthProvider({ children }) {
 
     const logout = async () => {
         await axios.post('/logout');
-        secureLocalStorage.removeItem('access_token');
+        clearStoredToken();
         delete axios.defaults.headers.common['Authorization'];
         setUser(null);
         setRoles([]);

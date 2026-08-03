@@ -1,0 +1,811 @@
+/*
+ * DashboardShell.css
+ * -------------------
+ * Styles for <DashboardShell> (Components/shared/DashboardShell.jsx) — the
+ * shared sidebar + topbar shell used on every logged-in screen.
+ *
+ * Pulled out of the component into its own file so DashboardShell.jsx only
+ * holds markup/logic. Import it once, at the top of DashboardShell.jsx:
+ *
+ *   import "./DashboardShell.css";
+ *
+ * Class names are namespaced with a `ds-` prefix (short for "dashboard
+ * shell") to avoid clashing with Tailwind utilities or other components.
+ *
+ * Note on .ds-menu / .ds-sidebar-menu: these are the two account dropdown
+ * menus (topbar + sidebar). Their position (top/left/right/bottom) is no
+ * longer set here — it's computed at runtime by <AccountMenu> from the
+ * trigger button's actual on-screen position, then the menu is rendered
+ * through a React portal directly into <body>. This is what fixes the menu
+ * rendering in the wrong place / getting clipped near the sidebar: it no
+ * longer lives inside the sidebar's `overflow: hidden` box, so it can't be
+ * cut off or dragged out of place by it.
+ */
+
+html, body, #app { height: 100%; }
+body { overflow: hidden; }
+.ds-shell {
+    height: 100vh;
+    height: 100dvh;
+    width: 100%;
+    position: relative;
+    display: flex;
+    overflow: hidden;
+    transition: background 0.4s ease, color 0.4s ease;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+}
+.ds-shell, .ds-shell * { box-sizing: border-box; }
+.ds-shell.light {
+    color: #0b1220;
+    background:
+        radial-gradient(900px 500px at 100% -10%, rgba(14,165,233,0.10), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, rgba(124,58,237,0.10), transparent 60%),
+        #f4f7fb;
+}
+.ds-shell.dark {
+    color: #e7ecf3;
+    background:
+        radial-gradient(900px 500px at 100% -10%, rgba(14,165,233,0.14), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, rgba(124,58,237,0.16), transparent 60%),
+        #0a0c12;
+}
+/* Color-accented LIGHT themes (offered from the account menu's "Theme"
+   picker) — 'blue', 'yellow', 'maroon'. Each carries the .light class too
+   (added alongside its own name in DashboardShell.jsx), so it inherits
+   every plain .ds-shell.light rule below (white cards, dark text, etc.)
+   and only needs to override the background tint plus the accent-colored
+   elements further down. */
+.ds-shell.maroon {
+    background:
+        radial-gradient(900px 500px at 100% -10%, rgba(220,38,38,0.10), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, rgba(127,29,46,0.08), transparent 60%),
+        #fdf3f4;
+}
+.ds-shell.blue {
+    background:
+        radial-gradient(900px 500px at 100% -10%, rgba(56,189,248,0.10), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, rgba(30,64,175,0.08), transparent 60%),
+        #f1f6fe;
+}
+.ds-shell.yellow {
+    background:
+        radial-gradient(900px 500px at 100% -10%, rgba(245,158,11,0.12), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, rgba(180,83,9,0.08), transparent 60%),
+        #fdf8ec;
+}
+/* ---------- Sidebar ---------- */
+/* Fully visible, no internal scrollbar: nav + footer are
+   laid out to fit within 100% height instead of overflowing. */
+.ds-sidebar {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 40;
+    width: 250px;
+    display: flex; flex-direction: column;
+    padding: 13px 14px 18px;
+    padding-top: max(13px, env(safe-area-inset-top));
+    padding-bottom: max(18px, env(safe-area-inset-bottom));
+    transform: translateX(-100%);
+    transition: transform 0.25s ease, width 0.2s ease;
+    overflow: hidden;
+}
+.ds-sidebar.open { transform: translateX(0); }
+@media (min-width: 960px) {
+    .ds-sidebar { position: sticky; transform: none; height: 100%; }
+    .ds-sidebar.collapsed { width: 78px; }
+    .ds-layout { display: flex; }
+}
+.ds-shell.light .ds-sidebar { background: #fff; border-right: 1.5px solid #c3ccdb; }
+.ds-shell.dark .ds-sidebar { background: #10131b; border-right: 1.5px solid #323b4a; }
+.ds-shell.maroon .ds-sidebar { background: #fef7f8; border-right: 1.5px solid #e8b3bc; }
+.ds-shell.blue .ds-sidebar { background: #f5f9ff; border-right: 1.5px solid #a9cdf5; }
+.ds-shell.yellow .ds-sidebar { background: #fefaf0; border-right: 1.5px solid #e6c477; }
+.ds-sidebar-backdrop {
+    position: fixed; inset: 0; z-index: 39;
+    background: rgba(2,6,23,0.5);
+    backdrop-filter: blur(2px);
+    animation: ds-fade-in 0.15s ease both;
+}
+@media (min-width: 960px) { .ds-sidebar-backdrop { display: none; } }
+.ds-brand { display: flex; align-items: center; gap: 10px; min-width: 0; text-decoration: none; color: inherit; padding: 0 8px 18px; flex-shrink: 0; }
+.ds-brand img { width: 34px; height: 34px; object-fit: contain; border-radius: 9px; flex-shrink: 0; }
+.ds-brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; overflow: hidden; }
+.ds-brand-name { font-weight: 800; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-brand-sub { font-size: 10.5px; opacity: 0.6; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+.ds-sidebar.collapsed .ds-brand-text { display: none; }
+.ds-sidebar.collapsed .ds-brand { justify-content: center; padding-left: 0; padding-right: 0; }
+.ds-nav-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.45; padding: 0 10px; margin: 4px 0 8px; flex-shrink: 0; white-space: nowrap; overflow: hidden; }
+.ds-sidebar.collapsed .ds-nav-label { opacity: 0; height: 0; margin: 0; padding: 0; }
+.ds-nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
+.ds-nav-link {
+    display: flex; align-items: center; gap: 11px;
+    padding: 10px 12px; border-radius: 11px;
+    font-size: 13.8px; font-weight: 650; text-decoration: none; color: inherit;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap; overflow: hidden;
+}
+.ds-sidebar.collapsed .ds-nav-link { justify-content: center; padding: 10px; }
+.ds-sidebar.collapsed .ds-nav-link span.ds-nav-text { display: none; }
+.ds-nav-icon { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; }
+.ds-shell.light .ds-nav-link:hover { background: #f4f7fb; }
+.ds-shell.dark .ds-nav-link:hover { background: #171c26; }
+.ds-nav-link.active {
+    color: #fff;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed 50%, #0ea5e9);
+    box-shadow: 0 8px 18px rgba(79,70,229,0.28);
+}
+.ds-shell.maroon .ds-nav-link.active { background: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); box-shadow: 0 8px 18px rgba(159,18,57,0.35); }
+.ds-shell.blue .ds-nav-link.active { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); box-shadow: 0 8px 18px rgba(37,99,235,0.35); }
+.ds-shell.yellow .ds-nav-link.active { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); box-shadow: 0 8px 18px rgba(217,119,6,0.35); color: #1c1408; }
+.ds-sidebar-spacer { flex: 1; min-height: 8px; }
+.ds-sidebar-footer { border-top: 1px solid; padding-top: 12px; margin-top: 8px; flex-shrink: 0; }
+.ds-shell.light .ds-sidebar-footer { border-color: #c9d1de; }
+.ds-shell.dark .ds-sidebar-footer { border-color: #323b4a; }
+.ds-sidebar-menu-wrap { position: relative; }
+.ds-user-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; min-width: 0; }
+.ds-user-row-btn {
+    width: 100%; border: none; background: none; cursor: pointer;
+    border-radius: 11px; color: inherit; font-family: inherit; text-align: left;
+    transition: background 0.15s ease;
+}
+.ds-shell.light .ds-user-row-btn:hover { background: #f4f7fb; }
+.ds-shell.dark .ds-user-row-btn:hover { background: #171c26; }
+.ds-sidebar.collapsed .ds-user-row { justify-content: center; padding-left: 0; padding-right: 0; }
+.ds-user-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-user-email { font-size: 11px; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-sidebar.collapsed .ds-user-text { display: none; }
+.ds-sidebar.collapsed .ds-user-row-chevron { display: none; }
+.ds-user-row-chevron { opacity: 0.55; flex-shrink: 0; transition: transform 0.15s ease; }
+.ds-user-row-btn[aria-expanded="true"] .ds-user-row-chevron { transform: rotate(180deg); }
+/* Flyout variant of .ds-menu: opens upward and is pinned to the
+   sidebar's own right edge (not the trigger button's position),
+   so it lands in the same screen spot whether the sidebar is
+   collapsed (78px) or expanded (250px) — see AccountMenu's
+   `alignRef`/`placement="top-after"` in DashboardShell.jsx. */
+/* Positioning (top/left/right/bottom) for .ds-sidebar-menu is now computed
+   at runtime by <AccountMenu> from the sidebar element's real screen
+   position and applied as an inline style, then rendered through a portal
+   straight into <body>. That's what makes it land next to the sidebar
+   instead of getting clipped/misplaced by the sidebar's own
+   `overflow: hidden`. This rule only owns appearance now. */
+.ds-sidebar-menu {
+    width: 260px;
+    animation: ds-fade-up 0.15s ease both;
+}
+@keyframes ds-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+/* ---------- Right side ---------- */
+.ds-content { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+/* Header never scrolls with the page — it's a fixed, non-scrolling
+   part of the flex column; only .ds-main below it scrolls. */
+.ds-topbar {
+    flex-shrink: 0;
+    position: relative; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px;
+    padding: 12px max(16px, env(safe-area-inset-right)) 12px max(16px, env(safe-area-inset-left));
+    padding-top: max(12px, env(safe-area-inset-top));
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+.ds-shell.light .ds-topbar { background: rgba(244,247,251,0.75); border-bottom: 1.5px solid #c3ccdb; }
+.ds-shell.dark .ds-topbar { background: rgba(10,12,18,0.75); border-bottom: 1.5px solid #323b4a; }
+.ds-shell.maroon .ds-topbar { background: rgba(254,247,248,0.75); border-bottom: 1.5px solid #e8b3bc; }
+.ds-shell.blue .ds-topbar { background: rgba(245,249,255,0.75); border-bottom: 1.5px solid #a9cdf5; }
+.ds-shell.yellow .ds-topbar { background: rgba(254,250,240,0.75); border-bottom: 1.5px solid #e6c477; }
+.ds-topbar-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ds-hamburger { display: inline-flex; }
+.ds-topbar-brand { display: flex; align-items: center; gap: 8px; text-decoration: none; color: inherit; min-width: 0; }
+.ds-topbar-brand img { width: 26px; height: 26px; object-fit: contain; border-radius: 7px; flex-shrink: 0; }
+.ds-topbar-brand span { font-weight: 800; font-size: 13.5px; white-space: nowrap; }
+@media (min-width: 960px) { .ds-topbar-brand { display: none; } }
+.ds-topbar-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+/* Slim progress bar pinned to the very top edge of the header (.ds-topbar
+   is already `position: relative`, so this sits flush along its top
+   border). Fires on every route change — sidebar nav clicks, the account
+   menu's Profile link, logout — via <DashboardShell>'s location watcher. */
+.ds-route-progress {
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    width: 0%; opacity: 0; z-index: 30; pointer-events: none;
+    background: linear-gradient(90deg, #4f46e5, #7c3aed, #0ea5e9);
+    border-radius: 0 3px 3px 0;
+}
+.ds-route-progress.is-active {
+    width: 78%; opacity: 1;
+    transition: width 0.45s cubic-bezier(0.4,0,0.2,1), opacity 0.15s ease;
+}
+.ds-route-progress.is-done {
+    width: 100%; opacity: 0;
+    transition: width 0.25s ease, opacity 0.35s ease 0.15s;
+}
+.ds-icon-btn {
+    width: 36px; height: 36px; border-radius: 10px; border: none; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.ds-shell.light .ds-icon-btn { background: rgba(255,255,255,0.7); border: 1.5px solid #c3ccdb; color: inherit; }
+.ds-shell.dark .ds-icon-btn { background: rgba(255,255,255,0.08); border: 1.5px solid #3a4457; color: inherit; }
+.ds-profile-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 10px 5px 5px; border-radius: 999px; cursor: pointer;
+    border: none;
+}
+.ds-shell.light .ds-profile-btn { background: rgba(255,255,255,0.7); border: 1.5px solid #c3ccdb; color: inherit; }
+.ds-shell.dark .ds-profile-btn { background: rgba(255,255,255,0.08); border: 1.5px solid #3a4457; color: inherit; }
+.ds-profile-btn-name { font-size: 13px; font-weight: 700; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 600px) { .ds-profile-btn-name { display: none; } }
+.ds-profile-chevron { opacity: 0.6; transition: transform 0.15s ease; flex-shrink: 0; }
+.ds-profile-btn[aria-expanded="true"] .ds-profile-chevron { transform: rotate(180deg); }
+.ds-avatar {
+    width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; color: #fff;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed 50%, #0ea5e9);
+}
+.ds-shell.maroon .ds-avatar { background: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); }
+.ds-shell.blue .ds-avatar { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); }
+.ds-shell.yellow .ds-avatar { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); color: #1c1408; }
+.ds-menu-wrap { position: relative; }
+/* Same story as .ds-sidebar-menu above: position comes from AccountMenu at
+   runtime, this rule is appearance-only. */
+.ds-menu {
+    min-width: 220px; border-radius: 14px; padding: 8px;
+    animation: ds-fade-in 0.15s ease both;
+}
+/* The menu portals into <body>, outside .ds-shell, so it can't rely on
+   `.ds-shell.light`/`.ds-shell.dark` ancestor selectors for its own
+   background/border/text color the way most of the shell does — it needs
+   its own light/dark class (applied by <AccountMenu theme=.../>) and full
+   color declarations of its own. */
+.ds-menu.light { background: #fff; border: 1.5px solid #c3ccdb; box-shadow: 0 20px 40px rgba(2,6,23,0.16); color: #0b1220; }
+.ds-menu.dark { background: #12161f; border: 1.5px solid #323b4a; box-shadow: 0 20px 40px rgba(0,0,0,0.5); color: #e7ecf3; }
+@keyframes ds-fade-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+.ds-menu-name { padding: 8px 10px 2px; font-size: 13.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-menu-email { padding: 0 10px 8px; font-size: 12px; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-menu-divider { height: 1px; margin: 4px 0; }
+.ds-menu.light .ds-menu-divider { background: #c9d1de; }
+.ds-menu.dark .ds-menu-divider { background: #323b4a; }
+.ds-menu-item {
+    display: flex; align-items: center; gap: 9px; width: 100%;
+    max-width: 100%; box-sizing: border-box;
+    padding: 9px 10px; border-radius: 9px; border: none; background: none; cursor: pointer;
+    font-size: 13.5px; font-weight: 600; text-align: left; color: inherit;
+    text-decoration: none;
+    /* Profile renders as a react-router <Link> (an <a> tag) while Theme/Log
+       out are <button>s — both share this class, but only the <a> picks up
+       the browser's default underline-on-hover unless we kill it explicitly.
+       `overflow: hidden` clips the hover fill exactly to this row's own
+       rounded box (9px radius) no matter what pushes its content wide, so
+       the hover background can never bleed past the account panel's edge
+       into the page behind it. */
+    overflow: hidden;
+}
+.ds-menu.light .ds-menu-item:hover { background: #f4f7fb; }
+.ds-menu.dark .ds-menu-item:hover { background: #1a2029; }
+.ds-menu-item.danger { color: #ef4444; }
+/* ---------- Theme picker (nested inside both account menus) ---------- */
+/* Deliberately NOT `position: relative` — leaving this static means the
+   popover's absolute positioning below resolves against the nearest
+   positioned ancestor, which is the portaled `.ds-menu` box itself
+   (it's `position: fixed`, set inline by <AccountMenu>). That's what lets
+   the popover align itself to the *whole account menu's* edge (its left,
+   right, top or bottom) instead of just this one row. */
+.ds-theme-row-wrap { }
+.ds-theme-pill {
+    margin-left: auto; flex-shrink: 0;
+    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+}
+.ds-menu.light .ds-theme-pill { background: #f4f7fb; border: 1.5px solid #c3ccdb; }
+.ds-menu.dark .ds-theme-pill { background: #1a2029; border: 1.5px solid #3a4457; }
+/* Flies out to the SIDE of the account menu box, not above it — the old
+   `bottom: 100%; left: 0; right: 0` used to pop up and stretch to the
+   full width of the account menu, landing right on top of the name/
+   email/profile rows above the Theme row. Sizing to its own content
+   (instead of stretching edge-to-edge) also keeps it from reading as an
+   overly-wide panel. The menu itself has no overflow rule, so this can
+   freely escape its parent's box without getting clipped. */
+.ds-theme-popover {
+    position: absolute;
+    width: 200px;
+    border-radius: 14px; padding: 8px; z-index: 5;
+    animation: ds-fade-in 0.15s ease both;
+}
+/* Sideways position — pick whichever side has open screen space. */
+.ds-theme-popover-side-left {
+    right: 100%;
+    margin-right: 10px;
+}
+.ds-theme-popover-side-right {
+    left: 100%;
+    margin-left: 10px;
+}
+/* Vertical "ground" — shares the whole account menu box's edge instead
+   of just this row's, so the two panels read as one continuous flyout. */
+.ds-theme-popover-align-bottom {
+    bottom: 0;
+}
+.ds-theme-popover-align-top {
+    top: 0;
+}
+/* Small screens: there usually isn't room for a sideways flyout next to
+   an account panel that's already nearly as wide as the viewport, so
+   fall back to a full-width panel that drops below the Theme row. */
+@media (max-width: 640px) {
+    .ds-theme-popover-side-left,
+    .ds-theme-popover-side-right {
+        position: absolute;
+        left: 0; right: 0;
+        width: auto;
+    }
+    /* Header's account menu drops down from the top bar, so its Theme
+       panel drops down too — stacking below the whole account panel,
+       still comfortably inside the viewport underneath the header. */
+    .ds-theme-popover-align-top {
+        top: 100%; bottom: auto;
+        margin: 8px 0 0;
+    }
+    /* Sidebar's account menu pops UP from a control near the bottom of
+       the screen, so its Theme panel must also pop up — stacking above
+       the whole account panel. Using the header's "drop down" rule here
+       would push it further down, off the bottom edge of the screen. */
+    .ds-theme-popover-align-bottom {
+        bottom: 100%; top: auto;
+        margin: 0 0 8px;
+    }
+}
+.ds-menu.light .ds-theme-popover { background: #fff; border: 1.5px solid #c3ccdb; box-shadow: 0 20px 40px rgba(2,6,23,0.16); color: #0b1220; }
+.ds-menu.dark .ds-theme-popover { background: #12161f; border: 1.5px solid #323b4a; box-shadow: 0 20px 40px rgba(0,0,0,0.5); color: #e7ecf3; }
+.ds-theme-popover-title {
+    padding: 6px 10px 8px; margin-bottom: 4px;
+    font-size: 11px; font-weight: 700; opacity: 0.55; text-transform: uppercase; letter-spacing: 0.07em;
+    border-bottom: 1px solid;
+}
+.ds-menu.light .ds-theme-popover-title { border-color: #c9d1de; }
+.ds-menu.dark .ds-theme-popover-title { border-color: #323b4a; }
+.ds-theme-option {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 9px 10px; border-radius: 9px; border: none; background: none; cursor: pointer;
+    font-size: 13.5px; font-weight: 600; text-align: left; color: inherit;
+}
+.ds-menu.light .ds-theme-option:hover { background: #f4f7fb; }
+.ds-menu.dark .ds-theme-option:hover { background: #1a2029; }
+.ds-theme-check { margin-left: auto; flex-shrink: 0; opacity: 0.85; }
+.ds-theme-swatch { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; border: 1px solid rgba(120,120,120,0.3); }
+.ds-theme-swatch-white { background: linear-gradient(135deg, #ffffff, #c3ccdb); }
+.ds-theme-swatch-black { background: linear-gradient(135deg, #3a4457, #0a0c12); }
+.ds-theme-swatch-blue { background: linear-gradient(135deg, #38bdf8, #1e40af); }
+.ds-theme-swatch-yellow { background: linear-gradient(135deg, #f59e0b, #b45309); }
+.ds-theme-swatch-maroon { background: linear-gradient(135deg, #dc2626, #7f1d2e); }
+/* Only this pane scrolls. min-height:0 is required for a flex
+   child to actually respect overflow-y instead of growing. */
+/* Fills 100% of whatever width the sidebar leaves behind —
+   collapsed or expanded — instead of capping at a fixed
+   centered column. That fixed cap used to leave dead space
+   on both sides once the sidebar collapsed (and put the
+   scrollbar at the edge of that narrow column instead of
+   the true edge of the screen). */
+.ds-main {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    padding: 28px max(16px, env(safe-area-inset-right)) 48px max(16px, env(safe-area-inset-left));
+    padding-bottom: max(48px, env(safe-area-inset-bottom));
+}
+/* ---------- Footer ---------- */
+/* Sits below .ds-main as a sibling in the .ds-content flex column, exactly
+   like .ds-topbar sits above it — flex-shrink: 0 means it keeps its own
+   height and never gets squeezed or dragged along by .ds-main's scrolling.
+   It is always visible, on every screen size, without moving. */
+.ds-footer {
+    flex-shrink: 0;
+    position: relative; z-index: 20;
+    padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    text-align: center;
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+}
+.ds-shell.light .ds-footer { background: rgba(244,247,251,0.75); border-top: 1.5px solid #c3ccdb; }
+.ds-shell.dark .ds-footer { background: rgba(10,12,18,0.75); border-top: 1.5px solid #323b4a; }
+.ds-shell.maroon .ds-footer { background: rgba(254,247,248,0.75); border-top: 1.5px solid #e8b3bc; }
+.ds-shell.blue .ds-footer { background: rgba(245,249,255,0.75); border-top: 1.5px solid #a9cdf5; }
+.ds-shell.yellow .ds-footer { background: rgba(254,250,240,0.75); border-top: 1.5px solid #e6c477; }
+
+.ds-footer-inner {
+    display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12px;
+}
+.ds-footer-credit { opacity: 0.75; white-space: nowrap; }
+.ds-footer-credit-link {
+    font-weight: 600;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+    text-decoration: none;
+}
+.ds-footer-credit-link:hover { text-decoration: underline; }
+
+.ds-footer-sep { opacity: 0.4; }
+.ds-footer-dot { opacity: 0.4; margin: 0 2px; }
+
+.ds-footer-links { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; opacity: 0.75; }
+.ds-footer-badge { display: inline-flex; align-items: center; gap: 4px; }
+
+.ds-footer-copy { opacity: 0.6; white-space: nowrap; }
+
+/* Phones held in portrait: collapse the footer down to just the developer
+   credit. Landscape phones/tablets and desktop/laptop keep showing the
+   full row (badges, separators, copyright). */
+@media (orientation: portrait) and (max-width: 768px) {
+    .ds-footer-extra { display: none; }
+    .ds-footer-inner { gap: 0; }
+}
+
+.ds-header {
+    display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap;
+    gap: 14px; margin-bottom: 24px;
+}
+.ds-header-text { min-width: 0; }
+.ds-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 5px 12px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    background: rgba(79, 70, 229, 0.10);
+    border: 1px solid rgba(79, 70, 229, 0.28);
+    color: #4f46e5; margin-bottom: 12px;
+}
+.ds-shell.maroon .ds-eyebrow { background: rgba(220,38,38,0.09); border-color: rgba(220,38,38,0.25); color: #b91c1c; }
+.ds-shell.blue .ds-eyebrow { background: rgba(37,99,235,0.09); border-color: rgba(37,99,235,0.25); color: #1d4ed8; }
+.ds-shell.yellow .ds-eyebrow { background: rgba(217,119,6,0.12); border-color: rgba(217,119,6,0.3); color: #b45309; }
+.ds-title { font-size: clamp(20px, 4.5vw, 28px); font-weight: 800; letter-spacing: -0.01em; margin: 0 0 6px; }
+.ds-subtitle { font-size: 13.5px; opacity: 0.7; margin: 0; max-width: 52ch; }
+.ds-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+/* Reusable building blocks shared by every authenticated page */
+.ds-card {
+    border-radius: 18px;
+    padding: clamp(18px, 4vw, 26px);
+    margin-bottom: 18px;
+}
+.ds-shell.light .ds-card {
+    background: rgba(255,255,255,0.85);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1.5px solid #c3ccdb;
+    box-shadow: 0 16px 40px rgba(2, 6, 23, 0.06);
+}
+.ds-shell.dark .ds-card {
+    background: rgba(18, 22, 32, 0.75);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1.5px solid #323b4a;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+}
+.ds-card-title { font-size: 15.5px; font-weight: 800; margin: 0 0 4px; }
+.ds-card-title-icon { display: inline-flex; align-items: center; gap: 9px; }
+.ds-card-title-icon svg { flex-shrink: 0; opacity: 0.85; }
+.ds-card-desc { font-size: 13px; opacity: 0.65; margin: 0 0 16px; }
+.ds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.ds-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 18px; }
+.ds-stat-card { border-radius: 16px; padding: 16px 18px; }
+.ds-shell.light .ds-stat-card { background: rgba(255,255,255,0.85); border: 1.5px solid #c3ccdb; }
+.ds-shell.dark .ds-stat-card { background: rgba(18,22,32,0.75); border: 1.5px solid #323b4a; }
+.ds-stat-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; margin-bottom: 10px; border-radius: 10px;
+    color: #4f46e5; background: rgba(79,70,229,0.10);
+}
+.ds-shell.dark .ds-stat-icon { background: rgba(99,102,241,0.16); color: #a5b4fc; }
+.ds-shell.maroon .ds-stat-icon { background: rgba(220,38,38,0.10); color: #b91c1c; }
+.ds-shell.blue .ds-stat-icon { background: rgba(37,99,235,0.10); color: #1d4ed8; }
+.ds-shell.yellow .ds-stat-icon { background: rgba(217,119,6,0.13); color: #b45309; }
+.ds-stat-value { font-size: 22px; font-weight: 800; line-height: 1.1; }
+.ds-stat-label { font-size: 12px; opacity: 0.6; font-weight: 600; margin-top: 2px; }
+.ds-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 11px 18px; border-radius: 12px; border: none; cursor: pointer;
+    font-size: 14px; font-weight: 700; text-decoration: none;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+}
+.ds-btn:active { transform: translateY(1px); }
+.ds-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.ds-btn-primary {
+    color: #fff;
+    background: linear-gradient(135deg, #4f46e5, #7c3aed 50%, #0ea5e9);
+    box-shadow: 0 10px 24px rgba(79,70,229,0.3);
+}
+.ds-shell.maroon .ds-btn-primary { background: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); box-shadow: 0 10px 24px rgba(159,18,57,0.35); }
+.ds-shell.blue .ds-btn-primary { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); box-shadow: 0 10px 24px rgba(37,99,235,0.35); }
+.ds-shell.yellow .ds-btn-primary { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); box-shadow: 0 10px 24px rgba(217,119,6,0.35); color: #1c1408; }
+.ds-btn-primary:hover { opacity: 0.92; }
+.ds-btn-secondary { background: transparent; }
+.ds-shell.light .ds-btn-secondary { color: #0b1220; border: 1.5px solid #b9c4d6; }
+.ds-shell.dark .ds-btn-secondary { color: #e7ecf3; border: 1.5px solid #3a4457; }
+.ds-shell.light .ds-btn-secondary:hover { background: #f4f7fb; }
+.ds-shell.dark .ds-btn-secondary:hover { background: #171c26; }
+.ds-btn-danger {
+    color: #ef4444; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
+}
+.ds-btn-danger:hover { background: rgba(239,68,68,0.14); }
+.ds-btn-block { width: 100%; }
+.ds-field { width: 100%; text-align: left; margin-bottom: 16px; }
+.ds-field label { display: block; font-size: 12.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.65; margin-bottom: 6px; }
+.ds-field input,
+.ds-field textarea {
+    width: 100%; padding: 11px 14px; border-radius: 12px;
+    font-size: 16px; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    box-sizing: border-box; font-family: inherit; resize: vertical;
+    -webkit-appearance: none; appearance: none;
+}
+.ds-shell.light .ds-field input, .ds-shell.light .ds-field textarea { background: #fff; border: 1.5px solid #b9c4d6; color: #0b1220; }
+.ds-shell.dark .ds-field input, .ds-shell.dark .ds-field textarea { background: #0f131c; border: 1.5px solid #3a4457; color: #e7ecf3; }
+.ds-field input:focus, .ds-field textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.18); }
+.ds-form-row { display: grid; grid-template-columns: 1fr; gap: 0; }
+@media (min-width: 560px) {
+    .ds-form-row-2 { grid-template-columns: 1fr 1fr; gap: 0 14px; }
+}
+.ds-error {
+    background: rgba(239,68,68,0.10); border: 1px solid rgba(239,68,68,0.3);
+    color: #ef4444; font-size: 13px; padding: 10px 14px; border-radius: 12px; margin-bottom: 18px;
+}
+.ds-field-error { color: #ef4444; font-size: 12px; font-weight: 600; margin-top: 6px; }
+.ds-field input[aria-invalid="true"], .ds-field textarea[aria-invalid="true"] { border-color: #ef4444 !important; }
+.ds-empty { text-align: center; padding: 40px 16px; opacity: 0.6; font-size: 14px; }
+.ds-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ds-list-item {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px 16px; border-radius: 14px; flex-wrap: wrap;
+}
+.ds-shell.light .ds-list-item { background: rgba(255,255,255,0.6); border: 1.5px solid #c9d1de; }
+.ds-shell.dark .ds-list-item { background: rgba(255,255,255,0.03); border: 1.5px solid #3a4457; }
+.ds-list-item-title { font-weight: 700; font-size: 14.5px; margin: 0 0 3px; }
+.ds-list-item-meta { font-size: 12.5px; opacity: 0.6; }
+.ds-badge {
+    display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; text-transform: capitalize; flex-shrink: 0;
+}
+.ds-badge-pending { background: rgba(245,158,11,0.12); color: #d97706; border: 1px solid rgba(245,158,11,0.3); }
+.ds-badge-found { background: rgba(34,197,94,0.12); color: #16a34a; border: 1px solid rgba(34,197,94,0.3); }
+.ds-badge-claimed { background: rgba(99,102,241,0.12); color: #4f46e5; border: 1px solid rgba(99,102,241,0.3); }
+.ds-badge-default { background: rgba(148,163,184,0.14); color: #64748b; border: 1px solid rgba(148,163,184,0.3); }
+.ds-badge-rejected { background: rgba(239,68,68,0.10); color: #dc2626; border: 1px solid rgba(239,68,68,0.28); }
+.ds-badge-review { background: rgba(14,165,233,0.10); color: #0284c7; border: 1px solid rgba(14,165,233,0.28); }
+.ds-badge-icon { display: inline-flex; align-items: center; gap: 5px; }
+.ds-badge-icon svg { flex-shrink: 0; }
+.ds-skeleton {
+    border-radius: 14px; height: 64px; margin-bottom: 10px;
+    background: linear-gradient(90deg, rgba(148,163,184,0.08), rgba(148,163,184,0.18), rgba(148,163,184,0.08));
+    background-size: 200% 100%;
+    animation: ds-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes ds-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+/* ---------- Page-shaped skeletons ---------- */
+/* Small shimmer "bone" blocks, sized per-context with utility classes below,
+   dropped straight into the same .ds-stat-card / .ds-card boxes a page
+   already renders — so the loading state has the exact same grid shape as
+   the real content that replaces it (no layout jump when data arrives). */
+.ds-skel {
+    border-radius: 8px;
+    background: linear-gradient(90deg, rgba(148,163,184,0.08), rgba(148,163,184,0.18), rgba(148,163,184,0.08));
+    background-size: 200% 100%;
+    animation: ds-shimmer 1.4s ease-in-out infinite;
+}
+.ds-skel-icon { width: 36px; height: 36px; border-radius: 10px; margin-bottom: 10px; }
+.ds-skel-value { width: 46%; height: 22px; margin-bottom: 7px; }
+.ds-skel-label { width: 68%; height: 11px; }
+.ds-skel-title { width: 55%; height: 16px; margin-bottom: 12px; }
+.ds-skel-desc { width: 92%; height: 11px; margin-bottom: 7px; }
+.ds-skel-desc-sm { width: 65%; height: 11px; margin-bottom: 18px; }
+.ds-skel-btn { width: 100%; height: 42px; border-radius: 12px; }
+/* Form-shaped bones (label pill + input/textarea bar), used by any page
+   whose real content is a <form> of .ds-field rows — mirrors the exact
+   label-then-input rhythm so the swap-in has no layout jump. */
+.ds-skel-field-label { height: 10px; border-radius: 4px; margin-bottom: 8px; }
+.ds-skel-input { width: 100%; height: 44px; border-radius: 12px; margin-bottom: 16px; }
+.ds-skel-textarea { width: 100%; height: 100px; border-radius: 12px; margin-bottom: 16px; }
+/* Profile-shaped bones (round avatar + name/email lines, list rows). */
+.ds-skel-avatar { width: 56px; height: 56px; border-radius: 14px; flex-shrink: 0; }
+.ds-skel-name-lg { width: 150px; height: 18px; margin-bottom: 8px; }
+.ds-skel-email-lg { width: 190px; height: 13px; }
+@media (prefers-reduced-motion: reduce) {
+    .ds-menu, .ds-skeleton, .ds-skel, .ds-route-progress { animation: none !important; }
+}
+
+/* ==========================================================================
+ * Profile page — hero chips, compact info grid, and the Change Password
+ * form (Security card). Added alongside the rest of the shared `ds-`
+ * vocabulary above so the Profile page needs no CSS file of its own.
+ * ========================================================================== */
+
+/* Small pill chips under the hero name (role / student id / course) —
+   lighter-weight than a full .ds-badge, meant to sit in a row. */
+.ds-chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ds-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 700;
+}
+.ds-shell.light .ds-chip { background: #f4f7fb; border: 1.5px solid #c3ccdb; color: #334155; }
+.ds-shell.dark .ds-chip { background: #171c26; border: 1.5px solid #323b4a; color: #cbd5e1; }
+.ds-chip.ds-chip-accent { background: rgba(79,70,229,0.10); border-color: rgba(79,70,229,0.28); color: #4f46e5; }
+.ds-shell.maroon .ds-chip.ds-chip-accent { background: rgba(220,38,38,0.09); border-color: rgba(220,38,38,0.25); color: #b91c1c; }
+.ds-shell.blue .ds-chip.ds-chip-accent { background: rgba(37,99,235,0.09); border-color: rgba(37,99,235,0.25); color: #1d4ed8; }
+.ds-shell.yellow .ds-chip.ds-chip-accent { background: rgba(217,119,6,0.12); border-color: rgba(217,119,6,0.3); color: #b45309; }
+
+/* Compact "info" grid used by the Profile page's account-details card —
+   several short fields per row instead of one full-width row each, which
+   is what used to leave large empty gutters on wide screens. */
+.ds-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.ds-info-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: 12px; min-width: 0; }
+.ds-shell.light .ds-info-item { background: rgba(255,255,255,0.6); border: 1.5px solid #c9d1de; }
+.ds-shell.dark .ds-info-item { background: rgba(255,255,255,0.03); border: 1.5px solid #3a4457; }
+.ds-info-icon {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 30px; height: 30px; border-radius: 9px; margin-top: 1px;
+    color: #4f46e5; background: rgba(79,70,229,0.10);
+}
+.ds-shell.dark .ds-info-icon { background: rgba(99,102,241,0.16); color: #a5b4fc; }
+.ds-shell.maroon .ds-info-icon { background: rgba(220,38,38,0.10); color: #b91c1c; }
+.ds-shell.blue .ds-info-icon { background: rgba(37,99,235,0.10); color: #1d4ed8; }
+.ds-shell.yellow .ds-info-icon { background: rgba(217,119,6,0.13); color: #b45309; }
+.ds-info-text { min-width: 0; }
+.ds-info-label { font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.55; margin-bottom: 3px; }
+.ds-info-value { font-size: 13.8px; font-weight: 700; word-break: break-word; }
+
+/* ---------- Security card / Change Password ---------- */
+.ds-security-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.ds-security-row-text { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.ds-security-icon {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 38px; height: 38px; border-radius: 11px;
+    color: #4f46e5; background: rgba(79,70,229,0.10);
+}
+.ds-shell.dark .ds-security-icon { background: rgba(99,102,241,0.16); color: #a5b4fc; }
+.ds-security-row-title { font-size: 14px; font-weight: 700; }
+.ds-security-row-meta { font-size: 12.5px; opacity: 0.6; letter-spacing: 0.06em; }
+
+.ds-success {
+    background: rgba(34,197,94,0.10); border: 1px solid rgba(34,197,94,0.3);
+    color: #16a34a; font-size: 13px; padding: 10px 14px; border-radius: 12px; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+}
+
+/* Password field: input plus an eye/eye-off toggle pinned inside it. */
+.ds-pwd-wrap { position: relative; }
+.ds-pwd-wrap input { padding-right: 42px !important; }
+.ds-pwd-toggle {
+    position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+    width: 30px; height: 30px; border: none; background: none; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;
+    opacity: 0.6;
+}
+.ds-pwd-toggle:hover { opacity: 1; }
+.ds-shell.light .ds-pwd-toggle { color: #0b1220; }
+.ds-shell.dark .ds-pwd-toggle { color: #e7ecf3; }
+.ds-shell.light .ds-pwd-toggle:hover { background: #c9d1de; }
+.ds-shell.dark .ds-pwd-toggle:hover { background: #1a2029; }
+
+/* Strength meter — five short ticks under the "new password" field. */
+.ds-strength { display: flex; align-items: center; gap: 8px; margin: -8px 0 16px; }
+.ds-strength-ticks { display: flex; gap: 4px; flex: 1; }
+.ds-strength-ticks span { height: 4px; flex: 1; border-radius: 999px; background: rgba(148,163,184,0.25); }
+.ds-strength-label { font-size: 11px; font-weight: 700; flex-shrink: 0; }
+
+.ds-checklist { margin: -6px 0 16px; }
+.ds-checklist-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px 10px; }
+.ds-checklist-item { display: flex; align-items: center; gap: 6px; font-size: 12px; opacity: 0.55; }
+.ds-checklist-item.is-ok { opacity: 1; color: #16a34a; }
+.ds-checklist-item svg { flex-shrink: 0; }
+
+.ds-match { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; margin: -10px 0 16px; }
+.ds-match.is-ok { color: #16a34a; }
+.ds-match.is-bad { color: #ef4444; }
+
+@media (prefers-reduced-motion: reduce) {
+    .ds-strength-ticks span { transition: none !important; }
+}
+
+/* ==========================================================================
+ * Claims — filter chips, thumbnails, evidence rows, risk banner, and the
+ * one-time-code display used on the Claim detail page's Release cards.
+ * ========================================================================== */
+
+/* Status filter row above the claims list (My Claims / All Claims). */
+.ds-filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.ds-filter-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 999px; cursor: pointer;
+    font-size: 12.5px; font-weight: 700; border: 1px solid transparent;
+    background: none; transition: opacity 0.15s ease;
+}
+.ds-shell.light .ds-filter-chip { background: #f4f7fb; border-color: #c3ccdb; color: #475569; }
+.ds-shell.dark .ds-filter-chip { background: #171c26; border-color: #323b4a; color: #94a3b8; }
+.ds-filter-chip:hover { opacity: 0.85; }
+.ds-filter-chip.is-active {
+    background: rgba(79,70,229,0.10); border-color: rgba(79,70,229,0.3); color: #4f46e5;
+}
+.ds-shell.maroon .ds-filter-chip.is-active { background: rgba(220,38,38,0.09); border-color: rgba(220,38,38,0.25); color: #b91c1c; }
+.ds-shell.blue .ds-filter-chip.is-active { background: rgba(37,99,235,0.09); border-color: rgba(37,99,235,0.25); color: #1d4ed8; }
+.ds-shell.yellow .ds-filter-chip.is-active { background: rgba(217,119,6,0.12); border-color: rgba(217,119,6,0.3); color: #b45309; }
+.ds-filter-count {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+    font-size: 10px; font-weight: 800; background: rgba(148,163,184,0.22);
+}
+
+/* Small square thumbnail (photo or icon fallback) used in list rows and
+   the item card on the detail page. */
+.ds-thumb {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 44px; height: 44px; border-radius: 12px; overflow: hidden;
+    color: #4f46e5; background: rgba(79,70,229,0.10);
+}
+.ds-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ds-shell.dark .ds-thumb { background: rgba(99,102,241,0.16); color: #a5b4fc; }
+.ds-shell.maroon .ds-thumb { background: rgba(220,38,38,0.10); color: #b91c1c; }
+.ds-shell.blue .ds-thumb { background: rgba(37,99,235,0.10); color: #1d4ed8; }
+.ds-shell.yellow .ds-thumb { background: rgba(217,119,6,0.13); color: #b45309; }
+.ds-thumb-lg { width: 64px; height: 64px; border-radius: 14px; }
+
+/* Item card hero row: thumbnail beside the item name + quick meta. */
+.ds-item-hero { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+.ds-item-hero-name { font-size: 17px; font-weight: 800; margin: 0 0 2px; }
+.ds-item-hero-meta { font-size: 12.5px; opacity: 0.6; }
+
+/* Evidence rows: icon + type/content on the left, file link + submitter
+   meta stacked on the right — replaces the old plain <li> text dump. */
+.ds-evidence-row { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 14px; }
+.ds-shell.light .ds-evidence-row { background: rgba(255,255,255,0.6); border: 1.5px solid #c9d1de; }
+.ds-shell.dark .ds-evidence-row { background: rgba(255,255,255,0.03); border: 1.5px solid #3a4457; }
+.ds-evidence-icon {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 34px; height: 34px; border-radius: 10px; margin-top: 1px;
+    color: #4f46e5; background: rgba(79,70,229,0.10);
+}
+.ds-shell.dark .ds-evidence-icon { background: rgba(99,102,241,0.16); color: #a5b4fc; }
+.ds-evidence-body { flex: 1; min-width: 0; }
+.ds-evidence-type { font-weight: 700; font-size: 13.5px; text-transform: capitalize; margin: 0 0 3px; }
+.ds-evidence-content { font-size: 12.5px; opacity: 0.75; word-break: break-word; }
+.ds-evidence-meta { font-size: 11.5px; opacity: 0.5; margin-top: 4px; }
+.ds-evidence-file {
+    display: inline-flex; align-items: center; gap: 5px; margin-top: 8px;
+    font-size: 12px; font-weight: 700; text-decoration: none;
+    padding: 5px 10px; border-radius: 999px; color: #4f46e5; background: rgba(79,70,229,0.10);
+}
+.ds-shell.dark .ds-evidence-file { background: rgba(99,102,241,0.16); color: #a5b4fc; }
+
+/* Risk banner: replaces the bare "Risk score: N/100" paragraph + <ul>. */
+.ds-risk-banner {
+    border-radius: 14px; padding: 14px 16px; margin-top: 14px;
+    background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.28);
+}
+.ds-risk-banner.is-high { background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.28); }
+.ds-risk-banner-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.ds-risk-banner-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: #b45309; }
+.ds-risk-banner.is-high .ds-risk-banner-title { color: #dc2626; }
+.ds-risk-score { font-size: 12px; font-weight: 800; opacity: 0.8; }
+.ds-risk-flags { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.ds-risk-flags li { display: flex; align-items: flex-start; gap: 7px; font-size: 12.5px; opacity: 0.85; }
+.ds-risk-flags li svg { flex-shrink: 0; margin-top: 2px; }
+
+/* One-time public code / token display used by the Release cards. */
+.ds-code-box {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 14px; border-radius: 12px; margin-bottom: 10px; min-width: 0;
+}
+.ds-shell.light .ds-code-box { background: #f4f7fb; border: 1.5px solid #c3ccdb; }
+.ds-shell.dark .ds-code-box { background: #0f131c; border: 1.5px solid #3a4457; }
+.ds-code-box-text { min-width: 0; }
+.ds-code-box-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.55; margin-bottom: 3px; }
+.ds-code-box-value { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13.5px; font-weight: 700; word-break: break-all; }
+.ds-code-copy {
+    display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 32px; height: 32px; border-radius: 9px; border: none; cursor: pointer;
+    color: #4f46e5; background: rgba(79,70,229,0.10);
+}
+.ds-shell.dark .ds-code-copy { background: rgba(99,102,241,0.16); color: #a5b4fc; }
+.ds-code-copy:hover { opacity: 0.85; }
+.ds-code-copy.is-copied { color: #16a34a; background: rgba(34,197,94,0.14); }
+
+/* Section divider used inside a .ds-card to separate a sub-form (e.g. "Add
+   evidence") from the read-only content above it. */
+.ds-divider { border: none; border-top: 1px solid; margin: 20px 0 18px; opacity: 0.5; }
+.ds-shell.light .ds-divider { border-color: #c3ccdb; }
+.ds-shell.dark .ds-divider { border-color: #323b4a; }
+.ds-section-label { font-size: 13px; font-weight: 800; margin: 0 0 12px; }
