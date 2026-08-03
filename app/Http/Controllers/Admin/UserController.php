@@ -24,14 +24,17 @@ class UserController extends Controller
         $users = User::query()
             // Disabling an account only flips is_active=false — it is
             // deliberately never soft-deleted (see destroy()'s comment) —
-            // so "Show disabled accounts" has to filter on is_active, not
-            // on Eloquent's trashed state. withTrashed() only matters for
-            // the rare legacy row that was soft-deleted before that fix
-            // shipped (see restore()); when the checkbox is off we want
-            // neither of those showing, only currently-active accounts.
+            // so the "Show disabled accounts only" checkbox has to filter
+            // on is_active, not on Eloquent's trashed state. withTrashed()
+            // only matters for the rare legacy row that was soft-deleted
+            // before that fix shipped (see restore()); those legacy rows
+            // are disabled accounts too, so they belong in the disabled
+            // view and nowhere else.
+            // Checked  -> only disabled accounts (is_active = false, incl. legacy trashed rows).
+            // Unchecked (default) -> only active/enabled accounts.
             ->when(
                 $includeDisabled,
-                fn ($q) => $q->withTrashed(),
+                fn ($q) => $q->withTrashed()->where('is_active', false),
                 fn ($q) => $q->where('is_active', true)
             )
             ->with('roles:id,name')

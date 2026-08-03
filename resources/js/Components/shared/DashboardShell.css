@@ -85,8 +85,9 @@ body { overflow: hidden; }
     padding-top: max(13px, env(safe-area-inset-top));
     padding-bottom: max(18px, env(safe-area-inset-bottom));
     transform: translateX(-100%);
-    transition: transform 0.25s ease, width 0.2s ease;
+    transition: transform 0.32s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1);
     overflow: hidden;
+    will-change: transform, width;
 }
 .ds-sidebar.open { transform: translateX(0); }
 /* Below the desktop breakpoint the sidebar is a slide-over overlay, so it
@@ -111,20 +112,27 @@ body { overflow: hidden; }
     position: fixed; inset: 0; z-index: 39;
     background: rgba(2,6,23,0.5);
     backdrop-filter: blur(2px);
-    animation: ds-fade-in 0.15s ease both;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.28s ease;
 }
+.ds-sidebar-backdrop.open { opacity: 1; pointer-events: auto; }
 @media (min-width: 960px) { .ds-sidebar-backdrop { display: none; } }
 /* Brand row shares .ds-nav-link's own left padding (12px) so the logo and
    every nav icon below it line up on the same left edge when expanded. */
 /* margin-top pulls the logo up so its own center lines up with the
    header burger button's center (both sit 30px from the very top of
    the screen) instead of sitting ~7px lower than it. */
-.ds-brand { display: flex; align-items: center; gap: 8px; min-width: 0; text-decoration: none; color: inherit; padding: 2px 8px 16px; margin-top: -3px; flex-shrink: 0; border-radius: 11px; transition: background 0.15s ease; }
+.ds-brand { display: flex; align-items: center; gap: 8px; min-width: 0; text-decoration: none; color: inherit; padding: 2px 8px 16px; margin-top: -3px; flex-shrink: 0; border-radius: 11px; transition: background 0.15s ease, gap 0.28s cubic-bezier(0.4,0,0.2,1), padding 0.28s cubic-bezier(0.4,0,0.2,1), margin 0.28s cubic-bezier(0.4,0,0.2,1); }
 /* Sized to match the 36x36 header burger button (.ds-icon-btn) so the
    sidebar logo reads as an equally prominent, "same weight" control
    instead of looking small next to it. */
 .ds-brand img { width: 44px; height: 44px; object-fit: contain; border-radius: 10px; flex-shrink: 0; }
-.ds-brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; overflow: hidden; }
+.ds-brand-text {
+    display: flex; flex-direction: column; line-height: 1.15; min-width: 0; overflow: hidden;
+    max-width: 180px; opacity: 1;
+    transition: opacity 0.2s ease, max-width 0.28s cubic-bezier(0.4,0,0.2,1);
+}
 .ds-brand-name { font-weight: 800; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Sized down slightly (and tighter letter-spacing) so the full "Opol
    Community College" subtitle fits on one line within the sidebar's
@@ -135,26 +143,35 @@ body { overflow: hidden; }
     text-transform: uppercase; white-space: nowrap; overflow: hidden;
     text-overflow: ellipsis; max-width: 100%; display: block;
 }
-.ds-sidebar.collapsed .ds-brand-text { display: none; }
+.ds-sidebar.collapsed .ds-brand-text { opacity: 0; max-width: 0; }
 /* Collapsed: the logo becomes just another icon in the rail — same
    padding/box/centering as .ds-nav-link's collapsed state below it (see
-   the matching `padding: 10px; justify-content: center` there). */
-.ds-sidebar.collapsed .ds-brand { justify-content: center; padding: 8px; margin: -7px 0 6px; }
+   the matching `padding: 10px; justify-content: center` there). `gap: 0`
+   keeps the logo perfectly centered while ds-brand-text shrinks to 0
+   width instead of leaving a stray gap-sized offset. */
+.ds-sidebar.collapsed .ds-brand { justify-content: center; padding: 8px; margin: -7px 0 6px; gap: 0; }
 .ds-sidebar.collapsed .ds-brand img { width: 40px; height: 40px; border-radius: 10px; }
 .ds-shell.light .ds-sidebar.collapsed .ds-brand:hover { background: #f4f7fb; }
 .ds-shell.dark .ds-sidebar.collapsed .ds-brand:hover { background: #171c26; }
-.ds-nav-label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.45; padding: 0 10px; margin: 4px 0 8px; flex-shrink: 0; white-space: nowrap; overflow: hidden; }
+.ds-nav-label {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.45; padding: 0 10px; margin: 4px 0 8px; flex-shrink: 0; white-space: nowrap; overflow: hidden;
+    transition: opacity 0.18s ease, height 0.28s cubic-bezier(0.4,0,0.2,1), margin 0.28s cubic-bezier(0.4,0,0.2,1), padding 0.28s cubic-bezier(0.4,0,0.2,1);
+}
 .ds-sidebar.collapsed .ds-nav-label { opacity: 0; height: 0; margin: 0; padding: 0; }
 .ds-nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
 .ds-nav-link {
     display: flex; align-items: center; gap: 11px;
     padding: 10px 12px; border-radius: 11px;
     font-size: 13.8px; font-weight: 650; text-decoration: none; color: inherit;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: background 0.15s ease, color 0.15s ease, gap 0.28s cubic-bezier(0.4,0,0.2,1), padding 0.28s cubic-bezier(0.4,0,0.2,1);
     white-space: nowrap; overflow: hidden;
 }
-.ds-sidebar.collapsed .ds-nav-link { justify-content: center; padding: 10px; }
-.ds-sidebar.collapsed .ds-nav-link span.ds-nav-text { display: none; }
+.ds-sidebar.collapsed .ds-nav-link { justify-content: center; padding: 10px; gap: 0; }
+.ds-nav-link span.ds-nav-text {
+    display: inline-block; max-width: 180px; opacity: 1; overflow: hidden;
+    transition: opacity 0.18s ease, max-width 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+.ds-sidebar.collapsed .ds-nav-link span.ds-nav-text { opacity: 0; max-width: 0; }
 .ds-nav-icon { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; }
 .ds-shell.light .ds-nav-link:hover { background: #f4f7fb; }
 .ds-shell.dark .ds-nav-link:hover { background: #171c26; }
@@ -171,7 +188,10 @@ body { overflow: hidden; }
 .ds-shell.light .ds-sidebar-footer { border-color: #c9d1de; }
 .ds-shell.dark .ds-sidebar-footer { border-color: #323b4a; }
 .ds-sidebar-menu-wrap { position: relative; }
-.ds-user-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; min-width: 0; }
+.ds-user-row {
+    display: flex; align-items: center; gap: 10px; padding: 6px 8px; min-width: 0;
+    transition: gap 0.28s cubic-bezier(0.4,0,0.2,1), padding 0.28s cubic-bezier(0.4,0,0.2,1);
+}
 .ds-user-row-btn {
     width: 100%; border: none; background: none; cursor: pointer;
     border-radius: 11px; color: inherit; font-family: inherit; text-align: left;
@@ -179,12 +199,19 @@ body { overflow: hidden; }
 }
 .ds-shell.light .ds-user-row-btn:hover { background: #f4f7fb; }
 .ds-shell.dark .ds-user-row-btn:hover { background: #171c26; }
-.ds-sidebar.collapsed .ds-user-row { justify-content: center; padding-left: 0; padding-right: 0; }
+.ds-sidebar.collapsed .ds-user-row { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
 .ds-user-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ds-user-email { font-size: 11px; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ds-sidebar.collapsed .ds-user-text { display: none; }
-.ds-sidebar.collapsed .ds-user-row-chevron { display: none; }
-.ds-user-row-chevron { opacity: 0.55; flex-shrink: 0; transition: transform 0.15s ease; }
+.ds-user-text {
+    max-width: 180px; opacity: 1; overflow: hidden;
+    transition: opacity 0.18s ease, max-width 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+.ds-sidebar.collapsed .ds-user-text { opacity: 0; max-width: 0; }
+.ds-user-row-chevron {
+    opacity: 0.55; flex-shrink: 0; max-width: 15px;
+    transition: transform 0.15s ease, opacity 0.18s ease, max-width 0.28s cubic-bezier(0.4,0,0.2,1);
+}
+.ds-sidebar.collapsed .ds-user-row-chevron { opacity: 0; max-width: 0; }
 .ds-user-row-btn[aria-expanded="true"] .ds-user-row-chevron { transform: rotate(180deg); }
 /* Flyout variant of .ds-menu: opens upward and is pinned to the
    sidebar's own right edge (not the trigger button's position),
@@ -252,6 +279,10 @@ body { overflow: hidden; }
 }
 .ds-shell.light .ds-icon-btn { background: rgba(255,255,255,0.7); border: 1.5px solid #c3ccdb; color: inherit; }
 .ds-shell.dark .ds-icon-btn { background: rgba(255,255,255,0.08); border: 1.5px solid #3a4457; color: inherit; }
+/* Crossfades the hamburger/close/expand glyph swap inside .ds-hamburger
+   instead of it snapping instantly to the new icon. */
+.ds-hamburger-icon { animation: ds-hamburger-fade 0.2s ease both; display: inline-flex; }
+@keyframes ds-hamburger-fade { from { opacity: 0; } to { opacity: 1; } }
 .ds-profile-btn {
     display: inline-flex; align-items: center; gap: 8px;
     padding: 5px 10px 5px 5px; border-radius: 999px; cursor: pointer;
@@ -556,9 +587,29 @@ body { overflow: hidden; }
     color: #ef4444; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.25);
 }
 .ds-btn-danger:hover { background: rgba(239,68,68,0.14); }
+/* Outline-only action variants — transparent-tinted background + a
+   colored border/text, same treatment as .ds-btn-danger above, just a
+   different color per action: edit = accent indigo, success = the same
+   green used for "enabled"/success everywhere else in the app (badges,
+   toasts, strength meter). */
+.ds-btn-edit {
+    color: #4f46e5; background: rgba(79,70,229,0.08); border: 1px solid rgba(79,70,229,0.28);
+}
+.ds-btn-edit:hover { background: rgba(79,70,229,0.14); }
+.ds-shell.dark .ds-btn-edit { color: #818cf8; background: rgba(129,140,248,0.10); border-color: rgba(129,140,248,0.32); }
+.ds-shell.dark .ds-btn-edit:hover { background: rgba(129,140,248,0.16); }
+.ds-btn-success {
+    color: #16a34a; background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.28);
+}
+.ds-btn-success:hover { background: rgba(34,197,94,0.14); }
+.ds-shell.dark .ds-btn-success { color: #4ade80; background: rgba(74,222,128,0.10); border-color: rgba(74,222,128,0.32); }
+.ds-shell.dark .ds-btn-success:hover { background: rgba(74,222,128,0.16); }
 .ds-btn-block { width: 100%; }
 .ds-field { width: 100%; text-align: left; margin-bottom: 16px; }
 .ds-field label { display: block; font-size: 12.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.65; margin-bottom: 6px; }
+/* Marks a field as required — same red used everywhere else in the app
+   for errors/danger (#ef4444), matching the auth pages' `.lg-required`. */
+.ds-required { color: #ef4444; opacity: 1; margin-left: 2px; }
 .ds-field input,
 .ds-field textarea {
     width: 100%; padding: 11px 14px; border-radius: 12px;

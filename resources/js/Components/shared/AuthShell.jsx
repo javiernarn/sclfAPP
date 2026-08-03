@@ -569,7 +569,7 @@ const LEDGER_CSS = `
     .lg-wrap.light .lg-input { border-bottom: 1.5px solid #d9e0ec; }
     .lg-wrap.dark .lg-input { border-bottom: 1.5px solid #2a3140; }
     .lg-input:focus { border-bottom-color: var(--lg-accent); }
-    .lg-input[aria-invalid="true"] { border-bottom-color: #e2543a; }
+    .lg-input[aria-invalid="true"] { border-bottom-color: var(--lg-danger); }
     .lg-input::placeholder { opacity: 0.35; }
     .lg-select { appearance: none; -webkit-appearance: none; cursor: pointer; }
 

@@ -27,7 +27,8 @@ export function ToastProvider({ children }) {
     const timers = useRef({});
     // Plain, colorless card — its only visual variant is light/dark, same
     // as every other surface in the app (dashboard shell, ledger auth
-    // pages). No per-type accent color anymore.
+    // pages) — plus a per-type outline color (see Toast.css), so an
+    // error toast and a success toast are otherwise styled identically.
     const { theme } = useAppTheme();
     const isDark = theme === 'black';
 
@@ -81,7 +82,7 @@ export function ToastProvider({ children }) {
                 {toasts.map((t) => {
                     const Icon = ICONS[t.type];
                     return (
-                        <div key={t.id} className="sclf-toast" role="alert">
+                        <div key={t.id} className={`sclf-toast sclf-toast-${t.type}`} role="alert">
                             <span className="sclf-toast-icon"><Icon size={18} strokeWidth={2.25} /></span>
                             <div className="sclf-toast-body">
                                 {t.title && <div className="sclf-toast-title">{t.title}</div>}

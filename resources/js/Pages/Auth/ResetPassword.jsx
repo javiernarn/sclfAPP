@@ -109,7 +109,7 @@ export default function ResetPassword() {
             {error && <LedgerBanner tone="error">{error}</LedgerBanner>}
 
             <form onSubmit={handleSubmit}>
-                <LedgerRow index={1} label="New password" icon={Lock}>
+                <LedgerRow index={1} label={<>New password <span className="lg-required">*</span></>} icon={Lock}>
                     <LedgerPasswordInput
                         id="password"
                         value={password}
@@ -117,13 +117,14 @@ export default function ResetPassword() {
                         autoComplete="new-password"
                         show={showPassword}
                         onToggle={() => setShowPassword((v) => !v)}
+                        aria-invalid={!!error}
                         required
                         autoFocus
                     />
                     <StrengthTicks password={password} />
                 </LedgerRow>
 
-                <LedgerRow index={2} label="Confirm password" icon={Lock}>
+                <LedgerRow index={2} label={<>Confirm password <span className="lg-required">*</span></>} icon={Lock}>
                     <LedgerPasswordInput
                         id="password_confirmation"
                         value={confirmPassword}
@@ -131,6 +132,7 @@ export default function ResetPassword() {
                         autoComplete="new-password"
                         show={showConfirm}
                         onToggle={() => setShowConfirm((v) => !v)}
+                        aria-invalid={!!error}
                         required
                     />
                     <PasswordMatchNote password={password} confirm={confirmPassword} />

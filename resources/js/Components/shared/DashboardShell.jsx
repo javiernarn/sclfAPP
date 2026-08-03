@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useAppTheme } from "../../hooks/useAppTheme";
+import { useToast } from "../../context/ToastContext";
 import logo from "../../assets/images/site-logo.png";
 import AccountMenu from "./AccountMenu";
 import Tooltip from "./Tooltip";
@@ -137,6 +138,7 @@ const DESKTOP_QUERY = "(min-width: 960px)";
 const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
     const { user, roles, logout } = useAuth();
     const { theme, setTheme } = useAppTheme();
+    const toast = useToast();
     const isDark = theme === "black";
     const navigate = useNavigate();
     const location = useLocation();
@@ -188,6 +190,26 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
             clearTimeout(toIdle);
         };
     }, [location.pathname]);
+
+    // Fires the "Welcome back" toast once the person has actually landed
+    // on a real dashboard-shell page — not at the moment they submitted
+    // the login form. LoginPage sets this sessionStorage flag right
+    // before routing through the MainPage loading screen; this is the
+    // first DashboardShell mount after that screen hands off, so it's
+    // the right moment to show it. Runs once per mount and immediately
+    // clears the flag so navigating around the app afterward (or a
+    // plain page refresh) doesn't replay it.
+    useEffect(() => {
+        try {
+            if (window.sessionStorage.getItem('sclf-login-toast') === '1') {
+                window.sessionStorage.removeItem('sclf-login-toast');
+                toast.success('You have successfully logged in.', { title: 'Welcome back' });
+            }
+        } catch (e) {
+            // ignore storage errors (private mode etc.)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Trigger-button refs (used by AccountMenu to compute where the portal
     // menu should be positioned) and menu refs (the portal's own root node)
@@ -320,9 +342,11 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
 
     return (
         <div className={`ds-shell ds-layout ${theme} ${isDark ? "dark" : "light"}`}>
-                {sidebarOpen && (
-                    <div className="ds-sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
-                )}
+                <div
+                    className={`ds-sidebar-backdrop ${sidebarOpen ? "open" : ""}`}
+                    onClick={() => setSidebarOpen(false)}
+                    aria-hidden={!sidebarOpen}
+                />
 
                 <nav ref={sidebarRef} className={`ds-sidebar ${sidebarOpen ? "open" : ""} ${collapsed ? "collapsed" : ""}`}>
                     <Link
@@ -459,11 +483,11 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                                     aria-label={collapsed ? "Expand sidebar" : "Toggle sidebar"}
                                 >
                                     {sidebarOpen ? (
-                                        <X size={18} />
+                                        <span className="ds-hamburger-icon" key="x"><X size={18} /></span>
                                     ) : collapsed ? (
-                                        <PanelLeftOpen size={18} />
+                                        <span className="ds-hamburger-icon" key="open"><PanelLeftOpen size={18} /></span>
                                     ) : (
-                                        <PanelLeftClose size={18} />
+                                        <span className="ds-hamburger-icon" key="close"><PanelLeftClose size={18} /></span>
                                     )}
                                 </button>
                             </Tooltip>

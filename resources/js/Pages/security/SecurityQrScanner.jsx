@@ -41,11 +41,11 @@ export default function SecurityQrScanner() {
                 </p>
                 <form onSubmit={submit}>
                     <div className="ds-field">
-                        <label>Public Code</label>
+                        <label>Public Code <span className="ds-required">*</span></label>
                         <input value={publicCode} onChange={(e) => setPublicCode(e.target.value)} placeholder="SCLF-ITEM-000245" required />
                     </div>
                     <div className="ds-field">
-                        <label>Token</label>
+                        <label>Token <span className="ds-required">*</span></label>
                         <input value={token} onChange={(e) => setToken(e.target.value)} placeholder="Paste the token shown on the claim's Generate Release Code step" required />
                     </div>
                     {error && <div className="ds-error">{error}</div>}

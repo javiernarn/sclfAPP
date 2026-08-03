@@ -63,6 +63,18 @@ export default function LoginPage() {
                 clearRememberedCredentials();
             }
 
+            // Don't toast here — the person still has the ~7s MainPage
+            // loading screen ahead of them before they actually land on
+            // their dashboard. Flag it instead; DashboardShell fires the
+            // "Welcome back" toast itself once they're really there (see
+            // the sessionStorage check in DashboardShell.jsx).
+            try {
+                window.sessionStorage.setItem('sclf-login-toast', '1');
+            } catch (e) {
+                // ignore storage errors (private mode etc.) — worst case
+                // they just don't get the post-login toast this time.
+            }
+
             // Route back through "/" so the branded MainPage loading
             // screen plays again before landing on the right dashboard —
             // same behaviour as right after visiting the site fresh.
@@ -97,7 +109,7 @@ export default function LoginPage() {
             )}
 
             <form onSubmit={handleSubmit} noValidate>
-                <LedgerRow index={1} label="Email on file" icon={Mail} hint="Format: occ.lastname.firstname@gmail.com">
+                <LedgerRow index={1} label={<>Email on file <span className="lg-required">*</span></>} icon={Mail} hint="Format: occ.lastname.firstname@gmail.com">
                     <LedgerInput
                         id="email"
                         type="email"
@@ -111,7 +123,7 @@ export default function LoginPage() {
                     />
                 </LedgerRow>
 
-                <LedgerRow index={2} label="Password" icon={Lock}>
+                <LedgerRow index={2} label={<>Password <span className="lg-required">*</span></>} icon={Lock}>
                     <LedgerPasswordInput
                         id="password"
                         value={password}

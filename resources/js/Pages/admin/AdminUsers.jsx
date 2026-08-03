@@ -48,7 +48,7 @@ export default function AdminUsers() {
     const [fieldErrors, setFieldErrors] = useState({});
     const [busy, setBusy] = useState(false);
     const [busyUserId, setBusyUserId] = useState(null);
-    const [showDisabled, setShowDisabled] = useState(true);
+    const [showDisabled, setShowDisabled] = useState(false);
     const toast = useToast();
     const confirm = useConfirm();
     const discardConfirm = useDiscardConfirm();
@@ -417,23 +417,23 @@ export default function AdminUsers() {
 
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
-                            <label htmlFor="first_name">First Name</label>
+                            <label htmlFor="first_name">First Name <span className="ds-required">*</span></label>
                             <input id="first_name" name="first_name" value={form.first_name} onChange={handleChange} required />
                         </div>
                         <div className="ds-field">
-                            <label htmlFor="last_name">Last Name</label>
+                            <label htmlFor="last_name">Last Name <span className="ds-required">*</span></label>
                             <input id="last_name" name="last_name" value={form.last_name} onChange={handleChange} required />
                         </div>
                     </div>
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
-                            <label htmlFor="email">Email</label>
+                            <label htmlFor="email">Email <span className="ds-required">*</span></label>
                             <input type="email" id="email" name="email" value={form.email} onChange={handleChange} onBlur={() => handleBlurCheck('email')} required
                                 aria-invalid={!!fieldErrors.email} />
                             {fieldErrors.email && <div className="ds-field-error">{fieldErrors.email}</div>}
                         </div>
                         <div className="ds-field">
-                            <label htmlFor="password">Temporary Password</label>
+                            <label htmlFor="password">Temporary Password <span className="ds-required">*</span></label>
                             <input type="text" id="password" name="password" value={form.password} onChange={handleChange} minLength={8} required
                                 aria-invalid={!!fieldErrors.password} />
                             {fieldErrors.password && <div className="ds-field-error">{fieldErrors.password}</div>}
@@ -495,7 +495,7 @@ export default function AdminUsers() {
                     <h3>All Users</h3>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                         <input type="checkbox" checked={showDisabled} onChange={(e) => setShowDisabled(e.target.checked)} />
-                        Show disabled accounts
+                        Show disabled accounts only
                     </label>
                 </div>
                 {loading && <div className="ds-skeleton" />}
@@ -536,7 +536,7 @@ export default function AdminUsers() {
                                         <Tooltip label="Edit name, email, phone, role, or reset the password">
                                             <button
                                                 type="button"
-                                                className="ds-btn ds-btn-secondary"
+                                                className="ds-btn ds-btn-edit"
                                                 onClick={() => openEdit(u)}
                                             >
                                                 <Pencil size={14} /> Edit
@@ -548,11 +548,11 @@ export default function AdminUsers() {
                                             </Tooltip>
                                         ) : u.is_active ? (
                                             <Tooltip label="Signs them out and blocks login; their history is kept">
-                                                <button className="ds-btn" disabled={busyUserId === u.id} onClick={() => disable(u.id, u.name)}>Disable</button>
+                                                <button className="ds-btn ds-btn-danger" disabled={busyUserId === u.id} onClick={() => disable(u.id, u.name)}>Disable</button>
                                             </Tooltip>
                                         ) : (
                                             <Tooltip label="Restores login access immediately">
-                                                <button className="ds-btn ds-btn-primary" disabled={busyUserId === u.id} onClick={() => enable(u.id, u.name)}>Enable</button>
+                                                <button className="ds-btn ds-btn-success" disabled={busyUserId === u.id} onClick={() => enable(u.id, u.name)}>Enable</button>
                                             </Tooltip>
                                         )}
                                     </div>
@@ -615,17 +615,17 @@ export default function AdminUsers() {
 
                             <div className="ds-form-row ds-form-row-2">
                                 <div className="ds-field">
-                                    <label htmlFor="edit_first_name">First Name</label>
+                                    <label htmlFor="edit_first_name">First Name <span className="ds-required">*</span></label>
                                     <input id="edit_first_name" name="first_name" value={editForm.first_name} onChange={handleEditChange} required />
                                 </div>
                                 <div className="ds-field">
-                                    <label htmlFor="edit_last_name">Last Name</label>
+                                    <label htmlFor="edit_last_name">Last Name <span className="ds-required">*</span></label>
                                     <input id="edit_last_name" name="last_name" value={editForm.last_name} onChange={handleEditChange} required />
                                 </div>
                             </div>
 
                             <div className="ds-field">
-                                <label htmlFor="edit_email">Email</label>
+                                <label htmlFor="edit_email">Email <span className="ds-required">*</span></label>
                                 <input type="email" id="edit_email" name="email" value={editForm.email} onChange={handleEditChange} required
                                     aria-invalid={!!editErrors.email} />
                                 {editErrors.email && <div className="ds-field-error">{editErrors.email}</div>}

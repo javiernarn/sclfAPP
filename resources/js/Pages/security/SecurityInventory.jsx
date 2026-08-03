@@ -108,13 +108,13 @@ export default function SecurityInventory() {
                     {error && <div className="ds-error">{error}</div>}
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
-                            <label>Campus</label>
+                            <label>Campus <span className="ds-required">*</span></label>
                             <select value={newLoc.campus_id} onChange={(e) => setNewLoc({ ...newLoc, campus_id: e.target.value })} required>
                                 {campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
                         <div className="ds-field">
-                            <label>Code (unique)</label>
+                            <label>Code (unique) <span className="ds-required">*</span></label>
                             <input value={newLoc.code} onChange={(e) => setNewLoc({ ...newLoc, code: e.target.value })}
                                 placeholder="e.g. STORE-A-3-5" required />
                         </div>

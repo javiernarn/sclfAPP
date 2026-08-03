@@ -11,7 +11,7 @@ import { useDiscardConfirm } from '../../../context/ConfirmContext';
 function PasswordField({ id, label, value, onChange, show, onToggle, autoComplete, autoFocus }) {
     return (
         <div className="ds-field">
-            <label htmlFor={id}>{label}</label>
+            <label htmlFor={id}>{label} <span className="ds-required">*</span></label>
             <div className="ds-pwd-wrap">
                 <input
                     id={id}

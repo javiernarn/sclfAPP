@@ -69,7 +69,7 @@ export default function LostItemCreate() {
 
                 <form onSubmit={handleSubmit}>
                     <div className="ds-field">
-                        <label htmlFor="item_name">Item Name</label>
+                        <label htmlFor="item_name">Item Name <span className="ds-required">*</span></label>
                         <input
                             id="item_name"
                             name="item_name"
@@ -81,7 +81,7 @@ export default function LostItemCreate() {
                     </div>
 
                     <div className="ds-field">
-                        <label htmlFor="description">Description</label>
+                        <label htmlFor="description">Description <span className="ds-required">*</span></label>
                         <textarea
                             id="description"
                             name="description"

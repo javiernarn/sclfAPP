@@ -104,7 +104,7 @@ export default function ForgotPassword() {
 
             {view === 'find' && (
                 <form onSubmit={handleFindAccount}>
-                    <LedgerRow index={1} label="Email on file" icon={Mail}>
+                    <LedgerRow index={1} label={<>Email on file <span className="lg-required">*</span></>} icon={Mail}>
                         <LedgerInput
                             id="email"
                             type="email"
@@ -112,6 +112,7 @@ export default function ForgotPassword() {
                             onChange={(e) => { setEmail(e.target.value); setError(''); }}
                             autoComplete="email"
                             placeholder="occ.lastname.firstname@gmail.com"
+                            aria-invalid={!!error}
                             required
                             autoFocus
                         />

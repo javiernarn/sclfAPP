@@ -22,11 +22,11 @@
 }
 
 /*
- * Plain, colorless box that matches the dashboard shell's `.ds-card` /
- * ledger `.lg-card` surface: a flat card with a dark-tinted outline, no
- * per-type accent color anywhere (no colored left border, no colored
- * icon). Only the light/dark theme changes how it looks — same as every
- * other surface in the app.
+ * Same flat card as the dashboard shell's `.ds-card` / ledger `.lg-card`
+ * surface: light/dark tinted background + border, no per-type accent
+ * anywhere in the fill (no colored background, no colored icon). The
+ * only per-type accent is the card's own outline color — see the
+ * `.sclf-toast-success/error/warning/info` rules below.
  */
 .sclf-toast {
     pointer-events: auto;
@@ -57,6 +57,15 @@
     border: 1.5px solid #323b4a;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
 }
+
+/* Per-type accent: outline color only — background, text, and icon
+   color are untouched, same values as the rest of the app already
+   uses for these states (badges, form errors, strength meter, etc). */
+.sclf-toast-success { border-color: #16a34a !important; }
+.sclf-toast-error   { border-color: #ef4444 !important; }
+.sclf-toast-warning { border-color: #f59e0b !important; }
+.sclf-toast-info    { border-color: #0ea5e9 !important; }
+
 
 .sclf-toast-icon { flex-shrink: 0; margin-top: 1px; opacity: 0.75; }
 
