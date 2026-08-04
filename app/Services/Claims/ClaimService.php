@@ -10,6 +10,7 @@ use App\Models\LostItem;
 use App\Models\User;
 use App\Notifications\SclfNotification;
 use App\Services\Audit\AuditLogService;
+use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -144,6 +145,61 @@ class ClaimService
             $this->notifyClaimant($claim, $to, $notes);
 
             return $claim->fresh();
+        });
+    }
+
+    /**
+     * Notifications are never linked to a claim by a real foreign key —
+     * they're polymorphic to the notifiable (the recipient user), and the
+     * claim is only referenced inside the JSON `data` blob as
+     * related_type/related_id (see SclfNotification::toArray()). So the
+     * database itself will never throw a foreign-key error when a claim
+     * is deleted. What happens instead is an *orphaned* notification: it
+     * still shows up in a user's bell/notifications list, but clicking it
+     * sends them to a claim that no longer exists (a 404 / "Could not
+     * load this claim" on the frontend). This clears those out first so
+     * deleting a claim never leaves a dangling notification behind.
+     */
+    protected function purgeNotifications(Claim $claim): int
+    {
+        return DatabaseNotification::query()
+            ->where('data->related_type', Claim::class)
+            ->where('data->related_id', $claim->id)
+            ->delete();
+    }
+
+    /**
+     * Permanently remove a single claim, along with any notifications
+     * that point back to it. claim_evidence and qr_releases rows cascade
+     * automatically at the DB level (see their migrations), so only the
+     * notifications link needs handling here.
+     */
+    public function delete(Claim $claim): void
+    {
+        DB::transaction(function () use ($claim) {
+            $this->purgeNotifications($claim);
+            $claim->delete();
+        });
+    }
+
+    /**
+     * Bulk cleanup for the admin "User Details" page: permanently remove
+     * every cancelled claim belonging to a given user (and their related
+     * notifications). Returns how many claims were deleted.
+     */
+    public function deleteCancelledForUser(User $user): int
+    {
+        return DB::transaction(function () use ($user) {
+            $claims = Claim::where('claimant_id', $user->id)
+                ->where('status', Claim::STATUS_CANCELLED)
+                ->get();
+
+            foreach ($claims as $claim) {
+                $this->purgeNotifications($claim);
+                $claim->delete();
+            }
+
+            return $claims->count();
         });
     }
 

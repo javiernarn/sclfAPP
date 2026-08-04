@@ -63,6 +63,7 @@ class UserController extends Controller
             'lostItems',
             'foundItems',
             'claims',
+            'claims as cancelled_claims_count' => fn ($q) => $q->where('status', \App\Models\Claim::STATUS_CANCELLED),
         ]);
         $user->load('roles:id,name');
 
@@ -80,7 +81,7 @@ class UserController extends Controller
     {
         $validated = $request->validated();
 
-        // Faculty / Security Officer / Admin each get a system-generated
+        // Instructor / Security Officer / Admin each get a system-generated
         // ID number instead of the self-chosen student_id used by public
         // registration — e.g. SEC-2026-0001. See User::generateStaffId().
         $staffId = User::generateStaffId($validated['role']);
@@ -126,7 +127,7 @@ class UserController extends Controller
      * Full account-editing endpoint used by the admin "Edit user" modal —
      * covers everything an admin might need to fix or recover for a staff
      * account, including their login email and password. This is the
-     * account-recovery path for faculty/security/admin accounts: since
+     * account-recovery path for instructor/security/admin accounts: since
      * those roles don't self-register, a staff member locked out (forgot
      * password, and/or lost access to the email on file) can't always
      * complete the normal self-service "Forgot password" flow, so an
@@ -162,7 +163,7 @@ class UserController extends Controller
             ],
             'gender' => 'sometimes|nullable|string|in:male,female,other,prefer_not_to_say',
             'is_active' => 'sometimes|boolean',
-            'role' => 'sometimes|in:student,faculty,security_officer,admin',
+            'role' => 'sometimes|in:student,instructor,security_officer,admin',
             'profile_picture' => ['sometimes', 'nullable', 'image', 'max:5120'],
         ], [
             'email.unique' => 'That email address is already in use by another account.',

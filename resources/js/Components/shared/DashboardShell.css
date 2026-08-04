@@ -34,6 +34,14 @@ body { overflow: hidden; }
     transition: background 0.4s ease, color 0.4s ease;
     font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto,
         "Helvetica Neue", Arial, sans-serif;
+    /* Shared height for the two "bottom bar" strips that sit at the very
+       bottom of the screen side by side: the sidebar's account row
+       (.ds-sidebar-footer, bottom-left) and the page footer
+       (.ds-footer, bottom-right of the content column). Both boxes use
+       this same min-height + flex vertical-centering so the account row
+       and the footer bar always land level with each other, regardless
+       of how much text either one happens to render. */
+    --sclf-bottombar-h: 60px;
 }
 .ds-shell, .ds-shell * { box-sizing: border-box; }
 .ds-shell.light {
@@ -81,9 +89,12 @@ body { overflow: hidden; }
     position: fixed; top: 0; bottom: 0; left: 0; z-index: 40;
     width: 250px;
     display: flex; flex-direction: column;
-    padding: 13px 14px 18px;
+    /* No fixed bottom padding here anymore — .ds-sidebar-footer below
+       owns its own bottom spacing (via --sclf-bottombar-h) so its
+       account row lands flush with the sidebar's bottom edge, level
+       with .ds-footer on the other side of the screen. */
+    padding: 13px 14px 0;
     padding-top: max(13px, env(safe-area-inset-top));
-    padding-bottom: max(18px, env(safe-area-inset-bottom));
     transform: translateX(-100%);
     transition: transform 0.32s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1);
     overflow: hidden;
@@ -173,8 +184,8 @@ body { overflow: hidden; }
 }
 .ds-sidebar.collapsed .ds-nav-link span.ds-nav-text { opacity: 0; max-width: 0; }
 .ds-nav-icon { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; }
-.ds-shell.light .ds-nav-link:hover { background: #f4f7fb; }
-.ds-shell.dark .ds-nav-link:hover { background: #171c26; }
+.ds-shell.light .ds-nav-link:hover:not(.active) { background: #f4f7fb; }
+.ds-shell.dark .ds-nav-link:hover:not(.active) { background: #171c26; }
 .ds-nav-link.active {
     color: #fff;
     background: linear-gradient(135deg, #4f46e5, #7c3aed 50%, #0ea5e9);
@@ -184,10 +195,23 @@ body { overflow: hidden; }
 .ds-shell.blue .ds-nav-link.active { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); box-shadow: 0 8px 18px rgba(37,99,235,0.35); }
 .ds-shell.yellow .ds-nav-link.active { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); box-shadow: 0 8px 18px rgba(217,119,6,0.35); color: #1c1408; }
 .ds-sidebar-spacer { flex: 1; min-height: 8px; }
-.ds-sidebar-footer { border-top: 1px solid; padding-top: 12px; margin-top: 8px; flex-shrink: 0; }
+/* Bottom-left "account bar" strip. min-height + flex centering matches
+   .ds-footer's own box below (same --sclf-bottombar-h var), and both
+   sit flush against their column's bottom edge — since .ds-sidebar no
+   longer carries its own bottom padding — so the account row and the
+   footer bar always land at the same height/position on screen. */
+.ds-sidebar-footer {
+    border-top: 1px solid;
+    margin-top: 8px;
+    flex-shrink: 0;
+    min-height: var(--sclf-bottombar-h);
+    padding-bottom: env(safe-area-inset-bottom);
+    display: flex;
+    align-items: center;
+}
 .ds-shell.light .ds-sidebar-footer { border-color: #c9d1de; }
 .ds-shell.dark .ds-sidebar-footer { border-color: #323b4a; }
-.ds-sidebar-menu-wrap { position: relative; }
+.ds-sidebar-menu-wrap { position: relative; width: 100%; }
 .ds-user-row {
     display: flex; align-items: center; gap: 10px; padding: 6px 8px; min-width: 0;
     transition: gap 0.28s cubic-bezier(0.4,0,0.2,1), padding 0.28s cubic-bezier(0.4,0,0.2,1);
@@ -462,8 +486,13 @@ body { overflow: hidden; }
 .ds-footer {
     flex-shrink: 0;
     position: relative; z-index: 20;
-    padding: 10px max(16px, env(safe-area-inset-right)) 10px max(16px, env(safe-area-inset-left));
-    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    /* Same min-height + flex vertical-centering as .ds-sidebar-footer
+       (shared --sclf-bottombar-h var) so this bar lands level with the
+       sidebar's account row instead of sizing purely to its own text. */
+    min-height: var(--sclf-bottombar-h);
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
+    padding-bottom: env(safe-area-inset-bottom);
     text-align: center;
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
 }
@@ -646,6 +675,29 @@ body { overflow: hidden; }
 .ds-field-error { color: #ef4444; font-size: 12px; font-weight: 600; margin-top: 6px; }
 .ds-field-hint { opacity: 0.6; font-size: 12px; margin: 6px 0 0; }
 .ds-field input[aria-invalid="true"], .ds-field textarea[aria-invalid="true"] { border-color: #ef4444 !important; }
+
+/* "Locked until you agree" banner shown above report forms (Lost/Found item
+   creation) — pairs with the <fieldset disabled> wrapping the inputs below
+   it, so the whole form reads as inert until the person confirms the
+   legitimacy notice and taps "Add Report". */
+.ds-lock-banner {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: rgba(217,119,6,0.10); border: 1px solid rgba(217,119,6,0.3);
+    border-radius: 12px; padding: 12px 14px; margin-bottom: 18px;
+}
+.ds-lock-banner-icon {
+    flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(217,119,6,0.16); color: #b45309;
+}
+.ds-lock-banner-text { font-size: 13px; line-height: 1.5; opacity: 0.85; }
+.ds-lock-banner-text strong { opacity: 1; }
+
+.ds-fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
+.ds-fieldset:disabled .ds-field input,
+.ds-fieldset:disabled .ds-field textarea {
+    opacity: 0.55; cursor: not-allowed; background: rgba(127,127,127,0.08);
+}
 .ds-empty { text-align: center; padding: 40px 16px; opacity: 0.6; font-size: 14px; }
 .ds-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .ds-list-item {
@@ -668,6 +720,47 @@ body { overflow: hidden; }
 .ds-badge-review { background: rgba(14,165,233,0.10); color: #0284c7; border: 1px solid rgba(14,165,233,0.28); }
 .ds-badge-icon { display: inline-flex; align-items: center; gap: 5px; }
 .ds-badge-icon svg { flex-shrink: 0; }
+
+/* ---------- List row layout helpers ---------- */
+/* Shared markup pieces for every ".ds-list-item" row across the app
+   (Lost Items, Found Items, Claims, Admin Users): a clickable link/button
+   wrapping the whole row, a "main" block (thumbnail/avatar + title/meta)
+   that's allowed to shrink, and a "side"/"actions" block (badge + buttons)
+   that holds its size on desktop but goes full-width on phones instead of
+   getting squeezed into whatever space the main block left behind — that
+   squeeze is what caused the misaligned buttons and ragged dead space. */
+.ds-list-item-link {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; gap: 14px; text-decoration: none; color: inherit;
+}
+.ds-list-item-main { display: flex; align-items: center; gap: 14px; min-width: 0; flex: 1; }
+.ds-list-item-side { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.ds-list-item-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+.ds-list-item-headrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+
+@media (max-width: 640px) {
+    /* Stack each row into two full-width bands — info on top, status +
+       actions below — instead of cramming both into one line that either
+       overflows or wraps mid-word. */
+    .ds-list-item { flex-direction: column; align-items: stretch; }
+    .ds-list-item-link { flex-direction: column; align-items: stretch; gap: 12px; }
+    .ds-list-item-main { width: 100%; }
+    .ds-list-item-side { width: 100%; justify-content: space-between; }
+    .ds-list-item-side .ds-btn,
+    .ds-list-item-side .ds-btn-sm { flex: 1; justify-content: center; }
+    .ds-list-item-actions { width: 100%; }
+    .ds-list-item-actions .ds-btn,
+    .ds-list-item-actions span.ds-badge {
+        flex: 1 1 calc(50% - 8px);
+        justify-content: center;
+        text-align: center;
+    }
+    /* A row with an odd one out (e.g. 3 action buttons) still reads
+       cleanly at 2-per-row instead of stretching one button full-width
+       while its neighbour looks orphaned. */
+    .ds-list-item-actions .ds-btn:last-child:nth-child(odd) { flex-basis: 100%; }
+    .ds-claim-delete-btn { width: 100%; margin: 8px 0 0 !important; }
+}
 .ds-skeleton {
     border-radius: 14px; height: 64px; margin-bottom: 10px;
     background: linear-gradient(90deg, rgba(148,163,184,0.08), rgba(148,163,184,0.18), rgba(148,163,184,0.08));

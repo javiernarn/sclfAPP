@@ -4,8 +4,8 @@ import { HelpCircle, X, LayoutDashboard, PackageSearch, Megaphone, ClipboardChec
 import Tooltip from './Tooltip';
 
 // Short, plain-language tips per role — what each part of the sidebar is
-// actually for and how the day-to-day workflow goes. Faculty share the
-// student nav, so they get the student tips plus one faculty-specific note.
+// actually for and how the day-to-day workflow goes. Instructor share the
+// student nav, so they get the student tips plus one instructor-specific note.
 const HINTS_BY_ROLE = {
     student: {
         title: 'How SCLF works for you',
@@ -18,9 +18,9 @@ const HINTS_BY_ROLE = {
         ],
         tip: 'Tip: keep your phone number and email accurate in your Profile — that\'s how staff reach you about a match.',
     },
-    faculty: {
+    instructor: {
         title: 'How SCLF works for you',
-        intro: "You're signed in as Faculty. You use the same Lost & Found tools as students, with one addition:",
+        intro: "You're signed in as Instructor. You use the same Lost & Found tools as students, with one addition:",
         items: [
             { icon: LayoutDashboard, label: 'Dashboard', text: 'A quick snapshot of your open reports and any claims waiting on you.' },
             { icon: PackageSearch, label: 'Lost & Found', text: "File a lost report, log an item you found, or browse what's been turned in." },
@@ -45,7 +45,7 @@ const HINTS_BY_ROLE = {
         intro: "You're signed in as Administrator. You have oversight of the whole system:",
         items: [
             { icon: LayoutDashboard, label: 'Dashboard', text: 'System-wide activity: reports filed, claims in progress, and items awaiting verification.' },
-            { icon: Users, label: 'User Management', text: 'Create Faculty, Security Officer, and Admin accounts here. Students self-register — you never need to create student accounts manually.' },
+            { icon: Users, label: 'User Management', text: 'Create Instructor, Security Officer, and Admin accounts here. Students self-register — you never need to create student accounts manually.' },
             { icon: ShieldCheck, label: 'Audit Log', text: 'A read-only trail of who did what and when — account changes, claim approvals, item edits.' },
             { icon: Boxes, label: 'Inventory & Claims', text: 'The same tools Security uses, with full edit and override access.' },
         ],
@@ -56,8 +56,8 @@ const HINTS_BY_ROLE = {
 export default function HelpHints({ roles, navRole, isDark }) {
     const [open, setOpen] = useState(false);
 
-    const isFaculty = Array.isArray(roles) && roles.includes('faculty');
-    const key = isFaculty && navRole === 'student' ? 'faculty' : (HINTS_BY_ROLE[navRole] ? navRole : 'student');
+    const isInstructor = Array.isArray(roles) && roles.includes('instructor');
+    const key = isInstructor && navRole === 'student' ? 'instructor' : (HINTS_BY_ROLE[navRole] ? navRole : 'student');
     const content = HINTS_BY_ROLE[key];
 
     return (

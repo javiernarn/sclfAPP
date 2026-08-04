@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * `staff_id` is the non-student counterpart to `student_id` — a
-     * system-generated ID number for faculty, security officers, and
+     * system-generated ID number for instructor, security officers, and
      * admins, created by the Admin "Create Account" form. Kept as its
      * own nullable/unique column (rather than reusing `student_id`)
      * because:

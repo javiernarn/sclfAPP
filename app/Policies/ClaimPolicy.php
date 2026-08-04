@@ -9,7 +9,7 @@ class ClaimPolicy
 {
     public function viewAny(User $user): bool
     {
-        return true; // controller scopes to "own" claims for students/faculty
+        return true; // controller scopes to "own" claims for students/instructor
     }
 
     public function view(User $user, Claim $claim): bool
@@ -19,7 +19,7 @@ class ClaimPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['student', 'faculty']);
+        return $user->hasAnyRole(['student', 'instructor']);
     }
 
     public function addEvidence(User $user, Claim $claim): bool
@@ -35,6 +35,14 @@ class ClaimPolicy
     public function cancel(User $user, Claim $claim): bool
     {
         return $user->id === $claim->claimant_id || $user->hasRole('admin');
+    }
+
+    // Admin-only: permanently remove a claim record from the list (e.g.
+    // cleaning up duplicate/cancelled clutter). This is separate from
+    // `cancel`, which just transitions status — this actually deletes.
+    public function delete(User $user, Claim $claim): bool
+    {
+        return $user->hasRole('admin');
     }
 
     public function generateRelease(User $user, Claim $claim): bool

@@ -23,19 +23,19 @@ import { checkAvailability } from '../../utils/availability';
 // get before they even submit.
 const ROLE_META = {
     student: { label: 'Student', idPrefix: null },
-    faculty: { label: 'Faculty', idPrefix: 'FAC' },
+    instructor: { label: 'Instructor', idPrefix: 'INS' },
     security_officer: { label: 'Security Officer', idPrefix: 'SEC' },
     admin: { label: 'Administrator', idPrefix: 'ADM' },
 };
 
 const emptyForm = {
     first_name: '', last_name: '', email: '', password: '',
-    role: 'faculty', phone_number: '', gender: '',
+    role: 'instructor', phone_number: '', gender: '',
 };
 
 const emptyEditForm = {
     first_name: '', last_name: '', email: '', password: '',
-    role: 'faculty', phone_number: '', gender: '',
+    role: 'instructor', phone_number: '', gender: '',
 };
 
 export default function AdminUsers() {
@@ -445,7 +445,7 @@ export default function AdminUsers() {
                         <div className="ds-field">
                             <label htmlFor="role">Role</label>
                             <select id="role" name="role" value={form.role} onChange={handleChange}>
-                                <option value="faculty">Faculty</option>
+                                <option value="instructor">Instructor</option>
                                 <option value="security_officer">Security Officer</option>
                                 <option value="admin">Administrator</option>
                             </select>
@@ -493,8 +493,8 @@ export default function AdminUsers() {
             </div>
 
             <div className="ds-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h3>All Users</h3>
+                <div className="ds-list-item-headrow" style={{ marginBottom: 14 }}>
+                    <h3 style={{ margin: 0 }}>All Users</h3>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
                         <input type="checkbox" checked={showDisabled} onChange={(e) => setShowDisabled(e.target.checked)} />
                         Show disabled accounts only
@@ -510,7 +510,7 @@ export default function AdminUsers() {
                                 .map((p) => p[0]?.toUpperCase()).join('');
                             return (
                                 <li key={u.id} className="ds-list-item">
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                                    <div className="ds-list-item-main">
                                         <span
                                             className="ds-avatar"
                                             style={{
@@ -534,23 +534,23 @@ export default function AdminUsers() {
                                             </p>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                    <div className="ds-list-item-actions">
                                         <Tooltip label="View this account's full profile and login/logout history">
                                             <button
                                                 type="button"
-                                                className="ds-btn ds-btn-secondary"
+                                                className="ds-btn ds-btn-secondary ds-btn-sm"
                                                 onClick={() => navigate(`/admin/users/${u.id}`)}
                                             >
-                                                <IdCard size={14} /> View Details
+                                                <IdCard size={13} /> View Details
                                             </button>
                                         </Tooltip>
                                         <Tooltip label="Edit name, email, phone, role, or reset the password">
                                             <button
                                                 type="button"
-                                                className="ds-btn ds-btn-edit"
+                                                className="ds-btn ds-btn-edit ds-btn-sm"
                                                 onClick={() => openEdit(u)}
                                             >
-                                                <Pencil size={14} /> Edit
+                                                <Pencil size={13} /> Edit
                                             </button>
                                         </Tooltip>
                                         {isSelf ? (
@@ -559,11 +559,11 @@ export default function AdminUsers() {
                                             </Tooltip>
                                         ) : u.is_active ? (
                                             <Tooltip label="Signs them out and blocks login; their history is kept">
-                                                <button className="ds-btn ds-btn-danger" disabled={busyUserId === u.id} onClick={() => disable(u.id, u.name)}>Disable</button>
+                                                <button className="ds-btn ds-btn-danger ds-btn-sm" disabled={busyUserId === u.id} onClick={() => disable(u.id, u.name)}>Disable</button>
                                             </Tooltip>
                                         ) : (
                                             <Tooltip label="Restores login access immediately">
-                                                <button className="ds-btn ds-btn-success" disabled={busyUserId === u.id} onClick={() => enable(u.id, u.name)}>Enable</button>
+                                                <button className="ds-btn ds-btn-success ds-btn-sm" disabled={busyUserId === u.id} onClick={() => enable(u.id, u.name)}>Enable</button>
                                             </Tooltip>
                                         )}
                                     </div>
@@ -684,7 +684,7 @@ export default function AdminUsers() {
                                         disabled={isEditingSelf && editRole === 'admin'}
                                     >
                                         <option value="student">Student</option>
-                                        <option value="faculty">Faculty</option>
+                                        <option value="instructor">Instructor</option>
                                         <option value="security_officer">Security Officer</option>
                                         <option value="admin">Administrator</option>
                                     </select>

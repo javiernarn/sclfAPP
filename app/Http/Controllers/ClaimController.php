@@ -7,6 +7,8 @@ use App\Http\Requests\StoreClaimEvidenceRequest;
 use App\Http\Requests\StoreClaimRequest;
 use App\Models\Claim;
 use App\Models\FoundItem;
+use App\Models\User;
+use App\Services\Audit\AuditLogService;
 use App\Services\Claims\ClaimService;
 use App\Services\Release\ItemReleaseService;
 use Illuminate\Http\Request;
@@ -16,6 +18,7 @@ class ClaimController extends Controller
     public function __construct(
         protected ClaimService $claims,
         protected ItemReleaseService $release,
+        protected AuditLogService $audit,
     ) {
     }
 
@@ -23,7 +26,7 @@ class ClaimController extends Controller
     {
         $query = Claim::with(['foundItem:id,item_name,category,image_path', 'claimant:id,name']);
 
-        // Students/faculty only ever see their own claims. Staff see everything,
+        // Students/instructor only ever see their own claims. Staff see everything,
         // scoped by their own status filter if provided.
         if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
             $query->where('claimant_id', $request->user()->id);
@@ -93,6 +96,46 @@ class ClaimController extends Controller
             'success' => true,
             'message' => 'Claim status updated.',
             'data' => $updated,
+        ]);
+    }
+
+    public function destroy(Claim $claim)
+    {
+        $this->authorize('delete', $claim);
+
+        // Also clears out any notifications pointing at this claim so
+        // nobody's bell list is left with a dead link (see
+        // ClaimService::delete / purgeNotifications for why that's needed
+        // instead of a DB-level foreign key).
+        $this->claims->delete($claim);
+
+        return response()->json(['success' => true, 'message' => 'Claim deleted.']);
+    }
+
+    /**
+     * Admin bulk cleanup: permanently remove every cancelled claim for a
+     * given user (and their related notifications) in one go — e.g. from
+     * the "User Details" page when a student/instructor account has piled up
+     * a bunch of cancelled claims. Gated by the 'role:admin' route group.
+     */
+    public function destroyCancelledForUser(Request $request, User $user)
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $count = $this->claims->deleteCancelledForUser($user);
+
+        $this->audit->log(
+            'claim.bulk_deleted',
+            $user,
+            "Deleted {$count} cancelled claim(s) for user #{$user->id} by admin #{$request->user()->id}."
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => $count > 0
+                ? "Deleted {$count} cancelled claim(s)."
+                : 'No cancelled claims to delete.',
+            'data' => ['deleted' => $count],
         ]);
     }
 

@@ -19,7 +19,7 @@ class LostItemPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['student', 'faculty']);
+        return $user->hasAnyRole(['student', 'instructor']);
     }
 
     public function update(User $user, LostItem $lostItem): bool

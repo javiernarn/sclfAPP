@@ -1,15 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { useNavigate } from 'react-router-dom';
+import { Lock, ShieldAlert } from 'lucide-react';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import FormSkeleton from '../../Components/shared/FormSkeleton';
 import { useToast } from '../../context/ToastContext';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import { useConfirm } from '../../context/ConfirmContext';
 
 const EMPTY_FORM = {
     item_name: '', description: '', category: '', brand: '', color: '', model: '',
     unique_characteristics: '', location_found: '', date_found: '',
 };
+
+const LEGITIMACY_NOTICE =
+    "Before you continue: only file a report for an item you actually found. What you enter here is what Security uses " +
+    "to verify the rightful owner, so please describe it accurately and honestly rather than guessing or filling this " +
+    "in as a test. Reports that turn out to be fake, exaggerated, or submitted as a joke are treated as misuse of the " +
+    "Lost & Found system, and accounts that repeatedly do this may be suspended or disabled. By clicking " +
+    "\"I Agree, Unlock Form\" you're confirming this report is genuine.";
 
 export default function FoundItemCreate() {
     const [form, setForm] = useState(EMPTY_FORM);
@@ -18,8 +27,10 @@ export default function FoundItemCreate() {
     const [fieldErrors, setFieldErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [pageLoading, setPageLoading] = useState(true);
+    const [unlocked, setUnlocked] = useState(false);
     const navigate = useNavigate();
     const toast = useToast();
+    const confirm = useConfirm();
 
     const isDirty = Object.entries(form).some(([key, value]) => value !== EMPTY_FORM[key]) || !!image;
     const { guardedAction } = useUnsavedChangesGuard(isDirty, {
@@ -43,6 +54,17 @@ export default function FoundItemCreate() {
     };
 
     const handleCancel = () => guardedAction(() => navigate('/found-items'));
+
+    const handleUnlockRequest = async () => {
+        const agreed = await confirm({
+            title: 'Make sure this report is genuine',
+            message: LEGITIMACY_NOTICE,
+            confirmLabel: 'I Agree, Unlock Form',
+            cancelLabel: 'Cancel',
+            tone: 'danger',
+        });
+        if (agreed) setUnlocked(true);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -86,18 +108,28 @@ export default function FoundItemCreate() {
             <div className="ds-card">
                 {error && <div className="ds-error">{error}</div>}
 
-                <form onSubmit={handleSubmit}>
+                {!unlocked && (
+                    <div className="ds-lock-banner">
+                        <div className="ds-lock-banner-icon"><Lock size={18} /></div>
+                        <div className="ds-lock-banner-text">
+                            <strong>Fields are locked.</strong> Tap <em>Add Report</em> and confirm the notice to fill this in.
+                        </div>
+                    </div>
+                )}
+
+                <form onSubmit={handleSubmit} autoComplete="off">
+                    <fieldset disabled={!unlocked} className="ds-fieldset">
                     <div className="ds-field">
                         <label htmlFor="item_name">Item Name <span className="ds-required">*</span></label>
                         <input id="item_name" name="item_name" value={form.item_name} onChange={handleChange}
-                            placeholder="e.g. Black umbrella" aria-invalid={!!fieldErrors.item_name} required />
+                            placeholder="e.g. Black umbrella" aria-invalid={!!fieldErrors.item_name} autoComplete="off" required />
                         {fieldErrors.item_name && <div className="ds-field-error">{fieldErrors.item_name}</div>}
                     </div>
 
                     <div className="ds-field">
                         <label htmlFor="description">Description <span className="ds-required">*</span></label>
                         <textarea id="description" name="description" rows={4} value={form.description}
-                            onChange={handleChange} placeholder="Color, brand, distinguishing marks, contents…" aria-invalid={!!fieldErrors.description} required />
+                            onChange={handleChange} placeholder="Color, brand, distinguishing marks, contents…" aria-invalid={!!fieldErrors.description} autoComplete="off" required />
                         {fieldErrors.description && <div className="ds-field-error">{fieldErrors.description}</div>}
                     </div>
 
@@ -105,23 +137,23 @@ export default function FoundItemCreate() {
                         <div className="ds-field">
                             <label htmlFor="category">Category</label>
                             <input id="category" name="category" value={form.category} onChange={handleChange}
-                                placeholder="e.g. Electronics" />
+                                placeholder="e.g. Electronics" autoComplete="off" />
                         </div>
                         <div className="ds-field">
                             <label htmlFor="brand">Brand</label>
                             <input id="brand" name="brand" value={form.brand} onChange={handleChange}
-                                placeholder="e.g. Samsung" />
+                                placeholder="e.g. Samsung" autoComplete="off" />
                         </div>
                     </div>
 
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
                             <label htmlFor="color">Color</label>
-                            <input id="color" name="color" value={form.color} onChange={handleChange} />
+                            <input id="color" name="color" value={form.color} onChange={handleChange} autoComplete="off" />
                         </div>
                         <div className="ds-field">
                             <label htmlFor="model">Model</label>
-                            <input id="model" name="model" value={form.model} onChange={handleChange} />
+                            <input id="model" name="model" value={form.model} onChange={handleChange} autoComplete="off" />
                         </div>
                     </div>
 
@@ -129,14 +161,14 @@ export default function FoundItemCreate() {
                         <label htmlFor="unique_characteristics">Unique Characteristics</label>
                         <input id="unique_characteristics" name="unique_characteristics"
                             value={form.unique_characteristics} onChange={handleChange}
-                            placeholder="Scratches, stickers, engravings…" />
+                            placeholder="Scratches, stickers, engravings…" autoComplete="off" />
                     </div>
 
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
                             <label htmlFor="location_found">Location Found</label>
                             <input id="location_found" name="location_found" value={form.location_found}
-                                onChange={handleChange} placeholder="e.g. Library, 2nd floor" />
+                                onChange={handleChange} placeholder="e.g. Library, 2nd floor" autoComplete="off" />
                         </div>
                         <div className="ds-field">
                             <label htmlFor="date_found">Date Found</label>
@@ -149,15 +181,23 @@ export default function FoundItemCreate() {
                         <label htmlFor="image">Photo (optional)</label>
                         <input id="image" type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] || null)} />
                     </div>
+                    </fieldset>
 
-                    <div style={{ display: 'flex', gap: 10 }}>
-                        <button type="button" className="ds-btn ds-btn-secondary" onClick={handleCancel} disabled={loading}>
-                            Cancel
+                    {unlocked ? (
+                        <div style={{ display: 'flex', gap: 10 }}>
+                            <button type="button" className="ds-btn ds-btn-secondary" onClick={handleCancel} disabled={loading}>
+                                Cancel
+                            </button>
+                            <button type="submit" className="ds-btn ds-btn-primary ds-btn-block" disabled={loading}>
+                                {loading ? 'Submitting…' : 'Submit Found Item Report'}
+                            </button>
+                        </div>
+                    ) : (
+                        <button type="button" className="ds-btn ds-btn-primary ds-btn-block" onClick={handleUnlockRequest}>
+                            <ShieldAlert size={16} style={{ marginRight: 6, verticalAlign: -3 }} />
+                            Add Report
                         </button>
-                        <button type="submit" className="ds-btn ds-btn-primary ds-btn-block" disabled={loading}>
-                            {loading ? 'Submitting…' : 'Submit Found Item Report'}
-                        </button>
-                    </div>
+                    )}
                 </form>
             </div>
             )}

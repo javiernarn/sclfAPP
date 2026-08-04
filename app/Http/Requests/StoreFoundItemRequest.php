@@ -8,7 +8,7 @@ class StoreFoundItemRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasAnyRole(['student', 'faculty', 'security_officer']);
+        return $this->user()->hasAnyRole(['student', 'instructor', 'security_officer']);
     }
 
     public function rules(): array

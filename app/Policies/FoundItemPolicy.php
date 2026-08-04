@@ -19,7 +19,7 @@ class FoundItemPolicy
 
     public function create(User $user): bool
     {
-        return $user->hasAnyRole(['student', 'faculty', 'security_officer']);
+        return $user->hasAnyRole(['student', 'instructor', 'security_officer']);
     }
 
     public function verify(User $user, FoundItem $foundItem): bool

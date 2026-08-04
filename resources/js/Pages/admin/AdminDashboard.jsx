@@ -65,7 +65,7 @@ export default function AdminDashboard() {
                     <div className="ds-grid" style={{ marginTop: 24 }}>
                         <div className="ds-card">
                             <div className="ds-card-title ds-card-title-icon"><Users size={18} strokeWidth={2} /> Manage Users</div>
-                            <p className="ds-card-desc">Create Faculty, Security Officer, and Admin accounts.</p>
+                            <p className="ds-card-desc">Create Instructor, Security Officer, and Admin accounts.</p>
                             <Link to="/admin/users" className="ds-btn ds-btn-primary ds-btn-block">
                                 Manage Users
                             </Link>

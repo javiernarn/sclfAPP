@@ -238,7 +238,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
     const navRole = isAdmin ? "admin" : isSecurity ? "security_officer" : "student";
     const navItems = NAV_BY_ROLE[navRole];
     const homePath = isAdmin ? "/admin/dashboard" : isSecurity ? "/security/dashboard" : "/dashboard";
-    const navLabel = isAdmin ? "Admin" : isSecurity ? "Security Officer" : "Student / Faculty";
+    const navLabel = isAdmin ? "Admin" : isSecurity ? "Security Officer" : "Student / Instructor";
 
     const handleLogout = async () => {
         try {

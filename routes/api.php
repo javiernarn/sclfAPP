@@ -39,7 +39,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::post('/change-password', [AuthController::class, 'changePassword']);
 
     // Lost Items — any authenticated user may browse/search; create is
-    // restricted to student/faculty via LostItemPolicy inside the controller.
+    // restricted to student/instructor via LostItemPolicy inside the controller.
     Route::get('/lost-items', [LostItemController::class, 'index']);
     Route::post('/lost-items', [LostItemController::class, 'store']);
     Route::get('/lost-items/{lostItem}', [LostItemController::class, 'show']);
@@ -111,6 +111,14 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::get('/admin-test', function () {
             return response()->json(['message' => 'Welcome, Admin! This endpoint is protected.']);
         });
+
+        // Cleanup: hard-remove a claim record from the list (e.g.
+        // redundant/cancelled claims). Separate from /claims/{claim}/cancel,
+        // which only transitions status and keeps the record.
+        Route::delete('/claims/{claim}', [ClaimController::class, 'destroy']);
+        // Bulk cleanup: wipe every cancelled claim for one user in one go,
+        // used by the admin User Details page.
+        Route::delete('/admin/users/{user}/claims/cancelled', [ClaimController::class, 'destroyCancelledForUser']);
 
         Route::get('/admin/users', [AdminUserController::class, 'index']);
         Route::post('/admin/users', [AdminUserController::class, 'store']);

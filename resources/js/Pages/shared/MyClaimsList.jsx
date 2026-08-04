@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { Link } from 'react-router-dom';
-import { Package, ChevronRight, Eye } from 'lucide-react';
+import { Package, ChevronRight, Eye, Trash2 } from 'lucide-react';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { ClaimListSkeleton } from '../../Components/shared/ClaimSkeleton';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmContext';
 import { CLAIM_STATUS, claimStatusLabel, claimStatusBadgeClass } from '../../utils/claimStatus';
 
 const FILTERS = [
@@ -15,10 +17,14 @@ const FILTERS = [
 export default function MyClaimsList() {
     const { roles } = useAuth();
     const isStaff = roles?.includes('security_officer') || roles?.includes('admin');
+    const isAdmin = roles?.includes('admin');
+    const toast = useToast();
+    const confirm = useConfirm();
     const [claims, setClaims] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [status, setStatus] = useState('');
+    const [busyId, setBusyId] = useState(null);
 
     useEffect(() => {
         document.title = "Claims | SCLF - Opol Community College";
@@ -32,6 +38,31 @@ export default function MyClaimsList() {
             .catch(() => setError('Could not load claims.'))
             .finally(() => setLoading(false));
     }, [status]);
+
+    const handleDelete = async (e, claim) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const ok = await confirm({
+            title: 'Delete this claim?',
+            message: `This will permanently remove the claim from ${claim.claimant?.name || 'this claimant'} for "${claim.found_item?.item_name || 'this item'}" (currently ${claimStatusLabel(claim.status)}). This can't be undone from the claims list.`,
+            confirmLabel: 'Delete claim',
+            cancelLabel: 'Keep it',
+            tone: 'danger',
+        });
+        if (!ok) return;
+
+        setBusyId(claim.id);
+        try {
+            await axios.delete(`/claims/${claim.id}`);
+            setClaims((prev) => prev.filter((c) => c.id !== claim.id));
+            toast.success('Claim deleted.');
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Could not delete this claim.', { title: 'Delete failed' });
+        } finally {
+            setBusyId(null);
+        }
+    };
 
     return (
         <DashboardShell
@@ -71,9 +102,9 @@ export default function MyClaimsList() {
                                     <li key={c.id} className="ds-list-item">
                                         <Link
                                             to={`/claims/${c.id}`}
-                                            style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', gap: 14, textDecoration: 'none', color: 'inherit' }}
+                                            className="ds-list-item-link"
                                         >
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
+                                            <div className="ds-list-item-main">
                                                 <span className="ds-thumb">
                                                     {c.found_item?.image_url
                                                         ? <img src={c.found_item.image_url} alt="" />
@@ -87,13 +118,25 @@ export default function MyClaimsList() {
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                            <div className="ds-list-item-side">
                                                 <span className={claimStatusBadgeClass(c.status)}>{claimStatusLabel(c.status)}</span>
                                                 <span className="ds-btn ds-btn-view ds-btn-sm">
                                                     <Eye size={13} /> View Details <ChevronRight size={13} />
                                                 </span>
                                             </div>
                                         </Link>
+                                        {isAdmin && (
+                                            <button
+                                                type="button"
+                                                className="ds-btn ds-btn-danger ds-btn-sm ds-claim-delete-btn"
+                                                style={{ marginLeft: 8, flexShrink: 0 }}
+                                                disabled={busyId === c.id}
+                                                onClick={(e) => handleDelete(e, c)}
+                                                title="Delete this claim"
+                                            >
+                                                <Trash2 size={13} /> Delete
+                                            </button>
+                                        )}
                                     </li>
                                 ))}
                             </ul>

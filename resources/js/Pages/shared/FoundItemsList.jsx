@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { Link } from 'react-router-dom';
-import { Package, ChevronRight, Eye } from 'lucide-react';
+import { Package, ChevronRight, Eye, Lock } from 'lucide-react';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import { useToast } from '../../context/ToastContext';
 
 const badgeClass = (status) => {
     const key = (status || '').toLowerCase();
@@ -14,7 +15,15 @@ const badgeClass = (status) => {
     return 'ds-badge ds-badge-default';
 };
 
+// Items in these statuses are already spoken for (claim approved/being
+// released) or fully wrapped up (handed back to the owner) — there's
+// nothing left for another user to do with them, so the row is no longer
+// clickable.
+const CLOSED_STATUSES = ['claimed', 'release_pending', 'released'];
+const isClosed = (status) => CLOSED_STATUSES.includes((status || '').toLowerCase());
+
 export default function FoundItemsList() {
+    const toast = useToast();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -57,13 +66,11 @@ export default function FoundItemsList() {
 
                 {!loading && items.length > 0 && (
                     <ul className="ds-list">
-                        {items.map(item => (
-                            <li key={item.id} className="ds-list-item">
-                                <Link
-                                    to={`/found-items/${item.id}`}
-                                    style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', gap: 14, textDecoration: 'none', color: 'inherit' }}
-                                >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
+                        {items.map(item => {
+                            const closed = isClosed(item.status);
+                            const rowContent = (
+                                <>
+                                    <div className="ds-list-item-main">
                                         <span className="ds-thumb">
                                             {item.image_url
                                                 ? <img src={item.image_url} alt="" />
@@ -76,15 +83,50 @@ export default function FoundItemsList() {
                                             </p>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                    <div className="ds-list-item-side">
                                         <span className={badgeClass(item.status)}>{(item.status || '').replace(/_/g, ' ')}</span>
-                                        <span className="ds-btn ds-btn-view ds-btn-sm">
-                                            <Eye size={13} /> View Details <ChevronRight size={13} />
-                                        </span>
+                                        {closed ? (
+                                            <span className="ds-btn ds-btn-sm" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
+                                                <Lock size={13} /> Closed
+                                            </span>
+                                        ) : (
+                                            <span className="ds-btn ds-btn-view ds-btn-sm">
+                                                <Eye size={13} /> View Details <ChevronRight size={13} />
+                                            </span>
+                                        )}
                                     </div>
-                                </Link>
-                            </li>
-                        ))}
+                                </>
+                            );
+
+                            if (closed) {
+                                return (
+                                    <li key={item.id} className="ds-list-item" style={{ opacity: 0.65 }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => toast.info(
+                                                'This item was already closed and found — it\'s no longer available to view.',
+                                                { title: 'Item unavailable' }
+                                            )}
+                                            className="ds-list-item-link"
+                                            style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left', font: 'inherit' }}
+                                        >
+                                            {rowContent}
+                                        </button>
+                                    </li>
+                                );
+                            }
+
+                            return (
+                                <li key={item.id} className="ds-list-item">
+                                    <Link
+                                        to={`/found-items/${item.id}`}
+                                        className="ds-list-item-link"
+                                    >
+                                        {rowContent}
+                                    </Link>
+                                </li>
+                            );
+                        })}
                     </ul>
                 )}
             </div>

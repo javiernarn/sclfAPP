@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     ArrowLeft, UserCircle, Mail, Phone, IdCard, ShieldCheck, Calendar,
     VenetianMask, MapPin, GraduationCap, LogIn, LogOut, History,
-    PackageSearch, ClipboardCheck, Ban,
+    PackageSearch, ClipboardCheck, Ban, Trash2,
 } from 'lucide-react';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ImageViewer from '../../Components/shared/ImageViewer';
@@ -22,7 +22,7 @@ const InfoItem = ({ icon: Icon, label, value }) => (
 
 const ROLE_LABELS = {
     student: 'Student',
-    faculty: 'Faculty',
+    instructor: 'Instructor',
     security_officer: 'Security Officer',
     admin: 'Administrator',
 };
@@ -47,18 +47,46 @@ export default function AdminUserDetail() {
     const [logsLoading, setLogsLoading] = useState(true);
     const [logFilter, setLogFilter] = useState('auth'); // 'auth' | 'all'
 
+    const [cleaningClaims, setCleaningClaims] = useState(false);
+    const [cleanupMessage, setCleanupMessage] = useState('');
+
     useEffect(() => {
         document.title = "User Details | SCLF - Opol Community College";
     }, []);
 
-    useEffect(() => {
+    const loadUser = () => {
         setLoading(true);
         setError('');
-        axios.get(`/admin/users/${id}`)
+        return axios.get(`/admin/users/${id}`)
             .then((res) => setUser(res.data.data))
             .catch((err) => setError(err?.response?.data?.message || 'Could not load this account.'))
             .finally(() => setLoading(false));
+    };
+
+    useEffect(() => {
+        loadUser();
     }, [id]);
+
+    const deleteCancelledClaims = async () => {
+        const count = user?.cancelled_claims_count ?? 0;
+        if (count === 0) return;
+        if (!window.confirm(
+            `Permanently delete ${count} cancelled claim(s) for ${user.name}? ` +
+            `Their related notifications will be removed too. This cannot be undone.`
+        )) return;
+
+        setCleaningClaims(true);
+        setCleanupMessage('');
+        try {
+            const res = await axios.delete(`/admin/users/${id}/claims/cancelled`);
+            setCleanupMessage(res.data.message || 'Done.');
+            await loadUser();
+        } catch (err) {
+            setCleanupMessage(err?.response?.data?.message || 'Could not delete cancelled claims.');
+        } finally {
+            setCleaningClaims(false);
+        }
+    };
 
     useEffect(() => {
         setLogsLoading(true);
@@ -161,7 +189,29 @@ export default function AdminUserDetail() {
                     <InfoItem icon={PackageSearch} label="Lost Items Reported" value={user.lost_items_count ?? 0} />
                     <InfoItem icon={PackageSearch} label="Found Items Reported" value={user.found_items_count ?? 0} />
                     <InfoItem icon={ClipboardCheck} label="Claims Filed" value={user.claims_count ?? 0} />
+                    <InfoItem icon={Ban} label="Cancelled Claims" value={user.cancelled_claims_count ?? 0} />
                 </div>
+
+                {(user.cancelled_claims_count ?? 0) > 0 && (
+                    <div style={{
+                        marginTop: 14, display: 'flex', alignItems: 'center',
+                        justifyContent: 'space-between', flexWrap: 'wrap', gap: 10,
+                    }}>
+                        <p className="ds-card-desc" style={{ margin: 0 }}>
+                            This account has {user.cancelled_claims_count} cancelled claim(s) cluttering its history.
+                        </p>
+                        <button
+                            type="button"
+                            className="ds-btn ds-btn-danger"
+                            onClick={deleteCancelledClaims}
+                            disabled={cleaningClaims}
+                        >
+                            <Trash2 size={14} style={{ verticalAlign: -2, marginRight: 6 }} />
+                            {cleaningClaims ? 'Deleting…' : 'Delete cancelled claims'}
+                        </button>
+                    </div>
+                )}
+                {cleanupMessage && <p className="ds-card-desc" style={{ marginTop: 8 }}>{cleanupMessage}</p>}
             </div>
 
             <div className="ds-card">

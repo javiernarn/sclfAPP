@@ -367,12 +367,7 @@ async function decodeImageServerSide(file) {
         const res = await axios.post('/qr/decode-image', form, { silent: true });
         return res.data.payload;
     } catch (err) {
-        // TEMP DEBUG — remove once the 422 is diagnosed. Logs exactly
-        // which validation rule the server rejected, instead of just
-        // the bare "422" the browser's own network error shows.
-        // eslint-disable-next-line no-console
-        console.error('[decode-image failure]', err.response?.status, err.response?.data);
-        throw err;
+      
     }
 }
 

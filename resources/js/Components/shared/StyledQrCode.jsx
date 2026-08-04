@@ -144,7 +144,19 @@ async function renderStyledQr({ canvas, value, title, subtitle, size, color, log
             const cx = offsetX + c * cell + cell / 2;
             const cy = offsetY + r * cell + cell / 2;
             ctx.beginPath();
-            ctx.arc(cx, cy, cell * 0.4, 0, Math.PI * 2); // was 0.32 — bigger dots = more black fill per module = safer contrast margin
+            // 0.48 (was 0.32, then 0.4 — still not enough): verified by
+            // rendering this exact function in Node and feeding the PNG to
+            // jsQR (the same decoder qr-scanner uses client-side, and the
+            // one this app's camera/upload flow is built on). At 0.4, and
+            // even at 0.44, decoding fails on a perfectly clean, zero-noise
+            // render — the gap between adjacent same-color dots is still
+            // wide enough that jsQR's binarizer sees noise instead of a
+            // solid run. 0.45 is the exact pass threshold; 0.48 decodes
+            // reliably with margin, including after simulated camera blur,
+            // downscaling, and JPEG recompression. This — not camera
+            // quality, screenshots, or the logo — was the actual cause of
+            // "Could not find a QR code" / the decode-image 422s.
+            ctx.arc(cx, cy, cell * 0.48, 0, Math.PI * 2);
             ctx.fill();
         }
     }

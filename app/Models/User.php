@@ -25,7 +25,7 @@ class User extends Authenticatable
     public const STAFF_ID_PREFIXES = [
         'admin' => 'ADM',
         'security_officer' => 'SEC',
-        'faculty' => 'FAC',
+        'instructor' => 'INS',
     ];
 
     /**
@@ -93,7 +93,7 @@ class User extends Authenticatable
 
     /**
      * Generate the next sequential ID number for a staff role
-     * (faculty / security_officer / admin), e.g. "SEC-2026-0001".
+     * (instructor / security_officer / admin), e.g. "SEC-2026-0001".
      *
      * Format: {PREFIX}-{YEAR}-{4-digit sequence, resets every year}.
      * The sequence is derived from the highest existing number for that

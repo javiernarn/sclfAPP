@@ -47,10 +47,10 @@ export default function ProfilePage() {
     const ROLE_LABELS = {
         admin: 'Administrator',
         security_officer: 'Security Officer',
-        faculty: 'Faculty',
+        instructor: 'Instructor',
         student: 'Student',
     };
-    const primaryRole = ['admin', 'security_officer', 'faculty', 'student']
+    const primaryRole = ['admin', 'security_officer', 'instructor', 'student']
         .find((r) => Array.isArray(roles) && roles.includes(r));
     const roleLabel = ROLE_LABELS[primaryRole] || 'Member';
 
@@ -62,7 +62,7 @@ export default function ProfilePage() {
     };
     const genderLabel = user?.gender ? (genderLabels[user.gender] || user.gender) : '—';
 
-    // Fields shown here are gated by role: a security officer or faculty
+    // Fields shown here are gated by role: a security officer or instructor
     // account never had a course/student address/student ID to begin
     // with, so those inputs are hidden entirely for them instead of
     // showing as empty dashes. Students see their self-chosen student_id;
@@ -72,7 +72,7 @@ export default function ProfilePage() {
     const ID_LABELS = {
         admin: 'Admin ID',
         security_officer: 'Security ID',
-        faculty: 'Faculty ID',
+        instructor: 'Instructor ID',
         student: 'Student ID',
     };
     const idLabel = ID_LABELS[primaryRole] || 'ID Number';

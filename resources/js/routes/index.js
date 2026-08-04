@@ -49,7 +49,7 @@ const securityRoutes = [
     { path: '/security/inventory', component: SecurityInventory },
 ];
 
-// Routes reachable by any authenticated user (student, faculty, security
+// Routes reachable by any authenticated user (student, instructor, security
 // officer, admin) — role-specific restrictions on WHAT they can do inside
 // these pages are still enforced by the backend (RBAC lives server-side).
 const studentRoutes = [
