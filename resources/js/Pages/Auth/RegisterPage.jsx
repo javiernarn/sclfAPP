@@ -293,7 +293,17 @@ export default function RegisterPage() {
             if (profileFile) data.append('profile_picture', profileFile);
 
             await register(data);
-            toast.success('Welcome to SCLF! Your account has been created.', { title: 'Account created' });
+
+            // Same trick LoginPage uses: don't toast here — there's still
+            // the branded MainPage loading screen ahead before they land
+            // on their dashboard. Flag it instead so DashboardShell fires
+            // the "Account created" toast once they've actually arrived.
+            try {
+                window.sessionStorage.setItem('sclf-register-toast', '1');
+            } catch (e) {
+                // ignore storage errors (private mode etc.)
+            }
+
             navigate('/', { replace: true });
         } catch (err) {
             const errors = err.response?.data?.errors;

@@ -43,8 +43,8 @@ class MatchController extends Controller
     {
         $this->authorize('view', $match->lostItem);
 
-        if (auth()->id() !== $match->lostItem->user_id) {
-            abort(403);
+        if ((int) auth()->id() !== (int) $match->lostItem->user_id) {
+            abort(403, 'You can only dismiss matches on a lost item report you filed yourself.');
         }
 
         $match->update(['status' => ItemMatch::STATUS_DISMISSED]);

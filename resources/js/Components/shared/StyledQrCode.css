@@ -1,0 +1,24 @@
+.sclf-qr-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0 4px;
+}
+
+.sclf-qr-canvas {
+    max-width: 100%;
+    width: 280px;
+    height: auto;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(27, 31, 59, 0.14);
+    border: 1px solid rgba(27, 31, 59, 0.08);
+    background: #fff;
+}
+
+.sclf-qr-loading {
+    padding: 70px 20px;
+    color: #6B6558;
+    font-size: 13px;
+    text-align: center;
+}

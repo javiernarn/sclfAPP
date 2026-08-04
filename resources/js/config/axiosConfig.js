@@ -38,6 +38,12 @@ instance.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        if (statusCode === 403) {
+            const message = error.response?.data?.message || "You don't have permission to do that.";
+            showToast({ type: 'error', title: 'Access denied', message });
+            return Promise.reject(error);
+        }
+
         if (statusCode === 429) {
             showToast({ type: 'warning', title: 'Slow down', message: 'Too many attempts. Please wait a moment and try again.' });
             return Promise.reject(error);

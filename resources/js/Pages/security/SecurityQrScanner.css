@@ -1,0 +1,109 @@
+.sclf-scan-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid rgba(27, 31, 59, 0.1);
+    padding-bottom: 14px;
+}
+
+.sclf-scan-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(27, 31, 59, 0.14);
+    background: #fff;
+    color: #1B1F3B;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.sclf-scan-tab.is-active {
+    background: #1B1F3B;
+    border-color: #1B1F3B;
+    color: #fff;
+}
+
+.sclf-scan-camera {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sclf-scan-video-wrap {
+    width: 100%;
+    max-width: 420px;
+    aspect-ratio: 1 / 1;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0d1024;
+    border: 1px solid rgba(27, 31, 59, 0.14);
+    position: relative;
+}
+
+.sclf-scan-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.sclf-scan-upload-wrap {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s ease;
+}
+
+.sclf-scan-upload-wrap:hover {
+    border-color: #1B1F3B;
+}
+
+.sclf-scan-upload-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    padding: 0 20px;
+}
+
+.sclf-scan-result {
+    padding-top: 4px;
+}
+
+.sclf-scan-result-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgba(47, 122, 92, 0.1);
+    color: #2F7A5C;
+    margin-bottom: 16px;
+}
+
+.sclf-scan-result-title {
+    margin: 0;
+    font-weight: 700;
+    font-size: 15px;
+    color: #1B1F3B;
+}
+
+.sclf-scan-result-sub {
+    margin: 2px 0 0;
+    font-size: 12.5px;
+    color: #6B6558;
+}
+
+.sclf-scan-result-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+}

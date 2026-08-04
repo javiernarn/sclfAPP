@@ -15,6 +15,7 @@ export default function FoundItemCreate() {
     const [form, setForm] = useState(EMPTY_FORM);
     const [image, setImage] = useState(null);
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [pageLoading, setPageLoading] = useState(true);
     const navigate = useNavigate();
@@ -34,13 +35,19 @@ export default function FoundItemCreate() {
         return () => clearTimeout(t);
     }, []);
 
-    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+    const handleChange = (e) => {
+        setForm({ ...form, [e.target.name]: e.target.value });
+        if (fieldErrors[e.target.name]) {
+            setFieldErrors((prev) => { const next = { ...prev }; delete next[e.target.name]; return next; });
+        }
+    };
 
     const handleCancel = () => guardedAction(() => navigate('/found-items'));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setFieldErrors({});
         setLoading(true);
         try {
             const data = new FormData();
@@ -51,10 +58,16 @@ export default function FoundItemCreate() {
             toast.success('Thank you — your found item report has been submitted for verification.', { title: 'Report filed' });
             navigate('/found-items');
         } catch (err) {
-            const message = err?.response?.data?.errors
-                ? Object.values(err.response.data.errors).flat().join('\n')
+            const errors = err?.response?.data?.errors;
+            const message = errors
+                ? Object.values(errors).flat().join('\n')
                 : (err?.response?.data?.message || 'Failed to submit. Please check your inputs.');
             setError(message);
+            // Per-field errors drive the same red-outline-on-invalid treatment
+            // used across the rest of the app (Admin Users, Register, etc).
+            setFieldErrors(
+                errors ? Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, v[0]])) : {}
+            );
             toast.error(message, { title: 'Could not submit report' });
         } finally {
             setLoading(false);
@@ -77,13 +90,15 @@ export default function FoundItemCreate() {
                     <div className="ds-field">
                         <label htmlFor="item_name">Item Name <span className="ds-required">*</span></label>
                         <input id="item_name" name="item_name" value={form.item_name} onChange={handleChange}
-                            placeholder="e.g. Black umbrella" required />
+                            placeholder="e.g. Black umbrella" aria-invalid={!!fieldErrors.item_name} required />
+                        {fieldErrors.item_name && <div className="ds-field-error">{fieldErrors.item_name}</div>}
                     </div>
 
                     <div className="ds-field">
                         <label htmlFor="description">Description <span className="ds-required">*</span></label>
                         <textarea id="description" name="description" rows={4} value={form.description}
-                            onChange={handleChange} placeholder="Color, brand, distinguishing marks, contents…" required />
+                            onChange={handleChange} placeholder="Color, brand, distinguishing marks, contents…" aria-invalid={!!fieldErrors.description} required />
+                        {fieldErrors.description && <div className="ds-field-error">{fieldErrors.description}</div>}
                     </div>
 
                     <div className="ds-form-row ds-form-row-2">

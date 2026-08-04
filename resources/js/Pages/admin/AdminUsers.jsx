@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from '../../config/axiosConfig';
+import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import Tooltip from '../../Components/shared/Tooltip';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm, useDiscardConfirm } from '../../context/ConfirmContext';
 import { useAuth } from '../../context/AuthContext';
-import { Info, RotateCcw, UserCircle, Upload, Pencil, X, KeyRound, Eye, EyeOff } from 'lucide-react';
+import { Info, RotateCcw, UserCircle, Upload, Pencil, X, KeyRound, Eye, EyeOff, IdCard } from 'lucide-react';
 import {
     filterPhoneInput,
     filterNameInput,
@@ -39,6 +40,7 @@ const emptyEditForm = {
 
 export default function AdminUsers() {
     const { user: currentUser } = useAuth();
+    const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [form, setForm] = useState(emptyForm);
@@ -408,7 +410,7 @@ export default function AdminUsers() {
                                     <Upload size={14} /> {photo ? 'Change photo' : 'Upload photo'}
                                 </button>
                                 {photo && (
-                                    <button type="button" className="ds-btn" onClick={clearPhoto}>Remove</button>
+                                    <button type="button" className="ds-btn ds-btn-secondary" onClick={clearPhoto}>Remove</button>
                                 )}
                             </div>
                             <p className="ds-card-desc" style={{ margin: '6px 0 0' }}>Optional — helps security staff verify people at a glance. JPG/PNG, up to 5MB.</p>
@@ -533,6 +535,15 @@ export default function AdminUsers() {
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                        <Tooltip label="View this account's full profile and login/logout history">
+                                            <button
+                                                type="button"
+                                                className="ds-btn ds-btn-secondary"
+                                                onClick={() => navigate(`/admin/users/${u.id}`)}
+                                            >
+                                                <IdCard size={14} /> View Details
+                                            </button>
+                                        </Tooltip>
                                         <Tooltip label="Edit name, email, phone, role, or reset the password">
                                             <button
                                                 type="button"
@@ -606,7 +617,7 @@ export default function AdminUsers() {
                                             <Upload size={14} /> {editPhoto ? 'Change photo' : 'Replace photo'}
                                         </button>
                                         {editPhoto && (
-                                            <button type="button" className="ds-btn" onClick={clearEditPhoto}>Undo</button>
+                                            <button type="button" className="ds-btn ds-btn-secondary" onClick={clearEditPhoto}>Undo</button>
                                         )}
                                     </div>
                                     <p className="ds-card-desc" style={{ margin: '6px 0 0' }}>JPG/PNG, up to 5MB. Leave unchanged to keep their current photo.</p>

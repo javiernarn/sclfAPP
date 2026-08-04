@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { Link } from 'react-router-dom';
-import { Package, ChevronRight } from 'lucide-react';
+import { Package, ChevronRight, Eye } from 'lucide-react';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { ClaimListSkeleton } from '../../Components/shared/ClaimSkeleton';
 import { useAuth } from '../../context/AuthContext';
@@ -87,9 +87,11 @@ export default function MyClaimsList() {
                                                     </p>
                                                 </div>
                                             </div>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                                                 <span className={claimStatusBadgeClass(c.status)}>{claimStatusLabel(c.status)}</span>
-                                                <ChevronRight size={16} style={{ opacity: 0.35 }} />
+                                                <span className="ds-btn ds-btn-view ds-btn-sm">
+                                                    <Eye size={13} /> View Details <ChevronRight size={13} />
+                                                </span>
                                             </div>
                                         </Link>
                                     </li>

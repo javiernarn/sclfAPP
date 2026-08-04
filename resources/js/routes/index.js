@@ -1,9 +1,11 @@
+import React from 'react';
 import LoginPage from '../Pages/Auth/LoginPage';
 import RegisterPage from '../Pages/Auth/RegisterPage';
 import ForgotPassword from '../Pages/Auth/ForgotPassword';
 import ResetPassword from '../Pages/Auth/ResetPassword';
 import AdminDashboard from '../Pages/admin/AdminDashboard';
 import AdminUsers from '../Pages/admin/AdminUsers';
+import AdminUserDetail from '../Pages/admin/AdminUserDetail';
 import AdminAuditLog from '../Pages/admin/AdminAuditLog';
 import StudentDashboard from '../Pages/student/StudentDashboard';
 import LostItemsList from '../Pages/student/LostItemsList';
@@ -18,8 +20,12 @@ import NotificationsPage from '../Pages/shared/NotificationsPage';
 import ProfilePage from '../Pages/Profile/ProfilePage';
 import SecurityDashboard from '../Pages/security/SecurityDashboard';
 import SecurityFoundItemsReview from '../Pages/security/SecurityFoundItemsReview';
-import SecurityQrScanner from '../Pages/security/SecurityQrScanner';
 import SecurityInventory from '../Pages/security/SecurityInventory';
+
+// Lazy-loaded: pulls in the qr-scanner camera/worker bundle only when a
+// security officer actually opens this page, instead of shipping it in
+// everyone's main chunk (students, admins, etc. never touch this page).
+const SecurityQrScanner = React.lazy(() => import('../Pages/security/SecurityQrScanner'));
 
 const publicRoutes = [
     { path: '/login', component: LoginPage },
@@ -31,6 +37,7 @@ const publicRoutes = [
 const adminRoutes = [
     { path: '/admin/dashboard', component: AdminDashboard },
     { path: '/admin/users', component: AdminUsers },
+    { path: '/admin/users/:id', component: AdminUserDetail },
     { path: '/admin/audit-log', component: AdminAuditLog },
 ];
 

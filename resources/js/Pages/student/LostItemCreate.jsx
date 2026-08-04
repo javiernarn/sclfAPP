@@ -11,6 +11,7 @@ const EMPTY_FORM = { item_name: '', description: '', category: '', brand: '', co
 export default function LostItemCreate() {
     const [form, setForm] = useState(EMPTY_FORM);
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [pageLoading, setPageLoading] = useState(true);
     const navigate = useNavigate();
@@ -32,23 +33,36 @@ export default function LostItemCreate() {
         return () => clearTimeout(t);
     }, []);
 
-    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+    const handleChange = (e) => {
+        setForm({ ...form, [e.target.name]: e.target.value });
+        if (fieldErrors[e.target.name]) {
+            setFieldErrors((prev) => { const next = { ...prev }; delete next[e.target.name]; return next; });
+        }
+    };
 
     const handleCancel = () => guardedAction(() => navigate('/lost-items'));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setFieldErrors({});
         setLoading(true);
         try {
             await axios.post('/lost-items', form, { silent: true });
             toast.success('Your lost item report has been submitted.', { title: 'Report filed' });
             navigate('/lost-items');
         } catch (err) {
-            const message = err?.response?.data?.errors
-                ? Object.values(err.response.data.errors).flat().join('\n')
+            const errors = err?.response?.data?.errors;
+            const message = errors
+                ? Object.values(errors).flat().join('\n')
                 : (err?.response?.data?.message || 'Failed to submit. Please check your inputs.');
             setError(message);
+            // Per-field errors (see backend's `item_name`/`description` required
+            // rules in LostItemController) drive the same red-outline-on-invalid
+            // treatment the rest of the app already uses — not just the banner.
+            setFieldErrors(
+                errors ? Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, v[0]])) : {}
+            );
             toast.error(message, { title: 'Could not submit report' });
         } finally {
             setLoading(false);
@@ -76,8 +90,10 @@ export default function LostItemCreate() {
                             value={form.item_name}
                             onChange={handleChange}
                             placeholder="e.g. Black umbrella"
+                            aria-invalid={!!fieldErrors.item_name}
                             required
                         />
+                        {fieldErrors.item_name && <div className="ds-field-error">{fieldErrors.item_name}</div>}
                     </div>
 
                     <div className="ds-field">
@@ -89,8 +105,10 @@ export default function LostItemCreate() {
                             value={form.description}
                             onChange={handleChange}
                             placeholder="Color, brand, distinguishing marks, contents…"
+                            aria-invalid={!!fieldErrors.description}
                             required
                         />
+                        {fieldErrors.description && <div className="ds-field-error">{fieldErrors.description}</div>}
                     </div>
 
                     <div className="ds-form-row ds-form-row-2">

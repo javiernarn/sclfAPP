@@ -48,6 +48,30 @@ class UserController extends Controller
     }
 
     /**
+     * Full profile detail for a single user — everything the admin "User
+     * Details" page shows: the account's own fields plus a few activity
+     * counts (reports/claims) so the admin gets a sense of the account's
+     * history at a glance. The page's own audit-log section fetches that
+     * separately via GET /audit-logs?user_id=... (AuditLogController),
+     * which already supports filtering to just this user.
+     */
+    public function show(Request $request, User $user)
+    {
+        $this->authorize('view', $user);
+
+        $user->loadCount([
+            'lostItems',
+            'foundItems',
+            'claims',
+        ]);
+        $user->load('roles:id,name');
+
+        return response()->json([
+            'data' => $user,
+        ]);
+    }
+
+    /**
      * Admin-only account creation. Unlike public registration, the role is
      * explicitly selected here by an already-authorized admin — still never
      * trusted from an unauthenticated/self-elevating source.

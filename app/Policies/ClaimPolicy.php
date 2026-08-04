@@ -41,4 +41,12 @@ class ClaimPolicy
     {
         return $user->hasAnyRole(['security_officer', 'admin']);
     }
+
+    // Only the claimant may download their own release QR — this is their
+    // pickup pass, not something staff or other students should be able
+    // to pull for them.
+    public function downloadRelease(User $user, Claim $claim): bool
+    {
+        return $user->id === $claim->claimant_id;
+    }
 }

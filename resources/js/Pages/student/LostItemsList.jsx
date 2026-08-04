@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Search, ChevronRight, Eye } from 'lucide-react';
 import DashboardShell from '../../Components/shared/DashboardShell';
 
 const badgeClass = (status) => {
@@ -33,12 +33,9 @@ export default function LostItemsList() {
             eyebrow="Lost & Found"
             title="Lost Items"
             subtitle="Everything the community has reported lost around campus."
-            actions={
-                <Link to="/lost-items/create" className="ds-btn ds-btn-primary">
-                    <Plus size={16} strokeWidth={2.5} /> Report Lost Item
-                </Link>
-            }
         >
+            {/* "Report Lost Item" already lives in the sidebar — no need to
+                repeat it up here too. */}
             <div className="ds-card">
                 {error && <div className="ds-error">{error}</div>}
 
@@ -58,14 +55,27 @@ export default function LostItemsList() {
                     <ul className="ds-list">
                         {items.map(item => (
                             <li key={item.id} className="ds-list-item">
-                                <Link to={`/lost-items/${item.id}/matches`} style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                    <div>
-                                        <p className="ds-list-item-title">{item.item_name}</p>
-                                        <p className="ds-list-item-meta">
-                                            {item.category || 'Uncategorized'} · Reported by {item.reporter}
-                                        </p>
+                                <Link
+                                    to={`/lost-items/${item.id}/matches`}
+                                    style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', gap: 14, textDecoration: 'none', color: 'inherit' }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
+                                        <span className="ds-thumb">
+                                            <Search size={17} />
+                                        </span>
+                                        <div style={{ minWidth: 0 }}>
+                                            <p className="ds-list-item-title">{item.item_name}</p>
+                                            <p className="ds-list-item-meta">
+                                                {item.category || 'Uncategorized'} · Reported by {item.reporter}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <span className={badgeClass(item.status)}>{item.status || 'pending'}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                        <span className={badgeClass(item.status)}>{item.status || 'pending'}</span>
+                                        <span className="ds-btn ds-btn-view ds-btn-sm">
+                                            <Eye size={13} /> View Matches <ChevronRight size={13} />
+                                        </span>
+                                    </div>
                                 </Link>
                             </li>
                         ))}

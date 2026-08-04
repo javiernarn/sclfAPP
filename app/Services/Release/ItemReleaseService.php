@@ -54,12 +54,17 @@ class ItemReleaseService
             $claim->claimant?->notify(new SclfNotification(
                 SclfNotification::TYPE_ITEM_READY_FOR_RELEASE,
                 'Item ready for release',
-                "Your item is ready for pickup. Present code {$publicCode} to Security.",
+                "Your item is ready for pickup. Present code {$publicCode} to Security, or download your release QR from this claim.",
                 Claim::class,
                 $claim->id,
             ));
 
-            return ['qr_release' => $qr, 'raw_token' => $rawToken, 'public_code' => $publicCode];
+            return [
+                'qr_release' => $qr,
+                'raw_token' => $rawToken,
+                'public_code' => $publicCode,
+                'qr_payload' => QrRelease::buildPayload($publicCode, $rawToken),
+            ];
         });
     }
 
@@ -101,7 +106,62 @@ class ItemReleaseService
 
             $this->audit->log('qr.regenerated', $qr, "Release token regenerated for claim #{$claim->id} (previous token lost/unused).");
 
-            return ['qr_release' => $qr->fresh(), 'raw_token' => $rawToken, 'public_code' => $qr->public_code];
+            return [
+                'qr_release' => $qr->fresh(),
+                'raw_token' => $rawToken,
+                'public_code' => $qr->public_code,
+                'qr_payload' => QrRelease::buildPayload($qr->public_code, $rawToken),
+            ];
+        });
+    }
+
+    /**
+     * Claimant-facing: issue (or re-issue) the QR pass for the claimant's
+     * own claim so they can download/screenshot it — no signal needed at
+     * pickup time. Reuses the same public_code and rotates the secret
+     * token, exactly like regenerateToken() above, so re-downloading
+     * automatically invalidates any earlier copy (lost phone, shared
+     * screenshot, etc). Only the claim's own claimant may call this.
+     */
+    public function issueForClaimant(Claim $claim, User $claimant): array
+    {
+        if ((int) $claim->claimant_id !== (int) $claimant->id) {
+            abort(403);
+        }
+
+        if ($claim->status !== Claim::STATUS_RELEASE_PENDING) {
+            throw ValidationException::withMessages([
+                'status' => ['Your release QR becomes available once Security marks your item ready for pickup.'],
+            ]);
+        }
+
+        $qr = $claim->qrRelease;
+
+        if (!$qr) {
+            throw ValidationException::withMessages([
+                'status' => ['No release code has been generated for this claim yet.'],
+            ]);
+        }
+
+        return DB::transaction(function () use ($claim, $qr) {
+            $rawToken = QrRelease::generateRawToken();
+
+            $qr->update([
+                'token_hash' => QrRelease::hashToken($rawToken),
+                'status' => QrRelease::STATUS_PENDING,
+                'expires_at' => now()->addHours(72),
+                'scanned_by' => null,
+                'scanned_at' => null,
+            ]);
+
+            $this->audit->log('qr.issued_to_claimant', $qr, "Release QR (re)issued to claimant for claim #{$claim->id}.");
+
+            return [
+                'qr_release' => $qr->fresh(),
+                'raw_token' => $rawToken,
+                'public_code' => $qr->public_code,
+                'qr_payload' => QrRelease::buildPayload($qr->public_code, $rawToken),
+            ];
         });
     }
 

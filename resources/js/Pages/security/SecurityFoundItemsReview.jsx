@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import { useToast } from '../../context/ToastContext';
 
 export default function SecurityFoundItemsReview() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [busyId, setBusyId] = useState(null);
     const [notes, setNotes] = useState({});
+    const toast = useToast();
 
     useEffect(() => {
         document.title = "Found Item Reviews | SCLF - Opol Community College";
@@ -25,7 +27,12 @@ export default function SecurityFoundItemsReview() {
         setBusyId(id);
         try {
             await axios.post(`/found-items/${id}/verify`, { approved, notes: notes[id] || '' });
+            toast.success(approved ? 'Found item report approved.' : 'Found item report rejected.', {
+                title: approved ? 'Approved' : 'Rejected',
+            });
             load();
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Could not update this report.', { title: 'Could not update' });
         } finally {
             setBusyId(null);
         }
@@ -59,10 +66,10 @@ export default function SecurityFoundItemsReview() {
                                     style={{ margin: '8px 0' }}
                                 />
                                 <div style={{ display: 'flex', gap: 8 }}>
-                                    <button className="ds-btn ds-btn-primary" disabled={busyId === item.id} onClick={() => verify(item.id, true)}>
+                                    <button className="ds-btn ds-btn-success" disabled={busyId === item.id} onClick={() => verify(item.id, true)}>
                                         Approve
                                     </button>
-                                    <button className="ds-btn" disabled={busyId === item.id} onClick={() => verify(item.id, false)}>
+                                    <button className="ds-btn ds-btn-danger" disabled={busyId === item.id} onClick={() => verify(item.id, false)}>
                                         Reject
                                     </button>
                                 </div>

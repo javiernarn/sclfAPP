@@ -19,6 +19,7 @@ export default function LostItemMatches() {
     const [matches, setMatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [dismissingId, setDismissingId] = useState(null);
 
     useEffect(() => {
         document.title = "Potential Matches | SCLF - Opol Community College";
@@ -35,8 +36,18 @@ export default function LostItemMatches() {
     useEffect(load, [id]);
 
     const dismiss = async (matchId) => {
-        await axios.post(`/matches/${matchId}/dismiss`);
-        load();
+        setDismissingId(matchId);
+        try {
+            await axios.post(`/matches/${matchId}/dismiss`);
+            load();
+        } catch (err) {
+            // The axios interceptor already toasts the specific reason
+            // (e.g. 403 "you can only dismiss matches on your own
+            // report") — just swallow it here so it doesn't surface as
+            // an unhandled promise rejection in the console.
+        } finally {
+            setDismissingId(null);
+        }
     };
 
     return (
@@ -67,7 +78,13 @@ export default function LostItemMatches() {
                                         <Link to={`/found-items/${m.found_item_id}`} className="ds-btn ds-btn-primary">
                                             View & Claim
                                         </Link>
-                                        <button className="ds-btn" onClick={() => dismiss(m.id)}>Not mine</button>
+                                        <button
+                                            className="ds-btn ds-btn-secondary"
+                                            onClick={() => dismiss(m.id)}
+                                            disabled={dismissingId === m.id}
+                                        >
+                                            {dismissingId === m.id ? 'Dismissing…' : 'Not mine'}
+                                        </button>
                                     </div>
                                 </div>
                                 <span className={levelBadge(m.match_level)}>{m.match_level.replace('_', ' ')}</span>

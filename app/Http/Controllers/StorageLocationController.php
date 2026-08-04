@@ -18,7 +18,7 @@ class StorageLocationController extends Controller
 
     public function index(Request $request)
     {
-        $locations = StorageLocation::with('campus:id,name', 'building:id,name')
+        $locations = StorageLocation::with('campus:id,name', 'building:id,name', 'creator:id,name')
             ->withCount('foundItems')
             ->when($request->campus_id, fn ($q) => $q->where('campus_id', $request->campus_id))
             ->orderBy('code')
@@ -43,9 +43,13 @@ class StorageLocationController extends Controller
             'code' => 'required|string|max:100|unique:storage_locations,code',
         ]);
 
-        $location = StorageLocation::create($validated);
+        $location = StorageLocation::create([
+            ...$validated,
+            'created_by' => $request->user()->id,
+        ]);
+        $location->load('creator:id,name');
 
-        $this->audit->log('storage.created', $location, "Storage location {$location->code} created.");
+        $this->audit->log('storage.created', $location, "Storage location {$location->code} created by {$request->user()->name}.");
 
         return response()->json(['success' => true, 'data' => $location], 201);
     }

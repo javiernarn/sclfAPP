@@ -1,0 +1,187 @@
+/*
+ * ImageViewer.css
+ * ---------------
+ * Styles for <ImageViewer> (Components/shared/ImageViewer.jsx).
+ *
+ * .iv-box is the fixed-size photo frame used inline on a page (e.g. the
+ * found-item detail hero photo). It never resizes to fit the image —
+ * callers control its size the same way they always did via className
+ * (e.g. .ds-detail-photo-wrap sets width/height/border-radius). This
+ * file only changes how the <img> inside it is fitted: `object-fit:
+ * contain` instead of `cover`, so the whole photo is always visible
+ * (letterboxed) rather than cropped to fill the box.
+ *
+ * .iv-lightbox-* is the full-screen "view image" overlay with rotate /
+ * flip / zoom / reset controls, portaled into <body> so it always sits
+ * above the dashboard shell regardless of where the box lives in the
+ * DOM.
+ */
+
+.iv-box {
+    position: relative;
+    cursor: zoom-in;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.iv-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+.iv-expand-hint {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: rgba(15, 20, 30, 0.55);
+    color: #fff;
+    opacity: 0;
+    transform: translateY(2px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    pointer-events: none;
+}
+.iv-box:hover .iv-expand-hint,
+.iv-box:focus-visible .iv-expand-hint {
+    opacity: 1;
+    transform: translateY(0);
+}
+/* Always show the hint on touch devices (no hover state to reveal it). */
+@media (hover: none) {
+    .iv-expand-hint { opacity: 0.85; }
+}
+.iv-box:focus-visible {
+    outline: 2px solid #6366f1;
+    outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- */
+/* Lightbox                                                          */
+/* ---------------------------------------------------------------- */
+
+.iv-lightbox-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 3000;
+    background: rgba(6, 8, 14, 0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    animation: iv-fade-in 0.15s ease;
+}
+@keyframes iv-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.iv-lightbox {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.iv-close-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+.iv-close-btn:hover { background: rgba(255, 255, 255, 0.18); }
+
+.iv-stage {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+}
+.iv-stage-pannable { cursor: grab; }
+.iv-stage-pannable:active { cursor: grabbing; }
+
+.iv-stage-img {
+    max-width: min(92vw, 1100px);
+    max-height: 68vh;
+    object-fit: contain;
+    transition: transform 0.18s ease;
+    will-change: transform;
+    pointer-events: none;
+}
+
+.iv-toolbar {
+    flex-shrink: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
+}
+.iv-toolbar button {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 14px;
+    min-height: 44px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, opacity 0.15s ease;
+}
+.iv-toolbar button:hover { background: rgba(255, 255, 255, 0.18); }
+.iv-toolbar button[aria-pressed="true"] {
+    background: rgba(99, 102, 241, 0.35);
+    border-color: rgba(129, 140, 248, 0.6);
+}
+.iv-toolbar button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.iv-toolbar button:focus-visible {
+    outline: 2px solid #818cf8;
+    outline-offset: 2px;
+}
+
+/* On very narrow screens, drop the text labels and keep icon-only
+   buttons so the whole toolbar comfortably fits in one or two rows. */
+@media (max-width: 480px) {
+    .iv-toolbar button span { display: none; }
+    .iv-toolbar button {
+        padding: 10px;
+        width: 44px;
+        justify-content: center;
+    }
+    .iv-stage-img { max-height: 60vh; }
+    .iv-close-btn { top: 10px; right: 10px; width: 38px; height: 38px; }
+}
+
+@media (max-width: 360px) {
+    .iv-toolbar { gap: 6px; }
+}

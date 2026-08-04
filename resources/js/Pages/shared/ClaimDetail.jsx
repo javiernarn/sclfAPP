@@ -8,6 +8,7 @@ import {
     QrCode, KeyRound, RefreshCw, Ban, PackageCheck,
 } from 'lucide-react';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import StyledQrCode from '../../Components/shared/StyledQrCode';
 import { ClaimDetailSkeleton } from '../../Components/shared/ClaimSkeleton';
 import { useAuth } from '../../context/AuthContext';
 import { claimStatusLabel, claimStatusBadgeClass } from '../../utils/claimStatus';
@@ -56,6 +57,74 @@ const CodeBox = ({ label, value }) => {
         </div>
     );
 };
+
+// Claimant's own downloadable release pass — a styled QR they can save now
+// and bring up offline at pickup. Requesting a new one instantly retires
+// any previously downloaded copy, so a lost/leaked screenshot can't be
+// reused after a fresh one is issued.
+function ReleasePassCard({ claimId, fallbackCode }) {
+    const [pass, setPass] = useState(null);
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState('');
+
+    const issue = async () => {
+        setBusy(true);
+        setError('');
+        try {
+            const res = await axios.post(`/claims/${claimId}/download-release`);
+            setPass(res.data.data);
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Could not generate your release QR.');
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    return (
+        <div className="ds-card">
+            <div className="ds-card-title">
+                <span className="ds-card-title-icon"><PackageCheck size={17} /> Ready for pickup</span>
+            </div>
+            <p className="ds-card-desc">
+                Get your release QR now — it's saved as an image, so it still works even with no
+                signal at the counter. Show it to Security and they'll scan it to release your item.
+            </p>
+
+            {!pass ? (
+                <button className="ds-btn ds-btn-primary" disabled={busy} onClick={issue}>
+                    <QrCode size={16} /> {busy ? 'Generating…' : 'Get My Release QR'}
+                </button>
+            ) : (
+                <>
+                    <StyledQrCode
+                        value={pass.qr_payload}
+                        title="SCLF - Opol Community College"
+                        subtitle="Lost & Found Release Pass"
+                        downloadName={`${pass.public_code}-release.png`}
+                    />
+                    <p className="ds-list-item-meta" style={{ textAlign: 'center', marginTop: 4 }}>
+                        <ClockIcon size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
+                        Valid until {new Date(pass.expires_at).toLocaleString()}
+                    </p>
+                    <hr className="ds-divider" />
+                    <p className="ds-list-item-meta">
+                        Case reference: <strong>{pass.public_code}</strong> — treat this QR like a ticket;
+                        don't share it with anyone but Security. Lost it, or the camera's down at the
+                        counter? Just tap the button again for a fresh one — the old image stops working
+                        the moment you do.
+                    </p>
+                    <button className="ds-btn ds-btn-secondary" disabled={busy} onClick={issue} style={{ marginTop: 10 }}>
+                        <RefreshCw size={16} /> {busy ? 'Generating…' : 'Get a New QR'}
+                    </button>
+                </>
+            )}
+            {error && <div className="ds-error">{error}</div>}
+            {!pass && fallbackCode && (
+                <p className="ds-list-item-meta" style={{ marginTop: 10 }}>Release code on file: {fallbackCode}</p>
+            )}
+        </div>
+    );
+}
 
 export default function ClaimDetail() {
     const { id } = useParams();
@@ -329,13 +398,13 @@ export default function ClaimDetail() {
                         )}
                         {(claim.status === 'under_review' || claim.status === 'more_evidence_required') && (
                             <>
-                                <button className="ds-btn ds-btn-primary" disabled={busy} onClick={() => transition('approved')}>
+                                <button className="ds-btn ds-btn-success" disabled={busy} onClick={() => transition('approved')}>
                                     <CheckCircle2 size={16} /> Approve
                                 </button>
                                 <button className="ds-btn ds-btn-danger" disabled={busy} onClick={() => transition('rejected')}>
                                     <XCircle size={16} /> Reject
                                 </button>
-                                <button className="ds-btn ds-btn-secondary" disabled={busy} onClick={() => transition('more_evidence_required')}>
+                                <button className="ds-btn ds-btn-warning" disabled={busy} onClick={() => transition('more_evidence_required')}>
                                     <AlertTriangle size={16} /> Request More Evidence
                                 </button>
                             </>
@@ -409,19 +478,13 @@ export default function ClaimDetail() {
 
             {/* ---------- Release (claimant view) ---------- */}
             {claim.status === 'release_pending' && !isStaff && (
-                <div className="ds-card">
-                    <div className="ds-card-title">
-                        <span className="ds-card-title-icon"><PackageCheck size={17} /> Ready for pickup</span>
-                    </div>
-                    {claim.qr_release?.public_code && (
-                        <CodeBox label="Release code" value={claim.qr_release.public_code} />
-                    )}
-                    <p className="ds-list-item-meta" style={{ marginTop: 10 }}>
+                <>
+                    <ReleasePassCard claimId={claim.id} fallbackCode={claim.qr_release?.public_code} />
+                    <p className="ds-list-item-meta" style={{ marginTop: -6, marginBottom: 16 }}>
                         <KeyRound size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
-                        Bring a valid ID and this code to Security at the counter. Security will verify your
-                        identity and complete the release on their end — you don't need anything else.
+                        Also bring a valid ID — Security verifies your identity in person before scanning.
                     </p>
-                </div>
+                </>
             )}
 
             {!isStaff && ['pending', 'under_review'].includes(claim.status) && (

@@ -245,7 +245,10 @@ export function LedgerSelect(props) {
 
 /** Password strength meter, rendered as a row of five ledger "ticks". */
 export function StrengthTicks({ password }) {
-    if (!password) return null;
+    // Always mounted (visibility toggled, not unmounted) so the row
+    // beneath it never jumps up/down as the person starts typing — that
+    // jump was what made the card grow a scrollbar mid-keystroke.
+    const has = !!password;
     const checks = [
         password.length >= 8,
         /[A-Z]/.test(password),
@@ -264,7 +267,7 @@ export function StrengthTicks({ password }) {
     ][score];
 
     return (
-        <div className="lg-strength">
+        <div className="lg-strength" style={{ visibility: has ? "visible" : "hidden" }}>
             <div className="lg-strength-ticks">
                 {[0, 1, 2, 3, 4].map((i) => (
                     <span key={i} className={i < score ? "is-filled" : ""} style={i < score ? { background: meta.color } : undefined} />
@@ -299,10 +302,15 @@ export function RequirementChecklist({ password }) {
 }
 
 export function PasswordMatchNote({ password, confirm }) {
-    if (!confirm) return null;
+    // Same fix as StrengthTicks above: stay mounted and just hide the
+    // note (instead of returning null) so its height is reserved from
+    // the moment step 4 renders. Otherwise the note popping in the
+    // instant "confirm password" gets its first character grows the
+    // card and pops a scrollbar right under the person's cursor.
+    const show = !!confirm;
     const match = password === confirm;
     return (
-        <div className={`lg-match ${match ? "is-ok" : "is-bad"}`}>
+        <div className={`lg-match ${match ? "is-ok" : "is-bad"}`} style={{ visibility: show ? "visible" : "hidden" }}>
             {match ? <CheckCircle2 size={13} /> : <XCircle size={13} />}
             {match ? "Entries match" : "Entries do not match"}
         </div>

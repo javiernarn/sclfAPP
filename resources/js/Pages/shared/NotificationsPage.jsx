@@ -44,7 +44,7 @@ export default function NotificationsPage() {
         <DashboardShell
             eyebrow="Lost & Found"
             title="Notifications"
-            actions={<button className="ds-btn" onClick={markAllRead}>Mark all as read</button>}
+            actions={<button className="ds-btn ds-btn-secondary" onClick={markAllRead}>Mark all as read</button>}
         >
             <div className="ds-card">
                 {loading && (<><div className="ds-skeleton" /><div className="ds-skeleton" /></>)}

@@ -116,7 +116,8 @@ class ClaimController extends Controller
             'message' => 'Release QR generated.',
             'data' => [
                 'public_code' => $result['public_code'],
-                'token' => $result['raw_token'], // shown once — encode into QR client-side
+                'token' => $result['raw_token'], // shown once — this is the officer's own manual-entry fallback
+                'qr_payload' => $result['qr_payload'],
                 'expires_at' => $result['qr_release']->expires_at,
             ],
         ], 201);
@@ -133,7 +134,31 @@ class ClaimController extends Controller
             'message' => 'Release token regenerated.',
             'data' => [
                 'public_code' => $result['public_code'],
-                'token' => $result['raw_token'], // shown once — encode into QR client-side
+                'token' => $result['raw_token'], // shown once — this is the officer's own manual-entry fallback
+                'qr_payload' => $result['qr_payload'],
+                'expires_at' => $result['qr_release']->expires_at,
+            ],
+        ], 201);
+    }
+
+    /**
+     * Claimant-facing: issue/re-issue the downloadable release QR for the
+     * signed-in student's own claim. The raw token is only ever returned
+     * here, baked into qr_payload — never persisted, never shown again
+     * once this response is gone.
+     */
+    public function downloadRelease(Claim $claim)
+    {
+        $this->authorize('downloadRelease', $claim);
+
+        $result = $this->release->issueForClaimant($claim, auth()->user());
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Release QR issued.',
+            'data' => [
+                'public_code' => $result['public_code'],
+                'qr_payload' => $result['qr_payload'],
                 'expires_at' => $result['qr_release']->expires_at,
             ],
         ], 201);

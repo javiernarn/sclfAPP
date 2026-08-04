@@ -604,7 +604,22 @@ body { overflow: hidden; }
 .ds-btn-success:hover { background: rgba(34,197,94,0.14); }
 .ds-shell.dark .ds-btn-success { color: #4ade80; background: rgba(74,222,128,0.10); border-color: rgba(74,222,128,0.32); }
 .ds-shell.dark .ds-btn-success:hover { background: rgba(74,222,128,0.16); }
+.ds-btn-warning {
+    color: #b45309; background: rgba(245,158,11,0.10); border: 1px solid rgba(245,158,11,0.32);
+}
+.ds-btn-warning:hover { background: rgba(245,158,11,0.16); }
+.ds-shell.dark .ds-btn-warning { color: #fbbf24; background: rgba(251,191,36,0.10); border-color: rgba(251,191,36,0.32); }
+.ds-shell.dark .ds-btn-warning:hover { background: rgba(251,191,36,0.16); }
 .ds-btn-block { width: 100%; }
+.ds-btn-sm { padding: 6px 12px; font-size: 12.5px; border-radius: 8px; }
+/* "View details" affordance — same outline-color language as .ds-btn-edit,
+   sized down for use inline inside a list row. */
+.ds-btn-view {
+    color: #4f46e5; background: rgba(79,70,229,0.08); border: 1px solid rgba(79,70,229,0.28);
+}
+.ds-btn-view:hover { background: rgba(79,70,229,0.14); }
+.ds-shell.dark .ds-btn-view { color: #818cf8; background: rgba(129,140,248,0.10); border-color: rgba(129,140,248,0.32); }
+.ds-shell.dark .ds-btn-view:hover { background: rgba(129,140,248,0.16); }
 .ds-field { width: 100%; text-align: left; margin-bottom: 16px; }
 .ds-field label { display: block; font-size: 12.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.65; margin-bottom: 6px; }
 /* Marks a field as required — same red used everywhere else in the app
@@ -848,6 +863,60 @@ body { overflow: hidden; }
 .ds-item-hero { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
 .ds-item-hero-name { font-size: 17px; font-weight: 800; margin: 0 0 2px; }
 .ds-item-hero-meta { font-size: 12.5px; opacity: 0.6; }
+
+/* Capped-height hero photo for detail pages (found item, etc) — fills the
+   card width but never balloons vertically the way a bare <img> does with
+   a tall portrait photo, which is what was eating all the whitespace. */
+.ds-detail-photo-wrap {
+    width: 100%;
+    height: 220px;
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 18px;
+}
+.ds-shell.light .ds-detail-photo-wrap { background: rgba(148,163,184,0.14); border: 1.5px solid #c9d1de; }
+.ds-shell.dark .ds-detail-photo-wrap { background: rgba(255,255,255,0.03); border: 1.5px solid #3a4457; }
+/* The box above stays a fixed size (width/height/radius) — it never
+   grows or shrinks to fit the photo. How the <img> inside it is FIT to
+   that box (contain vs crop) and the click-to-expand rotate/flip
+   viewer both live in ImageViewer.css / ImageViewer.jsx now. */
+
+/* Small pill-style segmented control (2-3 options), e.g. the "Sign-ins
+   only / All activity" filter on the admin User Details page. */
+.ds-seg {
+    display: inline-flex;
+    padding: 3px;
+    border-radius: 12px;
+    gap: 2px;
+}
+.ds-shell.light .ds-seg { background: rgba(148,163,184,0.16); border: 1.5px solid #c9d1de; }
+.ds-shell.dark .ds-seg { background: rgba(255,255,255,0.04); border: 1.5px solid #3a4457; }
+.ds-seg-btn {
+    border: none;
+    background: transparent;
+    padding: 7px 12px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    color: inherit;
+    opacity: 0.65;
+    white-space: nowrap;
+}
+.ds-seg-btn:hover { opacity: 0.9; }
+.ds-seg-btn.active {
+    opacity: 1;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15,23,42,0.14);
+}
+.ds-shell.dark .ds-seg-btn.active { background: rgba(255,255,255,0.14); box-shadow: none; }
+
+.ds-back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 700; text-decoration: none;
+    opacity: 0.7; margin-bottom: 14px;
+}
+.ds-back-link:hover { opacity: 1; }
 
 /* Evidence rows: icon + type/content on the left, file link + submitter
    meta stacked on the right — replaces the old plain <li> text dump. */

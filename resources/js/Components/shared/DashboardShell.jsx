@@ -205,6 +205,14 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                 window.sessionStorage.removeItem('sclf-login-toast');
                 toast.success('You have successfully logged in.', { title: 'Welcome back' });
             }
+            // Same handoff, but for a brand-new account — RegisterPage sets
+            // this flag right before routing through the MainPage loading
+            // screen, so it fires here once they've actually landed instead
+            // of mid-transition.
+            if (window.sessionStorage.getItem('sclf-register-toast') === '1') {
+                window.sessionStorage.removeItem('sclf-register-toast');
+                toast.success('Welcome to SCLF! Your account has been created.', { title: 'Account created' });
+            }
         } catch (e) {
             // ignore storage errors (private mode etc.)
         }
@@ -240,8 +248,30 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
         }
     };
 
-    const isActive = (item) =>
-        item.end ? location.pathname === item.to : location.pathname.startsWith(item.to);
+    // Highlights exactly ONE nav link at a time. A plain `startsWith`
+    // check (the old approach) lit up BOTH "Lost Items" (/lost-items)
+    // and "Report Lost Item" (/lost-items/create) whenever you were on
+    // the create page, since "/lost-items/create" also starts with
+    // "/lost-items" — same for "Found Items" vs "Report Found Item".
+    // Instead, find the single BEST match across every nav item (exact
+    // match, or the longest "/prefix/" match), so a more specific route
+    // like "/lost-items/create" always wins over its shorter sibling
+    // "/lost-items" rather than lighting up both at once.
+    const activeNavTo = React.useMemo(() => {
+        const path = location.pathname;
+        let best = null;
+        for (const item of navItems) {
+            const matches = item.end
+                ? path === item.to
+                : path === item.to || path.startsWith(`${item.to}/`);
+            if (matches && (!best || item.to.length > best.length)) {
+                best = item.to;
+            }
+        }
+        return best;
+    }, [location.pathname, navItems]);
+
+    const isActive = (item) => item.to === activeNavTo;
 
     const initials = (user?.name || "?")
         .split(" ")

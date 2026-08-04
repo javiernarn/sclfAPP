@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import { useToast } from '../../context/ToastContext';
+import { UserCircle } from 'lucide-react';
 
 export default function SecurityInventory() {
     const [locations, setLocations] = useState([]);
@@ -11,6 +13,8 @@ export default function SecurityInventory() {
     const [newLoc, setNewLoc] = useState({ campus_id: '', room: '', cabinet: '', shelf: '', box: '', code: '' });
     const [campuses, setCampuses] = useState([]);
     const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState({});
+    const toast = useToast();
 
     useEffect(() => {
         document.title = "Inventory | SCLF - Opol Community College";
@@ -40,7 +44,10 @@ export default function SecurityInventory() {
         setBusyId(itemId);
         try {
             await axios.post(`/found-items/${itemId}/assign-storage`, { storage_location_id });
+            toast.success('Item shelved and marked stored.', { title: 'Stored' });
             load();
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Could not store this item.', { title: 'Could not store' });
         } finally {
             setBusyId(null);
         }
@@ -49,12 +56,24 @@ export default function SecurityInventory() {
     const createLocation = async (e) => {
         e.preventDefault();
         setError('');
+        setFieldErrors({});
         try {
             await axios.post('/storage-locations', newLoc);
             setNewLoc({ ...newLoc, room: '', cabinet: '', shelf: '', box: '', code: '' });
+            toast.success('Storage location added.', { title: 'Location created' });
             load();
         } catch (err) {
-            setError(err?.response?.data?.message || 'Could not create storage location.');
+            const errors = err?.response?.data?.errors;
+            const message = errors
+                ? Object.values(errors).flat().join('\n')
+                : (err?.response?.data?.message || 'Could not create storage location.');
+            setError(message);
+            // Same red-outline-on-invalid treatment as the rest of the app —
+            // mirrors the backend's `campus_id`/`code` required rules.
+            setFieldErrors(
+                errors ? Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, v[0]])) : {}
+            );
+            toast.error(message, { title: 'Could not create location' });
         }
     };
 
@@ -97,6 +116,10 @@ export default function SecurityInventory() {
                                 <p className="ds-list-item-meta">
                                     {[l.building?.name, l.room, l.cabinet, l.shelf, l.box].filter(Boolean).join(' · ')}
                                 </p>
+                                <p className="ds-list-item-meta">
+                                    <UserCircle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
+                                    Added by {l.creator?.name || 'Unknown (legacy entry)'}
+                                </p>
                             </div>
                             <span className="ds-badge ds-badge-default">{l.found_items_count} item(s)</span>
                         </li>
@@ -109,14 +132,16 @@ export default function SecurityInventory() {
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
                             <label>Campus <span className="ds-required">*</span></label>
-                            <select value={newLoc.campus_id} onChange={(e) => setNewLoc({ ...newLoc, campus_id: e.target.value })} required>
+                            <select value={newLoc.campus_id} onChange={(e) => setNewLoc({ ...newLoc, campus_id: e.target.value })} aria-invalid={!!fieldErrors.campus_id} required>
                                 {campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
+                            {fieldErrors.campus_id && <div className="ds-field-error">{fieldErrors.campus_id}</div>}
                         </div>
                         <div className="ds-field">
                             <label>Code (unique) <span className="ds-required">*</span></label>
                             <input value={newLoc.code} onChange={(e) => setNewLoc({ ...newLoc, code: e.target.value })}
-                                placeholder="e.g. STORE-A-3-5" required />
+                                placeholder="e.g. STORE-A-3-5" aria-invalid={!!fieldErrors.code} required />
+                            {fieldErrors.code && <div className="ds-field-error">{fieldErrors.code}</div>}
                         </div>
                     </div>
                     <div className="ds-form-row ds-form-row-2">

@@ -62,6 +62,8 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::get('/claims/{claim}', [ClaimController::class, 'show']);
     Route::post('/claims/{claim}/evidence', [ClaimController::class, 'addEvidence']);
     Route::post('/claims/{claim}/cancel', [ClaimController::class, 'cancel']);
+    // Claimant downloads/re-downloads their own release QR (offline-friendly pass).
+    Route::post('/claims/{claim}/download-release', [ClaimController::class, 'downloadRelease']);
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
@@ -86,7 +88,15 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::post('/claims/{claim}/generate-release', [ClaimController::class, 'generateRelease']);
         Route::post('/claims/{claim}/regenerate-release', [ClaimController::class, 'regenerateRelease']);
 
-        Route::post('/qr/scan', [QrController::class, 'scan']);
+        // Throttled separately from the rest of the security group — this is
+        // the actual point where an item leaves the building, and a camera
+        // scanner can retry fast, so cap attempts to slow down guessing.
+        Route::middleware('throttle:30,1')->post('/qr/scan', [QrController::class, 'scan']);
+        // Fallback decode for "Upload QR Image" when the browser's own
+        // decoder can't read the file — throttled separately and more
+        // tightly since image decoding is heavier per-request than a
+        // plain payload scan.
+        Route::middleware('throttle:20,1')->post('/qr/decode-image', [QrController::class, 'decodeImage']);
         Route::post('/qr/{qrRelease}/revoke', [QrController::class, 'revoke']);
 
         Route::get('/analytics/overview', [AnalyticsController::class, 'overview']);
@@ -104,6 +114,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
 
         Route::get('/admin/users', [AdminUserController::class, 'index']);
         Route::post('/admin/users', [AdminUserController::class, 'store']);
+        Route::get('/admin/users/{user}', [AdminUserController::class, 'show'])->withTrashed();
         Route::put('/admin/users/{user}', [AdminUserController::class, 'update']);
         Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
         Route::post('/admin/users/{id}/restore', [AdminUserController::class, 'restore']);

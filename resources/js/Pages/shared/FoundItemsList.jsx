@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { Link } from 'react-router-dom';
-import { Plus } from 'lucide-react';
+import { Package, ChevronRight, Eye } from 'lucide-react';
 import DashboardShell from '../../Components/shared/DashboardShell';
 
 const badgeClass = (status) => {
@@ -39,12 +39,9 @@ export default function FoundItemsList() {
             eyebrow="Lost & Found"
             title="Found Items"
             subtitle="Verified items currently being held by Security, ready to be matched with an owner."
-            actions={
-                <Link to="/found-items/create" className="ds-btn ds-btn-primary">
-                    <Plus size={16} strokeWidth={2.5} /> Report Found Item
-                </Link>
-            }
         >
+            {/* "Report Found Item" already lives in the sidebar — no need to
+                repeat it up here too. */}
             <div className="ds-card">
                 <form onSubmit={(e) => { e.preventDefault(); load(q); }} className="ds-field" style={{ marginBottom: 16 }}>
                     <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name or description…" />
@@ -62,14 +59,29 @@ export default function FoundItemsList() {
                     <ul className="ds-list">
                         {items.map(item => (
                             <li key={item.id} className="ds-list-item">
-                                <Link to={`/found-items/${item.id}`} style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', textDecoration: 'none', color: 'inherit' }}>
-                                    <div>
-                                        <p className="ds-list-item-title">{item.item_name}</p>
-                                        <p className="ds-list-item-meta">
-                                            {item.category || 'Uncategorized'} · Found near {item.location_found || 'campus'}
-                                        </p>
+                                <Link
+                                    to={`/found-items/${item.id}`}
+                                    style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', gap: 14, textDecoration: 'none', color: 'inherit' }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, flex: 1 }}>
+                                        <span className="ds-thumb">
+                                            {item.image_url
+                                                ? <img src={item.image_url} alt="" />
+                                                : <Package size={19} />}
+                                        </span>
+                                        <div style={{ minWidth: 0 }}>
+                                            <p className="ds-list-item-title">{item.item_name}</p>
+                                            <p className="ds-list-item-meta">
+                                                {item.category || 'Uncategorized'} · Found near {item.location_found || 'campus'}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <span className={badgeClass(item.status)}>{(item.status || '').replace(/_/g, ' ')}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                        <span className={badgeClass(item.status)}>{(item.status || '').replace(/_/g, ' ')}</span>
+                                        <span className="ds-btn ds-btn-view ds-btn-sm">
+                                            <Eye size={13} /> View Details <ChevronRight size={13} />
+                                        </span>
+                                    </div>
                                 </Link>
                             </li>
                         ))}

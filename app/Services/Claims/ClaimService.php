@@ -23,6 +23,39 @@ class ClaimService
 
     public function submit(User $claimant, FoundItem $foundItem, array $data): Claim
     {
+        // A finder can't claim the very item they turned in — reporting a
+        // found item and then "claiming" it back would let someone bypass
+        // the whole verification process. This mirrors the button already
+        // being hidden for the finder on the frontend, but is enforced
+        // here too since the frontend check alone can't be trusted.
+        if ($foundItem->user_id === $claimant->id) {
+            throw ValidationException::withMessages([
+                'found_item' => ['You reported this item as found, so you cannot submit a claim for it yourself.'],
+            ]);
+        }
+
+        // Server-side backstop against duplicate submissions (double-
+        // click/double-tap, a retried request, two tabs, etc.) — the
+        // frontend already disables the button after the first click,
+        // but that alone can't be trusted. Someone with an active claim
+        // already in the pipeline for this item can't open a second one.
+        $activeStatuses = [
+            Claim::STATUS_PENDING,
+            Claim::STATUS_UNDER_REVIEW,
+            Claim::STATUS_MORE_EVIDENCE_REQUIRED,
+            Claim::STATUS_APPROVED,
+            Claim::STATUS_RELEASE_PENDING,
+        ];
+        $alreadyClaimed = Claim::where('found_item_id', $foundItem->id)
+            ->where('claimant_id', $claimant->id)
+            ->whereIn('status', $activeStatuses)
+            ->exists();
+        if ($alreadyClaimed) {
+            throw ValidationException::withMessages([
+                'found_item' => ['You already have an active claim for this item.'],
+            ]);
+        }
+
         return DB::transaction(function () use ($claimant, $foundItem, $data) {
             $itemMatch = null;
             $lostItemId = $data['lost_item_id'] ?? null;
