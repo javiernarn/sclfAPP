@@ -1,0 +1,31 @@
+#
+# openssl.cnf for sclfAPP — includes the OpenSSL 3.x provider section
+# required for EC (P-256) key generation/agreement to work. Without the
+# [provider_sect] block, OpenSSL 3.x on Windows builds can fail EC
+# operations even when this file is correctly found via OPENSSL_CONF.
+#
+
+HOME            = .
+RANDFILE        = $ENV::HOME/.rnd
+
+openssl_conf = openssl_init
+
+[openssl_init]
+providers = provider_sect
+
+[provider_sect]
+default = default_sect
+legacy  = legacy_sect
+
+[default_sect]
+activate = 1
+
+[legacy_sect]
+activate = 1
+
+[req]
+distinguished_name = req_distinguished_name
+
+[req_distinguished_name]
+
+[v3_ca]

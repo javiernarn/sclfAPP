@@ -8,6 +8,7 @@ import {
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ImageViewer from '../../Components/shared/ImageViewer';
 import { useAuth } from '../../context/AuthContext';
+import { itemChannelLabel, itemChannelBadgeClass, itemChannelIcon, itemChannelItemDescription } from '../../utils/itemChannel';
 
 const badgeClass = (status) => {
     const key = (status || '').toLowerCase();
@@ -121,13 +122,25 @@ export default function FoundItemDetail() {
     // for them in the first place.
     const isOwnFind = !!user && item.finder?.id === user.id;
     const canClaim = !isStaff && !isOwnFind && item.status === 'stored';
+    const ChannelIcon = itemChannelIcon(item.intake_channel);
+    const isCounterIntake = item.intake_channel === 'counter_intake';
 
     return (
         <DashboardShell
             eyebrow="Lost & Found"
             title={item.item_name}
-            subtitle={`Reported by ${item.finder?.name || 'a community member'}`}
-            actions={<span className={badgeClass(item.status)}>{(item.status || '').replace(/_/g, ' ')}</span>}
+            subtitle={isCounterIntake
+                ? `Logged at the counter by ${item.finder?.name || 'a staff member'}`
+                : `Reported by ${item.finder?.name || 'a community member'}`}
+            actions={(
+                <>
+                    <span className={`${itemChannelBadgeClass(item.intake_channel)} ds-badge-icon`}>
+                        <ChannelIcon size={13} />
+                        {itemChannelLabel(item.intake_channel)}
+                    </span>
+                    <span className={badgeClass(item.status)}>{(item.status || '').replace(/_/g, ' ')}</span>
+                </>
+            )}
         >
             <Link to="/found-items" className="ds-back-link">
                 <ArrowLeft size={14} /> Back to Found Items
@@ -135,7 +148,7 @@ export default function FoundItemDetail() {
 
             <div className="ds-card">
                 <div className="ds-card-title">Item</div>
-                <p className="ds-card-desc">Details as reported and verified by Security.</p>
+                <p className="ds-card-desc">{itemChannelItemDescription(item.intake_channel)}</p>
 
                 {item.image_url && (
                     <ImageViewer

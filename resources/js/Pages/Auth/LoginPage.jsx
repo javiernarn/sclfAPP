@@ -30,6 +30,15 @@ export default function LoginPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const sessionExpired = searchParams.get('type') === 'session-expired';
+    // Set when this login page was opened from a notification email's
+    // "Login to View" button (?redirect=/claims/5, etc.) — stashed for
+    // MainPage to pick up once the post-login "Preparing your
+    // workspace…" screen finishes, so the person lands straight on the
+    // claim/match/found item the email was about instead of just their
+    // role's generic dashboard. Only ever a same-app relative path (it's
+    // built server-side in SclfNotification::actionUrl()), but validated
+    // again here regardless before it's trusted.
+    const redirectParam = searchParams.get('redirect');
 
     useEffect(() => {
         document.title = 'Login | SCLF - Opol Community College';
@@ -70,9 +79,16 @@ export default function LoginPage() {
             // the sessionStorage check in DashboardShell.jsx).
             try {
                 window.sessionStorage.setItem('sclf-login-toast', '1');
+                // Relative path only ("/claims/5", "/notifications", …) —
+                // guards against an external/absolute URL ever being
+                // honored even though actionUrl() only ever builds one of
+                // the three known routes below.
+                if (redirectParam && /^\/(?!\/)/.test(redirectParam)) {
+                    window.sessionStorage.setItem('sclf-post-login-redirect', redirectParam);
+                }
             } catch (e) {
                 // ignore storage errors (private mode etc.) — worst case
-                // they just don't get the post-login toast this time.
+                // they just don't get the post-login toast/redirect this time.
             }
 
             // Route back through "/" so the branded MainPage loading
@@ -100,7 +116,7 @@ export default function LoginPage() {
             caseSeed="LOG"
             title={<>Open your <span className="accent">session</span></>}
             subtitle="Sign in to check on lost items and everything the campus has found."
-            railHeadline="Welcome back to the registrar's desk."
+            railHeadline="Welcome back to the SCLF office."
             railNote="One record, one login — everything you've reported or claimed lives under a single account."
             footer={<>No record on file? <Link to="/register">Open a new case file</Link></>}
         >

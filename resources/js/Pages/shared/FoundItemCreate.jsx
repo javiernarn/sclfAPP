@@ -123,6 +123,7 @@ export default function FoundItemCreate() {
                         <label htmlFor="item_name">Item Name <span className="ds-required">*</span></label>
                         <input id="item_name" name="item_name" value={form.item_name} onChange={handleChange}
                             placeholder="e.g. Black umbrella" aria-invalid={!!fieldErrors.item_name} autoComplete="off" required />
+                        <p className="ds-field-hint">A short, specific name for what you found — this is what owners will see when searching.</p>
                         {fieldErrors.item_name && <div className="ds-field-error">{fieldErrors.item_name}</div>}
                     </div>
 
@@ -130,6 +131,7 @@ export default function FoundItemCreate() {
                         <label htmlFor="description">Description <span className="ds-required">*</span></label>
                         <textarea id="description" name="description" rows={4} value={form.description}
                             onChange={handleChange} placeholder="Color, brand, distinguishing marks, contents…" aria-invalid={!!fieldErrors.description} autoComplete="off" required />
+                        <p className="ds-field-hint">Describe only what's visible from the outside — Security will ask claimants to name details you leave out, which is how they verify the real owner.</p>
                         {fieldErrors.description && <div className="ds-field-error">{fieldErrors.description}</div>}
                     </div>
 
@@ -138,22 +140,26 @@ export default function FoundItemCreate() {
                             <label htmlFor="category">Category</label>
                             <input id="category" name="category" value={form.category} onChange={handleChange}
                                 placeholder="e.g. Electronics" autoComplete="off" />
+                            <p className="ds-field-hint">General type — e.g. Electronics, Bag, ID/Documents, Clothing, Accessories.</p>
                         </div>
                         <div className="ds-field">
                             <label htmlFor="brand">Brand</label>
                             <input id="brand" name="brand" value={form.brand} onChange={handleChange}
                                 placeholder="e.g. Samsung" autoComplete="off" />
+                            <p className="ds-field-hint">Leave blank if unbranded or you're not sure.</p>
                         </div>
                     </div>
 
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
                             <label htmlFor="color">Color</label>
-                            <input id="color" name="color" value={form.color} onChange={handleChange} autoComplete="off" />
+                            <input id="color" name="color" value={form.color} onChange={handleChange} placeholder="e.g. Navy blue" autoComplete="off" />
+                            <p className="ds-field-hint">Main color — the single biggest clue for matching.</p>
                         </div>
                         <div className="ds-field">
                             <label htmlFor="model">Model</label>
-                            <input id="model" name="model" value={form.model} onChange={handleChange} autoComplete="off" />
+                            <input id="model" name="model" value={form.model} onChange={handleChange} placeholder="e.g. iPhone 13, Model XR-200" autoComplete="off" />
+                            <p className="ds-field-hint">Only if it's printed on the item or its packaging — optional.</p>
                         </div>
                     </div>
 
@@ -162,6 +168,7 @@ export default function FoundItemCreate() {
                         <input id="unique_characteristics" name="unique_characteristics"
                             value={form.unique_characteristics} onChange={handleChange}
                             placeholder="Scratches, stickers, engravings…" autoComplete="off" />
+                        <p className="ds-field-hint">Anything that would only be obvious to the real owner — this is your best fraud check.</p>
                     </div>
 
                     <div className="ds-form-row ds-form-row-2">
@@ -169,17 +176,20 @@ export default function FoundItemCreate() {
                             <label htmlFor="location_found">Location Found</label>
                             <input id="location_found" name="location_found" value={form.location_found}
                                 onChange={handleChange} placeholder="e.g. Library, 2nd floor" autoComplete="off" />
+                            <p className="ds-field-hint">Where you actually picked it up — building, room, or a nearby landmark.</p>
                         </div>
                         <div className="ds-field">
                             <label htmlFor="date_found">Date Found</label>
                             <input id="date_found" type="date" name="date_found" value={form.date_found}
                                 onChange={handleChange} />
+                            <p className="ds-field-hint">Today's date, or when you actually found it if that was earlier.</p>
                         </div>
                     </div>
 
                     <div className="ds-field">
                         <label htmlFor="image">Photo (optional)</label>
                         <input id="image" type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] || null)} />
+                        <p className="ds-field-hint">JPG or PNG. A clear photo speeds up verification — avoid showing serials or personal info clearly enough to fake a claim.</p>
                     </div>
                     </fieldset>
 

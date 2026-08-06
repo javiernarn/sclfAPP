@@ -12,6 +12,7 @@ import StyledQrCode from '../../Components/shared/StyledQrCode';
 import { ClaimDetailSkeleton } from '../../Components/shared/ClaimSkeleton';
 import { useAuth } from '../../context/AuthContext';
 import { claimStatusLabel, claimStatusBadgeClass } from '../../utils/claimStatus';
+import { itemChannelLabel, itemChannelBadgeClass, itemChannelIcon, itemChannelClaimDescription } from '../../utils/itemChannel';
 
 const EVIDENCE_ICON = {
     description: MessageSquare,
@@ -137,6 +138,8 @@ export default function ClaimDetail() {
     const [notes, setNotes] = useState('');
     const [busy, setBusy] = useState(false);
     const [release, setRelease] = useState(null);
+    const [manualConfirm, setManualConfirm] = useState(false);
+    const [manualReason, setManualReason] = useState('');
 
     // evidence form
     const [evType, setEvType] = useState('description');
@@ -204,6 +207,21 @@ export default function ClaimDetail() {
         }
     };
 
+    const manualRelease = async () => {
+        setBusy(true);
+        setError('');
+        try {
+            await axios.post(`/claims/${id}/manual-release`, { reason: manualReason });
+            setManualConfirm(false);
+            setManualReason('');
+            load();
+        } catch (err) {
+            setError(err?.response?.data?.message || 'Could not manually release this item.');
+        } finally {
+            setBusy(false);
+        }
+    };
+
     const regenerateRelease = async () => {
         setBusy(true);
         setError('');
@@ -248,6 +266,8 @@ export default function ClaimDetail() {
 
     const submittedAt = claim.created_at ? new Date(claim.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : null;
     const isHighRisk = (claim.risk_score || 0) >= 50;
+    const channel = claim.found_item?.intake_channel;
+    const ChannelIcon = itemChannelIcon(channel);
 
     return (
         <DashboardShell
@@ -259,8 +279,14 @@ export default function ClaimDetail() {
 
             {/* ---------- Item ---------- */}
             <div className="ds-card">
-                <div className="ds-card-title">Item</div>
-                <p className="ds-card-desc">The found item this claim is for.</p>
+                <div className="ds-card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    Item
+                    <span className={`${itemChannelBadgeClass(channel)} ds-badge-icon`}>
+                        <ChannelIcon size={13} />
+                        {itemChannelLabel(channel)}
+                    </span>
+                </div>
+                <p className="ds-card-desc">{itemChannelClaimDescription(channel)}</p>
 
                 <div className="ds-item-hero">
                     <span className="ds-thumb ds-thumb-lg">
@@ -362,16 +388,28 @@ export default function ClaimDetail() {
                                         <option value="document">Supporting document</option>
                                         <option value="other">Other</option>
                                     </select>
+                                    <p className="ds-field-hint">Pick whichever type of proof you can actually provide — you can add more than one.</p>
                                 </div>
                                 {(evType === 'photo' || evType === 'document') ? (
                                     <div className="ds-field">
                                         <label>File</label>
                                         <input type="file" onChange={(e) => setEvFile(e.target.files?.[0] || null)} />
+                                        <p className="ds-field-hint">
+                                            {evType === 'photo'
+                                                ? "A photo of you with the item, or one from before it was lost — JPG or PNG."
+                                                : "A receipt, warranty card, or ID photo showing your ownership — PDF, JPG, or PNG."}
+                                        </p>
                                     </div>
                                 ) : (
                                     <div className="ds-field">
                                         <label>Details</label>
-                                        <input value={evContent} onChange={(e) => setEvContent(e.target.value)} />
+                                        <input value={evContent} onChange={(e) => setEvContent(e.target.value)} placeholder={
+                                            evType === 'serial_number' ? 'e.g. SN-2024-88231'
+                                                : evType === 'purchase_info' ? 'e.g. Bought at SM Cagayan, receipt dated May 2024'
+                                                : evType === 'description' ? 'A mark, scratch, or contents Security hasn\'t mentioned publicly'
+                                                : 'Anything else that proves this is yours'
+                                        } />
+                                        <p className="ds-field-hint">Be specific — vague details ("it's mine, trust me") don't help Security verify you.</p>
                                     </div>
                                 )}
                             </div>
@@ -388,7 +426,9 @@ export default function ClaimDetail() {
                     <p className="ds-card-desc">Weigh the evidence above, then move this claim forward.</p>
                     <div className="ds-field">
                         <label>Notes</label>
-                        <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+                        <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)}
+                            placeholder="e.g. Serial number matches inventory record; approving." />
+                        <p className="ds-field-hint">Recorded on the claim's history — explain your decision, especially for a reject or more-evidence request.</p>
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                         {claim.status === 'pending' && (
@@ -471,6 +511,35 @@ export default function ClaimDetail() {
                                 <ClockIcon size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
                                 Expires {new Date(release.expires_at).toLocaleString()}
                             </p>
+                        </div>
+                    )}
+                    <hr className="ds-divider" />
+                    <p className="ds-list-item-meta" style={{ marginBottom: 8 }}>
+                        Claimant can't show their QR at all (lost phone, expired code)? Release it manually
+                        instead — this skips the scan, so a reason is required for the audit trail.
+                    </p>
+                    {!manualConfirm ? (
+                        <button className="ds-btn ds-btn-secondary" disabled={busy} onClick={() => setManualConfirm(true)}>
+                            <KeyRound size={16} /> Release Manually (No QR)
+                        </button>
+                    ) : (
+                        <div>
+                            <div className="ds-field">
+                                <label>Reason <span className="ds-required">*</span></label>
+                                <input
+                                    value={manualReason}
+                                    onChange={(e) => setManualReason(e.target.value)}
+                                    placeholder="e.g. Claimant's phone battery died, ID verified in person"
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <button className="ds-btn ds-btn-primary" disabled={busy || !manualReason.trim()} onClick={manualRelease}>
+                                    Confirm Manual Release
+                                </button>
+                                <button className="ds-btn ds-btn-secondary" disabled={busy} onClick={() => { setManualConfirm(false); setManualReason(''); }}>
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

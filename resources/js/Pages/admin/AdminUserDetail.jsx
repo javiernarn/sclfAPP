@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     ArrowLeft, UserCircle, Mail, Phone, IdCard, ShieldCheck, Calendar,
     VenetianMask, MapPin, GraduationCap, LogIn, LogOut, History,
-    PackageSearch, ClipboardCheck, Ban, Trash2,
+    PackageSearch, ClipboardCheck, Ban, Trash2, PackageCheck, QrCode,
 } from 'lucide-react';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ImageViewer from '../../Components/shared/ImageViewer';
@@ -100,6 +100,13 @@ export default function AdminUserDetail() {
 
     const isSelf = currentUser?.id === Number(id);
     const roleName = (user?.roles || [])[0]?.name;
+    // Counter check-ins / releases are logged by whoever is staffing the
+    // counter — in practice security officers, but admins can act as one
+    // too — so the "Counter Duty" section only makes sense for those two
+    // roles. Every role can be on the *receiving* end of a counter
+    // check-in though (a student or instructor whose item was handed
+    // straight to an officer), so "Claims from Counter" always shows.
+    const isCounterStaff = roleName === 'security_officer' || roleName === 'admin';
     const initials = (user?.name || '?')
         .split(' ').filter(Boolean).slice(0, 2)
         .map((p) => p[0]?.toUpperCase()).join('');
@@ -184,11 +191,16 @@ export default function AdminUserDetail() {
 
             <div className="ds-card">
                 <div className="ds-card-title">Activity</div>
-                <p className="ds-card-desc">What this account has reported and claimed so far.</p>
+                <p className="ds-card-desc">
+                    What this account has reported and claimed through the app itself — a counter
+                    check-in skips both of these, since the officer logs the item and the owner
+                    never has to file anything, so that activity is broken out separately below.
+                </p>
                 <div className="ds-info-grid">
                     <InfoItem icon={PackageSearch} label="Lost Items Reported" value={user.lost_items_count ?? 0} />
                     <InfoItem icon={PackageSearch} label="Found Items Reported" value={user.found_items_count ?? 0} />
                     <InfoItem icon={ClipboardCheck} label="Claims Filed" value={user.claims_count ?? 0} />
+                    <InfoItem icon={QrCode} label="Claims from Counter" value={user.counter_claims_count ?? 0} />
                     <InfoItem icon={Ban} label="Cancelled Claims" value={user.cancelled_claims_count ?? 0} />
                 </div>
 
@@ -213,6 +225,22 @@ export default function AdminUserDetail() {
                 )}
                 {cleanupMessage && <p className="ds-card-desc" style={{ marginTop: 8 }}>{cleanupMessage}</p>}
             </div>
+
+            {isCounterStaff && (
+                <div className="ds-card">
+                    <div className="ds-card-title">Counter Duty</div>
+                    <p className="ds-card-desc">
+                        Work this officer has personally done at the Main Security Counter — items
+                        checked in for a known owner (CounterIntakeService), and items physically
+                        handed over to a claimant, by QR scan or manual override, from either the
+                        counter or the full online report pipeline.
+                    </p>
+                    <div className="ds-info-grid">
+                        <InfoItem icon={PackageCheck} label="Items Checked In at Counter" value={user.counter_checkins_count ?? 0} />
+                        <InfoItem icon={QrCode} label="Items Released" value={user.items_released_count ?? 0} />
+                    </div>
+                </div>
+            )}
 
             <div className="ds-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>

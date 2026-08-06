@@ -26,6 +26,8 @@ import {
     Boxes,
     QrCode,
     ShieldCheck,
+    PackageCheck,
+    History,
 } from "lucide-react";
 
 // The five themes offered from the account menu's "Theme" picker. 'white'
@@ -110,10 +112,12 @@ const NAV_BY_ROLE = {
     ],
     security_officer: [
         { to: "/security/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+        { to: "/security/counter", label: "Counter", icon: PackageCheck },
         { to: "/security/found-items", label: "Found Item Reviews", icon: PackageSearch },
         { to: "/security/claims", label: "Claims", icon: ClipboardCheck },
         { to: "/security/inventory", label: "Inventory", icon: Boxes },
         { to: "/security/qr-scanner", label: "QR Release Scanner", icon: QrCode },
+        { to: "/security/history", label: "History", icon: History },
         { to: "/notifications", label: "Notifications", icon: Bell },
     ],
     admin: [
@@ -123,6 +127,10 @@ const NAV_BY_ROLE = {
         { to: "/claims", label: "Claims", icon: ClipboardCheck },
         { to: "/admin/users", label: "Users", icon: UserCircle },
         { to: "/admin/audit-log", label: "Audit Log", icon: ShieldCheck },
+        // Same Counter/Lost & Found release history Security sees at
+        // /security/history — admins get their own nav entry into it too,
+        // for oversight of what officers are checking in/releasing.
+        { to: "/admin/history", label: "History", icon: History },
         { to: "/notifications", label: "Notifications", icon: Bell },
     ],
 };
@@ -392,30 +400,46 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                     </Link>
 
                     <div className="ds-nav-label">{navLabel}</div>
-                    <ul className="ds-nav">
-                        {navItems.map((item) => {
-                            const Icon = item.icon;
-                            const link = (
-                                <Link
-                                    to={item.to}
-                                    className={`ds-nav-link ${isActive(item) ? "active" : ""}`}
-                                    onClick={() => setSidebarOpen(false)}
-                                >
-                                    <span className="ds-nav-icon">
-                                        <Icon size={18} strokeWidth={2} />
-                                    </span>
-                                    <span className="ds-nav-text">{item.label}</span>
-                                </Link>
-                            );
-                            return (
-                                <li key={item.to}>
-                                    {collapsed ? <Tooltip label={item.label} side="right">{link}</Tooltip> : link}
-                                </li>
-                            );
-                        })}
-                    </ul>
 
-                    <div className="ds-sidebar-spacer" />
+                    {/* Everything below the nav label that can outgrow the
+                        sidebar's own height (nav links + spacer) now lives
+                        in its own scroll container, instead of the whole
+                        sidebar being `overflow: hidden`. This is what fixes
+                        short viewports — mobile landscape phones especially,
+                        where the sidebar overlay's height barely fits half
+                        the nav — being unable to reach the lower nav items:
+                        the brand row, nav label, and the account footer
+                        below all stay pinned in place, and only this middle
+                        region scrolls. The scrollbar itself is hidden (see
+                        .ds-nav-scroll in the CSS) so it doesn't look like a
+                        classic browser scrollbar wedged into the sidebar —
+                        scrolling still works via touch/drag/wheel. */}
+                    <div className="ds-nav-scroll">
+                        <ul className="ds-nav">
+                            {navItems.map((item) => {
+                                const Icon = item.icon;
+                                const link = (
+                                    <Link
+                                        to={item.to}
+                                        className={`ds-nav-link ${isActive(item) ? "active" : ""}`}
+                                        onClick={() => setSidebarOpen(false)}
+                                    >
+                                        <span className="ds-nav-icon">
+                                            <Icon size={18} strokeWidth={2} />
+                                        </span>
+                                        <span className="ds-nav-text">{item.label}</span>
+                                    </Link>
+                                );
+                                return (
+                                    <li key={item.to}>
+                                        {collapsed ? <Tooltip label={item.label} side="right">{link}</Tooltip> : link}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+
+                        <div className="ds-sidebar-spacer" />
+                    </div>
 
                     {/* Single Account control pinned at the very bottom of the
                         sidebar. Opens a menu (Profile / theme / log out) via

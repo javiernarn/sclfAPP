@@ -98,7 +98,7 @@ export default function AuthShell({
                         <Link to="/" className="lg-brand">
                             <span className="lg-brand-mark"><img src={logo} alt="SCLF" /></span>
                             <span className="lg-brand-text">
-                                SCLF Registrar
+                                SCLF Office
                                 <span>Opol Community College</span>
                             </span>
                         </Link>
@@ -139,7 +139,7 @@ export default function AuthShell({
                     <div className="lg-stage-inner">
                         <Link to="/" className="lg-mobile-brand">
                             <img src={logo} alt="SCLF" />
-                            <span>SCLF Registrar<span>Opol Community College</span></span>
+                            <span>SCLF Office<span>Opol Community College</span></span>
                         </Link>
 
                         <div className={`lg-card${wide ? " is-wide" : ""}`}>

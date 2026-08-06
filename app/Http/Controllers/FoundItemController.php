@@ -23,6 +23,21 @@ class FoundItemController extends Controller
 
         $items = FoundItem::query()
             ->with(['finder:id,name', 'storageLocation:id,code'])
+            // Counter check-ins already have a known, confirmed owner — an
+            // approved claim is created for them the moment security checks
+            // the item in (see CounterIntakeService::checkIn), and they see
+            // it in their own My Claims. Surfacing it here too, to every
+            // student browsing the public list, just invites claims from
+            // people who aren't the actual owner. Security/admin still see
+            // everything (Counter/Inventory pages query this table directly
+            // by status/location, not through this general listing).
+            ->when(
+                !$request->user()->hasAnyRole(['security_officer', 'admin']),
+                fn ($q) => $q->where(function ($sub) {
+                    $sub->whereNull('intake_channel')
+                        ->orWhere('intake_channel', '!=', FoundItem::CHANNEL_COUNTER_INTAKE);
+                })
+            )
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->when($request->category, fn ($q) => $q->where('category', $request->category))
             ->when($request->q, function ($q) use ($request) {

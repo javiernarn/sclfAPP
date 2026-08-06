@@ -19,18 +19,53 @@ class AnalyticsController extends Controller
         $totalLost = LostItem::count();
         $recovered = LostItem::where('status', LostItem::STATUS_CLOSED)->count();
 
+        // Found items arrive through two distinct channels (see
+        // FoundItem::CHANNEL_*) and the two dashboards conflated them into
+        // one "Found Today" / "Items Released" number, which is what made
+        // Security/Admin's dashboard confusing: a spike could mean a rush of
+        // strangers turning items in for review, OR a rush of counter
+        // check-ins for known owners — two very different workflows. Every
+        // stat below is scoped to one channel or the other so the dashboard
+        // can show them as two separate sections instead of one blended one.
+        $reportItems = FoundItem::where('intake_channel', FoundItem::CHANNEL_ONLINE_REPORT);
+        $counterItems = FoundItem::where('intake_channel', FoundItem::CHANNEL_COUNTER_INTAKE);
+
         return response()->json([
             'lost_today' => LostItem::whereDate('created_at', today())->count(),
-            'found_today' => FoundItem::whereDate('created_at', today())->count(),
             'claims_waiting' => Claim::whereIn('status', [Claim::STATUS_PENDING, Claim::STATUS_UNDER_REVIEW])->count(),
-            'items_pending_verification' => FoundItem::where('verification_status', 'pending')->count(),
-            'items_released' => FoundItem::where('status', FoundItem::STATUS_RELEASED)->count(),
             'suspicious_claims' => Claim::where('risk_score', '>=', 40)->whereIn('status', [Claim::STATUS_PENDING, Claim::STATUS_UNDER_REVIEW])->count(),
             'recovery_rate' => $totalLost > 0 ? round(($recovered / $totalLost) * 100, 1) : 0,
             'average_recovery_days' => $this->averageRecoveryDays(),
             'total_lost' => $totalLost,
             'total_found' => FoundItem::count(),
             'total_recovered' => $recovered,
+
+            // --- Found Item Reports (strangers turning items in online,
+            // channel = online_report) — needs review/verification before
+            // it's accepted into inventory. ---
+            'found_reports' => [
+                'today' => (clone $reportItems)->whereDate('created_at', today())->count(),
+                'pending_verification' => (clone $reportItems)->where('verification_status', 'pending')->count(),
+                'released' => (clone $reportItems)->where('status', FoundItem::STATUS_RELEASED)->count(),
+                'total' => (clone $reportItems)->count(),
+            ],
+
+            // --- Counter (channel = counter_intake) — items handed over in
+            // person by a known owner via the Counter check-in flow, and
+            // released back to them later via Claims/QR scan. ---
+            'counter' => [
+                'checked_in_today' => (clone $counterItems)->whereDate('created_at', today())->count(),
+                'awaiting_release' => (clone $counterItems)->where('status', '!=', FoundItem::STATUS_RELEASED)->count(),
+                'released' => (clone $counterItems)->where('status', FoundItem::STATUS_RELEASED)->count(),
+                'total' => (clone $counterItems)->count(),
+            ],
+
+            // Deprecated combined fields — kept around in case anything
+            // else still reads them, but the dashboards now read the
+            // channel-scoped `found_reports` / `counter` blocks above.
+            'found_today' => FoundItem::whereDate('created_at', today())->count(),
+            'items_pending_verification' => FoundItem::where('verification_status', 'pending')->count(),
+            'items_released' => FoundItem::where('status', FoundItem::STATUS_RELEASED)->count(),
         ]);
     }
 

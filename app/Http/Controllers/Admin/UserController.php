@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdminCreateUserRequest;
+use App\Models\Claim;
+use App\Models\FoundItem;
 use App\Models\User;
 use App\Services\Audit\AuditLogService;
 use Illuminate\Http\Request;
@@ -54,6 +56,15 @@ class UserController extends Controller
      * history at a glance. The page's own audit-log section fetches that
      * separately via GET /audit-logs?user_id=... (AuditLogController),
      * which already supports filtering to just this user.
+     *
+     * Every count here is deliberately scoped by intake_channel rather
+     * than just counting the raw relation, because CounterIntakeService
+     * blurs "who reported/claimed this" for counter walk-ins: the officer
+     * ends up as the FoundItem's user_id (no independent finder exists in
+     * that flow) and the owner's Claim is created for them, not by them.
+     * Without the split, a busy security officer's counter check-ins
+     * showed up as "Found Items Reported", and a student who never opened
+     * the app to file anything still showed up with "Claims Filed".
      */
     public function show(Request $request, User $user)
     {
@@ -61,9 +72,30 @@ class UserController extends Controller
 
         $user->loadCount([
             'lostItems',
-            'foundItems',
-            'claims',
-            'claims as cancelled_claims_count' => fn ($q) => $q->where('status', \App\Models\Claim::STATUS_CANCELLED),
+            // Items genuinely found and reported through the app —
+            // excludes counter check-ins, where user_id is the officer's,
+            // not a finder's.
+            'foundItems as found_items_count' => fn ($q) => $q
+                ->where('intake_channel', FoundItem::CHANNEL_ONLINE_REPORT),
+            // Claims this person filed themselves via report -> match ->
+            // claim, as opposed to a claim an officer created for them.
+            'claims as claims_count' => fn ($q) => $q->whereHas(
+                'foundItem',
+                fn ($fq) => $fq->where('intake_channel', FoundItem::CHANNEL_ONLINE_REPORT)
+            ),
+            // Claims that exist only because an officer checked an item
+            // straight in for this person at the counter — pre-approved,
+            // never went through this claimant filing anything.
+            'claims as counter_claims_count' => fn ($q) => $q->whereHas(
+                'foundItem',
+                fn ($fq) => $fq->where('intake_channel', FoundItem::CHANNEL_COUNTER_INTAKE)
+            ),
+            'claims as cancelled_claims_count' => fn ($q) => $q->where('status', Claim::STATUS_CANCELLED),
+            // Security-desk activity: relevant for security officers and
+            // admins, but harmless (and simply zero) to compute for any
+            // account — nothing here assumes a particular role.
+            'counterCheckIns as counter_checkins_count',
+            'itemsReleased as items_released_count',
         ]);
         $user->load('roles:id,name');
 

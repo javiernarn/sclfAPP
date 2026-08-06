@@ -83,8 +83,10 @@ body { overflow: hidden; }
         #fdf8ec;
 }
 /* ---------- Sidebar ---------- */
-/* Fully visible, no internal scrollbar: nav + footer are
-   laid out to fit within 100% height instead of overflowing. */
+/* Brand row, nav label, and the account footer are pinned in place; only
+   the middle nav-links region (.ds-nav-scroll below) scrolls when the
+   sidebar is too short to show every item at once — short mobile-landscape
+   viewports especially. Its scrollbar is hidden (still scrollable). */
 .ds-sidebar {
     position: fixed; top: 0; bottom: 0; left: 0; z-index: 40;
     width: 250px;
@@ -96,7 +98,7 @@ body { overflow: hidden; }
     padding: 13px 14px 0;
     padding-top: max(13px, env(safe-area-inset-top));
     transform: translateX(-100%);
-    transition: transform 0.32s cubic-bezier(0.4,0,0.2,1), width 0.28s cubic-bezier(0.4,0,0.2,1);
+    transition: transform 0.32s cubic-bezier(0.4,0,0.2,1), width 0.32s cubic-bezier(0.4,0,0.2,1), padding-left 0.32s cubic-bezier(0.4,0,0.2,1), padding-right 0.32s cubic-bezier(0.4,0,0.2,1);
     overflow: hidden;
     will-change: transform, width;
 }
@@ -111,7 +113,12 @@ body { overflow: hidden; }
 }
 @media (min-width: 960px) {
     .ds-sidebar { position: sticky; transform: none; height: 100%; }
-    .ds-sidebar.collapsed { width: 68px; }
+    /* Collapsed rail is narrower than the sidebar's own 14px side padding
+       comfortably allows, so it gets a smaller side padding of its own —
+       this, plus zeroing each row's own left padding + gap below, is what
+       lets the logo/icons/avatar sit truly centered in the rail instead
+       of pinned to the left edge. */
+    .ds-sidebar.collapsed { width: 68px; padding-left: 10px; padding-right: 10px; }
     .ds-layout { display: flex; }
 }
 .ds-shell.light .ds-sidebar { background: #fff; border-right: 1.5px solid #c3ccdb; }
@@ -134,15 +141,23 @@ body { overflow: hidden; }
 /* margin-top pulls the logo up so its own center lines up with the
    header burger button's center (both sit 30px from the very top of
    the screen) instead of sitting ~7px lower than it. */
-.ds-brand { display: flex; align-items: center; gap: 8px; min-width: 0; text-decoration: none; color: inherit; padding: 2px 8px 16px; margin-top: -3px; flex-shrink: 0; border-radius: 11px; transition: background 0.15s ease, gap 0.28s cubic-bezier(0.4,0,0.2,1), padding 0.28s cubic-bezier(0.4,0,0.2,1), margin 0.28s cubic-bezier(0.4,0,0.2,1); }
+.ds-brand { display: flex; align-items: center; gap: 8px; min-width: 0; text-decoration: none; color: inherit; padding: 2px 8px 16px; margin-top: -3px; flex-shrink: 0; border-radius: 11px; transition: background 0.15s ease, gap 0.32s cubic-bezier(0.4,0,0.2,1), padding-left 0.32s cubic-bezier(0.4,0,0.2,1), padding-right 0.32s cubic-bezier(0.4,0,0.2,1), justify-content 0.32s ease; }
+/* Collapsed: drop the row's own left/right padding and gap and center its
+   content instead, so the logo sits in the middle of the 68px rail —
+   matching the header burger button above it — instead of pinned to the
+   left edge with a lopsided gap of empty space on the right. */
+.ds-sidebar.collapsed .ds-brand { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
 /* Sized to match the 36x36 header burger button (.ds-icon-btn) so the
    sidebar logo reads as an equally prominent, "same weight" control
-   instead of looking small next to it. */
+   instead of looking small next to it. Same size in every sidebar state
+   — collapsing the sidebar only fades the text beside it away, it never
+   resizes or re-centers the logo itself, so there's nothing to "jump"
+   mid-transition. */
 .ds-brand img { width: 44px; height: 44px; object-fit: contain; border-radius: 10px; flex-shrink: 0; }
 .ds-brand-text {
     display: flex; flex-direction: column; line-height: 1.15; min-width: 0; overflow: hidden;
     max-width: 180px; opacity: 1;
-    transition: opacity 0.2s ease, max-width 0.28s cubic-bezier(0.4,0,0.2,1);
+    transition: opacity 0.3s ease, max-width 0.32s cubic-bezier(0.4,0,0.2,1);
 }
 .ds-brand-name { font-weight: 800; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Sized down slightly (and tighter letter-spacing) so the full "Opol
@@ -155,32 +170,69 @@ body { overflow: hidden; }
     text-overflow: ellipsis; max-width: 100%; display: block;
 }
 .ds-sidebar.collapsed .ds-brand-text { opacity: 0; max-width: 0; }
-/* Collapsed: the logo becomes just another icon in the rail — same
-   padding/box/centering as .ds-nav-link's collapsed state below it (see
-   the matching `padding: 10px; justify-content: center` there). `gap: 0`
-   keeps the logo perfectly centered while ds-brand-text shrinks to 0
-   width instead of leaving a stray gap-sized offset. */
-.ds-sidebar.collapsed .ds-brand { justify-content: center; padding: 8px; margin: -7px 0 6px; gap: 0; }
-.ds-sidebar.collapsed .ds-brand img { width: 40px; height: 40px; border-radius: 10px; }
+/* Collapsed: only the text beside the logo fades/shrinks away — the logo
+   itself keeps the exact same size and the exact same left position it
+   has when expanded (no justify-content:center, no padding change, no
+   image resize), so the logo never visibly jumps or resizes as the
+   sidebar animates between the two widths. */
 .ds-shell.light .ds-sidebar.collapsed .ds-brand:hover { background: #f4f7fb; }
 .ds-shell.dark .ds-sidebar.collapsed .ds-brand:hover { background: #171c26; }
 .ds-nav-label {
     font-size: 10.5px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; opacity: 0.45; padding: 0 10px; margin: 4px 0 8px; flex-shrink: 0; white-space: nowrap; overflow: hidden;
-    transition: opacity 0.18s ease, height 0.28s cubic-bezier(0.4,0,0.2,1), margin 0.28s cubic-bezier(0.4,0,0.2,1), padding 0.28s cubic-bezier(0.4,0,0.2,1);
+    transition: opacity 0.3s ease, height 0.32s cubic-bezier(0.4,0,0.2,1), margin 0.32s cubic-bezier(0.4,0,0.2,1), padding 0.32s cubic-bezier(0.4,0,0.2,1);
 }
 .ds-sidebar.collapsed .ds-nav-label { opacity: 0; height: 0; margin: 0; padding: 0; }
+/* Scrollable middle region of the sidebar — everything between the nav
+   label ("STUDENT / INSTRUCTOR", "SECURITY OFFICER", "ADMIN") and the
+   pinned account footer. flex: 1 + min-height: 0 is what lets it actually
+   shrink below its content height and become the thing that scrolls,
+   instead of the old behavior where the whole sidebar just clipped
+   whatever didn't fit. Scrollbar is hidden on every engine (Firefox via
+   scrollbar-width, IE/legacy Edge via -ms-overflow-style, WebKit/Blink via
+   the ::-webkit-scrollbar rule below) — scrolling itself still works via
+   touch, trackpad, wheel, or drag, it just doesn't draw a visible bar. */
+.ds-nav-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+.ds-nav-scroll::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .ds-nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; flex-shrink: 0; }
 .ds-nav-link {
     display: flex; align-items: center; gap: 11px;
     padding: 10px 12px; border-radius: 11px;
     font-size: 13.8px; font-weight: 650; text-decoration: none; color: inherit;
-    transition: background 0.15s ease, color 0.15s ease, gap 0.28s cubic-bezier(0.4,0,0.2,1), padding 0.28s cubic-bezier(0.4,0,0.2,1);
+    transition: background 0.15s ease, color 0.15s ease, padding 0.32s cubic-bezier(0.4,0,0.2,1), gap 0.32s cubic-bezier(0.4,0,0.2,1), justify-content 0.32s ease;
     white-space: nowrap; overflow: hidden;
 }
-.ds-sidebar.collapsed .ds-nav-link { justify-content: center; padding: 10px; gap: 0; }
+/* Collapsed: same fix as .ds-brand above — zero the row's own left/right
+   padding and gap and center the icon in the rail, so the hover/active
+   highlight (which fills the whole row) reads as centered around the
+   icon instead of the icon sitting off to the highlight's left side. */
+.ds-sidebar.collapsed .ds-nav-link { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+/* The collapsed rail wraps each nav link in a <Tooltip> (for the hover
+   label), whose wrapper span is `display: inline-flex` — that shrinks to
+   fit just the icon instead of stretching across the full row, so the
+   centering above was only centering the icon *inside that tiny
+   shrink-wrapped box*, which itself still sat left-aligned in the row.
+   Forcing the wrapper to a full-width block box here is what actually
+   lines the icon up with the logo/avatar above and below it. */
+.ds-sidebar.collapsed .ds-nav-scroll .sclf-tooltip-wrap { display: block; width: 100%; }
+/* Collapsed: only the label text fades/shrinks away (see .ds-nav-text
+   below) — padding and alignment stay exactly as they are when expanded,
+   so every icon keeps the same left position in both states instead of
+   re-centering itself in the narrower rail, which is what used to make
+   icons visibly "jump" partway through the collapse animation. */
 .ds-nav-link span.ds-nav-text {
     display: inline-block; max-width: 180px; opacity: 1; overflow: hidden;
-    transition: opacity 0.18s ease, max-width 0.28s cubic-bezier(0.4,0,0.2,1);
+    transition: opacity 0.3s ease, max-width 0.32s cubic-bezier(0.4,0,0.2,1);
 }
 .ds-sidebar.collapsed .ds-nav-link span.ds-nav-text { opacity: 0; max-width: 0; }
 .ds-nav-icon { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; }
@@ -214,8 +266,11 @@ body { overflow: hidden; }
 .ds-sidebar-menu-wrap { position: relative; width: 100%; }
 .ds-user-row {
     display: flex; align-items: center; gap: 10px; padding: 6px 8px; min-width: 0;
-    transition: gap 0.28s cubic-bezier(0.4,0,0.2,1), padding 0.28s cubic-bezier(0.4,0,0.2,1);
+    transition: padding 0.32s cubic-bezier(0.4,0,0.2,1), gap 0.32s cubic-bezier(0.4,0,0.2,1), justify-content 0.32s ease;
 }
+/* Collapsed: same centering fix as the brand + nav rows above, so the
+   avatar sits in the middle of the rail instead of pinned to the left. */
+.ds-sidebar.collapsed .ds-user-row { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
 .ds-user-row-btn {
     width: 100%; border: none; background: none; cursor: pointer;
     border-radius: 11px; color: inherit; font-family: inherit; text-align: left;
@@ -223,17 +278,20 @@ body { overflow: hidden; }
 }
 .ds-shell.light .ds-user-row-btn:hover { background: #f4f7fb; }
 .ds-shell.dark .ds-user-row-btn:hover { background: #171c26; }
-.ds-sidebar.collapsed .ds-user-row { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+/* Collapsed: same story as .ds-nav-link and .ds-brand above — the avatar
+   keeps the exact same size and left position, only the name/email text
+   and chevron fade away (via .ds-user-text / .ds-user-row-chevron below),
+   so nothing re-centers or resizes mid-transition. */
 .ds-user-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ds-user-email { font-size: 11px; opacity: 0.55; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .ds-user-text {
     max-width: 180px; opacity: 1; overflow: hidden;
-    transition: opacity 0.18s ease, max-width 0.28s cubic-bezier(0.4,0,0.2,1);
+    transition: opacity 0.3s ease, max-width 0.32s cubic-bezier(0.4,0,0.2,1);
 }
 .ds-sidebar.collapsed .ds-user-text { opacity: 0; max-width: 0; }
 .ds-user-row-chevron {
     opacity: 0.55; flex-shrink: 0; max-width: 15px;
-    transition: transform 0.15s ease, opacity 0.18s ease, max-width 0.28s cubic-bezier(0.4,0,0.2,1);
+    transition: transform 0.15s ease, opacity 0.3s ease, max-width 0.32s cubic-bezier(0.4,0,0.2,1);
 }
 .ds-sidebar.collapsed .ds-user-row-chevron { opacity: 0; max-width: 0; }
 .ds-user-row-btn[aria-expanded="true"] .ds-user-row-chevron { transform: rotate(180deg); }
@@ -535,7 +593,7 @@ body { overflow: hidden; }
 
 .ds-header {
     display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap;
-    gap: 14px; margin-bottom: 24px;
+    gap: 14px; margin-bottom: 18px;
 }
 .ds-header-text { min-width: 0; }
 .ds-eyebrow {
@@ -573,23 +631,75 @@ body { overflow: hidden; }
 .ds-card-title { font-size: 15.5px; font-weight: 800; margin: 0 0 4px; }
 .ds-card-title-icon { display: inline-flex; align-items: center; gap: 9px; }
 .ds-card-title-icon svg { flex-shrink: 0; opacity: 0.85; }
-.ds-card-desc { font-size: 13px; opacity: 0.65; margin: 0 0 16px; }
+.ds-card-desc { font-size: 13px; opacity: 0.65; margin: 0 0 16px; overflow-wrap: anywhere; }
 .ds-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-.ds-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 18px; }
-.ds-stat-card { border-radius: 16px; padding: 16px 18px; }
+.ds-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 14px; }
+.ds-stat-card { border-radius: 14px; padding: 13px 15px; }
 .ds-shell.light .ds-stat-card { background: rgba(255,255,255,0.85); border: 1.5px solid #c3ccdb; }
 .ds-shell.dark .ds-stat-card { background: rgba(18,22,32,0.75); border: 1.5px solid #323b4a; }
 .ds-stat-icon {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 36px; height: 36px; margin-bottom: 10px; border-radius: 10px;
+    width: 32px; height: 32px; margin-bottom: 8px; border-radius: 9px;
     color: #4f46e5; background: rgba(79,70,229,0.10);
 }
 .ds-shell.dark .ds-stat-icon { background: rgba(99,102,241,0.16); color: #a5b4fc; }
 .ds-shell.maroon .ds-stat-icon { background: rgba(220,38,38,0.10); color: #b91c1c; }
 .ds-shell.blue .ds-stat-icon { background: rgba(37,99,235,0.10); color: #1d4ed8; }
 .ds-shell.yellow .ds-stat-icon { background: rgba(217,119,6,0.13); color: #b45309; }
-.ds-stat-value { font-size: 22px; font-weight: 800; line-height: 1.1; }
-.ds-stat-label { font-size: 12px; opacity: 0.6; font-weight: 600; margin-top: 2px; }
+/* Dashboard sections — groups a heading + description + its own stat grid,
+   used to visually split "Found Item Reports" (strangers turning items in,
+   channel = online_report) from "Counter" (items handed over in person by
+   a known owner, channel = counter_intake) on the Security/Admin
+   dashboards, so the two very different workflows don't read as one
+   blended set of numbers. See SecurityDashboard.jsx / AdminDashboard.jsx.
+   Layout: the stat cards are the thing you actually came to read, so they
+   sit in the wide left column; the icon/title/description is a compact
+   label column on the right. DOM order is grid-then-head so that's the
+   natural (unstyled) reading order too — on narrow screens the media
+   query below reverses it back to head-on-top since there's no "right"
+   on a phone. */
+.ds-dashboard-section { margin-bottom: 18px; }
+.ds-dashboard-section-body { display: flex; align-items: flex-start; gap: 18px; }
+.ds-dashboard-section-body .ds-stat-grid { flex: 1 1 auto; min-width: 0; margin-bottom: 0; }
+.ds-dashboard-section-head {
+    display: flex; align-items: flex-start; gap: 10px;
+    flex: 0 0 200px; max-width: 220px;
+}
+.ds-dashboard-section-icon {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 9px;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.ds-dashboard-section-icon.is-reports { background: rgba(37,99,235,0.12); color: #1d4ed8; }
+.ds-dashboard-section-icon.is-counter { background: rgba(180,83,9,0.14); color: #b45309; }
+.ds-shell.dark .ds-dashboard-section-icon.is-reports { background: rgba(56,189,248,0.14); color: #7dd3fc; }
+.ds-shell.dark .ds-dashboard-section-icon.is-counter { background: rgba(245,158,11,0.16); color: #fbbf24; }
+.ds-dashboard-section-title { font-size: 14.5px; font-weight: 800; margin: 0; }
+.ds-dashboard-section-desc { font-size: 12px; opacity: 0.65; margin: 2px 0 0; }
+.ds-stat-value { font-size: 20px; font-weight: 800; line-height: 1.1; }
+.ds-stat-label { font-size: 11.5px; opacity: 0.6; font-weight: 600; margin-top: 2px; }
+@media (max-width: 760px) {
+    .ds-dashboard-section-body { flex-direction: column; gap: 10px; }
+    .ds-dashboard-section-head { order: -1; flex: 1 1 auto; max-width: none; }
+}
+/* Stat grids on phones/small tablets — .ds-stat-grid's default
+   `auto-fit, minmax(150px,1fr)` picks ONE column count for the whole grid,
+   not per row. That's fine when a section has an even number of stat
+   cards, but Admin/Security/Student's 3-card sections ("Found Item
+   Reports", "Counter", Student's summary row) end up with 2 columns and a
+   lone 3rd card sitting alone in row two — leaving an empty, unstyled
+   track beside it. Force an explicit 2-up grid here instead, and make a
+   trailing unpaired card span the full row so it never leaves that gap. */
+@media (max-width: 760px) {
+    .ds-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ds-stat-grid > *:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+/* Smallest phones (older/compact devices, ~360px and below): even 2-up
+   cards start to squeeze the value + wrapping label, so drop to one full-
+   width card per row. A single column always fills its row completely,
+   so this never reintroduces dead space either. */
+@media (max-width: 380px) {
+    .ds-stat-grid { grid-template-columns: 1fr; }
+}
 .ds-btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
     padding: 11px 18px; border-radius: 12px; border: none; cursor: pointer;
@@ -708,9 +818,25 @@ body { overflow: hidden; }
 .ds-shell.dark .ds-list-item { background: rgba(255,255,255,0.03); border: 1.5px solid #3a4457; }
 .ds-list-item-title { font-weight: 700; font-size: 14.5px; margin: 0 0 3px; }
 .ds-list-item-meta { font-size: 12.5px; opacity: 0.6; }
+
+/* Storage-location cards (Security > Inventory). A single wide full-row
+   list looked mostly empty when there were only one or two locations —
+   short "code + address" text stranded on the left of a near-1400px row.
+   A wrapping grid instead sizes each card to its content and lets several
+   sit side by side, so the space fills naturally as locations are added
+   and there's nothing to stretch awkwardly when there's just one. */
+.ds-location-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px; align-items: stretch;
+}
+.ds-location-card { padding: 14px 16px; border-radius: 14px; display: flex; flex-direction: column; min-width: 0; }
+.ds-shell.light .ds-location-card { background: rgba(255,255,255,0.6); border: 1.5px solid #c9d1de; }
+.ds-shell.dark .ds-location-card { background: rgba(255,255,255,0.03); border: 1.5px solid #3a4457; }
+.ds-location-card .ds-chip-row { margin-top: auto; padding-top: 8px; }
 .ds-badge {
     display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px;
     font-size: 11px; font-weight: 700; text-transform: capitalize; flex-shrink: 0;
+    white-space: nowrap;
 }
 .ds-badge-pending { background: rgba(245,158,11,0.12); color: #d97706; border: 1px solid rgba(245,158,11,0.3); }
 .ds-badge-found { background: rgba(34,197,94,0.12); color: #16a34a; border: 1px solid rgba(34,197,94,0.3); }
@@ -718,6 +844,8 @@ body { overflow: hidden; }
 .ds-badge-default { background: rgba(148,163,184,0.14); color: #64748b; border: 1px solid rgba(148,163,184,0.3); }
 .ds-badge-rejected { background: rgba(239,68,68,0.10); color: #dc2626; border: 1px solid rgba(239,68,68,0.28); }
 .ds-badge-review { background: rgba(14,165,233,0.10); color: #0284c7; border: 1px solid rgba(14,165,233,0.28); }
+.ds-badge-lostfound { background: rgba(20,184,166,0.12); color: #0d9488; border: 1px solid rgba(20,184,166,0.3); }
+.ds-badge-counter { background: rgba(139,92,246,0.12); color: #7c3aed; border: 1px solid rgba(139,92,246,0.3); }
 .ds-badge-icon { display: inline-flex; align-items: center; gap: 5px; }
 .ds-badge-icon svg { flex-shrink: 0; }
 
@@ -768,6 +896,19 @@ body { overflow: hidden; }
     animation: ds-shimmer 1.4s ease-in-out infinite;
 }
 @keyframes ds-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Small inline spinner for "searching…" states inside a text input —
+   lighter-weight than the full .ds-skeleton, used while a debounced
+   search request is in flight so the list doesn't flash on every keystroke. */
+.ds-spinner {
+    display: inline-block;
+    width: 14px; height: 14px;
+    border: 2px solid rgba(148,163,184,0.35);
+    border-top-color: var(--brass, #D4A73D);
+    border-radius: 50%;
+    animation: ds-spin 0.7s linear infinite;
+}
+@keyframes ds-spin { to { transform: rotate(360deg); } }
 /* ---------- Page-shaped skeletons ---------- */
 /* Small shimmer "bone" blocks, sized per-context with utility classes below,
    dropped straight into the same .ds-stat-card / .ds-card boxes a page
@@ -820,6 +961,17 @@ body { overflow: hidden; }
 .ds-shell.maroon .ds-chip.ds-chip-accent { background: rgba(220,38,38,0.09); border-color: rgba(220,38,38,0.25); color: #b91c1c; }
 .ds-shell.blue .ds-chip.ds-chip-accent { background: rgba(37,99,235,0.09); border-color: rgba(37,99,235,0.25); color: #1d4ed8; }
 .ds-shell.yellow .ds-chip.ds-chip-accent { background: rgba(217,119,6,0.12); border-color: rgba(217,119,6,0.3); color: #b45309; }
+
+/* Status-badge legend (Security Inventory's "What the badges mean" card).
+   A 2-up grid on anything wide enough, so short lines don't each claim a
+   full-width row with a wall of empty space trailing after them; collapses
+   to one column automatically once a row no longer fits two. */
+.ds-legend-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 10px 20px;
+}
+.ds-legend-row { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 6px 10px; }
+.ds-legend-row .ds-list-item-meta { margin: 0; flex: 1 1 160px; min-width: 0; padding-top: 2px; }
 
 /* Compact "info" grid used by the Profile page's account-details card —
    several short fields per row instead of one full-width row each, which
@@ -917,6 +1069,14 @@ body { overflow: hidden; }
 
 /* Status filter row above the claims list (My Claims / All Claims). */
 .ds-filter-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+@media (max-width: 480px) {
+    /* Narrow phones: the search box, filter chips, and the two native
+       date inputs used to all fight for space on one line and clip.
+       Let the search box take the full first row, and the two date
+       inputs share one row evenly instead of shrinking unpredictably. */
+    .ds-filter-row input[type="date"] { flex: 1 1 calc(50% - 4px); min-width: 0; }
+    .ds-filter-row > div[style*="position: relative"] { flex-basis: 100%; }
+}
 .ds-filter-chip {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 14px; border-radius: 999px; cursor: pointer;
@@ -937,6 +1097,114 @@ body { overflow: hidden; }
     min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
     font-size: 10px; font-weight: 800; background: rgba(148,163,184,0.22);
 }
+
+/* ==========================================================================
+ * Cards / Table view toggle — a small pill switch used at the top of any
+ * list page that offers both a card/row layout and a flat table layout for
+ * the same records (Found Items, Lost Items, Claims, Notifications, Users,
+ * Audit Log, ...). The row it sits in wraps on mobile so the toggle never
+ * fights the page title or a search field for space.
+ * ========================================================================== */
+.ds-list-head-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.ds-list-head-row > h3 { margin: 0; }
+.ds-view-toggle {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 4px; border-radius: 12px; flex-shrink: 0;
+}
+.ds-shell.light .ds-view-toggle { background: #e4e9f2; border: 1.5px solid #b7c0d1; }
+.ds-shell.dark .ds-view-toggle { background: #0b0e15; border: 1.5px solid #3a4457; }
+.ds-view-toggle-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 9px; border: none; cursor: pointer;
+    font-size: 12.5px; font-weight: 800; background: none;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.ds-shell.light .ds-view-toggle-btn { color: #334155; }
+.ds-shell.dark .ds-view-toggle-btn { color: #cbd5e1; }
+.ds-shell.light .ds-view-toggle-btn:hover:not(.is-active) { background: rgba(15,23,42,0.06); }
+.ds-shell.dark .ds-view-toggle-btn:hover:not(.is-active) { background: rgba(255,255,255,0.08); }
+.ds-view-toggle-btn.is-active { color: #fff; }
+.ds-view-toggle-btn.is-active svg { flex-shrink: 0; }
+.ds-view-toggle-btn:not(.is-active) svg { opacity: 0.85; }
+.ds-view-toggle-btn.is-active { background: linear-gradient(135deg, #4338ca, #4f46e5 50%, #6366f1); box-shadow: 0 6px 16px rgba(79,70,229,0.32); }
+.ds-shell.maroon .ds-view-toggle-btn.is-active { background: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); box-shadow: 0 6px 16px rgba(159,18,57,0.32); }
+.ds-shell.blue .ds-view-toggle-btn.is-active { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); box-shadow: 0 6px 16px rgba(37,99,235,0.32); }
+.ds-shell.yellow .ds-view-toggle-btn.is-active { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); box-shadow: 0 6px 16px rgba(217,119,6,0.32); color: #1c1408; }
+
+/* Flat table view — every column visible at once, alternative to the
+   .ds-list rows above for the exact same data. */
+.ds-table-wrap { overflow-x: auto; border-radius: 14px; -webkit-overflow-scrolling: touch; }
+.ds-shell.light .ds-table-wrap { border: 1.5px solid #c9d1de; }
+.ds-shell.dark .ds-table-wrap { border: 1.5px solid #3a4457; }
+.ds-table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13px; }
+.ds-table th {
+    text-align: left; padding: 12px 14px; font-size: 11px; font-weight: 800;
+    letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.6; white-space: nowrap;
+}
+.ds-shell.light .ds-table th { background: #f4f7fb; border-bottom: 1.5px solid #c9d1de; }
+.ds-shell.dark .ds-table th { background: #171c26; border-bottom: 1.5px solid #3a4457; }
+.ds-table td { padding: 11px 14px; vertical-align: middle; }
+.ds-table tbody tr { border-bottom: 1px solid; }
+.ds-shell.light .ds-table tbody tr { border-color: #e2e7f0; }
+.ds-shell.dark .ds-table tbody tr { border-color: #262c39; }
+.ds-table tbody tr:last-child { border-bottom: none; }
+.ds-shell.light .ds-table tbody tr.is-clickable:hover { background: rgba(79,70,229,0.05); }
+.ds-shell.dark .ds-table tbody tr.is-clickable:hover { background: rgba(129,140,248,0.06); }
+.ds-table tbody tr.is-clickable { cursor: pointer; }
+.ds-table tbody tr.is-closed { opacity: 0.55; }
+.ds-table tbody tr.is-unread td:first-child { box-shadow: inset 3px 0 0 #4f46e5; }
+.ds-table-cell-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ds-table-title { font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+.ds-table-sub { font-size: 12px; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
+.ds-table-actions { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; white-space: nowrap; }
+.ds-table-nowrap { white-space: nowrap; }
+
+/* Note: this used to have a decorative right-edge fade (a ::after hint
+   that the table scrolls sideways) but it was miscomputing its position
+   on this layout and rendering as a pale vertical band straight through
+   the table's full height — removed rather than papered over. */
+.ds-table-wrap { position: relative; }
+
+@media (max-width: 720px) {
+    .ds-list-head-row { align-items: stretch; }
+    .ds-view-toggle { align-self: flex-start; }
+}
+
+/* ==========================================================================
+ * History (Counter / Lost & Found release history) — on phones (which is
+ * the only device Security Officers actually use for this page) a wide
+ * multi-column table forces sideways scrolling to read a single row, so
+ * below 720px it's swapped for a stacked card per record instead. Both
+ * markups render from the same data; CSS just picks which one is visible.
+ * ========================================================================== */
+.ds-history-cards { display: none; }
+@media (max-width: 720px) {
+    .ds-table-wrap { display: none; }
+    .ds-history-cards { display: flex; flex-direction: column; gap: 10px; }
+}
+.ds-history-card { padding: 14px 16px; border-radius: 14px; }
+.ds-shell.light .ds-history-card { background: rgba(255,255,255,0.6); border: 1.5px solid #c9d1de; }
+.ds-shell.dark .ds-history-card { background: rgba(255,255,255,0.03); border: 1.5px solid #3a4457; }
+.ds-history-card-head {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 10px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px dashed;
+}
+.ds-shell.light .ds-history-card-head { border-color: #d7deea; }
+.ds-shell.dark .ds-history-card-head { border-color: #2a3140; }
+.ds-history-card-row {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; padding: 5px 0; font-size: 13px;
+}
+.ds-history-card-label {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase;
+    opacity: 0.55; flex-shrink: 0; padding-top: 1px;
+}
+.ds-history-card-value { text-align: right; min-width: 0; }
+.ds-history-card-value .ds-table-title { max-width: none; white-space: normal; }
+.ds-history-card-value .ds-table-sub { max-width: none; white-space: normal; }
 
 /* Small square thumbnail (photo or icon fallback) used in list rows and
    the item card on the detail page. */

@@ -21,6 +21,8 @@ import ProfilePage from '../Pages/Profile/ProfilePage';
 import SecurityDashboard from '../Pages/security/SecurityDashboard';
 import SecurityFoundItemsReview from '../Pages/security/SecurityFoundItemsReview';
 import SecurityInventory from '../Pages/security/SecurityInventory';
+import SecurityCounter from '../Pages/security/SecurityCounter';
+import SecurityHistory from '../Pages/security/SecurityHistory';
 
 // Lazy-loaded: pulls in the qr-scanner camera/worker bundle only when a
 // security officer actually opens this page, instead of shipping it in
@@ -39,6 +41,11 @@ const adminRoutes = [
     { path: '/admin/users', component: AdminUsers },
     { path: '/admin/users/:id', component: AdminUserDetail },
     { path: '/admin/audit-log', component: AdminAuditLog },
+    // Reuses the same page/endpoints Security uses at /security/history —
+    // HistoryController already allows both security_officer and admin
+    // (see routes/api.php), this just gives admins their own nav entry
+    // and URL instead of making them guess the security path.
+    { path: '/admin/history', component: SecurityHistory },
 ];
 
 const securityRoutes = [
@@ -47,6 +54,8 @@ const securityRoutes = [
     { path: '/security/claims', component: MyClaimsList },
     { path: '/security/qr-scanner', component: SecurityQrScanner },
     { path: '/security/inventory', component: SecurityInventory },
+    { path: '/security/counter', component: SecurityCounter },
+    { path: '/security/history', component: SecurityHistory },
 ];
 
 // Routes reachable by any authenticated user (student, instructor, security

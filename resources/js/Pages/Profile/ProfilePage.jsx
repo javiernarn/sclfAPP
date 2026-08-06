@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { UserCircle, Mail, ShieldCheck, Moon, Sun, Phone, MapPin, VenetianMask, IdCard, GraduationCap } from 'lucide-react';
+import { UserCircle, Mail, ShieldCheck, Moon, Sun, Phone, MapPin, VenetianMask, IdCard, GraduationCap, Bell, BellOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppTheme } from '../../hooks/useAppTheme';
+import usePushNotifications from '../../hooks/usePushNotifications';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ProfileSkeleton from '../../Components/shared/ProfileSkeleton';
 import ChangePasswordForm from './Partials/ChangePasswordForm';
+import { useToast } from '../../context/ToastContext';
 
 // One compact "field" block used inside the account-details grid — icon,
 // small uppercase label, value. Several of these sit side by side per row
@@ -25,6 +27,8 @@ export default function ProfilePage() {
     const { theme, toggleTheme } = useAppTheme();
     const isDark = theme === 'black';
     const [pageLoading, setPageLoading] = useState(true);
+    const toast = useToast();
+    const push = usePushNotifications();
 
     useEffect(() => {
         document.title = "Profile | SCLF - Opol Community College";
@@ -77,6 +81,25 @@ export default function ProfilePage() {
     };
     const idLabel = ID_LABELS[primaryRole] || 'ID Number';
     const idValue = isStudent ? user?.student_id : user?.staff_id;
+
+    const handlePushToggle = async () => {
+        if (push.subscribed) {
+            await push.disable();
+            toast.info('Push notifications turned off for this device.');
+            return;
+        }
+
+        const result = await push.enable();
+        if (result.status === 'subscribed') {
+            toast.success('Push notifications are on for this device.');
+        } else if (result.status === 'denied') {
+            toast.warning('Notifications are blocked in your browser settings. Allow them for this site to turn this on.');
+        } else if (result.status === 'unconfigured') {
+            toast.error('Push notifications aren\'t set up on the server yet.');
+        } else if (result.status === 'unsupported') {
+            toast.error('This browser doesn\'t support push notifications.');
+        }
+    };
 
     return (
         <DashboardShell
@@ -137,6 +160,40 @@ export default function ProfilePage() {
                 <div className="ds-card-title">Security</div>
                 <p className="ds-card-desc">Update your password to keep your account secure.</p>
                 <ChangePasswordForm />
+            </div>
+
+            {/* ---------- Notifications ---------- */}
+            <div className="ds-card">
+                <div className="ds-card-title">Notifications</div>
+                <p className="ds-card-desc">
+                    Get an alert on this device the moment something changes — a claim update, a match, or an item
+                    ready for pickup — even when SCLF isn't open in a tab. This is separate from email notifications,
+                    which keep going either way.
+                </p>
+
+                {!push.supported && (
+                    <p style={{ fontSize: 13, opacity: 0.65, margin: 0 }}>
+                        This browser doesn't support push notifications.
+                    </p>
+                )}
+
+                {push.supported && push.loading && <div className="ds-skeleton" style={{ height: 40 }} />}
+
+                {push.supported && !push.loading && (
+                    <button
+                        type="button"
+                        className={push.subscribed ? 'ds-btn ds-btn-secondary' : 'ds-btn ds-btn-primary'}
+                        onClick={handlePushToggle}
+                        disabled={push.busy}
+                    >
+                        {push.subscribed ? <BellOff size={16} /> : <Bell size={16} />}
+                        {push.busy
+                            ? 'Please wait…'
+                            : push.subscribed
+                                ? 'Turn off notifications on this device'
+                                : 'Enable notifications on this device'}
+                    </button>
+                )}
             </div>
 
             {/* ---------- Appearance ---------- */}

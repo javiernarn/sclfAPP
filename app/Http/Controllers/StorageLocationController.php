@@ -19,8 +19,30 @@ class StorageLocationController extends Controller
     public function index(Request $request)
     {
         $locations = StorageLocation::with('campus:id,name', 'building:id,name', 'creator:id,name')
-            ->withCount('foundItems')
+            ->withCount([
+                'foundItems',
+                // Physically on the shelf right now, available to be matched/claimed.
+                'foundItems as on_shelf_count' => fn ($q) => $q->whereIn('status', [
+                    FoundItem::STATUS_STORED,
+                    FoundItem::STATUS_MATCHED,
+                ]),
+                // Approved and matched to a claimant, but still physically here
+                // until the claimant actually picks it up.
+                'foundItems as claimed_count' => fn ($q) => $q->where('status', FoundItem::STATUS_CLAIMED),
+                // A release QR/code has been issued — still on the shelf, but
+                // expected to walk out the door very soon.
+                'foundItems as pending_release_count' => fn ($q) => $q->where('status', FoundItem::STATUS_RELEASE_PENDING),
+                // Already handed back to the owner — no longer physically here.
+                // Counted for history only; storage_location_id is kept on the
+                // record rather than cleared, so this is what tells the two
+                // apart from "still on the shelf".
+                'foundItems as released_count' => fn ($q) => $q->where('status', FoundItem::STATUS_RELEASED),
+            ])
             ->when($request->campus_id, fn ($q) => $q->where('campus_id', $request->campus_id))
+            // ?type=counter / ?type=storage filters the two kinds apart —
+            // used by the Inventory page (storage only) and the Counter
+            // page (counter only) instead of each mixing in the other's rows.
+            ->when($request->type, fn ($q) => $q->where('type', $request->type))
             ->orderBy('code')
             ->get();
 
@@ -36,6 +58,11 @@ class StorageLocationController extends Controller
         $validated = $request->validate([
             'campus_id' => 'required|exists:campuses,id',
             'building_id' => 'nullable|exists:buildings,id',
+            'type' => 'nullable|in:' . StorageLocation::TYPE_STORAGE . ',' . StorageLocation::TYPE_COUNTER,
+            // Counter locations only need a friendly label (e.g. "Counter 1")
+            // — no room/cabinet/shelf/box hierarchy, since it's a front
+            // desk spot, not archived storage.
+            'label' => 'nullable|string|max:100|required_if:type,' . StorageLocation::TYPE_COUNTER,
             'room' => 'nullable|string|max:100',
             'cabinet' => 'nullable|string|max:100',
             'shelf' => 'nullable|string|max:100',
@@ -45,6 +72,7 @@ class StorageLocationController extends Controller
 
         $location = StorageLocation::create([
             ...$validated,
+            'type' => $validated['type'] ?? StorageLocation::TYPE_STORAGE,
             'created_by' => $request->user()->id,
         ]);
         $location->load('creator:id,name');

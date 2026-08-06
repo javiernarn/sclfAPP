@@ -74,6 +74,80 @@
     padding: 0 20px;
 }
 
+/* Staged "working on it" panel shown over the camera view / uploaded
+   image while a decoded code is being verified server-side. */
+.sclf-scan-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(13, 16, 36, 0.82);
+    backdrop-filter: blur(1px);
+}
+
+.sclf-scan-upload-wrap.is-busy {
+    cursor: default;
+}
+
+.sclf-scan-progress {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px;
+    width: 100%;
+    max-width: 260px;
+}
+
+.sclf-scan-progress-icon {
+    color: #fff;
+    display: flex;
+}
+
+.sclf-scan-spin {
+    animation: sclf-scan-rotate 1s linear infinite;
+}
+
+@keyframes sclf-scan-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.sclf-scan-progress-text {
+    margin: 0;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    min-height: 18px;
+}
+
+.sclf-scan-progress-track {
+    position: relative;
+    width: 100%;
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.sclf-scan-progress-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 40%;
+    border-radius: 2px;
+    background: #fff;
+    animation: sclf-scan-slide 1.1s ease-in-out infinite;
+}
+
+@keyframes sclf-scan-slide {
+    0% { left: -40%; }
+    100% { left: 100%; }
+}
+
 .sclf-scan-result {
     padding-top: 4px;
 }

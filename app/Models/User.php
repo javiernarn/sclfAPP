@@ -11,6 +11,7 @@ use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class User extends Authenticatable
 {
@@ -148,6 +149,18 @@ class User extends Authenticatable
         return $this->hasMany(LostItem::class);
     }
 
+    /**
+     * Every FoundItem row with user_id = this account, regardless of how
+     * it was logged. For an online report this genuinely means "found and
+     * reported by this person" — but CounterIntakeService::checkIn() also
+     * stamps user_id with the *officer's* id (there's no independent
+     * finder in that flow), so on its own this relation over-counts a
+     * busy officer's counter check-ins as items they personally found.
+     * Callers that need "found items reported through the app" should
+     * scope this to intake_channel = FoundItem::CHANNEL_ONLINE_REPORT
+     * (see UserController::show()); callers that need "items checked in
+     * at the counter" should use counterCheckIns() above instead.
+     */
     public function foundItems()
     {
         return $this->hasMany(FoundItem::class, 'user_id');
@@ -161,6 +174,44 @@ class User extends Authenticatable
     public function reviewedClaims()
     {
         return $this->hasMany(Claim::class, 'reviewed_by');
+    }
+
+    /**
+     * Items this account checked in directly at a security counter for a
+     * known owner (CounterIntakeService::checkIn()). There's no separate
+     * "finder" in that flow — the officer standing at the counter is the
+     * one logging the record — so this is keyed on security_officer_id,
+     * not user_id (see the comment on foundItems() above for why user_id
+     * alone can't be trusted for this).
+     */
+    public function counterCheckIns()
+    {
+        return $this->hasMany(FoundItem::class, 'security_officer_id')
+            ->where('intake_channel', FoundItem::CHANNEL_COUNTER_INTAKE);
+    }
+
+    /**
+     * Items this account has physically handed over to a claimant, via
+     * either a QR scan (ItemReleaseService::scanAndRelease()) or a manual
+     * override (::manualRelease()) — both log an InventoryMovement with
+     * action=released and moved_by=the releasing officer, regardless of
+     * whether the original item came in through the counter or the full
+     * online report -> match -> claim pipeline.
+     */
+    public function itemsReleased()
+    {
+        return $this->hasMany(InventoryMovement::class, 'moved_by')
+            ->where('action', InventoryMovement::ACTION_RELEASED);
+    }
+
+    /**
+     * This account's registered Web Push subscriptions — one per
+     * browser/device that's granted notification permission. See
+     * PushSubscription and App\Notifications\Channels\WebPushChannel.
+     */
+    public function pushSubscriptions(): HasMany
+    {
+        return $this->hasMany(PushSubscription::class);
     }
 
     /**

@@ -82,7 +82,7 @@ const STEP_META = [
         title: <>How can we <span className="accent">reach you</span></>,
         subtitle: 'So we can notify you the moment someone finds your item.',
         railHeadline: 'A record only works if we can reach you.',
-        railNote: "Your contact details are used only for case updates — never shared outside the registrar's desk.",
+        railNote: "Your contact details are used only for case updates — never shared outside the SCLF office.",
     },
     {
         key: 'academic',

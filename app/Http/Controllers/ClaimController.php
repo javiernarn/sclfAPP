@@ -24,7 +24,7 @@ class ClaimController extends Controller
 
     public function index(Request $request)
     {
-        $query = Claim::with(['foundItem:id,item_name,category,image_path', 'claimant:id,name']);
+        $query = Claim::with(['foundItem:id,item_name,category,image_path,intake_channel', 'claimant:id,name']);
 
         // Students/instructor only ever see their own claims. Staff see everything,
         // scoped by their own status filter if provided.
@@ -164,6 +164,26 @@ class ClaimController extends Controller
                 'expires_at' => $result['qr_release']->expires_at,
             ],
         ], 201);
+    }
+
+    /**
+     * Manual override for when the claimant can't present their QR at all
+     * (lost phone, expired code) — requires a logged reason instead of a
+     * token. See ItemReleaseService::manualRelease().
+     */
+    public function manualRelease(Request $request, Claim $claim)
+    {
+        $this->authorize('generateRelease', $claim);
+
+        $request->validate(['reason' => 'required|string|max:500']);
+
+        $updated = $this->release->manualRelease($claim, $request->user(), $request->input('reason'));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Item manually released. Case closed.',
+            'data' => $updated,
+        ]);
     }
 
     public function regenerateRelease(Claim $claim)

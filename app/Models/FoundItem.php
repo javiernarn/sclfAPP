@@ -19,6 +19,10 @@ class FoundItem extends Model
     public const STATUS_RELEASE_PENDING = 'release_pending';
     public const STATUS_RELEASED = 'released';
 
+    // Where this record came from — see the intake_channel migration for why.
+    public const CHANNEL_ONLINE_REPORT = 'online_report';
+    public const CHANNEL_COUNTER_INTAKE = 'counter_intake';
+
     public const STATUSES = [
         self::STATUS_PENDING_REVIEW,
         self::STATUS_REJECTED,
@@ -45,6 +49,7 @@ class FoundItem extends Model
         'time_found',
         'image_path',
         'status',
+        'intake_channel',
         'verification_status',
         'verification_notes',
         'security_officer_id',

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { HelpCircle, X, LayoutDashboard, PackageSearch, Megaphone, ClipboardCheck, QrCode, Boxes, ShieldCheck, Users } from 'lucide-react';
+import { HelpCircle, X, LayoutDashboard, PackageSearch, Megaphone, ClipboardCheck, QrCode, Boxes, ShieldCheck, Users, PackageCheck } from 'lucide-react';
 import Tooltip from './Tooltip';
 
 // Short, plain-language tips per role — what each part of the sidebar is
@@ -14,7 +14,7 @@ const HINTS_BY_ROLE = {
             { icon: LayoutDashboard, label: 'Dashboard', text: 'A quick snapshot of your open reports and any claims waiting on you.' },
             { icon: PackageSearch, label: 'Lost & Found', text: "Lost something? File a report here. Found something? Report it so staff can log it in. You'll also see the browsable catalog of found items." },
             { icon: ClipboardCheck, label: 'Claims', text: 'Track the status of items you\'ve claimed — from "pending verification" to "ready for pickup."' },
-            { icon: Megaphone, label: 'Announcements', text: 'Campus-wide notices from the registrar\'s office, including matches to your reports.' },
+            { icon: Megaphone, label: 'Announcements', text: 'Campus-wide notices from the SCLF office, including matches to your reports.' },
         ],
         tip: 'Tip: keep your phone number and email accurate in your Profile — that\'s how staff reach you about a match.',
     },
@@ -34,11 +34,12 @@ const HINTS_BY_ROLE = {
         intro: "You're signed in as Security. Your job is verifying items and matching claims:",
         items: [
             { icon: LayoutDashboard, label: 'Dashboard', text: 'Overview of items awaiting verification and claims awaiting your review.' },
-            { icon: Boxes, label: 'Inventory', text: 'The physical log of everything currently held at the desk — what it is, where it\'s stored, and its verification status.' },
+            { icon: PackageCheck, label: 'Counter', text: 'For items handed to you in person by their own owner — like a bag-check desk. Look the person up by school ID, log the item, and a pickup pass is issued to them immediately. Use this instead of Inventory whenever you already know exactly whose item it is.' },
+            { icon: Boxes, label: 'Inventory', text: 'The physical log of everything currently held at the desk — what it is, where it\'s stored, and its verification status. Use this for items a stranger found and turned in, where the owner isn\'t known yet.' },
             { icon: QrCode, label: 'QR Scan / Verify', text: 'Scan an item\'s tag to pull up its record instantly instead of searching by hand.' },
             { icon: ClipboardCheck, label: 'Claims', text: 'Review a claimant\'s proof against the item on file, then approve or deny the release.' },
         ],
-        tip: 'Tip: always verify the claimant\'s ID and description details against the stored item before releasing it.',
+        tip: 'Tip: at the Counter, always confirm the person\'s face matches their photo on file before logging an item to their account.',
     },
     admin: {
         title: 'How SCLF works for you',

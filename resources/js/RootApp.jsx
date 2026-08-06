@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { publicRoutes, adminRoutes, securityRoutes, studentRoutes } from './routes';
 import MainPage from './Pages/Main/MainPage';
+import useServiceWorkerNavigation from './hooks/useServiceWorkerNavigation';
 
 function ProtectedRoute({ children, requiredRoles }) {
     const { user, roles, loading } = useAuth();
@@ -17,6 +18,10 @@ function ProtectedRoute({ children, requiredRoles }) {
 }
 
 export default function RootApp() {
+    // Lets tapping a background push notification jump straight to the
+    // relevant claim/match/item when SCLF is already open in another tab.
+    useServiceWorkerNavigation();
+
     return (
         // Suspense fallback covers the lazy-loaded SecurityQrScanner chunk
         // (see routes/index.js) — MainPage doubles as the loading screen

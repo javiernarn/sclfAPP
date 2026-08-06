@@ -5,7 +5,7 @@ import DashboardShell from '../../Components/shared/DashboardShell';
 import { useToast } from '../../context/ToastContext';
 import {
     Camera, Keyboard, Upload, CheckCircle2, XCircle, PackageCheck, User, IdCard,
-    Tag, Hash, RotateCcw,
+    Tag, Hash, RotateCcw, Loader2,
 } from 'lucide-react';
 import './SecurityQrScanner.css';
 
@@ -18,6 +18,38 @@ import './SecurityQrScanner.css';
 // even for a QR that scans perfectly with a camera.
 QrScanner._disableBarcodeDetector = true;
 
+// A decoded code doesn't get shown to the officer instantly — it steps
+// through these as a visible "working on it" sequence for at least
+// MIN_SCAN_MS before the release result appears, whether the release
+// itself came back a moment ago or is still in flight. Real backend work
+// (server verification) runs underneath this the whole time; the stages
+// are just how that wait is narrated rather than fake busywork on top of
+// an already-slow request.
+const SCAN_STAGES = [
+    'Reading QR pattern…',
+    'Matching release code…',
+    'Checking claim status…',
+    'Confirming with server…',
+];
+const MIN_SCAN_MS = 4000;
+const STAGE_MS = MIN_SCAN_MS / SCAN_STAGES.length;
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+function ScanningPanel({ stage }) {
+    return (
+        <div className="sclf-scan-progress">
+            <div className="sclf-scan-progress-icon">
+                <Loader2 size={20} className="sclf-scan-spin" />
+            </div>
+            <p className="sclf-scan-progress-text">{SCAN_STAGES[stage]}</p>
+            <div className="sclf-scan-progress-track">
+                <div className="sclf-scan-progress-fill" />
+            </div>
+        </div>
+    );
+}
+
 export default function SecurityQrScanner() {
     const [mode, setMode] = useState('camera'); // 'camera' | 'upload' | 'manual'
     const [publicCode, setPublicCode] = useState('');
@@ -29,6 +61,7 @@ export default function SecurityQrScanner() {
     const [uploadPreview, setUploadPreview] = useState(null);
     const [uploadError, setUploadError] = useState('');
     const [decoding, setDecoding] = useState(false);
+    const [scanStage, setScanStage] = useState(0);
     const toast = useToast();
 
     const videoRef = useRef(null);
@@ -36,12 +69,15 @@ export default function SecurityQrScanner() {
     const fileInputRef = useRef(null);
     const busyRef = useRef(false); // avoids stale-closure double-submits from the decode loop
     const resultRef = useRef(null); // same, for the "already have a result" guard
+    const stageTimerRef = useRef(null);
 
     useEffect(() => {
         document.title = "QR Release Scanner | SCLF - Opol Community College";
     }, []);
 
     useEffect(() => { resultRef.current = result; }, [result]);
+
+    useEffect(() => () => clearInterval(stageTimerRef.current), []);
 
     // ---- Camera lifecycle ----
     useEffect(() => {
@@ -87,16 +123,43 @@ export default function SecurityQrScanner() {
 
     const releaseByPayload = async (payload) => {
         setError(''); setBusy(true); busyRef.current = true;
+        setScanStage(0);
+        // Freeze the live camera view immediately so the officer sees the
+        // "working on it" panel over the code that was just read, instead
+        // of the feed continuing to hunt for the next code underneath it.
+        scannerRef.current?.stop();
+
+        // Step through the stage labels once every STAGE_MS, purely for
+        // display — the actual verification below runs independently of
+        // this timer.
+        let stage = 0;
+        stageTimerRef.current = setInterval(() => {
+            stage = Math.min(stage + 1, SCAN_STAGES.length - 1);
+            setScanStage(stage);
+        }, STAGE_MS);
+
+        const startedAt = Date.now();
         try {
-            const res = await axios.post('/qr/scan', { payload });
+            // Whichever takes longer wins: a fast server response still
+            // waits out the minimum stage sequence, and a slow one is
+            // never cut short by it.
+            const [res] = await Promise.all([
+                axios.post('/qr/scan', { payload }),
+                sleep(MIN_SCAN_MS),
+            ]);
             setResult(res.data.data);
             toast.success(res.data?.message || 'Item released successfully.', { title: 'Release confirmed' });
-            scannerRef.current?.stop();
         } catch (err) {
+            // A rejected request resolves as soon as the server responds,
+            // so top up the remaining time ourselves — an error shouldn't
+            // flash past the scanning panel any faster than a success would.
+            const elapsed = Date.now() - startedAt;
+            if (elapsed < MIN_SCAN_MS) await sleep(MIN_SCAN_MS - elapsed);
             const message = err?.response?.data?.message || Object.values(err?.response?.data?.errors || {}).flat().join(' ') || 'Could not release item.';
             setError(message);
             toast.error(message, { title: 'Could not release item' });
         } finally {
+            clearInterval(stageTimerRef.current);
             setBusy(false); busyRef.current = false;
         }
     };
@@ -125,6 +188,11 @@ export default function SecurityQrScanner() {
             return;
         }
 
+        // Revoke any previous preview's blob: URL before creating a new
+        // one — picking a second image (e.g. after a failed decode) used
+        // to leave the first preview's URL permanently pinned in memory,
+        // since only unmounting/leaving upload mode ever revoked it.
+        if (uploadPreview) URL.revokeObjectURL(uploadPreview);
         const previewUrl = URL.createObjectURL(file);
         setUploadPreview(previewUrl);
         setDecoding(true);
@@ -227,11 +295,16 @@ export default function SecurityQrScanner() {
                     <div className="sclf-scan-camera">
                         <div className="sclf-scan-video-wrap">
                             <video ref={videoRef} className="sclf-scan-video" muted playsInline />
+                            {busy && (
+                                <div className="sclf-scan-overlay">
+                                    <ScanningPanel stage={scanStage} />
+                                </div>
+                            )}
                         </div>
                         {cameraError && <div className="ds-error" style={{ marginTop: 12 }}>{cameraError}</div>}
-                        {!cameraError && (
+                        {!cameraError && !busy && (
                             <p className="ds-list-item-meta" style={{ textAlign: 'center', marginTop: 10 }}>
-                                {busy ? 'Verifying…' : "Point the camera at the student's release QR."}
+                                Point the camera at the student's release QR.
                             </p>
                         )}
                     </div>
@@ -246,7 +319,7 @@ export default function SecurityQrScanner() {
                             onChange={handleImageChange}
                             style={{ display: 'none' }}
                         />
-                        <div className="sclf-scan-video-wrap sclf-scan-upload-wrap" onClick={handlePickImage} role="button" tabIndex={0}>
+                        <div className={`sclf-scan-video-wrap sclf-scan-upload-wrap ${busy ? 'is-busy' : ''}`} onClick={!busy ? handlePickImage : undefined} role="button" tabIndex={0}>
                             {uploadPreview ? (
                                 <img src={uploadPreview} alt="Uploaded QR" className="sclf-scan-video" style={{ objectFit: 'contain', background: '#0d1024' }} />
                             ) : (
@@ -255,16 +328,21 @@ export default function SecurityQrScanner() {
                                     <span>Click to choose a QR code image</span>
                                 </div>
                             )}
+                            {busy && (
+                                <div className="sclf-scan-overlay">
+                                    <ScanningPanel stage={scanStage} />
+                                </div>
+                            )}
                         </div>
                         <p className="ds-list-item-meta" style={{ textAlign: 'center', marginTop: 10 }}>
                             {decoding
                                 ? 'Reading the QR code…'
                                 : busy
-                                    ? 'Verifying…'
+                                    ? ' '
                                     : "Best for a laptop with no camera — upload a screenshot or saved photo of the student's release QR. On the phone at deployment, use \"Scan with Camera\" instead."}
                         </p>
                         {uploadError && <div className="ds-error" style={{ marginTop: 12 }}>{uploadError}</div>}
-                        {uploadPreview && !decoding && (
+                        {uploadPreview && !decoding && !busy && (
                             <button type="button" className="ds-btn ds-btn-secondary" style={{ marginTop: 10 }} onClick={handlePickImage}>
                                 Choose a different image
                             </button>
@@ -353,9 +431,12 @@ async function decodeImageClientSide(file) {
 // Fallback for when the browser decoder gives up: sends the raw file to
 // the server, which reads it with a full ZXing-ported PHP decoder — far
 // more tolerant of screenshots, recompression, and our styled dots than
-// the lightweight JS decoder. Throws (via axios) if the server also
-// can't find a code, which the caller treats the same as a client-side
-// failure.
+// the lightweight JS decoder. Throws on failure so the caller's catch
+// block (which shows "Could not find a QR code in that image.") actually
+// runs — this used to swallow the error silently instead, which meant a
+// failed server decode still fell through to releaseByPayload(undefined),
+// sending a blank payload to /qr/scan and surfacing a confusing generic
+// 422 instead of the correct "couldn't read this image" message.
 async function decodeImageServerSide(file) {
     const form = new FormData();
     form.append('image', file);
@@ -363,12 +444,8 @@ async function decodeImageServerSide(file) {
     // the multipart boundary itself. Setting 'multipart/form-data'
     // by hand strips that boundary, so Laravel can't parse the upload
     // at all and just sees a missing "image" field -> 422.
-    try {
-        const res = await axios.post('/qr/decode-image', form, { silent: true });
-        return res.data.payload;
-    } catch (err) {
-      
-    }
+    const res = await axios.post('/qr/decode-image', form, { silent: true });
+    return res.data.payload;
 }
 
 // Redraws an image file onto a canvas at N× its natural size. Used as a
@@ -376,10 +453,21 @@ async function decodeImageServerSide(file) {
 // screenshots can leave individual QR modules too tiny for the decoder
 // to binarize cleanly, and a scaled-up canvas gives it more pixels per
 // module to work with.
+//
+// Every call creates a blob: URL via URL.createObjectURL() to feed the
+// <img> element. That URL has to be revoked once the image has loaded —
+// otherwise the browser keeps the full decoded image bitmap pinned in
+// memory for the rest of the page's life, not just for this one decode
+// attempt. On a scanner page a security officer might use for dozens of
+// uploads in one shift, that's a steadily growing memory leak (this is
+// almost certainly the "possible memory leak" from scanning/uploading
+// QR images). Revoke it in both the success and error paths.
 function upscaleImageFile(file, factor) {
     return new Promise((resolve, reject) => {
         const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
         img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
             const canvas = document.createElement('canvas');
             canvas.width = img.naturalWidth * factor;
             canvas.height = img.naturalHeight * factor;
@@ -388,7 +476,10 @@ function upscaleImageFile(file, factor) {
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             resolve(canvas);
         };
-        img.onerror = reject;
-        img.src = URL.createObjectURL(file);
+        img.onerror = (err) => {
+            URL.revokeObjectURL(objectUrl);
+            reject(err);
+        };
+        img.src = objectUrl;
     });
 }

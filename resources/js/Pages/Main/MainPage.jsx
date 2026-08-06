@@ -27,6 +27,25 @@ const MainPage = () => {
                 navigate("/login", { replace: true });
                 return;
             }
+
+            // A notification email's "Login to View" button stashes the
+            // page it actually pointed at (a specific claim, match, found
+            // item, or the Notifications list) before bouncing through
+            // /login — honor that once instead of dropping the person on
+            // their generic role dashboard, then clear it so it's a
+            // one-time hop and not sticky across future logins.
+            try {
+                const redirect = window.sessionStorage.getItem("sclf-post-login-redirect");
+                if (redirect) {
+                    window.sessionStorage.removeItem("sclf-post-login-redirect");
+                    navigate(redirect, { replace: true });
+                    return;
+                }
+            } catch (e) {
+                // ignore storage errors (private mode etc.) — falls through
+                // to the normal role-based landing below.
+            }
+
             if (roles?.includes("admin")) {
                 navigate("/admin/dashboard", { replace: true });
                 return;
@@ -50,21 +69,21 @@ const MainPage = () => {
                     --mp-accent-3: #7c3aed;
                 }
                 .mp-wrapper {
-                    min-height: 100vh;
-                    min-height: 100dvh;
+                    height: 100vh;
+                    height: 100dvh;
                     width: 100%;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
                     position: relative;
-                    overflow-x: hidden;
+                    overflow: hidden;
                     transition: background 0.4s ease, color 0.4s ease;
                     font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto,
                         "Helvetica Neue", Arial, sans-serif;
-                    padding: 24px 16px;
-                    padding-top: max(24px, env(safe-area-inset-top));
-                    padding-bottom: max(24px, env(safe-area-inset-bottom));
+                    padding: clamp(10px, 3vh, 24px) 16px;
+                    padding-top: max(clamp(10px, 3vh, 24px), env(safe-area-inset-top));
+                    padding-bottom: max(clamp(10px, 3vh, 24px), env(safe-area-inset-bottom));
                     box-sizing: border-box;
                 }
                 .mp-wrapper, .mp-wrapper * { box-sizing: border-box; }
@@ -104,10 +123,12 @@ const MainPage = () => {
                     flex-direction: column;
                     align-items: center;
                     text-align: center;
-                    padding: clamp(32px, 6vw, 48px) clamp(20px, 6vw, 40px);
+                    padding: clamp(14px, 5vh, 48px) clamp(20px, 6vw, 40px);
                     border-radius: 26px;
                     max-width: 420px;
+                    max-height: 100%;
                     width: 100%;
+                    overflow: hidden;
                     animation: mp-fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
                 }
                 .mp-wrapper.light .mp-card {
@@ -128,7 +149,7 @@ const MainPage = () => {
                     display: inline-flex; align-items: center; gap: 8px;
                     flex-shrink: 0;
                     white-space: nowrap;
-                    padding: 6px 14px;
+                    padding: clamp(4px, 1vh, 6px) 14px;
                     border-radius: 999px;
                     font-size: 11px;
                     font-weight: 700;
@@ -137,7 +158,7 @@ const MainPage = () => {
                     background: rgba(79, 70, 229, 0.10);
                     border: 1px solid rgba(79, 70, 229, 0.28);
                     color: var(--mp-accent);
-                    margin: 0 0 24px;
+                    margin: 0 0 clamp(8px, 2.5vh, 24px);
                 }
                 .mp-chip .pulse {
                     width: 8px; height: 8px; border-radius: 50%;
@@ -150,15 +171,15 @@ const MainPage = () => {
                     50%     { box-shadow: 0 0 0 10px rgba(34,197,94,0); }
                 }
                 .mp-logo-wrap {
-                    width: clamp(96px, 26vw, 140px);
-                    height: clamp(96px, 26vw, 140px);
+                    width: clamp(56px, min(26vw, 20vh), 140px);
+                    height: clamp(56px, min(26vw, 20vh), 140px);
                     flex-shrink: 0;
-                    margin: 0 0 22px;
+                    margin: 0 0 clamp(8px, 2.5vh, 22px);
                     border-radius: 32px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    padding: 18px;
+                    padding: clamp(8px, 2.5vh, 18px);
                     position: relative;
                     background: linear-gradient(135deg,
                         rgba(79, 70, 229, 0.12),
@@ -195,10 +216,10 @@ const MainPage = () => {
                     50%     { opacity: 0.55; }
                 }
                 .mp-title {
-                    font-size: clamp(21px, 6vw, 28px);
+                    font-size: clamp(16px, min(6vw, 5vh), 28px);
                     font-weight: 800;
                     letter-spacing: -0.01em;
-                    margin: 0 0 6px;
+                    margin: 0 0 clamp(2px, 1vh, 6px);
                     color: inherit;
                     width: 100%;
                 }
@@ -208,8 +229,8 @@ const MainPage = () => {
                     -webkit-text-fill-color: transparent; color: transparent;
                 }
                 .mp-sub {
-                    margin: 0 0 28px;
-                    font-size: 13.5px;
+                    margin: 0 0 clamp(10px, 3.5vh, 28px);
+                    font-size: clamp(11.5px, 2vh, 13.5px);
                     opacity: 0.75;
                     color: inherit;
                     width: 100%;
@@ -217,11 +238,11 @@ const MainPage = () => {
                 .mp-loader {
                     position: relative;
                     width: 100%;
-                    height: 6px;
+                    height: clamp(4px, 1vh, 6px);
                     border-radius: 4px;
                     overflow: hidden;
                     background: rgba(148, 163, 184, 0.18);
-                    margin-bottom: 12px;
+                    margin-bottom: clamp(6px, 1.5vh, 12px);
                 }
                 .mp-loader::before {
                     content: "";

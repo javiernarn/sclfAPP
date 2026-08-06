@@ -3,6 +3,8 @@ import axios from '../../config/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import Tooltip from '../../Components/shared/Tooltip';
+import ViewToggle from '../../Components/shared/ViewToggle';
+import useViewMode from '../../hooks/useViewMode';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm, useDiscardConfirm } from '../../context/ConfirmContext';
 import { useAuth } from '../../context/AuthContext';
@@ -51,6 +53,7 @@ export default function AdminUsers() {
     const [busy, setBusy] = useState(false);
     const [busyUserId, setBusyUserId] = useState(null);
     const [showDisabled, setShowDisabled] = useState(false);
+    const [view, setView] = useViewMode('admin-users');
     const toast = useToast();
     const confirm = useConfirm();
     const discardConfirm = useDiscardConfirm();
@@ -420,24 +423,26 @@ export default function AdminUsers() {
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
                             <label htmlFor="first_name">First Name <span className="ds-required">*</span></label>
-                            <input id="first_name" name="first_name" value={form.first_name} onChange={handleChange} required />
+                            <input id="first_name" name="first_name" placeholder="e.g. Jessa" value={form.first_name} onChange={handleChange} required />
                         </div>
                         <div className="ds-field">
                             <label htmlFor="last_name">Last Name <span className="ds-required">*</span></label>
-                            <input id="last_name" name="last_name" value={form.last_name} onChange={handleChange} required />
+                            <input id="last_name" name="last_name" placeholder="e.g. Ramirez" value={form.last_name} onChange={handleChange} required />
                         </div>
                     </div>
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
                             <label htmlFor="email">Email <span className="ds-required">*</span></label>
-                            <input type="email" id="email" name="email" value={form.email} onChange={handleChange} onBlur={() => handleBlurCheck('email')} required
+                            <input type="email" id="email" name="email" placeholder="name@opol-cc.edu.ph" value={form.email} onChange={handleChange} onBlur={() => handleBlurCheck('email')} required
                                 aria-invalid={!!fieldErrors.email} />
+                            <p className="ds-field-hint">Must be unique across the whole system — this is also their login and where password resets are sent.</p>
                             {fieldErrors.email && <div className="ds-field-error">{fieldErrors.email}</div>}
                         </div>
                         <div className="ds-field">
                             <label htmlFor="password">Temporary Password <span className="ds-required">*</span></label>
-                            <input type="text" id="password" name="password" value={form.password} onChange={handleChange} minLength={8} required
+                            <input type="text" id="password" name="password" placeholder="8+ characters" value={form.password} onChange={handleChange} minLength={8} required
                                 aria-invalid={!!fieldErrors.password} />
+                            <p className="ds-field-hint">Share this with them directly — they can change it themselves afterward from their Profile page.</p>
                             {fieldErrors.password && <div className="ds-field-error">{fieldErrors.password}</div>}
                         </div>
                     </div>
@@ -478,6 +483,7 @@ export default function AdminUsers() {
                                 aria-invalid={!!fieldErrors.phone_number}
                                 title={FORMAT_HINTS.phone}
                             />
+                            <p className="ds-field-hint">Philippine mobile format, 11 digits starting with 09 — optional, but useful for urgent contact.</p>
                             {fieldErrors.phone_number && <div className="ds-field-error">{fieldErrors.phone_number}</div>}
                         </div>
                     </div>
@@ -495,13 +501,109 @@ export default function AdminUsers() {
             <div className="ds-card">
                 <div className="ds-list-item-headrow" style={{ marginBottom: 14 }}>
                     <h3 style={{ margin: 0 }}>All Users</h3>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                        <input type="checkbox" checked={showDisabled} onChange={(e) => setShowDisabled(e.target.checked)} />
-                        Show disabled accounts only
-                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
+                            <input type="checkbox" checked={showDisabled} onChange={(e) => setShowDisabled(e.target.checked)} />
+                            Show disabled accounts only
+                        </label>
+                        <ViewToggle mode={view} onChange={setView} />
+                    </div>
                 </div>
                 {loading && <div className="ds-skeleton" />}
-                {!loading && (
+
+                {!loading && view === 'table' && (
+                    <div className="ds-table-wrap">
+                        <table className="ds-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>ID</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.map(u => {
+                                    const isSelf = currentUser?.id === u.id;
+                                    const initials = (u.name || '?')
+                                        .split(' ').filter(Boolean).slice(0, 2)
+                                        .map((p) => p[0]?.toUpperCase()).join('');
+                                    return (
+                                        <tr key={u.id}>
+                                            <td>
+                                                <div className="ds-table-cell-main">
+                                                    <span
+                                                        className="ds-avatar"
+                                                        style={{
+                                                            width: 32, height: 32, fontSize: 12, borderRadius: 10, flexShrink: 0,
+                                                            backgroundImage: u.profile_picture_url ? `url(${u.profile_picture_url})` : undefined,
+                                                            backgroundSize: 'cover', backgroundPosition: 'center',
+                                                        }}
+                                                    >
+                                                        {!u.profile_picture_url && initials}
+                                                    </span>
+                                                    <span className="ds-table-title">
+                                                        {u.name}
+                                                        {isSelf && <span className="ds-badge ds-badge-default" style={{ marginLeft: 8 }}>You</span>}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="ds-table-nowrap">{u.email}</td>
+                                            <td className="ds-table-nowrap">{u.roles?.map(r => r.name).join(', ') || 'no role'}</td>
+                                            <td className="ds-table-nowrap">{u.display_id || '—'}</td>
+                                            <td>
+                                                {!u.is_active
+                                                    ? <span className="ds-badge ds-badge-default">Disabled</span>
+                                                    : u.deleted_at
+                                                        ? <span className="ds-badge ds-badge-default">Archived</span>
+                                                        : <span className="ds-badge ds-badge-found">Active</span>}
+                                            </td>
+                                            <td>
+                                                <div className="ds-table-actions">
+                                                    <Tooltip label="View this account's full profile and login/logout history">
+                                                        <button
+                                                            type="button"
+                                                            className="ds-btn ds-btn-secondary ds-btn-sm"
+                                                            onClick={() => navigate(`/admin/users/${u.id}`)}
+                                                        >
+                                                            <IdCard size={13} />
+                                                        </button>
+                                                    </Tooltip>
+                                                    <Tooltip label="Edit name, email, phone, role, or reset the password">
+                                                        <button
+                                                            type="button"
+                                                            className="ds-btn ds-btn-edit ds-btn-sm"
+                                                            onClick={() => openEdit(u)}
+                                                        >
+                                                            <Pencil size={13} />
+                                                        </button>
+                                                    </Tooltip>
+                                                    {isSelf ? (
+                                                        <Tooltip label="You can't disable your own account — ask another admin if you need this account disabled">
+                                                            <span className="ds-badge ds-badge-default">This is you</span>
+                                                        </Tooltip>
+                                                    ) : u.is_active ? (
+                                                        <Tooltip label="Signs them out and blocks login; their history is kept">
+                                                            <button className="ds-btn ds-btn-danger ds-btn-sm" disabled={busyUserId === u.id} onClick={() => disable(u.id, u.name)}>Disable</button>
+                                                        </Tooltip>
+                                                    ) : (
+                                                        <Tooltip label="Restores login access immediately">
+                                                            <button className="ds-btn ds-btn-success ds-btn-sm" disabled={busyUserId === u.id} onClick={() => enable(u.id, u.name)}>Enable</button>
+                                                        </Tooltip>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {!loading && view === 'cards' && (
                     <ul className="ds-list">
                         {users.map(u => {
                             const isSelf = currentUser?.id === u.id;

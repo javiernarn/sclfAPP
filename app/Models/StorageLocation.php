@@ -6,8 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 
 class StorageLocation extends Model
 {
+    // 'storage' = the original Room/Cabinet/Shelf/Box shelving.
+    // 'counter' = a front-desk spot for items checked in with a known
+    // owner, expected back same-day (see CounterIntakeService).
+    public const TYPE_STORAGE = 'storage';
+    public const TYPE_COUNTER = 'counter';
+
     protected $fillable = [
-        'campus_id', 'building_id', 'room', 'cabinet', 'shelf', 'box', 'code', 'is_active', 'created_by',
+        'campus_id', 'building_id', 'type', 'label', 'room', 'cabinet', 'shelf', 'box', 'code', 'is_active', 'created_by',
     ];
 
     protected $casts = [

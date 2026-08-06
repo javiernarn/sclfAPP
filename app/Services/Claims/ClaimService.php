@@ -24,6 +24,19 @@ class ClaimService
 
     public function submit(User $claimant, FoundItem $foundItem, array $data): Claim
     {
+        // Counter check-ins already have a confirmed owner — security
+        // verified their identity in person at hand-off, and an approved
+        // claim was created for them immediately (see
+        // CounterIntakeService::checkIn). Unlike a normal found item —
+        // where multiple people can legitimately dispute ownership and
+        // security compares evidence to decide — there's no ambiguity
+        // here, so a claim from anyone else is never legitimate.
+        if ($foundItem->intake_channel === FoundItem::CHANNEL_COUNTER_INTAKE) {
+            throw ValidationException::withMessages([
+                'found_item' => ['This item was checked in directly for its owner at the counter and is not open for claims.'],
+            ]);
+        }
+
         // A finder can't claim the very item they turned in — reporting a
         // found item and then "claiming" it back would let someone bypass
         // the whole verification process. This mirrors the button already

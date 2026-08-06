@@ -3,6 +3,7 @@ import secureLocalStorage from 'react-secure-storage';
 import { BASE_URL } from './constant';
 import { showToast } from '../utils/eventBus';
 import { humanizeValidationErrors } from '../utils/validators';
+import { disablePush } from '../utils/push';
 
 const SESSION_KEY = 'sclf_access_token';
 
@@ -22,6 +23,14 @@ instance.interceptors.response.use(
 
         if (statusCode === 401 && !error.config?.skipAuthRedirect) {
             clearStoredToken();
+            // Browser-side only (no server call — the token that would
+            // authenticate a /push/unsubscribe request is exactly what
+            // just got rejected). Covers a session that simply expires
+            // on a shared device without anyone explicitly logging out;
+            // the leftover server-side row still self-heals via
+            // WebPushChannel's 404/410 pruning, or gets reconciled the
+            // moment someone next logs in on this browser.
+            disablePush().catch(() => {});
             showToast({ type: 'warning', title: 'Session expired', message: 'Please sign in again to continue.' });
             window.location.href = `/login?type=session-expired`;
             return Promise.reject(error);

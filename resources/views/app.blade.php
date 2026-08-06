@@ -15,8 +15,18 @@
 
     <!-- Title / SEO -->
     <title>SCLF - Opol Community College</title>
-    <meta name="description" content="Smart Campus Lost & Found system for Opol Community College.">
+    <meta name="description" content="Smart Campus Lost & Found system for Opol Community College. Report, search, and claim lost or found items on campus.">
     <meta name="application-name" content="SCLF - Opol Community College">
+    <meta name="keywords" content="SCLF, Opol Community College, Lost and Found, OCC Lost and Found, Campus Lost and Found">
+    <link rel="canonical" href="{{ url()->current() }}">
+
+    <!-- Open Graph / social preview -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SCLF - Opol Community College">
+    <meta property="og:title" content="SCLF - Opol Community College">
+    <meta property="og:description" content="Smart Campus Lost & Found system for Opol Community College.">
+    <meta property="og:image" content="{{ asset('images/site-logo.png') }}">
+    <meta property="og:url" content="{{ url()->current() }}">
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/site-logo.png') }}">

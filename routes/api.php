@@ -6,10 +6,13 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\ClaimController;
+use App\Http\Controllers\CounterController;
 use App\Http\Controllers\FoundItemController;
+use App\Http\Controllers\HistoryController;
 use App\Http\Controllers\LostItemController;
 use App\Http\Controllers\MatchController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PushController;
 use App\Http\Controllers\QrController;
 use App\Http\Controllers\StorageLocationController;
 use Illuminate\Support\Facades\Route;
@@ -70,6 +73,12 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 
+    // Web Push — OS-level notifications outside the browser/PWA. See
+    // PushController, WebPushChannel, and public/sw.js.
+    Route::get('/push/status', [PushController::class, 'status']);
+    Route::post('/push/subscribe', [PushController::class, 'subscribe']);
+    Route::post('/push/unsubscribe', [PushController::class, 'unsubscribe']);
+
     // Reference data for forms/dropdowns
     Route::get('/campuses', [\App\Http\Controllers\ReferenceDataController::class, 'campuses']);
     Route::get('/buildings', [\App\Http\Controllers\ReferenceDataController::class, 'buildings']);
@@ -87,6 +96,16 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::patch('/claims/{claim}/review', [ClaimController::class, 'review']);
         Route::post('/claims/{claim}/generate-release', [ClaimController::class, 'generateRelease']);
         Route::post('/claims/{claim}/regenerate-release', [ClaimController::class, 'regenerateRelease']);
+        // Fallback when a student can't show their QR (lost phone, expired
+        // code) — officer identity + a required reason stand in for the
+        // token check. See ItemReleaseService::manualRelease().
+        Route::post('/claims/{claim}/manual-release', [ClaimController::class, 'manualRelease']);
+
+        // Counter — walk-in item check-in for a known owner (see
+        // CounterIntakeService). Search is its own throttle since it's a
+        // student-directory lookup, not tied to a specific record.
+        Route::middleware('throttle:60,1')->get('/counter/owners', [CounterController::class, 'searchOwners']);
+        Route::post('/counter/check-in', [CounterController::class, 'checkIn']);
 
         // Throttled separately from the rest of the security group — this is
         // the actual point where an item leaves the building, and a camera
@@ -98,6 +117,14 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         // plain payload scan.
         Route::middleware('throttle:20,1')->post('/qr/decode-image', [QrController::class, 'decodeImage']);
         Route::post('/qr/{qrRelease}/revoke', [QrController::class, 'revoke']);
+
+        // History — read-only. Counter release history (CounterIntakeService
+        // + ItemReleaseService, scoped to counter check-ins) and Lost &
+        // Found release history (the full claim pipeline's release step,
+        // any intake channel). See HistoryController for how release
+        // method (qr_scan vs manual) is derived from the audit trail.
+        Route::get('/history/counter-releases', [HistoryController::class, 'counterReleases']);
+        Route::get('/history/lost-found-releases', [HistoryController::class, 'releases']);
 
         Route::get('/analytics/overview', [AnalyticsController::class, 'overview']);
         Route::get('/analytics/categories', [AnalyticsController::class, 'categories']);
@@ -126,7 +153,7 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
         Route::put('/admin/users/{user}', [AdminUserController::class, 'update']);
         Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
         Route::post('/admin/users/{id}/restore', [AdminUserController::class, 'restore']);
-
+        // audit log
         Route::get('/audit-logs', [AuditLogController::class, 'index']);
     });
 });

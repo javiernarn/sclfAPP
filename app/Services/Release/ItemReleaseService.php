@@ -25,15 +25,35 @@ class ItemReleaseService
      * returned once (to encode into the QR image on the frontend) and
      * only its hash is persisted.
      */
-    public function generate(Claim $claim, User $officer): array
-    {
-        if ($claim->status !== Claim::STATUS_APPROVED) {
-            throw ValidationException::withMessages([
-                'status' => ['A release QR can only be generated for an approved claim.'],
-            ]);
-        }
+    /**
+     * `notifyTitle`/`notifyMessage` let a caller override the claimant
+     * notification copy for contexts where the default "ready for
+     * pickup" wording doesn't fit — e.g. CounterIntakeService, where the
+     * item was just handed over seconds ago rather than released from
+     * review. Defaults preserve the original wording for every other caller.
+     */
+    public function generate(
+        Claim $claim,
+        User $officer,
+        ?string $notifyTitle = null,
+        ?string $notifyMessage = null,
+    ): array {
+        return DB::transaction(function () use ($claim, $officer, $notifyTitle, $notifyMessage) {
+            // Re-read and lock the claim row inside the transaction rather
+            // than trusting the $claim instance the caller already has —
+            // two "Generate release" taps arriving milliseconds apart both
+            // see status===approved on a stale in-memory copy otherwise,
+            // and both proceed to create a QrRelease row (the second only
+            // fails with a raw DB unique-constraint error on public_code,
+            // not the friendly validation message below).
+            $claim = Claim::where('id', $claim->id)->lockForUpdate()->first();
 
-        return DB::transaction(function () use ($claim, $officer) {
+            if ($claim->status !== Claim::STATUS_APPROVED) {
+                throw ValidationException::withMessages([
+                    'status' => ['A release QR can only be generated for an approved claim.'],
+                ]);
+            }
+
             $rawToken = QrRelease::generateRawToken();
             $publicCode = 'SCLF-ITEM-' . str_pad((string) $claim->found_item_id, 6, '0', STR_PAD_LEFT);
 
@@ -53,8 +73,8 @@ class ItemReleaseService
 
             $claim->claimant?->notify(new SclfNotification(
                 SclfNotification::TYPE_ITEM_READY_FOR_RELEASE,
-                'Item ready for release',
-                "Your item is ready for pickup. Present code {$publicCode} to Security, or download your release QR from this claim.",
+                $notifyTitle ?? 'Item ready for release',
+                $notifyMessage ?? "Your item is ready for pickup. Present code {$publicCode} to Security, or download your release QR from this claim.",
                 Claim::class,
                 $claim->id,
             ));
@@ -172,36 +192,48 @@ class ItemReleaseService
      */
     public function scanAndRelease(string $publicCode, string $rawToken, User $officer): QrRelease
     {
-        $qr = QrRelease::where('public_code', $publicCode)->first();
+        // Everything — including the very first read of the QR row — has
+        // to happen inside one locked transaction. Two officers (or one
+        // officer double-tapping / two devices on the same code) can hit
+        // this method within milliseconds of each other; if the "already
+        // used?" check and the "mark used" write aren't atomic, both
+        // requests can pass the check before either writes STATUS_USED,
+        // and the item gets released twice (two InventoryMovement rows,
+        // two notifications, a claim that's already terminal). A plain
+        // ->first() outside the transaction, like this used to do, does
+        // not protect against that — SELECT ... FOR UPDATE (lockForUpdate)
+        // does, because the second request blocks until the first
+        // request's transaction commits, then re-reads the now-USED row.
+        return DB::transaction(function () use ($publicCode, $rawToken, $officer) {
+            $qr = QrRelease::where('public_code', $publicCode)->lockForUpdate()->first();
 
-        if (!$qr) {
-            throw ValidationException::withMessages(['qr' => ['Unrecognized release code.']]);
-        }
+            if (!$qr) {
+                throw ValidationException::withMessages(['qr' => ['Unrecognized release code.']]);
+            }
 
-        if (!$qr->verifyToken($rawToken)) {
-            throw ValidationException::withMessages(['qr' => ['Invalid release token.']]);
-        }
+            if (!$qr->verifyToken($rawToken)) {
+                throw ValidationException::withMessages(['qr' => ['Invalid release token.']]);
+            }
 
-        if ($qr->status === QrRelease::STATUS_USED) {
-            throw ValidationException::withMessages(['qr' => ['This release code has already been used.']]);
-        }
+            if ($qr->status === QrRelease::STATUS_USED) {
+                throw ValidationException::withMessages(['qr' => ['This release code has already been used.']]);
+            }
 
-        if ($qr->status === QrRelease::STATUS_REVOKED) {
-            throw ValidationException::withMessages(['qr' => ['This release code has been revoked.']]);
-        }
+            if ($qr->status === QrRelease::STATUS_REVOKED) {
+                throw ValidationException::withMessages(['qr' => ['This release code has been revoked.']]);
+            }
 
-        if ($qr->expires_at->isPast()) {
-            $qr->update(['status' => QrRelease::STATUS_EXPIRED]);
-            throw ValidationException::withMessages(['qr' => ['This release code has expired.']]);
-        }
+            if ($qr->expires_at->isPast()) {
+                $qr->update(['status' => QrRelease::STATUS_EXPIRED]);
+                throw ValidationException::withMessages(['qr' => ['This release code has expired.']]);
+            }
 
-        $claim = $qr->claim;
+            $claim = $qr->claim()->lockForUpdate()->first();
 
-        if ($claim->status !== Claim::STATUS_RELEASE_PENDING) {
-            throw ValidationException::withMessages(['qr' => ['Claim is not in a releasable state.']]);
-        }
+            if ($claim->status !== Claim::STATUS_RELEASE_PENDING) {
+                throw ValidationException::withMessages(['qr' => ['Claim is not in a releasable state.']]);
+            }
 
-        return DB::transaction(function () use ($qr, $claim, $officer) {
             $qr->update([
                 'status' => QrRelease::STATUS_USED,
                 'scanned_by' => $officer->id,
@@ -226,6 +258,48 @@ class ItemReleaseService
             $this->audit->log('item.released', $claim->foundItem, "Found item #{$claim->found_item_id} released. Case closed.");
 
             return $qr->fresh();
+        });
+    }
+
+    /**
+     * Fallback for when the QR/token is genuinely unusable (lost phone,
+     * expired code, etc.) and the officer needs to hand the item over
+     * anyway. Unlike scanAndRelease(), this never checks a token — the
+     * officer's identity + a mandatory reason are the audit trail instead.
+     * Deliberately not exposed to any bulk/automated path; one claim at a time.
+     */
+    public function manualRelease(Claim $claim, User $officer, string $reason): Claim
+    {
+        return DB::transaction(function () use ($claim, $officer, $reason) {
+            $claim = Claim::where('id', $claim->id)->lockForUpdate()->first();
+
+            if ($claim->status !== Claim::STATUS_RELEASE_PENDING) {
+                throw ValidationException::withMessages([
+                    'status' => ['Only a claim awaiting release can be manually released.'],
+                ]);
+            }
+
+            if ($qr = $claim->qrRelease) {
+                $qr->update(['status' => QrRelease::STATUS_USED, 'scanned_by' => $officer->id, 'scanned_at' => now()]);
+            }
+
+            InventoryMovement::create([
+                'found_item_id' => $claim->found_item_id,
+                'storage_location_id' => $claim->foundItem->storage_location_id,
+                'moved_by' => $officer->id,
+                'action' => InventoryMovement::ACTION_RELEASED,
+                'notes' => "Manually released to claimant #{$claim->claimant_id} without QR scan. Reason: {$reason}",
+            ]);
+
+            $this->claims->transition($claim, Claim::STATUS_RELEASED, $officer, "Manually released without QR. Reason: {$reason}");
+
+            if ($claim->lostItem) {
+                $claim->lostItem->update(['status' => \App\Models\LostItem::STATUS_CLOSED]);
+            }
+
+            $this->audit->log('claim.manual_release', $claim, "Claim #{$claim->id} manually released by officer #{$officer->id} without a QR scan. Reason: {$reason}");
+
+            return $claim->fresh();
         });
     }
 
