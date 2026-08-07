@@ -18,9 +18,16 @@ use App\Http\Controllers\StorageLocationController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes — no login required
-Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/check-availability', [AuthController::class, 'checkAvailability']);
+
+// Throttled separately from login: registration and the availability probe
+// are both unauthenticated and repeatable, so without a limit either one
+// can be hammered for account-creation spam or used to enumerate which
+// emails/phones/student IDs are already registered (checkAvailability
+// doesn't reveal *whose* account it is, but an attacker can still brute
+// force through the whole ID space if nothing throttles the requests).
+Route::middleware('throttle:5,60')->post('/register', [AuthController::class, 'register']);
+Route::middleware('throttle:20,1')->post('/check-availability', [AuthController::class, 'checkAvailability']);
 
 
 // Password recovery — intentionally separate from AuthController/login,

@@ -66,11 +66,20 @@ export function AuthProvider({ children }) {
 
     // Accepts either a plain object or a FormData instance (FormData is
     // required when a profile picture file is attached).
+    //
+    // silent: true — same reason as login() above. RegisterPage owns its
+    // own error handling (per-field highlighting, which wizard step to
+    // send them back to, a tailored message for a throttled 429) and
+    // shows exactly one toast itself; without `silent` here, the global
+    // axios interceptor would *also* fire its own generic toast for the
+    // same error, and the person would see two toasts stacked for one
+    // failed submit.
     const register = async (payload) => {
         const isFormData = typeof FormData !== 'undefined' && payload instanceof FormData;
-        const res = await axios.post('/register', payload, isFormData
-            ? { headers: { 'Content-Type': 'multipart/form-data' } }
-            : undefined);
+        const res = await axios.post('/register', payload, {
+            silent: true,
+            ...(isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {}),
+        });
         refreshAuthToken(res.data.token, true);
         setUser(res.data.user);
         setRoles(res.data.roles);

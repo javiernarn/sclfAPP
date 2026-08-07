@@ -127,14 +127,24 @@ class ItemMatchingService
                 continue;
             }
 
-            $match = ItemMatch::updateOrCreate(
-                ['lost_item_id' => $lost->id, 'found_item_id' => $found->id],
-                [
-                    'score' => $score,
-                    'match_level' => $this->matchLevel($score),
-                    'score_breakdown' => $breakdown,
-                ]
+            $match = ItemMatch::firstOrNew(
+                ['lost_item_id' => $lost->id, 'found_item_id' => $found->id]
             );
+
+            $match->fill([
+                'score' => $score,
+                'match_level' => $this->matchLevel($score),
+                'score_breakdown' => $breakdown,
+            ]);
+
+            // Only a brand-new record gets the default status. Re-scoring an
+            // existing match must never clobber a status a human already set
+            // (notified/claimed/dismissed).
+            if (!$match->exists) {
+                $match->status = ItemMatch::STATUS_PENDING;
+            }
+
+            $match->save();
 
             $created[] = $match;
         }

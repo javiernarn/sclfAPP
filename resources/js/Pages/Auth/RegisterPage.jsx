@@ -307,7 +307,19 @@ export default function RegisterPage() {
             navigate('/', { replace: true });
         } catch (err) {
             const errors = err.response?.data?.errors;
-            if (errors) {
+
+            if (err.response?.status === 429) {
+                // Laravel's own throttle message is just "Too Many
+                // Attempts." with no context — build a friendlier one
+                // from the Retry-After header (seconds) it always sends
+                // alongside a 429, so the person knows how long to wait
+                // instead of just being told to try again.
+                const retryAfterSeconds = parseInt(err.response.headers?.['retry-after'], 10);
+                const waitMessage = Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+                    ? `Please wait about ${Math.ceil(retryAfterSeconds / 60)} minute${Math.ceil(retryAfterSeconds / 60) === 1 ? '' : 's'} before trying again.`
+                    : 'Please wait a few minutes before trying again.';
+                toast.error(waitMessage, { title: 'Too many attempts' });
+            } else if (errors) {
                 const messages = humanizeValidationErrors(errors);
                 toast.error(messages.join('\n'), { title: 'Please check your details' });
                 const perField = {};

@@ -4,7 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Claim;
 use App\Models\FoundItem;
-use App\Models\QrRelease;
+// use App\Models\QrRelease;
 use App\Models\User;
 use App\Services\Release\ItemReleaseService;
 use Database\Seeders\RoleSeeder;
@@ -19,6 +19,8 @@ class QrReleaseSecurityTest extends TestCase
     protected function officer(): User
     {
         $this->seed(RoleSeeder::class);
+
+        /** @var User $officer */
         $officer = User::factory()->create(['is_active' => true]);
         $officer->assignRole('security_officer');
 
@@ -27,7 +29,10 @@ class QrReleaseSecurityTest extends TestCase
 
     protected function approvedClaim(): Claim
     {
+        /** @var FoundItem $found */
         $found = FoundItem::factory()->create();
+
+        /** @var User $claimant */
         $claimant = User::factory()->create();
 
         return Claim::create([
@@ -79,6 +84,8 @@ class QrReleaseSecurityTest extends TestCase
     public function test_only_a_security_officer_or_admin_can_hit_the_scan_endpoint(): void
     {
         $this->seed(RoleSeeder::class);
+
+        /** @var User $student */
         $student = User::factory()->create(['is_active' => true]);
         $student->assignRole('student');
 
