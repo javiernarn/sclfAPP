@@ -13,6 +13,11 @@ import './StyledQrCode.css';
  *
  * `value` is the ONLY thing encoded into the actual QR matrix. Title and
  * subtitle are decorative text painted below it, not part of the code.
+ *
+ * The code visibly "assembles" itself dot by dot over `generateDurationMs`
+ * (default 7s) instead of appearing all at once — so on a real device the
+ * person sees continuous progress the whole time instead of a sudden pop
+ * that can read as a freeze/crash.
  */
 export default function StyledQrCode({
     value,
@@ -23,20 +28,28 @@ export default function StyledQrCode({
     logoSrc = siteLogo,
     downloadName = 'release-qr.png',
     showDownloadButton = true,
+    generateDurationMs = 7000,
 }) {
     const canvasRef = useRef(null);
     const [ready, setReady] = useState(false);
+    const [progress, setProgress] = useState(0);
     const [error, setError] = useState('');
 
     useEffect(() => {
         if (!value) return;
         let cancelled = false;
         setReady(false);
+        setProgress(0);
         setError('');
 
         (async () => {
             try {
-                await renderStyledQr({ canvas: canvasRef.current, value, title, subtitle, size, color, logoSrc });
+                await renderStyledQr({
+                    canvas: canvasRef.current,
+                    value, title, subtitle, size, color, logoSrc,
+                    duration: generateDurationMs,
+                    onProgress: (p) => { if (!cancelled) setProgress(p); },
+                });
                 if (!cancelled) setReady(true);
             } catch (e) {
                 if (!cancelled) setError('Could not render the QR code on this device.');
@@ -44,7 +57,7 @@ export default function StyledQrCode({
         })();
 
         return () => { cancelled = true; };
-    }, [value, title, subtitle, size, color, logoSrc]);
+    }, [value, title, subtitle, size, color, logoSrc, generateDurationMs]);
 
     const download = () => {
         const canvas = canvasRef.current;
@@ -81,10 +94,21 @@ export default function StyledQrCode({
         }
     };
 
+    const pct = Math.round(progress * 100);
+
     return (
         <div className="sclf-qr-wrap">
-            <canvas ref={canvasRef} className="sclf-qr-canvas" style={{ display: ready ? 'block' : 'none' }} />
-            {!ready && !error && <div className="sclf-qr-loading">Generating your QR…</div>}
+            <div className="sclf-qr-canvas-frame">
+                <canvas ref={canvasRef} className={`sclf-qr-canvas ${ready ? 'is-ready' : 'is-building'}`} />
+                {!ready && !error && (
+                    <div className="sclf-qr-progress-overlay" role="status" aria-live="polite">
+                        <div className="sclf-qr-progress-track">
+                            <div className="sclf-qr-progress-fill" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className="sclf-qr-progress-label">Generating your QR… {pct}%</span>
+                    </div>
+                )}
+            </div>
             {error && <div className="ds-error">{error}</div>}
             {ready && showDownloadButton && (
                 <button type="button" className="ds-btn ds-btn-primary" onClick={download}>
@@ -95,7 +119,7 @@ export default function StyledQrCode({
     );
 }
 
-async function renderStyledQr({ canvas, value, title, subtitle, size, color, logoSrc }) {
+async function renderStyledQr({ canvas, value, title, subtitle, size, color, logoSrc, duration = 7000, onProgress }) {
     const qr = QRCode.create(value, { errorCorrectionLevel: 'H' });
     const modules = qr.modules;
     const count = modules.size;
@@ -107,13 +131,13 @@ async function renderStyledQr({ canvas, value, title, subtitle, size, color, log
     const topPad = Math.round(size * 0.06); // was 0.04 — thicker quiet zone around the QR itself
     const totalH = qrSize + topPad * 2 + captionH + subH;
 
+    // Set real pixel dimensions up front (even though drawing happens
+    // progressively below) so the canvas never sits at the browser's
+    // default 300x150 box for a frame — that would show as a layout
+    // jump right as the build animation kicks in.
     canvas.width = qrSize + topPad * 2;
     canvas.height = totalH;
     const ctx = canvas.getContext('2d');
-
-    // Background
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const offsetX = topPad;
     const offsetY = topPad;
@@ -133,33 +157,6 @@ async function renderStyledQr({ canvas, value, title, subtitle, size, color, log
     const logoStart = Math.floor((count - logoModules) / 2);
     const logoEnd = logoStart + logoModules;
     const inLogoZone = (r, c) => logoSrc && r >= logoStart && r < logoEnd && c >= logoStart && c < logoEnd;
-
-    // Data dots
-    ctx.fillStyle = color;
-    for (let r = 0; r < count; r++) {
-        for (let c = 0; c < count; c++) {
-            if (!modules.get(r, c)) continue;
-            if (isFinder(r, c)) continue;
-            if (inLogoZone(r, c)) continue;
-            const cx = offsetX + c * cell + cell / 2;
-            const cy = offsetY + r * cell + cell / 2;
-            ctx.beginPath();
-            // 0.48 (was 0.32, then 0.4 — still not enough): verified by
-            // rendering this exact function in Node and feeding the PNG to
-            // jsQR (the same decoder qr-scanner uses client-side, and the
-            // one this app's camera/upload flow is built on). At 0.4, and
-            // even at 0.44, decoding fails on a perfectly clean, zero-noise
-            // render — the gap between adjacent same-color dots is still
-            // wide enough that jsQR's binarizer sees noise instead of a
-            // solid run. 0.45 is the exact pass threshold; 0.48 decodes
-            // reliably with margin, including after simulated camera blur,
-            // downscaling, and JPEG recompression. This — not camera
-            // quality, screenshots, or the logo — was the actual cause of
-            // "Could not find a QR code" / the decode-image 422s.
-            ctx.arc(cx, cy, cell * 0.48, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
 
     // Finder eyes — rounded squares, three corners.
     // IMPORTANT: a QR finder eye must keep the standard 1:1:3:1:1
@@ -195,12 +192,50 @@ async function renderStyledQr({ canvas, value, title, subtitle, size, color, log
         ctx.fillStyle = color;
         ctx.fill();
     };
-    drawFinder(0, 0);
-    drawFinder(0, count - 7);
-    drawFinder(count - 7, 0);
 
-    // Center logo roundel
-    if (logoSrc && logoModules > 0) {
+    // Collect every data-dot position up front, then shuffle the draw
+    // order so the reveal reads as the code "assembling itself" rather
+    // than a mechanical left-to-right scan.
+    const dots = [];
+    for (let r = 0; r < count; r++) {
+        for (let c = 0; c < count; c++) {
+            if (!modules.get(r, c)) continue;
+            if (isFinder(r, c)) continue;
+            if (inLogoZone(r, c)) continue;
+            dots.push({ r, c });
+        }
+    }
+    shuffle(dots);
+
+    // Preload the logo once (if any) so each animation frame is just a
+    // cheap drawImage call instead of re-decoding the file every time.
+    let logoImg = null;
+    if (logoSrc) {
+        try { logoImg = await loadImage(logoSrc); } catch (e) { logoImg = null; }
+    }
+
+    const drawDot = (r, c) => {
+        const cx = offsetX + c * cell + cell / 2;
+        const cy = offsetY + r * cell + cell / 2;
+        ctx.beginPath();
+        // 0.48 (was 0.32, then 0.4 — still not enough): verified by
+        // rendering this exact function in Node and feeding the PNG to
+        // jsQR (the same decoder qr-scanner uses client-side, and the
+        // one this app's camera/upload flow is built on). At 0.4, and
+        // even at 0.44, decoding fails on a perfectly clean, zero-noise
+        // render — the gap between adjacent same-color dots is still
+        // wide enough that jsQR's binarizer sees noise instead of a
+        // solid run. 0.45 is the exact pass threshold; 0.48 decodes
+        // reliably with margin, including after simulated camera blur,
+        // downscaling, and JPEG recompression. This — not camera
+        // quality, screenshots, or the logo — was the actual cause of
+        // "Could not find a QR code" / the decode-image 422s.
+        ctx.arc(cx, cy, cell * 0.48, 0, Math.PI * 2);
+        ctx.fill();
+    };
+
+    const drawLogoRoundel = () => {
+        if (!(logoSrc && logoModules > 0)) return;
         const zonePx = logoModules * cell;
         const zoneX = offsetX + logoStart * cell;
         const zoneY = offsetY + logoStart * cell;
@@ -209,31 +244,97 @@ async function renderStyledQr({ canvas, value, title, subtitle, size, color, log
         ctx.fillStyle = '#ffffff';
         ctx.fill();
 
-        try {
-            ctx.save();
-            const inset = zonePx * 0.1;
-            roundRectPath(ctx, zoneX + inset, zoneY + inset, zonePx - inset * 2, zonePx - inset * 2, (zonePx - inset * 2) * 0.16);
-            ctx.clip();
-            await drawImageAsync(ctx, logoSrc, zoneX + inset, zoneY + inset, zonePx - inset * 2, zonePx - inset * 2);
-            ctx.restore();
-        } catch (e) {
-            // Logo failed to load (e.g. offline first load) — the QR still
-            // scans fine without it, so just skip silently.
+        if (logoImg) {
+            try {
+                ctx.save();
+                const inset = zonePx * 0.1;
+                roundRectPath(ctx, zoneX + inset, zoneY + inset, zonePx - inset * 2, zonePx - inset * 2, (zonePx - inset * 2) * 0.16);
+                ctx.clip();
+                ctx.drawImage(logoImg, zoneX + inset, zoneY + inset, zonePx - inset * 2, zonePx - inset * 2);
+                ctx.restore();
+            } catch (e) {
+                // Logo failed to draw — the QR still scans fine without it.
+            }
         }
+    };
+
+    const drawCaption = () => {
+        ctx.textAlign = 'center';
+        if (title) {
+            ctx.fillStyle = color;
+            ctx.font = `700 ${Math.round(size * 0.05)}px 'Inter', system-ui, sans-serif`;
+            ctx.fillText(title, canvas.width / 2, qrSize + offsetY * 2 + captionH * 0.62, canvas.width - topPad * 2);
+        }
+        if (subtitle) {
+            ctx.fillStyle = '#6B6558';
+            ctx.font = `500 ${Math.round(size * 0.028)}px 'Inter', system-ui, sans-serif`;
+            ctx.fillText(subtitle, canvas.width / 2, qrSize + offsetY * 2 + captionH + subH * 0.65, canvas.width - topPad * 2);
+        }
+    };
+
+    // A full frame redraw: background, finder eyes (always shown as
+    // anchors), the dots revealed so far, and — once the reveal is
+    // basically done — the logo roundel and caption fading in on top.
+    const drawFrame = (revealCount, showFinishingTouches) => {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = color;
+        drawFinder(0, 0);
+        drawFinder(0, count - 7);
+        drawFinder(count - 7, 0);
+
+        ctx.fillStyle = color;
+        for (let i = 0; i < revealCount; i++) {
+            drawDot(dots[i].r, dots[i].c);
+        }
+
+        if (showFinishingTouches) {
+            drawLogoRoundel();
+            drawCaption();
+        }
+    };
+
+    const prefersReducedMotion = typeof window !== 'undefined'
+        && window.matchMedia
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+        drawFrame(dots.length, true);
+        if (onProgress) onProgress(1);
+        return;
     }
 
-    // Caption
-    ctx.textAlign = 'center';
-    if (title) {
-        ctx.fillStyle = color;
-        ctx.font = `700 ${Math.round(size * 0.05)}px 'Inter', system-ui, sans-serif`;
-        ctx.fillText(title, canvas.width / 2, qrSize + offsetY * 2 + captionH * 0.62, canvas.width - topPad * 2);
+    // First paintable frame, right away — background + finder eyes so
+    // there's never a blank canvas while the animation loop spins up.
+    drawFrame(0, false);
+    if (onProgress) onProgress(0);
+
+    await new Promise((resolve) => {
+        const start = performance.now();
+        const tick = (now) => {
+            const elapsed = now - start;
+            const progress = Math.min(1, elapsed / duration);
+            const revealCount = Math.floor(progress * dots.length);
+            drawFrame(revealCount, progress >= 0.92);
+            if (onProgress) onProgress(progress);
+
+            if (progress < 1) {
+                requestAnimationFrame(tick);
+            } else {
+                resolve();
+            }
+        };
+        requestAnimationFrame(tick);
+    });
+}
+
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
     }
-    if (subtitle) {
-        ctx.fillStyle = '#6B6558';
-        ctx.font = `500 ${Math.round(size * 0.028)}px 'Inter', system-ui, sans-serif`;
-        ctx.fillText(subtitle, canvas.width / 2, qrSize + offsetY * 2 + captionH + subH * 0.65, canvas.width - topPad * 2);
-    }
+    return arr;
 }
 
 function roundRectPath(ctx, x, y, w, h, r) {
@@ -247,14 +348,14 @@ function roundRectPath(ctx, x, y, w, h, r) {
     ctx.closePath();
 }
 
-function drawImageAsync(ctx, src, x, y, w, h) {
+function loadImage(src) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         // Defensive: if this logo ever gets served from a different
         // origin, this keeps the canvas "untainted" so toDataURL()/PNG
         // download still works instead of throwing a SecurityError.
         img.crossOrigin = 'anonymous';
-        img.onload = () => { ctx.drawImage(img, x, y, w, h); resolve(); };
+        img.onload = () => resolve(img);
         img.onerror = reject;
         img.src = src;
     });

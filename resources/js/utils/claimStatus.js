@@ -11,7 +11,7 @@ import {
 
 // Single source of truth for how a claim status renders across the Claims
 // list and the Claim detail page — label, badge color, and icon all keyed
-// off the same status string so the two pages can never drift apart.
+// off the same status string so the two pages can never drift apart
 export const CLAIM_STATUS = {
     pending: { label: 'Pending', badge: 'ds-badge-pending', icon: Clock },
     under_review: { label: 'Under Review', badge: 'ds-badge-review', icon: Search },

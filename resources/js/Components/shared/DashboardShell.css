@@ -909,6 +909,13 @@ body { overflow: hidden; }
     animation: ds-spin 0.7s linear infinite;
 }
 @keyframes ds-spin { to { transform: rotate(360deg); } }
+
+/* Utility: spins any inline icon (e.g. a lucide-react icon inside a
+   button) while an action is in flight — pair with disabled state so
+   the button reads as "working" instead of silently doing nothing. */
+.ds-spin {
+    animation: ds-spin 0.7s linear infinite;
+}
 /* ---------- Page-shaped skeletons ---------- */
 /* Small shimmer "bone" blocks, sized per-context with utility classes below,
    dropped straight into the same .ds-stat-card / .ds-card boxes a page

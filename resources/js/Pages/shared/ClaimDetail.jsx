@@ -93,7 +93,8 @@ function ReleasePassCard({ claimId, fallbackCode }) {
 
             {!pass ? (
                 <button className="ds-btn ds-btn-primary" disabled={busy} onClick={issue}>
-                    <QrCode size={16} /> {busy ? 'Generating…' : 'Get My Release QR'}
+                    {busy ? <RefreshCw size={16} className="ds-spin" /> : <QrCode size={16} />}
+                    {busy ? 'Generating…' : 'Get My Release QR'}
                 </button>
             ) : (
                 <>
@@ -115,7 +116,7 @@ function ReleasePassCard({ claimId, fallbackCode }) {
                         the moment you do.
                     </p>
                     <button className="ds-btn ds-btn-secondary" disabled={busy} onClick={issue} style={{ marginTop: 10 }}>
-                        <RefreshCw size={16} /> {busy ? 'Generating…' : 'Get a New QR'}
+                        <RefreshCw size={16} className={busy ? 'ds-spin' : ''} /> {busy ? 'Generating…' : 'Get a New QR'}
                     </button>
                 </>
             )}
