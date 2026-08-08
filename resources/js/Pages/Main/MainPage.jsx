@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useAppTheme } from "../../hooks/useAppTheme";
+import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
 import logo from "../../assets/images/site-logo.png";
 
 // Shown at "/" before we know where the visitor belongs, and again right
@@ -14,6 +15,9 @@ const MainPage = () => {
     const { user, roles, loading } = useAuth();
     const { theme } = useAppTheme();
     const isDark = theme === "black";
+    // Right-click / DevTools / browser-zoom guard — same behavior as the
+    // public auth pages. See usePreventInspect.jsx to toggle site-wide.
+    const { zoomModalOpen, closeZoomModal } = usePreventInspect();
 
     useEffect(() => {
         document.title = "Loading | SCLF - Opol Community College";
@@ -299,7 +303,7 @@ const MainPage = () => {
                     </span>
 
                     <div className="mp-logo-wrap">
-                        <img src={logo} alt="SCLF Logo" />
+                        <img src={logo} alt="SCLF Logo" {...guardImageEvents} />
                     </div>
 
                     <h1 className="mp-title">
@@ -313,6 +317,8 @@ const MainPage = () => {
                     </div>
                 </div>
             </div>
+
+            <ZoomWarningModal open={zoomModalOpen} onClose={closeZoomModal} />
         </>
     );
 };

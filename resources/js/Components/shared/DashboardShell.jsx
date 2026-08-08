@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { useToast } from "../../context/ToastContext";
+import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
 import logo from "../../assets/images/site-logo.png";
 import AccountMenu from "./AccountMenu";
 import Tooltip from "./Tooltip";
@@ -147,6 +148,9 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
     const { user, roles, logout } = useAuth();
     const { theme, setTheme } = useAppTheme();
     const toast = useToast();
+    // Right-click / DevTools / browser-zoom guard — same behavior as the
+    // public auth pages. See usePreventInspect.jsx to toggle site-wide.
+    const { zoomModalOpen, closeZoomModal } = usePreventInspect();
     const isDark = theme === "black";
     const navigate = useNavigate();
     const location = useLocation();
@@ -379,6 +383,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
     }, []);
 
     return (
+        <>
         <div className={`ds-shell ds-layout ${theme} ${isDark ? "dark" : "light"}`}>
                 <div
                     className={`ds-sidebar-backdrop ${sidebarOpen ? "open" : ""}`}
@@ -392,7 +397,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                         className="ds-brand"
                         onClick={() => setSidebarOpen(false)}
                     >
-                        <img src={logo} alt="SCLF Logo" />
+                        <img src={logo} alt="SCLF Logo" {...guardImageEvents} />
                         <span className="ds-brand-text">
                             <span className="ds-brand-name">SCLF</span>
                             <span className="ds-brand-sub">Opol Community College</span>
@@ -546,7 +551,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                                 </button>
                             </Tooltip>
                             <Link to={homePath} className="ds-topbar-brand">
-                                <img src={logo} alt="SCLF Logo" />
+                                <img src={logo} alt="SCLF Logo" {...guardImageEvents} />
                                 <span>SCLF</span>
                             </Link>
                         </div>
@@ -671,6 +676,9 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                     </footer>
                 </div>
             </div>
+
+            <ZoomWarningModal open={zoomModalOpen} onClose={closeZoomModal} />
+        </>
     );
 };
 

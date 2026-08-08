@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Sun, Moon, ShieldCheck, Eye, EyeOff, CheckCircle2, XCircle } from "lucide-react";
 import { useAppTheme } from "../../hooks/useAppTheme";
+import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
 import logo from "../../assets/images/site-logo.png";
 
 /**
@@ -74,6 +75,11 @@ export default function AuthShell({
     const isDark = theme === "black";
     const [caseNumber] = useState(() => buildCaseNumber(caseSeed));
     const [now, setNow] = useState(() => new Date());
+    // Shared right-click / DevTools / browser-zoom guard — covers every
+    // page that renders through this shell (Login, Register, Forgot
+    // Password, Reset Password) from one place. See usePreventInspect.jsx
+    // to toggle it off site-wide while debugging.
+    const { zoomModalOpen, closeZoomModal } = usePreventInspect();
 
     useEffect(() => {
         const t = setInterval(() => setNow(new Date()), 1000 * 30);
@@ -96,7 +102,7 @@ export default function AuthShell({
 
                     <div className="lg-rail-top">
                         <Link to="/" className="lg-brand">
-                            <span className="lg-brand-mark"><img src={logo} alt="SCLF" /></span>
+                            <span className="lg-brand-mark"><img src={logo} alt="SCLF" {...guardImageEvents} /></span>
                             <span className="lg-brand-text">
                                 SCLF Office
                                 <span>Opol Community College</span>
@@ -138,7 +144,7 @@ export default function AuthShell({
 
                     <div className="lg-stage-inner">
                         <Link to="/" className="lg-mobile-brand">
-                            <img src={logo} alt="SCLF" />
+                            <img src={logo} alt="SCLF" {...guardImageEvents} />
                             <span>SCLF Office<span>Opol Community College</span></span>
                         </Link>
 
@@ -168,6 +174,8 @@ export default function AuthShell({
                     </div>
                 </main>
             </div>
+
+            <ZoomWarningModal open={zoomModalOpen} onClose={closeZoomModal} />
         </>
     );
 }
