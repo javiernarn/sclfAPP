@@ -566,7 +566,7 @@ export default function AdminUsers() {
                                                         <button
                                                             type="button"
                                                             className="ds-btn ds-btn-secondary ds-btn-sm"
-                                                            onClick={() => navigate(`/admin/users/${u.id}`)}
+                                                            onClick={() => navigate(`/app/admin/users/${u.id}`)}
                                                         >
                                                             <IdCard size={13} />
                                                         </button>
@@ -641,7 +641,7 @@ export default function AdminUsers() {
                                             <button
                                                 type="button"
                                                 className="ds-btn ds-btn-secondary ds-btn-sm"
-                                                onClick={() => navigate(`/admin/users/${u.id}`)}
+                                                onClick={() => navigate(`/app/admin/users/${u.id}`)}
                                             >
                                                 <IdCard size={13} /> View Details
                                             </button>

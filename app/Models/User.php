@@ -76,6 +76,11 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        // Never serialize these even though $fillable already excludes
+        // them from mass assignment — 'hidden' is what actually keeps
+        // them out of any ->toArray()/response()->json($user) call.
+        'two_factor_secret',
+        'two_factor_recovery_codes',
     ];
 
     /**
@@ -89,7 +94,24 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            // Belt-and-suspenders on top of 'hidden' above: these are
+            // encrypted at rest too, so a raw DB dump/backup leak alone
+            // doesn't expose a usable TOTP secret or recovery-code hashes.
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted',
+            'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Whether 2FA is actually turned on (confirmed), not just mid-setup.
+     * Kept off $appends deliberately — AuthController::userPayload()
+     * decides when this belongs in a response rather than it riding along
+     * on every User serialization automatically.
+     */
+    public function getTwoFactorEnabledAttribute(): bool
+    {
+        return $this->two_factor_confirmed_at !== null;
     }
 
     /**
@@ -212,6 +234,11 @@ class User extends Authenticatable
     public function pushSubscriptions(): HasMany
     {
         return $this->hasMany(PushSubscription::class);
+    }
+
+    public function refreshTokens(): HasMany
+    {
+        return $this->hasMany(RefreshToken::class);
     }
 
     /**

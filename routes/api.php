@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\ClaimController;
@@ -19,6 +20,14 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes — no login required
 Route::post('/login', [AuthController::class, 'login']);
+Route::middleware('throttle:10,1')->post('/token/refresh', [AuthController::class, 'refreshToken']);
+
+// Mid-login 2FA challenge: authenticated only by the short-lived
+// "2fa-pending" token issued from login() above, not a full session — so
+// this deliberately sits outside the require.full_access group below
+// (that middleware exists specifically to block a pending token from
+// reaching anything else).
+Route::middleware(['auth:sanctum', 'throttle:10,1'])->post('/2fa/login-verify', [TwoFactorController::class, 'verifyLogin']);
 
 // Throttled separately from login: registration and the availability probe
 // are both unauthenticated and repeatable, so without a limit either one
@@ -42,11 +51,22 @@ Route::middleware('throttle:6,1')->group(function () {
 });
 
 // Protected routes — must be logged in (valid Sanctum token) AND have an
-// account that hasn't been disabled by an administrator.
-Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
+// account that hasn't been disabled by an administrator, AND (via
+// require.full_access) hold a real session token rather than a
+// still-mid-2FA-challenge pending one.
+Route::middleware(['auth:sanctum', 'account.active', 'require.full_access'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+
+    // Two-factor authentication management (Profile page's Security
+    // card). Setup/confirm/disable all require a fully-authenticated
+    // session — none of these should be reachable with a 2fa-pending
+    // token, which require.full_access already guarantees for the whole
+    // group.
+    Route::post('/2fa/setup', [TwoFactorController::class, 'setup']);
+    Route::post('/2fa/confirm', [TwoFactorController::class, 'confirm']);
+    Route::post('/2fa/disable', [TwoFactorController::class, 'disable']);
 
     // Lost Items — any authenticated user may browse/search; create is
     // restricted to student/instructor via LostItemPolicy inside the controller.
@@ -71,6 +91,9 @@ Route::middleware(['auth:sanctum', 'account.active'])->group(function () {
     Route::post('/found-items/{foundItem}/claims', [ClaimController::class, 'store']);
     Route::get('/claims/{claim}', [ClaimController::class, 'show']);
     Route::post('/claims/{claim}/evidence', [ClaimController::class, 'addEvidence']);
+    // Private, policy-checked evidence retrieval — replaces the old
+    // public('storage')-disk URL that anyone with the link could hit.
+    Route::get('/claims/evidence/{evidence}/download', [ClaimController::class, 'downloadEvidence']);
     Route::post('/claims/{claim}/cancel', [ClaimController::class, 'cancel']);
     // Claimant downloads/re-downloads their own release QR (offline-friendly pass).
     Route::post('/claims/{claim}/download-release', [ClaimController::class, 'downloadRelease']);

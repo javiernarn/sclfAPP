@@ -194,6 +194,27 @@ export default function ClaimDetail() {
         }
     };
 
+    const [downloadingEvidenceId, setDownloadingEvidenceId] = useState(null);
+
+    // Evidence files live on the private disk now (see ClaimController::
+    // downloadEvidence), so there's no bare URL to link to directly — the
+    // request has to carry the Authorization header, which a plain <a href>
+    // can't do. Fetch it as a blob and hand the browser a local object URL
+    // instead.
+    const downloadEvidence = async (evidenceId) => {
+        setDownloadingEvidenceId(evidenceId);
+        try {
+            const res = await axios.get(`/claims/evidence/${evidenceId}/download`, { responseType: 'blob' });
+            const blobUrl = window.URL.createObjectURL(res.data);
+            window.open(blobUrl, '_blank', 'noopener,noreferrer');
+            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+        } catch (err) {
+            setError('Could not open that file. Please try again.');
+        } finally {
+            setDownloadingEvidenceId(null);
+        }
+    };
+
     const generateRelease = async () => {
         setBusy(true);
         setError('');
@@ -361,10 +382,15 @@ export default function ClaimDetail() {
                                         {ev.submitter?.name && (
                                             <p className="ds-evidence-meta">Submitted by {ev.submitter.name}</p>
                                         )}
-                                        {ev.file_url && (
-                                            <a className="ds-evidence-file" href={ev.file_url} target="_blank" rel="noreferrer">
-                                                <ExternalLink size={12} /> View file
-                                            </a>
+                                        {ev.has_file && (
+                                            <button
+                                                type="button"
+                                                className="ds-evidence-file"
+                                                onClick={() => downloadEvidence(ev.id)}
+                                                disabled={downloadingEvidenceId === ev.id}
+                                            >
+                                                <ExternalLink size={12} /> {downloadingEvidenceId === ev.id ? 'Opening…' : 'View file'}
+                                            </button>
                                         )}
                                     </div>
                                 </div>

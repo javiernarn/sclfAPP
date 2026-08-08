@@ -90,7 +90,7 @@ export default function LostItemsList() {
                                                 { title: 'Item unavailable' }
                                             );
                                         } else {
-                                            navigate(`/lost-items/${item.id}/matches`);
+                                            navigate(`/app/lost-items/${item.id}/matches`);
                                         }
                                     };
                                     return (
@@ -180,7 +180,7 @@ export default function LostItemsList() {
                             return (
                                 <li key={item.id} className="ds-list-item">
                                     <Link
-                                        to={`/lost-items/${item.id}/matches`}
+                                        to={`/app/lost-items/${item.id}/matches`}
                                         className="ds-list-item-link"
                                     >
                                         {rowContent}

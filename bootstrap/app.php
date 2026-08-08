@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'role' => \App\Http\Middleware\CheckRole::class,
             'account.active' => \App\Http\Middleware\EnsureAccountActive::class,
+            'require.full_access' => \App\Http\Middleware\RequireFullAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

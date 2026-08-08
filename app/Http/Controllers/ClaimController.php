@@ -9,9 +9,12 @@ use App\Models\Claim;
 use App\Models\FoundItem;
 use App\Models\User;
 use App\Services\Audit\AuditLogService;
+use App\Models\ClaimEvidence;
 use App\Services\Claims\ClaimService;
 use App\Services\Release\ItemReleaseService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ClaimController extends Controller
 {
@@ -67,7 +70,13 @@ class ClaimController extends Controller
     {
         $filePath = null;
         if ($request->hasFile('file')) {
-            $filePath = $request->file('file')->store('claim-evidence', 'public');
+            // Claim evidence is sensitive (proof-of-ownership documents,
+            // photos of serial numbers, etc.) and must NOT be reachable by
+            // guessing/enumerating a public URL, so this goes on the
+            // private 'local' disk (storage/app/private) rather than
+            // 'public'. Retrieval is only ever through downloadEvidence()
+            // below, which re-checks the same policy as viewing the claim.
+            $filePath = $request->file('file')->store('claim-evidence', 'local');
         }
 
         $evidence = $this->claims->addEvidence($claim, $request->user(), [
@@ -81,6 +90,24 @@ class ClaimController extends Controller
             'message' => 'Evidence submitted.',
             'data' => $evidence,
         ], 201);
+    }
+
+    /**
+     * Stream a piece of claim evidence to whoever is allowed to see the
+     * claim it belongs to (the claimant themselves, or security/admin
+     * staff) — mirrors ClaimPolicy::view() rather than a new policy method,
+     * since "can see the claim" and "can see its evidence" are the same
+     * question here. Unlike the old public-disk approach, there is no URL
+     * that works without a valid Sanctum token and a passing authorization
+     * check on every request.
+     */
+    public function downloadEvidence(ClaimEvidence $evidence): StreamedResponse
+    {
+        $this->authorize('view', $evidence->claim);
+
+        abort_if(!$evidence->file_path || !Storage::disk('local')->exists($evidence->file_path), 404);
+
+        return Storage::disk('local')->download($evidence->file_path);
     }
 
     public function review(ReviewClaimRequest $request, Claim $claim)

@@ -142,7 +142,7 @@ export default function SecurityCounter() {
                         generate the release code from there.
                     </p>
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                        <button className="ds-btn ds-btn-primary" onClick={() => navigate(`/claims/${result.claim.id}`)}>
+                        <button className="ds-btn ds-btn-primary" onClick={() => navigate(`/app/claims/${result.claim.id}`)}>
                             Open this claim <ArrowRight size={16} />
                         </button>
                         <button className="ds-btn ds-btn-secondary" onClick={resetForCounterNext}>

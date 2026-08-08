@@ -121,7 +121,7 @@ export default function MyClaimsList() {
                                         {claims.map(c => {
                                             const ChannelIcon = itemChannelIcon(c.found_item?.intake_channel);
                                             return (
-                                            <tr key={c.id} className="is-clickable" onClick={() => navigate(`/claims/${c.id}`)}>
+                                            <tr key={c.id} className="is-clickable" onClick={() => navigate(`/app/claims/${c.id}`)}>
                                                 <td>
                                                     <div className="ds-table-cell-main">
                                                         <span className="ds-thumb">
@@ -174,7 +174,7 @@ export default function MyClaimsList() {
                                     return (
                                     <li key={c.id} className="ds-list-item">
                                         <Link
-                                            to={`/claims/${c.id}`}
+                                            to={`/app/claims/${c.id}`}
                                             className="ds-list-item-link"
                                         >
                                             <div className="ds-list-item-main">

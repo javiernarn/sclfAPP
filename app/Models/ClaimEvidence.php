@@ -10,7 +10,12 @@ class ClaimEvidence extends Model
         'claim_id', 'submitted_by', 'type', 'content', 'file_path',
     ];
 
-    protected $appends = ['file_url'];
+    // file_path now lives on the private disk (storage/app/private), so
+    // there is no longer a public asset URL to append — exposing one would
+    // recreate the same unauthenticated-access issue this replaces.
+    // Frontend gets a boolean and fetches the actual bytes through the
+    // authenticated /claims/evidence/{evidence}/download endpoint instead.
+    protected $appends = ['has_file'];
 
     public function claim()
     {
@@ -22,8 +27,8 @@ class ClaimEvidence extends Model
         return $this->belongsTo(User::class, 'submitted_by');
     }
 
-    public function getFileUrlAttribute(): ?string
+    public function getHasFileAttribute(): bool
     {
-        return $this->file_path ? asset('storage/' . $this->file_path) : null;
+        return (bool) $this->file_path;
     }
 }

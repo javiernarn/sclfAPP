@@ -146,7 +146,7 @@ export default function FoundItemsList() {
                                                 { title: 'Item unavailable' }
                                             );
                                         } else {
-                                            navigate(`/found-items/${item.id}`);
+                                            navigate(`/app/found-items/${item.id}`);
                                         }
                                     };
                                     const ChannelIcon = itemChannelIcon(item.intake_channel);
@@ -254,7 +254,7 @@ export default function FoundItemsList() {
                             return (
                                 <li key={item.id} className="ds-list-item">
                                     <Link
-                                        to={`/found-items/${item.id}`}
+                                        to={`/app/found-items/${item.id}`}
                                         className="ds-list-item-link"
                                     >
                                         {rowContent}

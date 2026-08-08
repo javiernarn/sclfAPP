@@ -1305,7 +1305,12 @@ body { overflow: hidden; }
     display: inline-flex; align-items: center; gap: 5px; margin-top: 8px;
     font-size: 12px; font-weight: 700; text-decoration: none;
     padding: 5px 10px; border-radius: 999px; color: #4f46e5; background: rgba(79,70,229,0.10);
+    /* Now a <button> (evidence download requires an authenticated blob
+       fetch, not a plain href) — reset the native button chrome so it
+       still reads as the same pill it always was. */
+    border: none; cursor: pointer; font-family: inherit;
 }
+.ds-evidence-file:disabled { opacity: 0.6; cursor: default; }
 .ds-shell.dark .ds-evidence-file { background: rgba(99,102,241,0.16); color: #a5b4fc; }
 
 /* Risk banner: replaces the bare "Risk score: N/100" paragraph + <ul>. */

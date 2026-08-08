@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios, { refreshAuthToken, getStoredToken, clearStoredToken } from '../config/axiosConfig';
+import axios, { storeTokenPair, getStoredToken, clearStoredToken } from '../config/axiosConfig';
 import { getCurrentSubscription, disablePush } from '../utils/push';
 
 const AuthContext = createContext(null);
@@ -55,12 +55,42 @@ export function AuthProvider({ children }) {
         }
     };
 
+    const applySession = async (data, remember) => {
+        storeTokenPair(
+            { access_token: data.access_token, refresh_token: data.refresh_token, expires_in: data.expires_in },
+            remember
+        );
+        setUser(data.user);
+        setRoles(data.roles);
+        await reconcilePushSubscription();
+    };
+
+    // Returns either a completed session ({ user, roles, ... }) or, for an
+    // account with 2FA enabled, { two_factor_required: true, temp_token }
+    // — the caller (LoginPage) is responsible for switching to the OTP
+    // step and holding onto temp_token for verifyTwoFactor() below rather
+    // than this resolving into a signed-in state right away.
     const login = async (email, password, remember = false) => {
         const res = await axios.post('/login', { email, password }, { silent: true });
-        refreshAuthToken(res.data.token, remember);
-        setUser(res.data.user);
-        setRoles(res.data.roles);
-        await reconcilePushSubscription();
+
+        if (res.data.two_factor_required) {
+            return res.data;
+        }
+
+        await applySession(res.data, remember);
+        return res.data;
+    };
+
+    // Second step of a 2FA login: exchange the temp_token (sent as the
+    // bearer for this one request only — not stored) + the code from the
+    // authenticator app/a recovery code for a real session.
+    const verifyTwoFactor = async (tempToken, code, remember = false) => {
+        const res = await axios.post(
+            '/2fa/login-verify',
+            { code },
+            { silent: true, headers: { Authorization: `Bearer ${tempToken}` } }
+        );
+        await applySession(res.data, remember);
         return res.data;
     };
 
@@ -80,11 +110,15 @@ export function AuthProvider({ children }) {
             silent: true,
             ...(isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {}),
         });
-        refreshAuthToken(res.data.token, true);
-        setUser(res.data.user);
-        setRoles(res.data.roles);
-        await reconcilePushSubscription();
+        await applySession(res.data, true);
         return res.data;
+    };
+
+    // Patches the in-memory user (e.g. after 2FA setup/disable flips
+    // two_factor_enabled) without a full /me round-trip — the caller
+    // already knows the new value from the response it just got back.
+    const updateUser = (patch) => {
+        setUser((prev) => (prev ? { ...prev, ...patch } : prev));
     };
 
     const logout = async () => {
@@ -104,13 +138,12 @@ export function AuthProvider({ children }) {
 
         await axios.post('/logout');
         clearStoredToken();
-        delete axios.defaults.headers.common['Authorization'];
         setUser(null);
         setRoles([]);
     };
 
     return (
-        <AuthContext.Provider value={{ user, roles, loading, login, register, logout }}>
+        <AuthContext.Provider value={{ user, roles, loading, login, verifyTwoFactor, register, logout, updateUser }}>
             {children}
         </AuthContext.Provider>
     );

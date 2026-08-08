@@ -75,7 +75,7 @@ export default function LostItemMatches() {
                                         {' · '}Score {m.score}/100
                                     </p>
                                     <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                                        <Link to={`/found-items/${m.found_item_id}`} className="ds-btn ds-btn-primary">
+                                        <Link to={`/app/found-items/${m.found_item_id}`} className="ds-btn ds-btn-primary">
                                             View & Claim
                                         </Link>
                                         <button

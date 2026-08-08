@@ -142,7 +142,7 @@ export default function FoundItemDetail() {
                 </>
             )}
         >
-            <Link to="/found-items" className="ds-back-link">
+            <Link to="/app/found-items" className="ds-back-link">
                 <ArrowLeft size={14} /> Back to Found Items
             </Link>
 
@@ -220,7 +220,7 @@ export default function FoundItemDetail() {
                         </button>
                     )}
                     {success && (
-                        <button className="ds-btn ds-btn-primary" onClick={() => navigate('/claims')}>
+                        <button className="ds-btn ds-btn-primary" onClick={() => navigate('/app/claims')}>
                             View My Claims
                         </button>
                     )}

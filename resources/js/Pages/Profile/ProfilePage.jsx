@@ -6,6 +6,7 @@ import usePushNotifications from '../../hooks/usePushNotifications';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ProfileSkeleton from '../../Components/shared/ProfileSkeleton';
 import ChangePasswordForm from './Partials/ChangePasswordForm';
+import TwoFactorAuthForm from './Partials/TwoFactorAuthForm';
 import { useToast } from '../../context/ToastContext';
 
 // One compact "field" block used inside the account-details grid — icon,
@@ -158,8 +159,10 @@ export default function ProfilePage() {
             {/* ---------- Security: Change Password ---------- */}
             <div className="ds-card">
                 <div className="ds-card-title">Security</div>
-                <p className="ds-card-desc">Update your password to keep your account secure.</p>
+                <p className="ds-card-desc">Update your password or turn on two-factor authentication to keep your account secure.</p>
                 <ChangePasswordForm />
+                <hr className="ds-divider" />
+                <TwoFactorAuthForm />
             </div>
 
             {/* ---------- Notifications ---------- */}

@@ -47,14 +47,14 @@ const MainPage = () => {
             }
 
             if (roles?.includes("admin")) {
-                navigate("/admin/dashboard", { replace: true });
+                navigate("/app/admin/dashboard", { replace: true });
                 return;
             }
             if (roles?.includes("security_officer")) {
-                navigate("/security/dashboard", { replace: true });
+                navigate("/app/security/dashboard", { replace: true });
                 return;
             }
-            navigate("/dashboard", { replace: true });
+            navigate("/app/dashboard", { replace: true });
         }, 7000);
 
         return () => clearTimeout(t);

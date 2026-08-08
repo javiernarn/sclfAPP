@@ -138,7 +138,7 @@ export default function AdminUserDetail() {
                 </span>
             }
         >
-            <Link to="/admin/users" className="ds-back-link">
+            <Link to="/app/admin/users" className="ds-back-link">
                 <ArrowLeft size={14} /> Back to Users
             </Link>
 
@@ -297,7 +297,7 @@ export default function AdminUserDetail() {
                     </ul>
                 )}
 
-                <Link to="/admin/audit-log" className="ds-back-link" style={{ marginTop: 12, marginBottom: 0 }}>
+                <Link to="/app/admin/audit-log" className="ds-back-link" style={{ marginTop: 12, marginBottom: 0 }}>
                     Open full Audit Log <ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} />
                 </Link>
             </div>

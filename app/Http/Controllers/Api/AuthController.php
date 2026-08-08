@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Audit\AuditLogService;
+use App\Services\Auth\RefreshTokenReuseException;
+use App\Services\Auth\RefreshTokenService;
+use App\Services\Auth\TwoFactorAuthService;
 use Illuminate\Http\Request;
 // use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -22,8 +25,30 @@ class AuthController extends Controller
     private const LOGIN_MAX_ATTEMPTS = 5;
     private const LOGIN_DECAY_SECONDS = 600; // 10 minutes
 
-    public function __construct(protected AuditLogService $audit)
+    public function __construct(
+        protected AuditLogService $audit,
+        protected RefreshTokenService $tokens,
+        protected TwoFactorAuthService $twoFactor,
+    ) {
+    }
+
+    /**
+     * The user+roles shape returned by register/login/me/2FA-verify.
+     * Pulled into one place so all four response sites stay in sync —
+     * in particular so two_factor_enabled is never accidentally missing
+     * from one of them (the frontend's Profile page depends on it to
+     * decide which Security-card state to render).
+     */
+    private function userPayload(User $user): array
     {
+        return [
+            'user' => $user->only(
+                'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
+                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course',
+                'profile_picture_url', 'two_factor_enabled'
+            ),
+            'roles' => $user->getRoleNames(),
+        ];
     }
 
     private function loginThrottleKey(Request $request): string
@@ -115,16 +140,16 @@ class AuthController extends Controller
 
         $this->audit->log('user.registered', $user, "Student account #{$user->id} self-registered.");
 
-        $token = $user->createToken('auth-token')->plainTextToken;
+        $pair = $this->tokens->issue($user, $request);
 
-        return response()->json([
-            'user' => $user->only(
-                'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
-                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course', 'profile_picture_url'
-            ),
-            'roles' => $user->getRoleNames(),
-            'token' => $token,
-        ], 201);
+        return response()->json(array_merge(
+            $this->userPayload($user),
+            [
+                'access_token' => $pair['access_token'],
+                'refresh_token' => $pair['refresh_token'],
+                'expires_in' => $pair['expires_in'],
+            ]
+        ), 201);
     }
 
     public function login(Request $request)
@@ -173,17 +198,61 @@ class AuthController extends Controller
 
         RateLimiter::clear($throttleKey);
 
-        $token = $user->createToken('auth-token')->plainTextToken;
-
         $this->audit->log('auth.login', $user, "User #{$user->id} logged in.");
 
+        if ($this->twoFactor->isEnabled($user)) {
+            // Don't hand out a real, usable token yet — just a narrowly
+            // scoped, short-lived one that RequireFullAccess will reject
+            // everywhere except the verify endpoint. The frontend uses
+            // two_factor_required to switch the login form into the
+            // OTP-entry step instead of navigating into the app.
+            return response()->json([
+                'two_factor_required' => true,
+                'temp_token' => $this->tokens->issuePendingTwoFactorToken($user),
+            ]);
+        }
+
+        $pair = $this->tokens->issue($user, $request);
+
+        return response()->json(array_merge(
+            $this->userPayload($user),
+            [
+                'access_token' => $pair['access_token'],
+                'refresh_token' => $pair['refresh_token'],
+                'expires_in' => $pair['expires_in'],
+            ]
+        ));
+    }
+
+    /**
+     * Exchange a still-valid, not-yet-rotated refresh token for a new
+     * access+refresh pair. Deliberately NOT behind auth:sanctum — by the
+     * time a client needs this, its access token has usually already
+     * expired, so there's nothing valid to authenticate the request with
+     * except the refresh token itself.
+     */
+    public function refreshToken(Request $request)
+    {
+        $validated = $request->validate([
+            'refresh_token' => ['required', 'string'],
+        ]);
+
+        try {
+            $pair = $this->tokens->rotate($validated['refresh_token'], $request);
+        } catch (RefreshTokenReuseException $e) {
+            throw ValidationException::withMessages([
+                'refresh_token' => [$e->getMessage()],
+            ]);
+        } catch (\RuntimeException $e) {
+            throw ValidationException::withMessages([
+                'refresh_token' => ['Your session has expired. Please sign in again.'],
+            ]);
+        }
+
         return response()->json([
-            'user' => $user->only(
-                'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
-                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course', 'profile_picture_url'
-            ),
-            'roles' => $user->getRoleNames(),
-            'token' => $token,
+            'access_token' => $pair['access_token'],
+            'refresh_token' => $pair['refresh_token'],
+            'expires_in' => $pair['expires_in'],
         ]);
     }
 
@@ -191,6 +260,8 @@ class AuthController extends Controller
     {
         $this->audit->log('auth.logout', $request->user(), "User #{$request->user()->id} logged out.");
 
+        $accessTokenId = $request->user()->currentAccessToken()->id;
+        $this->tokens->revokeForAccessToken($accessTokenId);
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logged out successfully']);
@@ -198,15 +269,7 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        $user = $request->user();
-
-        return response()->json([
-            'user' => $user->only(
-                'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
-                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course', 'profile_picture_url'
-            ),
-            'roles' => $user->getRoleNames(),
-        ]);
+        return response()->json($this->userPayload($request->user()));
     }
 
     /**
@@ -245,7 +308,9 @@ class AuthController extends Controller
         // Revoke every other active token (other devices/sessions) and keep
         // only the one used to make this request, so a changed password
         // actually locks out anyone who might have an old session.
-        $user->tokens()->where('id', '!=', $user->currentAccessToken()?->id)->delete();
+        $currentTokenId = $user->currentAccessToken()?->id;
+        $user->tokens()->where('id', '!=', $currentTokenId)->delete();
+        $this->tokens->revokeAllForUser($user, $currentTokenId);
 
         return response()->json([
             'success' => true,
