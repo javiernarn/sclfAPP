@@ -27,13 +27,8 @@ class PwaManifestController extends Controller
             'name' => 'SCLF - Opol Community College',
             'short_name' => 'SCLF',
             'description' => 'Smart Campus Lost & Found system for Opol Community College.',
-            // Scoped to /app/ (not '/') so the installed WebAPK on Android
-            // only ever intercepts authenticated app routes — /login,
-            // /register, /forgot-password, and /reset-password/{token}
-            // stay outside the scope and always open in the regular
-            // browser, e.g. when tapped from a Gmail/SMS link.
-            'start_url' => '/app/dashboard',
-            'scope' => '/app/',
+            'start_url' => '/',
+            'scope' => '/',
             'display' => 'standalone',
             'orientation' => 'any',
             'background_color' => $isBlack ? '#0a0c12' : '#ffffff',

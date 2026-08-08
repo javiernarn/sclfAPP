@@ -36,7 +36,7 @@ self.addEventListener('push', (event) => {
         // stacking — e.g. repeated updates on the same claim collapse
         // into one notification rather than flooding the tray.
         tag: payload.tag || 'sclf-notification',
-        data: { url: payload.url || '/app/notifications' },
+        data: { url: payload.url || '/notifications' },
     };
 
     event.waitUntil(self.registration.showNotification(title, options));
@@ -45,7 +45,7 @@ self.addEventListener('push', (event) => {
 // Fired when the person taps/clicks the OS notification itself.
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const targetUrl = event.notification.data?.url || '/app/notifications';
+    const targetUrl = event.notification.data?.url || '/notifications';
 
     event.waitUntil(
         self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientsList) => {

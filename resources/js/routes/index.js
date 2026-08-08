@@ -36,47 +36,43 @@ const publicRoutes = [
     { path: '/reset-password/:token', component: ResetPassword },
 ];
 
-// All authenticated routes live under /app/ so the installed PWA's
-// manifest scope ("/app/") only ever claims these — not /login,
-// /register, /forgot-password, or /reset-password/:token, which must
-// stay reachable as plain browser pages (see PwaManifestController).
 const adminRoutes = [
-    { path: '/app/admin/dashboard', component: AdminDashboard },
-    { path: '/app/admin/users', component: AdminUsers },
-    { path: '/app/admin/users/:id', component: AdminUserDetail },
-    { path: '/app/admin/audit-log', component: AdminAuditLog },
-    // Reuses the same page/endpoints Security uses at /app/security/history —
+    { path: '/admin/dashboard', component: AdminDashboard },
+    { path: '/admin/users', component: AdminUsers },
+    { path: '/admin/users/:id', component: AdminUserDetail },
+    { path: '/admin/audit-log', component: AdminAuditLog },
+    // Reuses the same page/endpoints Security uses at /security/history —
     // HistoryController already allows both security_officer and admin
     // (see routes/api.php), this just gives admins their own nav entry
     // and URL instead of making them guess the security path.
-    { path: '/app/admin/history', component: SecurityHistory },
+    { path: '/admin/history', component: SecurityHistory },
 ];
 
 const securityRoutes = [
-    { path: '/app/security/dashboard', component: SecurityDashboard },
-    { path: '/app/security/found-items', component: SecurityFoundItemsReview },
-    { path: '/app/security/claims', component: MyClaimsList },
-    { path: '/app/security/qr-scanner', component: SecurityQrScanner },
-    { path: '/app/security/inventory', component: SecurityInventory },
-    { path: '/app/security/counter', component: SecurityCounter },
-    { path: '/app/security/history', component: SecurityHistory },
+    { path: '/security/dashboard', component: SecurityDashboard },
+    { path: '/security/found-items', component: SecurityFoundItemsReview },
+    { path: '/security/claims', component: MyClaimsList },
+    { path: '/security/qr-scanner', component: SecurityQrScanner },
+    { path: '/security/inventory', component: SecurityInventory },
+    { path: '/security/counter', component: SecurityCounter },
+    { path: '/security/history', component: SecurityHistory },
 ];
 
 // Routes reachable by any authenticated users such as (student, instructor, security
 // officer, admin) — role-specific restrictions on WHAT they can do inside
 // these pages are still enforced by the backend ,live server-side .
 const studentRoutes = [
-    { path: '/app/dashboard', component: StudentDashboard },
-    { path: '/app/lost-items', component: LostItemsList },
-    { path: '/app/lost-items/create', component: LostItemCreate },
-    { path: '/app/lost-items/:id/matches', component: LostItemMatches },
-    { path: '/app/found-items', component: FoundItemsList },
-    { path: '/app/found-items/create', component: FoundItemCreate },
-    { path: '/app/found-items/:id', component: FoundItemDetail },
-    { path: '/app/claims', component: MyClaimsList },
-    { path: '/app/claims/:id', component: ClaimDetail },
-    { path: '/app/notifications', component: NotificationsPage },
-    { path: '/app/profile', component: ProfilePage },
+    { path: '/dashboard', component: StudentDashboard },
+    { path: '/lost-items', component: LostItemsList },
+    { path: '/lost-items/create', component: LostItemCreate },
+    { path: '/lost-items/:id/matches', component: LostItemMatches },
+    { path: '/found-items', component: FoundItemsList },
+    { path: '/found-items/create', component: FoundItemCreate },
+    { path: '/found-items/:id', component: FoundItemDetail },
+    { path: '/claims', component: MyClaimsList },
+    { path: '/claims/:id', component: ClaimDetail },
+    { path: '/notifications', component: NotificationsPage },
+    { path: '/profile', component: ProfilePage },
 ];
 
 export { publicRoutes, adminRoutes, securityRoutes, studentRoutes };

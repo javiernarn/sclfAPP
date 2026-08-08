@@ -11,7 +11,7 @@ function ProtectedRoute({ children, requiredRoles }) {
     if (loading) return <MainPage />;
     if (!user) return <Navigate to="/login" replace />;
     if (requiredRoles && !requiredRoles.some((r) => roles.includes(r))) {
-        return <Navigate to="/app/dashboard" replace />;
+        return <Navigate to="/dashboard" replace />;
     }
 
     return children;

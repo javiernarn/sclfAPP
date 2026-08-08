@@ -102,36 +102,36 @@ const ThemePicker = ({ open, onToggle, current, onPick, side = "right", align = 
 // instead of an emoji, so the sidebar reads as a real product UI.
 const NAV_BY_ROLE = {
     student: [
-        { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
-        { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
-        { to: "/app/lost-items/create", label: "Report Lost Item", icon: Megaphone },
-        { to: "/app/found-items", label: "Found Items", icon: PackageSearch },
-        { to: "/app/found-items/create", label: "Report Found Item", icon: Megaphone },
-        { to: "/app/claims", label: "My Claims", icon: ClipboardCheck },
-        { to: "/app/notifications", label: "Notifications", icon: Bell },
+        { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+        { to: "/lost-items", label: "Lost Items", icon: PackageSearch },
+        { to: "/lost-items/create", label: "Report Lost Item", icon: Megaphone },
+        { to: "/found-items", label: "Found Items", icon: PackageSearch },
+        { to: "/found-items/create", label: "Report Found Item", icon: Megaphone },
+        { to: "/claims", label: "My Claims", icon: ClipboardCheck },
+        { to: "/notifications", label: "Notifications", icon: Bell },
     ],
     security_officer: [
-        { to: "/app/security/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
-        { to: "/app/security/counter", label: "Counter", icon: PackageCheck },
-        { to: "/app/security/found-items", label: "Found Item Reviews", icon: PackageSearch },
-        { to: "/app/security/claims", label: "Claims", icon: ClipboardCheck },
-        { to: "/app/security/inventory", label: "Inventory", icon: Boxes },
-        { to: "/app/security/qr-scanner", label: "QR Release Scanner", icon: QrCode },
-        { to: "/app/security/history", label: "History", icon: History },
-        { to: "/app/notifications", label: "Notifications", icon: Bell },
+        { to: "/security/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+        { to: "/security/counter", label: "Counter", icon: PackageCheck },
+        { to: "/security/found-items", label: "Found Item Reviews", icon: PackageSearch },
+        { to: "/security/claims", label: "Claims", icon: ClipboardCheck },
+        { to: "/security/inventory", label: "Inventory", icon: Boxes },
+        { to: "/security/qr-scanner", label: "QR Release Scanner", icon: QrCode },
+        { to: "/security/history", label: "History", icon: History },
+        { to: "/notifications", label: "Notifications", icon: Bell },
     ],
     admin: [
-        { to: "/app/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
-        { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
-        { to: "/app/found-items", label: "Found Items", icon: PackageSearch },
-        { to: "/app/claims", label: "Claims", icon: ClipboardCheck },
-        { to: "/app/admin/users", label: "Users", icon: UserCircle },
-        { to: "/app/admin/audit-log", label: "Audit Log", icon: ShieldCheck },
+        { to: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+        { to: "/lost-items", label: "Lost Items", icon: PackageSearch },
+        { to: "/found-items", label: "Found Items", icon: PackageSearch },
+        { to: "/claims", label: "Claims", icon: ClipboardCheck },
+        { to: "/admin/users", label: "Users", icon: UserCircle },
+        { to: "/admin/audit-log", label: "Audit Log", icon: ShieldCheck },
         // Same Counter/Lost & Found release history Security sees at
-        // /app/security/history — admins get their own nav entry into it too,
+        // /security/history — admins get their own nav entry into it too,
         // for oversight of what officers are checking in/releasing.
-        { to: "/app/admin/history", label: "History", icon: History },
-        { to: "/app/notifications", label: "Notifications", icon: Bell },
+        { to: "/admin/history", label: "History", icon: History },
+        { to: "/notifications", label: "Notifications", icon: Bell },
     ],
 };
 
@@ -245,7 +245,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
     const isSecurity = Array.isArray(roles) && roles.includes("security_officer");
     const navRole = isAdmin ? "admin" : isSecurity ? "security_officer" : "student";
     const navItems = NAV_BY_ROLE[navRole];
-    const homePath = isAdmin ? "/app/admin/dashboard" : isSecurity ? "/app/security/dashboard" : "/app/dashboard";
+    const homePath = isAdmin ? "/admin/dashboard" : isSecurity ? "/security/dashboard" : "/dashboard";
     const navLabel = isAdmin ? "Admin" : isSecurity ? "Security Officer" : "Student / Instructor";
 
     const handleLogout = async () => {
@@ -475,7 +475,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                                 <div className="ds-menu-email">{user?.email || ""}</div>
                                 <div className="ds-menu-divider" />
                                 <Link
-                                    to="/app/profile"
+                                    to="/profile"
                                     className="ds-menu-item"
                                     onClick={() => setSidebarMenuOpen(false)}
                                     role="menuitem"
@@ -582,7 +582,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                                     <div className="ds-menu-email">{user?.email || ""}</div>
                                     <div className="ds-menu-divider" />
                                     <Link
-                                        to="/app/profile"
+                                        to="/profile"
                                         className="ds-menu-item"
                                         onClick={() => setMenuOpen(false)}
                                         role="menuitem"

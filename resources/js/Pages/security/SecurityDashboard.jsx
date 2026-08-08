@@ -143,11 +143,11 @@ export default function SecurityDashboard() {
             <div className="ds-card">
                 <h3>Quick Actions</h3>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 12 }}>
-                    <Link to="/app/security/found-items" className="ds-btn ds-btn-primary">Review Found Items</Link>
-                    <Link to="/app/security/counter" className="ds-btn ds-btn-secondary">Open Counter</Link>
-                    <Link to="/app/security/claims" className="ds-btn ds-btn-secondary">Review Claims</Link>
-                    <Link to="/app/security/inventory" className="ds-btn ds-btn-secondary">Manage Inventory</Link>
-                    <Link to="/app/security/qr-scanner" className="ds-btn ds-btn-secondary">Scan Release Code</Link>
+                    <Link to="/security/found-items" className="ds-btn ds-btn-primary">Review Found Items</Link>
+                    <Link to="/security/counter" className="ds-btn ds-btn-secondary">Open Counter</Link>
+                    <Link to="/security/claims" className="ds-btn ds-btn-secondary">Review Claims</Link>
+                    <Link to="/security/inventory" className="ds-btn ds-btn-secondary">Manage Inventory</Link>
+                    <Link to="/security/qr-scanner" className="ds-btn ds-btn-secondary">Scan Release Code</Link>
                 </div>
             </div>
         </DashboardShell>
