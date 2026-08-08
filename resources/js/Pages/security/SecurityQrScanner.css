@@ -90,6 +90,29 @@
     cursor: default;
 }
 
+/* Shown over the camera view when a decoded QR failed to release
+   (wrong/expired code, already released, etc.) — gives the officer a
+   one-tap way to resume the live feed instead of it sitting frozen. */
+.sclf-scan-retry-overlay {
+    flex-direction: column;
+    gap: 12px;
+    padding: 0 24px;
+    text-align: center;
+    color: #fff;
+}
+
+.sclf-scan-retry-overlay svg {
+    color: #E5484D;
+}
+
+.sclf-scan-retry-overlay .sclf-scan-progress-text {
+    max-width: 260px;
+}
+
+.sclf-scan-retry-overlay .ds-btn {
+    margin-top: 4px;
+}
+
 .sclf-scan-progress {
     display: flex;
     flex-direction: column;

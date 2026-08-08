@@ -260,6 +260,18 @@ export default function SecurityQrScanner() {
         }
     };
 
+    // Clears a failed-scan error and resumes the live camera feed. Used
+    // when a QR was read but the release itself failed (wrong/expired
+    // code, already released, etc.) — releaseByPayload() froze the video
+    // by calling scanner.stop() the moment it decoded something, and
+    // without this the officer had no way back to a live feed short of
+    // switching tabs away from Camera and back again.
+    const retryCamera = () => {
+        setError('');
+        setCameraError('');
+        scannerRef.current?.start().catch(() => setCameraError('Could not restart the camera.'));
+    };
+
     return (
         <DashboardShell
             eyebrow="Security"
@@ -300,9 +312,18 @@ export default function SecurityQrScanner() {
                                     <ScanningPanel stage={scanStage} />
                                 </div>
                             )}
+                            {!busy && error && (
+                                <div className="sclf-scan-overlay sclf-scan-retry-overlay">
+                                    <XCircle size={28} />
+                                    <p className="sclf-scan-progress-text">{error}</p>
+                                    <button type="button" className="ds-btn ds-btn-primary" onClick={retryCamera}>
+                                        <RotateCcw size={16} /> Try Again
+                                    </button>
+                                </div>
+                            )}
                         </div>
                         {cameraError && <div className="ds-error" style={{ marginTop: 12 }}>{cameraError}</div>}
-                        {!cameraError && !busy && (
+                        {!cameraError && !busy && !error && (
                             <p className="ds-list-item-meta" style={{ textAlign: 'center', marginTop: 10 }}>
                                 Point the camera at the student's release QR.
                             </p>
@@ -371,7 +392,7 @@ export default function SecurityQrScanner() {
                     </form>
                 )}
 
-                {error && !result && <div className="ds-error" style={{ marginTop: 14 }}>{error}</div>}
+                {error && !result && mode !== 'camera' && <div className="ds-error" style={{ marginTop: 14 }}>{error}</div>}
 
                 {result && (
                     <div className="sclf-scan-result">
