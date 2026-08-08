@@ -57,7 +57,7 @@ export default function StudentDashboard() {
                         <div className="ds-card">
                             <div className="ds-card-title ds-card-title-icon"><PackageSearch size={18} strokeWidth={2} /> View Lost Items</div>
                             <p className="ds-card-desc">Browse everything that's been reported lost so far.</p>
-                            <Link to="/lost-items" className="ds-btn ds-btn-secondary ds-btn-block">
+                            <Link to="/app/lost-items" className="ds-btn ds-btn-secondary ds-btn-block">
                                 View Lost Items
                             </Link>
                         </div>
@@ -65,7 +65,7 @@ export default function StudentDashboard() {
                         <div className="ds-card">
                             <div className="ds-card-title ds-card-title-icon"><Megaphone size={18} strokeWidth={2} /> Report a Lost Item</div>
                             <p className="ds-card-desc">Lost something on campus? Let the community know.</p>
-                            <Link to="/lost-items/create" className="ds-btn ds-btn-primary ds-btn-block">
+                            <Link to="/app/lost-items/create" className="ds-btn ds-btn-primary ds-btn-block">
                                 Report a Lost Item
                             </Link>
                         </div>

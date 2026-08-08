@@ -61,9 +61,9 @@ class SclfNotification extends Notification
      * person on the same screen clicking the notification in-app would.
      */
     private const ROUTES = [
-        Claim::class => '/claims/%d',
-        LostItem::class => '/lost-items/%d/matches',
-        FoundItem::class => '/found-items/%d',
+        Claim::class => '/app/claims/%d',
+        LostItem::class => '/app/lost-items/%d/matches',
+        FoundItem::class => '/app/found-items/%d',
     ];
 
     public function __construct(
@@ -170,7 +170,7 @@ class SclfNotification extends Notification
     {
         return ($this->relatedType && $this->relatedId && isset(self::ROUTES[$this->relatedType]))
             ? sprintf(self::ROUTES[$this->relatedType], $this->relatedId)
-            : '/notifications';
+            : '/app/notifications';
     }
 
     /**

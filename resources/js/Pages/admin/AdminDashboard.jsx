@@ -135,7 +135,7 @@ export default function AdminDashboard() {
                         <div className="ds-card">
                             <div className="ds-card-title ds-card-title-icon"><Users size={18} strokeWidth={2} /> Manage Users</div>
                             <p className="ds-card-desc">Create Instructor, Security Officer, and Admin accounts.</p>
-                            <Link to="/admin/users" className="ds-btn ds-btn-primary ds-btn-block">
+                            <Link to="/app/admin/users" className="ds-btn ds-btn-primary ds-btn-block">
                                 Manage Users
                             </Link>
                         </div>
@@ -143,7 +143,7 @@ export default function AdminDashboard() {
                         <div className="ds-card">
                             <div className="ds-card-title ds-card-title-icon"><ScrollText size={18} strokeWidth={2} /> Audit Log</div>
                             <p className="ds-card-desc">Review every sensitive action taken across the system.</p>
-                            <Link to="/admin/audit-log" className="ds-btn ds-btn-secondary ds-btn-block">
+                            <Link to="/app/admin/audit-log" className="ds-btn ds-btn-secondary ds-btn-block">
                                 View Audit Log
                             </Link>
                         </div>

@@ -6,9 +6,9 @@ import ViewToggle from '../../Components/shared/ViewToggle';
 import useViewMode from '../../hooks/useViewMode';
 
 const ROUTE_FOR_TYPE = {
-    'App\\Models\\Claim': (id) => `/claims/${id}`,
-    'App\\Models\\LostItem': (id) => `/lost-items/${id}/matches`,
-    'App\\Models\\FoundItem': (id) => `/found-items/${id}`,
+    'App\\Models\\Claim': (id) => `/app/claims/${id}`,
+    'App\\Models\\LostItem': (id) => `/app/lost-items/${id}/matches`,
+    'App\\Models\\FoundItem': (id) => `/app/found-items/${id}`,
 };
 
 export default function NotificationsPage() {

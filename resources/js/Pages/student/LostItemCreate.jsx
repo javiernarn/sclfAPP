@@ -51,7 +51,7 @@ export default function LostItemCreate() {
         }
     };
 
-    const handleCancel = () => guardedAction(() => navigate('/lost-items'));
+    const handleCancel = () => guardedAction(() => navigate('/app/lost-items'));
 
     const handleUnlockRequest = async () => {
         const agreed = await confirm({
@@ -72,7 +72,7 @@ export default function LostItemCreate() {
         try {
             await axios.post('/lost-items', form, { silent: true });
             toast.success('Your lost item report has been submitted.', { title: 'Report filed' });
-            navigate('/lost-items');
+            navigate('/app/lost-items');
         } catch (err) {
             const errors = err?.response?.data?.errors;
             const message = errors

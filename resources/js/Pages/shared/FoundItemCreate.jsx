@@ -53,7 +53,7 @@ export default function FoundItemCreate() {
         }
     };
 
-    const handleCancel = () => guardedAction(() => navigate('/found-items'));
+    const handleCancel = () => guardedAction(() => navigate('/app/found-items'));
 
     const handleUnlockRequest = async () => {
         const agreed = await confirm({
@@ -78,7 +78,7 @@ export default function FoundItemCreate() {
 
             await axios.post('/found-items', data, { headers: { 'Content-Type': 'multipart/form-data' }, silent: true });
             toast.success('Thank you — your found item report has been submitted for verification.', { title: 'Report filed' });
-            navigate('/found-items');
+            navigate('/app/found-items');
         } catch (err) {
             const errors = err?.response?.data?.errors;
             const message = errors

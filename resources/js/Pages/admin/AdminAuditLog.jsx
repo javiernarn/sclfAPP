@@ -86,7 +86,7 @@ export default function AdminAuditLog() {
             </div>
             {!loading && (
                 <p className="ds-card-desc" style={{ marginTop: 4 }}>
-                    Looking for claim, item, or storage activity? Open <Link to="/admin/users">Users</Link>, pick the account, and check its Activity tab — it's scoped to that one account so it's easier to review.
+                    Looking for claim, item, or storage activity? Open <Link to="/app/admin/users">Users</Link>, pick the account, and check its Activity tab — it's scoped to that one account so it's easier to review.
                 </p>
             )}
         </DashboardShell>
