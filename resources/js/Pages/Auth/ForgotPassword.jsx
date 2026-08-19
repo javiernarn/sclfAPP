@@ -9,7 +9,7 @@ import AuthShell, {
     LedgerGhostButton,
     Stamp,
 } from '../../Components/shared/AuthShell';
-import { Mail, User, CheckCircle2 } from 'lucide-react';
+import { Mail, User, CheckCircle2 } from '../../Components/icons';
 
 // ---------------------------------------------------------------------------
 // Mirrors the Alumni system's recovery flow exactly: find the account by

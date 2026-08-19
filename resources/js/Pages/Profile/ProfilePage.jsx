@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { UserCircle, Mail, ShieldCheck, Moon, Sun, Phone, MapPin, VenetianMask, IdCard, GraduationCap, Bell, BellOff } from 'lucide-react';
+import { UserCircle, Mail, ShieldCheck, Moon, Sun, Phone, MapPin, VenetianMask, IdCard, GraduationCap, Bell, BellOff } from '../../Components/icons';
 import { useAuth } from '../../context/AuthContext';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import usePushNotifications from '../../hooks/usePushNotifications';

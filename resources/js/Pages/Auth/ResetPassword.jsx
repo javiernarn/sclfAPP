@@ -11,7 +11,7 @@ import AuthShell, {
     PasswordMatchNote,
     Stamp,
 } from '../../Components/shared/AuthShell';
-import { Lock } from 'lucide-react';
+import { Lock } from '../../Components/icons';
 
 export default function ResetPassword() {
     const { token } = useParams();

@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react';
-import { AlertTriangle, HelpCircle } from 'lucide-react';
+import { AlertTriangle, HelpCircle } from '../Components/icons';
 import '../Components/shared/ConfirmDialog.css';
 
 const ConfirmContext = createContext(null);

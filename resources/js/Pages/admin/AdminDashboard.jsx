@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
     ClipboardList, Hourglass, CircleCheck, Handshake, Users, ShieldCheck, ScrollText,
     PackageSearch, PackageCheck, Boxes,
-} from 'lucide-react';
+} from '../../Components/icons';
 import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import DashboardSkeleton from '../../Components/shared/DashboardSkeleton';

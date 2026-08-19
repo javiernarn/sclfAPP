@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import {
     Expand, X, RotateCcw, RotateCw, FlipHorizontal, FlipVertical,
     ZoomIn, ZoomOut, RefreshCw,
-} from 'lucide-react';
+} from '../icons';
 import './ImageViewer.css';
 
 /**

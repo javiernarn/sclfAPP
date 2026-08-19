@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Search, Megaphone, Handshake, Sun, Moon } from "lucide-react";
+import { Search, Megaphone, Handshake, Sun, Moon } from "../icons";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import logo from "../../assets/images/site-logo.png";
 

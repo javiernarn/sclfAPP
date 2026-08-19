@@ -18,6 +18,15 @@ class FoundItem extends Model
     public const STATUS_CLAIMED = 'claimed';
     public const STATUS_RELEASE_PENDING = 'release_pending';
     public const STATUS_RELEASED = 'released';
+    // Retention expired with no claim. Still physically on the shelf —
+    // this is a flag, not a removal — until an officer actually disposes
+    // of it (see DispositionService). An officer can also restore it back
+    // to STATUS_STORED if the owner shows up late.
+    public const STATUS_UNCLAIMED = 'unclaimed';
+    // Physically removed from the shelf via disposition (donated,
+    // discarded, destroyed, or transferred out). Terminal, like RELEASED —
+    // the record and its movement history stay for audit purposes.
+    public const STATUS_DISPOSED = 'disposed';
 
     // Where this record came from — see the intake_channel migration for why.
     public const CHANNEL_ONLINE_REPORT = 'online_report';
@@ -32,6 +41,34 @@ class FoundItem extends Model
         self::STATUS_CLAIMED,
         self::STATUS_RELEASE_PENDING,
         self::STATUS_RELEASED,
+        self::STATUS_UNCLAIMED,
+        self::STATUS_DISPOSED,
+    ];
+
+    // Disposition outcomes — kept as service-layer-validated strings, not a
+    // DB enum, same reasoning as counter_queue_entries' `purpose` column.
+    public const DISPOSITION_DONATED = 'donated';
+    public const DISPOSITION_DISCARDED = 'discarded';
+    public const DISPOSITION_DESTROYED = 'destroyed';
+    public const DISPOSITION_TRANSFERRED = 'transferred';
+
+    public const DISPOSITION_METHODS = [
+        self::DISPOSITION_DONATED,
+        self::DISPOSITION_DISCARDED,
+        self::DISPOSITION_DESTROYED,
+        self::DISPOSITION_TRANSFERRED,
+    ];
+
+    // Items still physically occupying a shelf slot — used for capacity
+    // counts and for the retention sweep's eligibility query. Excludes
+    // RELEASED/DISPOSED (gone) and the pre-storage statuses (never had a
+    // slot yet).
+    public const ON_SHELF_STATUSES = [
+        self::STATUS_STORED,
+        self::STATUS_MATCHED,
+        self::STATUS_CLAIMED,
+        self::STATUS_RELEASE_PENDING,
+        self::STATUS_UNCLAIMED,
     ];
 
     protected $fillable = [
@@ -56,11 +93,20 @@ class FoundItem extends Model
         'verified_at',
         'storage_location_id',
         'qr_code',
+        'retention_expires_at',
+        'unclaimed_at',
+        'disposition_method',
+        'disposition_notes',
+        'disposed_by',
+        'disposed_at',
     ];
 
     protected $casts = [
         'date_found' => 'date',
         'verified_at' => 'datetime',
+        'retention_expires_at' => 'date',
+        'unclaimed_at' => 'datetime',
+        'disposed_at' => 'datetime',
     ];
 
     protected $appends = ['image_url'];
@@ -83,6 +129,11 @@ class FoundItem extends Model
     public function storageLocation()
     {
         return $this->belongsTo(StorageLocation::class);
+    }
+
+    public function disposedBy()
+    {
+        return $this->belongsTo(User::class, 'disposed_by');
     }
 
     public function matches()

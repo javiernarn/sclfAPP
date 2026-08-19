@@ -130,6 +130,7 @@ class UserController extends Controller
             'email' => $validated['email'],
             'phone_number' => $validated['phone_number'] ?? null,
             'gender' => $validated['gender'] ?? null,
+            'campus_id' => $validated['campus_id'] ?? null,
             'staff_id' => $staffId,
             'profile_picture' => $profilePicturePath,
             'password' => Hash::make($validated['password']),
@@ -194,6 +195,7 @@ class UserController extends Controller
                 \Illuminate\Validation\Rule::unique('users', 'phone_number')->ignore($user->id),
             ],
             'gender' => 'sometimes|nullable|string|in:male,female,other,prefer_not_to_say',
+            'campus_id' => 'sometimes|nullable|exists:campuses,id',
             'is_active' => 'sometimes|boolean',
             'role' => 'sometimes|in:student,instructor,security_officer,admin',
             'profile_picture' => ['sometimes', 'nullable', 'image', 'max:5120'],
@@ -216,7 +218,7 @@ class UserController extends Controller
             abort(422, 'You cannot remove your own admin role.');
         }
 
-        $before = $user->only('name', 'first_name', 'last_name', 'email', 'phone_number', 'gender');
+        $before = $user->only('name', 'first_name', 'last_name', 'email', 'phone_number', 'gender', 'campus_id');
 
         $attributes = collect($validated)->except(['role', 'password', 'profile_picture'])->toArray();
         if (isset($validated['first_name']) || isset($validated['last_name'])) {

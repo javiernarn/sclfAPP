@@ -6,7 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import {
     Camera, Keyboard, Upload, CheckCircle2, XCircle, PackageCheck, User, IdCard,
     Tag, Hash, RotateCcw, Loader2,
-} from 'lucide-react';
+} from '../../Components/icons';
 import './SecurityQrScanner.css';
 
 // Force the JS/WASM decoder path instead of the browser's native

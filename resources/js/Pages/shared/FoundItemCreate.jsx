@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { useNavigate } from 'react-router-dom';
-import { Lock, ShieldAlert } from 'lucide-react';
+import { Lock, ShieldAlert } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import FormSkeleton from '../../Components/shared/FormSkeleton';
 import { useToast } from '../../context/ToastContext';

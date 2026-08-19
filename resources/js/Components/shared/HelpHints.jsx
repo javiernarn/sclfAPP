@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { HelpCircle, X, LayoutDashboard, PackageSearch, Megaphone, ClipboardCheck, QrCode, Boxes, ShieldCheck, Users, PackageCheck } from 'lucide-react';
+import { HelpCircle, X, LayoutDashboard, PackageSearch, Megaphone, ClipboardCheck, QrCode, Boxes, ShieldCheck, Users, PackageCheck } from '../icons';
 import Tooltip from './Tooltip';
 
 // Short, plain-language tips per role — what each part of the sidebar is

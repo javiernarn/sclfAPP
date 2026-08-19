@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
-import { ClipboardList, Hourglass, CircleCheck, PackageSearch, Megaphone } from 'lucide-react';
+import { ClipboardList, Hourglass, CircleCheck, PackageSearch, Megaphone } from '../../Components/icons';
 import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import DashboardSkeleton from '../../Components/shared/DashboardSkeleton';

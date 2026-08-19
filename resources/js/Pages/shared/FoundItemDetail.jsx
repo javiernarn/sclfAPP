@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     ArrowLeft, Package, Tag, MapPin, Calendar, Boxes, UserCircle,
     HelpCircle, CheckCircle2, Sparkles,
-} from 'lucide-react';
+} from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ImageViewer from '../../Components/shared/ImageViewer';
 import { useAuth } from '../../context/AuthContext';
@@ -36,6 +36,7 @@ export default function FoundItemDetail() {
     const [item, setItem] = useState(null);
     const [myLostItems, setMyLostItems] = useState([]);
     const [selectedLostItem, setSelectedLostItem] = useState('');
+    const [matches, setMatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
@@ -59,14 +60,21 @@ export default function FoundItemDetail() {
         Promise.all([
             axios.get(`/found-items/${id}`),
             axios.get('/lost-items', { params: { mine: true } }).catch(() => ({ data: { data: [] } })),
+            // Only staff can review candidate lost-item matches for a found
+            // item — MatchController::forFoundItem 403s for anyone else, so
+            // don't even ask unless this viewer is security/admin.
+            isStaff
+                ? axios.get(`/found-items/${id}/matches`).catch(() => ({ data: [] }))
+                : Promise.resolve({ data: [] }),
         ])
-            .then(([itemRes, mineRes]) => {
+            .then(([itemRes, mineRes, matchesRes]) => {
                 setItem(itemRes.data);
                 setMyLostItems((mineRes.data.data || []).filter(li => li.status !== 'closed'));
+                setMatches(matchesRes.data || []);
             })
             .catch(() => setError('Could not load this item.'))
             .finally(() => setLoading(false));
-    }, [id]);
+    }, [id, isStaff]);
 
     const handleClaim = async () => {
         // Synchronous guard against double-click/double-tap spam — see
@@ -177,6 +185,32 @@ export default function FoundItemDetail() {
                     </div>
                 )}
             </div>
+
+            {isStaff && matches.length > 0 && (
+                <div className="ds-card">
+                    <div className="ds-card-title">
+                        <span className="ds-card-title-icon"><Sparkles size={17} /> Potential Lost-Item Matches</span>
+                    </div>
+                    <p className="ds-card-desc">
+                        Lost item reports the matching engine flagged against this found item, most likely first.
+                        Doesn't assign ownership — use the claim/verification flow to confirm.
+                    </p>
+                    <ul className="ds-list">
+                        {matches.map(m => (
+                            <li key={m.id} className="ds-list-item">
+                                <div style={{ minWidth: 0 }}>
+                                    <p className="ds-list-item-title">{m.lost_item?.item_name}</p>
+                                    <p className="ds-list-item-meta">
+                                        {m.lost_item?.category || 'Uncategorized'}
+                                        {m.lost_item?.location_lost ? ` · Lost near ${m.lost_item.location_lost}` : ''}
+                                    </p>
+                                </div>
+                                <span className="ds-badge ds-badge-found">{m.score}% match</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
 
             {!isStaff && isOwnFind && item.status === 'stored' && (
                 <div className="ds-card">

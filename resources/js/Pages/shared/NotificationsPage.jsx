@@ -4,18 +4,22 @@ import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ViewToggle from '../../Components/shared/ViewToggle';
 import useViewMode from '../../hooks/useViewMode';
-
-const ROUTE_FOR_TYPE = {
-    'App\\Models\\Claim': (id) => `/app/claims/${id}`,
-    'App\\Models\\LostItem': (id) => `/app/lost-items/${id}/matches`,
-    'App\\Models\\FoundItem': (id) => `/app/found-items/${id}`,
-};
+import { useNotifications } from '../../context/NotificationContext';
+import { routeForNotification } from '../../utils/notificationRoutes';
 
 export default function NotificationsPage() {
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const [view, setView] = useViewMode('notifications');
+    // Routing mark-read/mark-all-read through the shared context (instead
+    // of calling the API directly here) is what keeps the header bell's
+    // badge and the sidebar's "Notifications" count in sync with this
+    // page the instant something is read here, and vice versa — all
+    // three surfaces share one source of truth. This page still fetches
+    // its own full, paginated list below (the context only ever keeps a
+    // short preview for the bell's dropdown).
+    const { markAsRead, markAllAsRead } = useNotifications();
 
     useEffect(() => {
         document.title = "Notifications | SCLF - Opol Community College";
@@ -31,15 +35,13 @@ export default function NotificationsPage() {
     useEffect(load, []);
 
     const openNotification = async (n) => {
-        await axios.post(`/notifications/${n.id}/read`);
-        const related = n.data?.related_type && n.data?.related_id
-            ? ROUTE_FOR_TYPE[n.data.related_type]?.(n.data.related_id)
-            : null;
-        if (related) navigate(related); else load();
+        if (!n.read_at) await markAsRead(n.id);
+        const hasRelated = Boolean(n.data?.related_type && n.data?.related_id);
+        if (hasRelated) navigate(routeForNotification(n)); else load();
     };
 
     const markAllRead = async () => {
-        await axios.post('/notifications/read-all');
+        await markAllAsRead();
         load();
     };
 

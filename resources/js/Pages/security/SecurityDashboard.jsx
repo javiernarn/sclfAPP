@@ -8,7 +8,7 @@ import {
     Hourglass,
     ShieldAlert,
     Boxes,
-} from 'lucide-react';
+} from '../../Components/icons';
 
 // Found items arrive through two different channels (see
 // FoundItem::CHANNEL_* on the backend), and they're different jobs for a

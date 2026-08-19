@@ -7,7 +7,7 @@ import {
     Ban,
     PackageCheck,
     PartyPopper,
-} from 'lucide-react';
+} from '../Components/icons';
 
 // Single source of truth for how a claim status renders across the Claims
 // list and the Claim detail page — label, badge color, and icon all keyed

@@ -389,6 +389,74 @@ body { overflow: hidden; }
 .ds-shell.blue .ds-avatar { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); }
 .ds-shell.yellow .ds-avatar { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); color: #1c1408; }
 .ds-menu-wrap { position: relative; }
+/* ---------- Header notification bell ---------- */
+.ds-bell-btn { position: relative; }
+.ds-bell-badge {
+    position: absolute; top: -4px; right: -4px;
+    min-width: 17px; height: 17px; padding: 0 4px; border-radius: 999px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 800; line-height: 1;
+    background: #ef4444; color: #fff;
+}
+.ds-shell.light .ds-bell-badge { box-shadow: 0 0 0 2px #fff; }
+.ds-shell.dark .ds-bell-badge { box-shadow: 0 0 0 2px #0d1117; }
+.ds-notif-menu { padding: 0; width: 360px; max-width: calc(100vw - 24px); }
+.ds-notif-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px 10px;
+}
+.ds-notif-title { font-size: 14px; font-weight: 800; }
+.ds-notif-mark-all {
+    display: inline-flex; align-items: center; gap: 5px;
+    border: none; background: none; cursor: pointer;
+    font-size: 12px; font-weight: 700; color: #4f46e5; padding: 4px 6px; border-radius: 6px;
+}
+.ds-notif-mark-all:hover { background: rgba(79,70,229,0.1); }
+.ds-notif-list {
+    max-height: 360px; overflow-y: auto; overscroll-behavior: contain;
+    display: flex; flex-direction: column; padding: 0 6px;
+}
+.ds-notif-list .ds-skeleton { margin: 4px 8px; }
+.ds-notif-empty {
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    padding: 28px 14px; opacity: 0.55; font-size: 13px; text-align: center;
+}
+.ds-notif-item {
+    display: flex; align-items: flex-start; gap: 9px; width: 100%;
+    padding: 9px 8px; border: none; background: none; cursor: pointer;
+    border-radius: 9px; text-align: left; color: inherit;
+}
+.ds-menu.light .ds-notif-item:hover { background: #f4f7fb; }
+.ds-menu.dark .ds-notif-item:hover { background: #1a2029; }
+.ds-notif-item.is-unread { font-weight: 600; }
+.ds-notif-dot {
+    flex-shrink: 0; width: 8px; height: 8px; margin-top: 6px; border-radius: 50%;
+    border: none; padding: 0; background: currentColor; opacity: 0.85;
+}
+.ds-notif-item-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.ds-notif-item-title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-notif-item-message {
+    font-size: 12px; opacity: 0.7; font-weight: 500;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ds-notif-item-time { font-size: 11px; opacity: 0.5; font-weight: 500; margin-top: 1px; }
+.ds-notif-unread-mark {
+    flex-shrink: 0; width: 8px; height: 8px; border-radius: 50%; margin-top: 6px;
+    background: #4f46e5;
+}
+/* On short landscape phones there usually isn't enough vertical room for
+   the full 360px list AND the "View all notifications" footer below it —
+   AccountMenu's own maxHeight clamp (see AccountMenu.jsx) would otherwise
+   make the *whole panel* scroll before you could ever see that footer.
+   Capping the list itself to roughly 3 rows here keeps the footer on
+   screen without a second scroll step. Gated to touch/coarse-pointer so a
+   short desktop browser window (which has more forgiving chrome and a
+   mouse, not a fixed screen height) isn't affected. Portrait and
+   tablet/desktop landscape keep the full-height list. */
+@media (orientation: landscape) and (max-height: 500px) and (hover: none) and (pointer: coarse) {
+    .ds-notif-list { max-height: 246px; }
+}
+
 /* Same story as .ds-sidebar-menu above: position comes from AccountMenu at
    runtime, this rule is appearance-only. */
 .ds-menu {
@@ -433,7 +501,7 @@ body { overflow: hidden; }
    (it's `position: fixed`, set inline by <AccountMenu>). That's what lets
    the popover align itself to the *whole account menu's* edge (its left,
    right, top or bottom) instead of just this one row. */
-.ds-theme-row-wrap { }
+/* .ds-theme-row-wrap { } */
 .ds-theme-pill {
     margin-left: auto; flex-shrink: 0;
     font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
@@ -718,6 +786,8 @@ body { overflow: hidden; }
 .ds-shell.yellow .ds-btn-primary { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); box-shadow: 0 10px 24px rgba(217,119,6,0.35); color: #1c1408; }
 .ds-btn-primary:hover { opacity: 0.92; }
 .ds-btn-secondary { background: transparent; }
+.ds-btn-danger { background: rgba(220,38,38,0.12); color: #dc2626; border: 1.5px solid rgba(220,38,38,0.35); }
+.ds-btn-danger:hover { background: rgba(220,38,38,0.2); }
 .ds-shell.light .ds-btn-secondary { color: #0b1220; border: 1.5px solid #b9c4d6; }
 .ds-shell.dark .ds-btn-secondary { color: #e7ecf3; border: 1.5px solid #3a4457; }
 .ds-shell.light .ds-btn-secondary:hover { background: #f4f7fb; }

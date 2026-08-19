@@ -8,7 +8,7 @@ import useViewMode from '../../hooks/useViewMode';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm, useDiscardConfirm } from '../../context/ConfirmContext';
 import { useAuth } from '../../context/AuthContext';
-import { Info, RotateCcw, UserCircle, Upload, Pencil, X, KeyRound, Eye, EyeOff, IdCard } from 'lucide-react';
+import { Info, RotateCcw, UserCircle, Upload, Pencil, X, KeyRound, Eye, EyeOff, IdCard } from '../../Components/icons';
 import {
     filterPhoneInput,
     filterNameInput,

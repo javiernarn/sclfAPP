@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import { Download } from 'lucide-react';
+import { Download } from '../icons';
 import siteLogo from '../../assets/images/site-logo.png';
 import './StyledQrCode.css';
 

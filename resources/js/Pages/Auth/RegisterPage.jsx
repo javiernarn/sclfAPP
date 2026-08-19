@@ -40,7 +40,7 @@ import {
     Camera,
     Check,
     Info,
-} from 'lucide-react';
+} from '../../Components/icons';
 
 const COURSES = [
    'BSIT — Bachelor of Science in Information Technology',

@@ -48,6 +48,8 @@ class User extends Authenticatable
         'profile_picture',
         'is_active',
         'password',
+        'campus_id',
+        'department_id',
     ];
 
     /**
@@ -164,6 +166,45 @@ class User extends Authenticatable
     public function getDisplayIdAttribute(): ?string
     {
         return $this->student_id ?: $this->staff_id;
+    }
+
+    /**
+     * The campus this account is tied to. Nullable — not every account is
+     * campus-scoped (e.g. a global admin, or an account created before
+     * campus scoping existed). See the users.campus_id migration.
+     */
+    public function campus()
+    {
+        return $this->belongsTo(Campus::class);
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * Whether this account may operate on a resource scoped to the given
+     * campus. Admins are global by design (they oversee every campus).
+     * A null campus_id means "unscoped" — legacy/global accounts created
+     * before campus scoping existed, or accounts deliberately left
+     * unscoped — and are allowed everywhere rather than blocked
+     * everywhere, so this rolls out without locking anyone out. Once a
+     * real multi-campus deployment assigns officers to specific campuses,
+     * this is what keeps an officer at Campus A from touching Campus B's
+     * counters/storage.
+     */
+    public function canOperateInCampus(?int $campusId): bool
+    {
+        if ($this->hasRole('admin')) {
+            return true;
+        }
+
+        if ($this->campus_id === null || $campusId === null) {
+            return true;
+        }
+
+        return $this->campus_id === $campusId;
     }
 
     public function lostItems()

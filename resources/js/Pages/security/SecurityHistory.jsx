@@ -10,7 +10,7 @@ import {
     Search,
     ChevronLeft,
     ChevronRight,
-} from 'lucide-react';
+} from '../../Components/icons';
 
 // Two tabs, mirroring the two release flows that actually exist in the
 // backend (see HistoryController):

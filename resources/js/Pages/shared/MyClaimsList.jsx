@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { Link, useNavigate } from 'react-router-dom';
-import { Package, ChevronRight, Eye, Trash2 } from 'lucide-react';
+import { Package, ChevronRight, Eye, Trash2 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ViewToggle from '../../Components/shared/ViewToggle';
 import useViewMode from '../../hooks/useViewMode';

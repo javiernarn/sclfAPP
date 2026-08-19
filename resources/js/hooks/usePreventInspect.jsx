@@ -23,15 +23,15 @@
 // edits and nothing left commented out in the page components.
 // ============================================================
 import React, { useEffect, useState, useCallback } from "react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "../Components/icons";
 
-export const INSPECT_PROTECTION_ENABLED =
-    (typeof import.meta !== "undefined" &&
-        import.meta.env?.VITE_ENABLE_INSPECT_PROTECTION) === "false"
-        ? false
-        : true;
+// export const INSPECT_PROTECTION_ENABLED =
+//     (typeof import.meta !== "undefined" &&
+//         import.meta.env?.VITE_ENABLE_INSPECT_PROTECTION) === "false"
+//         ? false
+//         : true;
 
-// export const INSPECT_PROTECTION_ENABLED = false;
+export const INSPECT_PROTECTION_ENABLED = false;
 
 // Desktop-only breakpoint (window.innerWidth >= 992).
 const DESKTOP_MIN_WIDTH = 992;

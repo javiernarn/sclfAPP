@@ -6,8 +6,10 @@ import { useToast } from "../../context/ToastContext";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
 import logo from "../../assets/images/site-logo.png";
 import AccountMenu from "./AccountMenu";
+import GlobalSearchBar from "./GlobalSearchBar";
 import Tooltip from "./Tooltip";
 import HelpHints from "./HelpHints";
+import NotificationBell from "./NotificationBell";
 import "./DashboardShell.css";
 import {
     LayoutDashboard,
@@ -28,8 +30,12 @@ import {
     QrCode,
     ShieldCheck,
     PackageCheck,
+    ListOrdered,
     History,
-} from "lucide-react";
+    AlertTriangle,
+    UserCheck,
+    Wrench,
+} from "../icons";
 
 // The five themes offered from the account menu's "Theme" picker. 'white'
 // (Default) and 'black' (Dark) are plain — the same two the public login
@@ -109,14 +115,22 @@ const NAV_BY_ROLE = {
         { to: "/app/found-items", label: "Found Items", icon: PackageSearch },
         { to: "/app/found-items/create", label: "Report Found Item", icon: Megaphone },
         { to: "/app/claims", label: "My Claims", icon: ClipboardCheck },
+        { to: "/app/incidents", label: "Security Incidents", icon: AlertTriangle },
+        { to: "/app/service-requests", label: "Service Requests", icon: Wrench },
         { to: "/app/notifications", label: "Notifications", icon: Bell },
     ],
     security_officer: [
         { to: "/app/security/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
         { to: "/app/security/counter", label: "Counter", icon: PackageCheck },
+        { to: "/app/security/counter-dashboard", label: "Counter Dashboard", icon: ListOrdered },
         { to: "/app/security/found-items", label: "Found Item Reviews", icon: PackageSearch },
         { to: "/app/security/claims", label: "Claims", icon: ClipboardCheck },
         { to: "/app/security/inventory", label: "Inventory", icon: Boxes },
+        { to: "/app/security/unclaimed-items", label: "Unclaimed Items", icon: AlertTriangle },
+        { to: "/app/incidents", label: "Incidents", icon: ShieldCheck },
+        { to: "/app/service-requests", label: "Service Requests", icon: Wrench },
+        { to: "/app/security/assets", label: "Assets", icon: Boxes },
+        { to: "/app/security/visitors", label: "Visitors", icon: UserCheck },
         { to: "/app/security/qr-scanner", label: "QR Release Scanner", icon: QrCode },
         { to: "/app/security/history", label: "History", icon: History },
         { to: "/app/notifications", label: "Notifications", icon: Bell },
@@ -128,6 +142,21 @@ const NAV_BY_ROLE = {
         { to: "/app/claims", label: "Claims", icon: ClipboardCheck },
         { to: "/app/admin/users", label: "Users", icon: UserCircle },
         { to: "/app/admin/audit-log", label: "Audit Log", icon: ShieldCheck },
+        // No separate /app/admin/counter-dashboard route exists — this
+        // points straight at the security path, which ProtectedRoute
+        // already allows admins into (securityRoutes' requiredRoles
+        // includes 'admin'), same as how officers reach it.
+        { to: "/app/security/counter-dashboard", label: "Counter Dashboard", icon: ListOrdered },
+        // Same reuse pattern as Counter Dashboard above — no separate
+        // /app/admin/unclaimed-items route, admins hit the security path.
+        { to: "/app/security/unclaimed-items", label: "Unclaimed Items", icon: AlertTriangle },
+        // /app/incidents is already open to any authenticated user and
+        // self-scopes to "everything" for admin/officer roles inside the
+        // controller — no separate /app/admin/incidents route needed.
+        { to: "/app/incidents", label: "Incidents", icon: ShieldCheck },
+        { to: "/app/service-requests", label: "Service Requests", icon: Wrench },
+        { to: "/app/security/assets", label: "Assets", icon: Boxes },
+        { to: "/app/security/visitors", label: "Visitors", icon: UserCheck },
         // Same Counter/Lost & Found release history Security sees at
         // /app/security/history — admins get their own nav entry into it too,
         // for oversight of what officers are checking in/releasing.
@@ -423,14 +452,15 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                         <ul className="ds-nav">
                             {navItems.map((item) => {
                                 const Icon = item.icon;
+                                const active = isActive(item);
                                 const link = (
                                     <Link
                                         to={item.to}
-                                        className={`ds-nav-link ${isActive(item) ? "active" : ""}`}
+                                        className={`ds-nav-link ${active ? "active" : ""}`}
                                         onClick={() => setSidebarOpen(false)}
                                     >
                                         <span className="ds-nav-icon">
-                                            <Icon size={18} strokeWidth={2} />
+                                            <Icon size={18} strokeWidth={2} active={active} />
                                         </span>
                                         <span className="ds-nav-text">{item.label}</span>
                                     </Link>
@@ -474,6 +504,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                                 offset={12}
                                 width={260}
                                 theme={isDark ? "dark" : "light"}
+                                flyoutOpen={sidebarThemePickerOpen}
                                 className="ds-menu ds-sidebar-menu"
                             >
                                 <div className="ds-menu-name">{user?.name || "Account"}</div>
@@ -557,7 +588,9 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                         </div>
 
                         <div className="ds-topbar-actions">
+                            <GlobalSearchBar />
                             <HelpHints roles={roles} navRole={navRole} isDark={isDark} />
+                            <NotificationBell isDark={isDark} />
                             <div className="ds-menu-wrap">
                                 <button
                                     type="button"
@@ -581,6 +614,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                                     placement="bottom-end"
                                     width={220}
                                     theme={isDark ? "dark" : "light"}
+                                    flyoutOpen={themePickerOpen}
                                     className="ds-menu"
                                 >
                                     <div className="ds-menu-name">{user?.name || "Account"}</div>

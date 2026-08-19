@@ -22,7 +22,19 @@ import SecurityDashboard from '../Pages/security/SecurityDashboard';
 import SecurityFoundItemsReview from '../Pages/security/SecurityFoundItemsReview';
 import SecurityInventory from '../Pages/security/SecurityInventory';
 import SecurityCounter from '../Pages/security/SecurityCounter';
+import SecurityCounterDashboard from '../Pages/security/SecurityCounterDashboard';
+import SecurityUnclaimedItems from '../Pages/security/SecurityUnclaimedItems';
+import SecurityVisitors from '../Pages/security/SecurityVisitors';
 import SecurityHistory from '../Pages/security/SecurityHistory';
+import SecurityAssetCreate from '../Pages/security/SecurityAssetCreate';
+import IncidentsList from '../Pages/shared/IncidentsList';
+import IncidentCreate from '../Pages/shared/IncidentCreate';
+import IncidentDetail from '../Pages/shared/IncidentDetail';
+import ServiceRequestsList from '../Pages/shared/ServiceRequestsList';
+import ServiceRequestCreate from '../Pages/shared/ServiceRequestCreate';
+import ServiceRequestDetail from '../Pages/shared/ServiceRequestDetail';
+import AssetsList from '../Pages/shared/AssetsList';
+import AssetDetail from '../Pages/shared/AssetDetail';
 
 // Lazy-loaded: pulls in the qr-scanner camera/worker bundle only when a
 // security officer actually opens this page, instead of shipping it in
@@ -59,7 +71,17 @@ const securityRoutes = [
     { path: '/app/security/qr-scanner', component: SecurityQrScanner },
     { path: '/app/security/inventory', component: SecurityInventory },
     { path: '/app/security/counter', component: SecurityCounter },
+    { path: '/app/security/counter-dashboard', component: SecurityCounterDashboard },
+    { path: '/app/security/unclaimed-items', component: SecurityUnclaimedItems },
+    { path: '/app/security/visitors', component: SecurityVisitors },
     { path: '/app/security/history', component: SecurityHistory },
+    // Registering/managing the asset registry is officer/admin-only;
+    // viewing (including a custodian's own "My Assets") is in
+    // studentRoutes below via the same shared AssetsList/AssetDetail
+    // components — see AssetPolicy for why viewing splits that way.
+    { path: '/app/security/assets/new', component: SecurityAssetCreate },
+    { path: '/app/security/assets/:id', component: AssetDetail },
+    { path: '/app/security/assets', component: AssetsList },
 ];
 
 // Routes reachable by any authenticated users such as (student, instructor, security
@@ -77,6 +99,17 @@ const studentRoutes = [
     { path: '/app/claims/:id', component: ClaimDetail },
     { path: '/app/notifications', component: NotificationsPage },
     { path: '/app/profile', component: ProfilePage },
+    { path: '/app/incidents', component: IncidentsList },
+    { path: '/app/incidents/report', component: IncidentCreate },
+    { path: '/app/incidents/:id', component: IncidentDetail },
+    { path: '/app/service-requests', component: ServiceRequestsList },
+    { path: '/app/service-requests/new', component: ServiceRequestCreate },
+    { path: '/app/service-requests/:id', component: ServiceRequestDetail },
+    // "My Assets" — any authenticated user can view assets currently
+    // assigned to them (AssetPolicy::view()); registering/managing the
+    // registry itself is officer/admin-only, see securityRoutes above.
+    { path: '/app/assets', component: AssetsList },
+    { path: '/app/assets/:id', component: AssetDetail },
 ];
 
 export { publicRoutes, adminRoutes, securityRoutes, studentRoutes };

@@ -2,13 +2,17 @@
 
 namespace App\Http\Requests;
 
+use App\Models\FoundItem;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreFoundItemRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->hasAnyRole(['student', 'instructor', 'security_officer']);
+        // Delegates to FoundItemPolicy::create() rather than duplicating
+        // the allowed-role list here, so there's a single source of truth
+        // for "who can report a found item."
+        return $this->user()->can('create', FoundItem::class);
     }
 
     public function rules(): array

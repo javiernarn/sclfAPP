@@ -65,10 +65,17 @@ class InventoryService
     public function assignStorage(FoundItem $item, StorageLocation $location, User $officer, ?string $notes = null): FoundItem
     {
         return DB::transaction(function () use ($item, $location, $officer, $notes) {
+            $this->assertHasCapacity($location);
+
             $item->update([
                 'storage_location_id' => $location->id,
                 'status' => FoundItem::STATUS_STORED,
                 'qr_code' => $item->qr_code ?? ('SCLF-ITEM-' . str_pad((string) $item->id, 6, '0', STR_PAD_LEFT) . '-' . Str::upper(Str::random(4))),
+                // Only fill in on first storage — a re-assignment of an
+                // already-stored item shouldn't silently reset a retention
+                // date an officer may have already customized.
+                'retention_expires_at' => $item->retention_expires_at
+                    ?? now()->addDays((int) config('sclf.retention_days'))->toDateString(),
             ]);
 
             InventoryMovement::create([
@@ -88,6 +95,13 @@ class InventoryService
     public function move(FoundItem $item, StorageLocation $location, User $officer, ?string $notes = null): FoundItem
     {
         return DB::transaction(function () use ($item, $location, $officer, $notes) {
+            // Only check capacity when actually changing shelf — moving an
+            // item to the location it's already at (a no-op in practice)
+            // shouldn't get blocked by its own occupancy.
+            if ($item->storage_location_id !== $location->id) {
+                $this->assertHasCapacity($location);
+            }
+
             $item->update(['storage_location_id' => $location->id]);
 
             InventoryMovement::create([
@@ -102,5 +116,15 @@ class InventoryService
 
             return $item->fresh();
         });
+    }
+
+    /**
+     * @throws StorageCapacityExceededException
+     */
+    protected function assertHasCapacity(StorageLocation $location): void
+    {
+        if ($location->isAtCapacity()) {
+            throw new StorageCapacityExceededException($location);
+        }
     }
 }

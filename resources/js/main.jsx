@@ -4,6 +4,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { ToastProvider } from './context/ToastContext';
 import { ConfirmProvider } from './context/ConfirmContext';
 import RootApp from './RootApp';
@@ -27,7 +28,11 @@ ReactDOM.createRoot(document.getElementById('app')).render(
             <ToastProvider>
                 <ConfirmProvider>
                     <AuthProvider>
-                        <RootApp />
+                        {/* Needs AuthProvider above it — it only polls
+                            /notifications while a user session exists. */}
+                        <NotificationProvider>
+                            <RootApp />
+                        </NotificationProvider>
                     </AuthProvider>
                 </ConfirmProvider>
             </ToastProvider>

@@ -56,9 +56,33 @@ class CounterIntakeService
             ]);
         }
 
+        // Alongside is_active (a hard on/off switch), status gives a
+        // reason: a counter can be temporarily 'closed' or 'maintenance'
+        // without being deactivated outright. Only 'open' accepts new
+        // check-ins — is_active alone can't express "still exists, just
+        // not accepting walk-ins right now."
+        if ($counter->status !== StorageLocation::STATUS_OPEN) {
+            $reason = match ($counter->status) {
+                StorageLocation::STATUS_CLOSED => 'currently closed',
+                StorageLocation::STATUS_MAINTENANCE => 'under maintenance',
+                StorageLocation::STATUS_INACTIVE => 'inactive',
+                default => 'not accepting check-ins right now',
+            };
+
+            throw ValidationException::withMessages([
+                'storage_location_id' => ["That counter is {$reason}."],
+            ]);
+        }
+
         if ($owner->id === $officer->id) {
             throw ValidationException::withMessages([
                 'owner_id' => ['A security officer cannot check an item in under their own account.'],
+            ]);
+        }
+
+        if (!$officer->canOperateInCampus($counter->campus_id)) {
+            throw ValidationException::withMessages([
+                'storage_location_id' => ['That counter belongs to a different campus than your account.'],
             ]);
         }
 

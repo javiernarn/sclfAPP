@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { useToast } from '../../context/ToastContext';
-import { UserCircle, PackageCheck, PackageOpen, QrCode, CheckCircle2 } from 'lucide-react';
+import { UserCircle, PackageCheck, PackageOpen, QrCode, CheckCircle2, Archive, AlertTriangle } from '../../Components/icons';
 
 // Per-location status breakdown, so a guard glancing at this list — not
 // just the one who shelved it — can tell at a glance whether what's listed
@@ -14,8 +14,9 @@ function LocationStatusChips({ location }) {
     const onShelf = location.on_shelf_count || 0;
     const claimed = location.claimed_count || 0;
     const pendingRelease = location.pending_release_count || 0;
+    const unclaimed = location.unclaimed_count || 0;
     const released = location.released_count || 0;
-    const stillHere = onShelf + claimed + pendingRelease;
+    const stillHere = onShelf + claimed + pendingRelease + unclaimed;
 
     if (!stillHere && !released) {
         return <span className="ds-badge ds-badge-default">Empty — no items assigned yet</span>;
@@ -38,6 +39,11 @@ function LocationStatusChips({ location }) {
                     <QrCode size={12} /> {pendingRelease} release pending — expect pickup soon
                 </span>
             )}
+            {unclaimed > 0 && (
+                <span className="ds-badge ds-badge-rejected ds-badge-icon">
+                    <AlertTriangle size={12} /> {unclaimed} unclaimed — retention expired
+                </span>
+            )}
             {released > 0 && (
                 <span className="ds-badge ds-badge-default ds-badge-icon">
                     <PackageCheck size={12} /> {released} already released (history only)
@@ -47,14 +53,77 @@ function LocationStatusChips({ location }) {
     );
 }
 
+// Capacity is opt-in per location (see the Phase 3 migration) — shows
+// nothing for locations nobody's bothered to measure, and a plain X/Y
+// count that turns to a warning badge once genuinely full.
+function CapacityBadge({ location }) {
+    if (location.capacity === null || location.capacity === undefined) {
+        return null;
+    }
+    const occupied = (location.on_shelf_count || 0) + (location.claimed_count || 0)
+        + (location.pending_release_count || 0) + (location.unclaimed_count || 0);
+
+    return (
+        <span className={`ds-badge ${location.is_at_capacity ? 'ds-badge-rejected' : 'ds-badge-default'} ds-badge-icon`}>
+            <Archive size={12} /> {occupied}/{location.capacity} slots {location.is_at_capacity ? '— full' : 'used'}
+        </span>
+    );
+}
+
+// Inline "set capacity" control on each storage card — capacity is set
+// after the fact (see the PATCH /storage-locations/{id}/capacity route),
+// not required at creation, since an officer measuring actual shelf slots
+// usually happens later than initial setup.
+function CapacityEditor({ location, onSaved }) {
+    const [value, setValue] = useState(location.capacity ?? '');
+    const [saving, setSaving] = useState(false);
+    const toast = useToast();
+
+    const save = async () => {
+        setSaving(true);
+        try {
+            await axios.patch(`/storage-locations/${location.id}/capacity`, {
+                capacity: value === '' ? null : Number(value),
+            });
+            toast.success('Capacity updated.', { title: 'Saved' });
+            onSaved();
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Could not update capacity.', { title: 'Could not save' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <div className="ds-list-item-side" style={{ marginTop: 8 }}>
+            <input
+                type="number"
+                min="1"
+                placeholder="No limit"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                style={{ width: 90 }}
+            />
+            <button className="ds-btn ds-btn-secondary" disabled={saving} onClick={save}>
+                Set capacity
+            </button>
+        </div>
+    );
+}
+
 export default function SecurityInventory() {
     const [storageLocations, setStorageLocations] = useState([]);
     const [counterLocations, setCounterLocations] = useState([]);
     const [unstored, setUnstored] = useState([]);
+    const [stored, setStored] = useState([]); // already-shelved items, movable to a new location
     const [loading, setLoading] = useState(true);
     const [assign, setAssign] = useState({}); // itemId -> locationId
+    const [move, setMove] = useState({}); // itemId -> new locationId
     const [busyId, setBusyId] = useState(null);
-    const [newLoc, setNewLoc] = useState({ campus_id: '', type: 'storage', label: '', room: '', cabinet: '', shelf: '', box: '', code: '' });
+    const [historyForId, setHistoryForId] = useState(null);
+    const [historyEntries, setHistoryEntries] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [newLoc, setNewLoc] = useState({ campus_id: '', type: 'storage', label: '', room: '', cabinet: '', shelf: '', box: '', code: '', capacity: '' });
     const [campuses, setCampuses] = useState([]);
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
@@ -70,12 +139,16 @@ export default function SecurityInventory() {
             axios.get('/storage-locations', { params: { type: 'storage' } }),
             axios.get('/storage-locations', { params: { type: 'counter' } }),
             axios.get('/found-items', { params: { status: 'accepted' } }),
+            // Already shelved, still on the shelf — eligible to be moved to
+            // a different location (e.g. consolidating or re-organizing).
+            axios.get('/found-items', { params: { status: 'stored' } }),
             axios.get('/campuses'),
         ])
-            .then(([storeRes, counterRes, itemRes, campRes]) => {
+            .then(([storeRes, counterRes, itemRes, storedRes, campRes]) => {
                 setStorageLocations(storeRes.data);
                 setCounterLocations(counterRes.data);
                 setUnstored(itemRes.data.data);
+                setStored(storedRes.data.data);
                 setCampuses(campRes.data);
                 if (campRes.data[0]) setNewLoc(f => ({ ...f, campus_id: f.campus_id || campRes.data[0].id }));
             })
@@ -99,13 +172,46 @@ export default function SecurityInventory() {
         }
     };
 
+    const moveStorage = async (itemId) => {
+        const storage_location_id = move[itemId];
+        if (!storage_location_id) return;
+        setBusyId(itemId);
+        try {
+            await axios.post(`/found-items/${itemId}/move-storage`, { storage_location_id });
+            toast.success('Item moved to the new location.', { title: 'Moved' });
+            load();
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Could not move this item.', { title: 'Could not move' });
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const toggleHistory = async (itemId) => {
+        if (historyForId === itemId) {
+            setHistoryForId(null);
+            return;
+        }
+        setHistoryForId(itemId);
+        setHistoryLoading(true);
+        try {
+            const res = await axios.get(`/found-items/${itemId}/movements`);
+            setHistoryEntries(res.data);
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Could not load movement history.', { title: 'Could not load history' });
+            setHistoryEntries([]);
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
+
     const createLocation = async (e) => {
         e.preventDefault();
         setError('');
         setFieldErrors({});
         try {
-            await axios.post('/storage-locations', newLoc);
-            setNewLoc({ ...newLoc, label: '', room: '', cabinet: '', shelf: '', box: '', code: '' });
+            await axios.post('/storage-locations', { ...newLoc, capacity: newLoc.capacity === '' ? null : Number(newLoc.capacity) });
+            setNewLoc({ ...newLoc, label: '', room: '', cabinet: '', shelf: '', box: '', code: '', capacity: '' });
             toast.success('Storage location added.', { title: 'Location created' });
             load();
         } catch (err) {
@@ -159,12 +265,89 @@ export default function SecurityInventory() {
             </div>
 
             <div className="ds-card">
-                <h3>Lost &amp; Found Storage</h3>
+                <h3>Stored Items</h3>
                 <p className="ds-card-desc">
-                    Room / cabinet / shelf / box shelving for unmatched found items going through the normal
-                    report → verify → match → claim flow. Each spot shows what's actually still there right now,
-                    not just how many items were ever shelved here.
+                    Already shelved. Move an item to a different location, or check its movement history.
                 </p>
+                {loading && <div className="ds-skeleton" />}
+                {!loading && stored.length === 0 && <div className="ds-empty">Nothing on the shelf right now.</div>}
+                {!loading && stored.length > 0 && (
+                    <ul className="ds-list">
+                        {stored.map(item => (
+                            <li key={item.id} className="ds-list-item" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                                <div className="ds-list-item-main">
+                                    <div style={{ minWidth: 0 }}>
+                                        <p className="ds-list-item-title">{item.item_name}</p>
+                                        <p className="ds-list-item-meta">
+                                            {item.category}
+                                            {item.storage_location?.code ? ` · Currently at ${item.storage_location.code}` : ''}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="ds-list-item-side">
+                                    <select
+                                        value={move[item.id] || ''}
+                                        onChange={(e) => setMove({ ...move, [item.id]: e.target.value })}
+                                        style={{ flex: 1, minWidth: 0 }}
+                                    >
+                                        <option value="">Move to…</option>
+                                        {storageLocations
+                                            .filter(l => l.id !== item.storage_location_id)
+                                            .map(l => <option key={l.id} value={l.id}>{l.code}</option>)}
+                                    </select>
+                                    <button className="ds-btn ds-btn-primary" disabled={busyId === item.id} onClick={() => moveStorage(item.id)}>
+                                        Move
+                                    </button>
+                                    <button className="ds-btn ds-btn-secondary" onClick={() => toggleHistory(item.id)}>
+                                        {historyForId === item.id ? 'Hide history' : 'History'}
+                                    </button>
+                                </div>
+                                {historyForId === item.id && (
+                                    <div className="ds-card" style={{ marginTop: 8, marginBottom: 0 }}>
+                                        {historyLoading && <div className="ds-skeleton" />}
+                                        {!historyLoading && historyEntries.length === 0 && (
+                                            <div className="ds-empty">No movement history recorded.</div>
+                                        )}
+                                        {!historyLoading && historyEntries.length > 0 && (
+                                            <ul className="ds-list">
+                                                {historyEntries.map(entry => (
+                                                    <li key={entry.id} className="ds-list-item">
+                                                        <div style={{ minWidth: 0 }}>
+                                                            <p className="ds-list-item-title" style={{ textTransform: 'capitalize' }}>
+                                                                {entry.action?.replace(/_/g, ' ')}
+                                                                {entry.storage_location?.code ? ` — ${entry.storage_location.code}` : ''}
+                                                            </p>
+                                                            <p className="ds-list-item-meta">
+                                                                {entry.mover?.name || 'Unknown staff'} · {new Date(entry.created_at).toLocaleString()}
+                                                            </p>
+                                                            {entry.notes && <p className="ds-list-item-meta">{entry.notes}</p>}
+                                                        </div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+
+            <div className="ds-card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                    <div>
+                        <h3 style={{ marginBottom: 4 }}>Lost &amp; Found Storage</h3>
+                        <p className="ds-card-desc">
+                            Room / cabinet / shelf / box shelving for unmatched found items going through the normal
+                            report → verify → match → claim flow. Each spot shows what's actually still there right now,
+                            not just how many items were ever shelved here.
+                        </p>
+                    </div>
+                    <a href="/app/security/unclaimed-items" className="ds-btn ds-btn-secondary" style={{ whiteSpace: 'nowrap' }}>
+                        Unclaimed Items
+                    </a>
+                </div>
                 {!loading && storageLocations.length === 0 && (
                     <div className="ds-empty">No lost &amp; found storage locations yet — add one below.</div>
                 )}
@@ -179,7 +362,11 @@ export default function SecurityInventory() {
                                 <UserCircle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
                                 Added by {l.creator?.name || 'Unknown (legacy entry)'}
                             </p>
+                            <div className="ds-chip-row" style={{ marginTop: 6 }}>
+                                <CapacityBadge location={l} />
+                            </div>
                             <LocationStatusChips location={l} />
+                            <CapacityEditor location={l} onSaved={load} />
                         </div>
                     ))}
                 </div>
@@ -300,6 +487,14 @@ export default function SecurityInventory() {
                                     <label>Box</label>
                                     <input value={newLoc.box} onChange={(e) => setNewLoc({ ...newLoc, box: e.target.value })} placeholder="e.g. Box 5" />
                                     <p className="ds-field-hint">Optional — the most specific level, e.g. a labeled bin.</p>
+                                </div>
+                            </div>
+                            <div className="ds-form-row ds-form-row-2">
+                                <div className="ds-field">
+                                    <label>Capacity</label>
+                                    <input type="number" min="1" value={newLoc.capacity}
+                                        onChange={(e) => setNewLoc({ ...newLoc, capacity: e.target.value })} placeholder="No limit" />
+                                    <p className="ds-field-hint">Optional — max items this spot can hold. Leave blank for no limit; can be set later too.</p>
                                 </div>
                             </div>
                         </>

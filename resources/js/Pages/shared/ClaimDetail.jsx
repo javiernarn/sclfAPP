@@ -6,7 +6,7 @@ import {
     MessageSquare, Hash, Receipt, Image as ImageIcon, FileText, HelpCircle,
     ExternalLink, Copy, Check, PlayCircle, CheckCircle2, XCircle, Clock as ClockIcon,
     QrCode, KeyRound, RefreshCw, Ban, PackageCheck,
-} from 'lucide-react';
+} from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import StyledQrCode from '../../Components/shared/StyledQrCode';
 import { ClaimDetailSkeleton } from '../../Components/shared/ClaimSkeleton';

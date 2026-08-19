@@ -15,7 +15,7 @@ class AdminSeeder extends Seeder
         $name = env('INITIAL_ADMIN_NAME', 'System Administrator');
 
         if (!$email || !$password) {
-            $this->command?->warn(
+            $this->command?->warn(       // From ENV
                 'Skipping initial admin seeder: INITIAL_ADMIN_EMAIL / INITIAL_ADMIN_PASSWORD not set in .env'
             );
 

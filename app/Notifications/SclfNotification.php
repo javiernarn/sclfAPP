@@ -3,9 +3,12 @@
 namespace App\Notifications;
 
 use App\Mail\NotificationMail;
+use App\Models\Asset;
 use App\Models\Claim;
 use App\Models\FoundItem;
 use App\Models\LostItem;
+use App\Models\SecurityIncident;
+use App\Models\ServiceRequest;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Notification;
@@ -26,6 +29,11 @@ class SclfNotification extends Notification
     public const TYPE_FOUND_REPORT_APPROVED = 'found_report_approved';
     public const TYPE_FOUND_REPORT_REJECTED = 'found_report_rejected';
     public const TYPE_SECURITY_VERIFICATION_COMPLETED = 'security_verification_completed';
+    public const TYPE_QUEUE_CALLED = 'queue_called';
+    public const TYPE_INCIDENT_ASSIGNED = 'incident_assigned';
+    public const TYPE_SERVICE_REQUEST_ASSIGNED = 'service_request_assigned';
+    public const TYPE_SERVICE_REQUEST_COMPLETED = 'service_request_completed';
+    public const TYPE_ASSET_ASSIGNED = 'asset_assigned';
 
     /**
      * Only these two roles get an email copy of their in-app notification.
@@ -53,6 +61,11 @@ class SclfNotification extends Notification
         self::TYPE_FOUND_REPORT_APPROVED => ['Report Approved', 'success'],
         self::TYPE_FOUND_REPORT_REJECTED => ['Report Rejected', 'danger'],
         self::TYPE_SECURITY_VERIFICATION_COMPLETED => ['Verification Completed', 'info'],
+        self::TYPE_QUEUE_CALLED => ["It's Your Turn", 'success'],
+        self::TYPE_INCIDENT_ASSIGNED => ['Incident Assigned', 'warning'],
+        self::TYPE_SERVICE_REQUEST_ASSIGNED => ['Service Request Assigned', 'warning'],
+        self::TYPE_SERVICE_REQUEST_COMPLETED => ['Request Completed', 'success'],
+        self::TYPE_ASSET_ASSIGNED => ['Asset Assigned', 'info'],
     ];
 
     /**
@@ -64,6 +77,9 @@ class SclfNotification extends Notification
         Claim::class => '/app/claims/%d',
         LostItem::class => '/app/lost-items/%d/matches',
         FoundItem::class => '/app/found-items/%d',
+        SecurityIncident::class => '/app/incidents/%d',
+        ServiceRequest::class => '/app/service-requests/%d',
+        Asset::class => '/app/security/assets/%d',
     ];
 
     public function __construct(

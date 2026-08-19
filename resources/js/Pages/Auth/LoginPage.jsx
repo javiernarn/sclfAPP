@@ -16,7 +16,7 @@ import AuthShell, {
     LedgerBanner,
     LedgerButton,
 } from '../../Components/shared/AuthShell';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock } from '../../Components/icons';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');

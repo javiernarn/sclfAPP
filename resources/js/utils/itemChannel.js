@@ -1,4 +1,4 @@
-import { Search, Building2 } from 'lucide-react';
+import { Search, Building2 } from '../Components/icons';
 
 // Single source of truth for how an item's intake_channel renders across
 // the Claims list, Claim detail, Found Items list, and Found Item detail

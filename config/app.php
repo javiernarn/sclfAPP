@@ -26,6 +26,7 @@ return [
     |
     */
 
+          // LOCAL OR PRODUCTION
     'env' => env('APP_ENV', 'production'),
 
     /*
@@ -38,7 +39,7 @@ return [
     | application. If disabled, a simple generic error page is shown.
     |
     */
-
+        //false OR true
     'debug' => (bool) env('APP_DEBUG', false),
 
     /*
@@ -51,8 +52,8 @@ return [
     | the application so that it's available within Artisan commands.
     |
     */
-
-    'url' => env('APP_URL', 'http://localhost'),
+        //live URL OR localhost
+   'url' => env('APP_URL', 'http://localhost'),
 
     /*
     |--------------------------------------------------------------------------
@@ -64,8 +65,8 @@ return [
     | is set to "UTC" by default as it is suitable for most use cases.
     |
     */
-
-    'timezone' => 'UTC',
+        // Asia/manila OR UTC
+    'timezone' => env('APP_TIMEZONE', 'UTC'),
 
     /*
     |--------------------------------------------------------------------------

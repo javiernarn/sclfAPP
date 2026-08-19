@@ -3,7 +3,7 @@ import axios from '../../config/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { useToast } from '../../context/ToastContext';
-import { Search, UserCircle, PackageCheck, Info, RotateCcw, ArrowRight } from 'lucide-react';
+import { Search, UserCircle, PackageCheck, Info, RotateCcw, ArrowRight } from '../../Components/icons';
 
 // The counter check-in flow, in three steps: find the owner, describe the
 // item + pick where it's being held, submit. Kept as one page (not a

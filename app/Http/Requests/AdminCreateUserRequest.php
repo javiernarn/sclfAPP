@@ -22,6 +22,11 @@ class AdminCreateUserRequest extends FormRequest
             // Philippine mobile numbers: 11 digits starting with 09.
             'phone_number' => ['nullable', 'string', 'regex:/^09\d{9}$/', 'unique:users,phone_number'],
             'gender' => ['nullable', 'string', 'in:male,female,other,prefer_not_to_say'],
+            // Optional: which campus this account is tied to. Nullable so
+            // creating a global admin (no single-campus scope) still works;
+            // campus-scoped enforcement for security_officer accounts is
+            // applied separately, not forced here at creation time.
+            'campus_id' => ['nullable', 'exists:campuses,id'],
             // Optional at creation — staff can also add one later from
             // their own Profile page. Same limits as self-registration.
             'profile_picture' => ['nullable', 'image', 'max:5120'],

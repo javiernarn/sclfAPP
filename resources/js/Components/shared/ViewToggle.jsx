@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutList, Table2 } from 'lucide-react';
+import { LayoutList, Table2 } from '../icons';
 
 // Small pill switch that flips a list page between its "cards" layout
 // (one record per row, friendlier on mobile) and a flat "table" layout

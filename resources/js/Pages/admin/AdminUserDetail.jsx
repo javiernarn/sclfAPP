@@ -5,7 +5,7 @@ import {
     ArrowLeft, UserCircle, Mail, Phone, IdCard, ShieldCheck, Calendar,
     VenetianMask, MapPin, GraduationCap, LogIn, LogOut, History,
     PackageSearch, ClipboardCheck, Ban, Trash2, PackageCheck, QrCode,
-} from 'lucide-react';
+} from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ImageViewer from '../../Components/shared/ImageViewer';
 import { useAuth } from '../../context/AuthContext';

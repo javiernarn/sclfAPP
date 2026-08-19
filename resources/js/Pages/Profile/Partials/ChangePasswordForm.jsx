@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, ShieldCheck, CheckCircle2, XCircle, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, Lock, ShieldCheck, CheckCircle2, XCircle, KeyRound } from '../../../Components/icons';
 import axios from '../../../config/axiosConfig';
 import Tooltip from '../../../Components/shared/Tooltip';
 import { useToast } from '../../../context/ToastContext';

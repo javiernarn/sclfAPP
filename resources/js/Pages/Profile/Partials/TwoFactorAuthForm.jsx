@@ -3,7 +3,7 @@ import QRCode from 'qrcode';
 import {
     ShieldCheck, ShieldOff, Smartphone, Copy, Check, Eye, EyeOff,
     AlertTriangle, KeyRound, Download,
-} from 'lucide-react';
+} from '../../../Components/icons';
 import axios from '../../../config/axiosConfig';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
