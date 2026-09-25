@@ -38,6 +38,18 @@ const MainPage = () => {
             // /login — honor that once instead of dropping the person on
             // their generic role dashboard, then clear it so it's a
             // one-time hop and not sticky across future logins.
+            // Admin-created staff account that hasn't set its own
+            // password/photo/name yet — send it straight to the setup
+            // gate instead of a dashboard (or notification deep link)
+            // it'll just get bounced out of anyway (see ProtectedRoute
+            // in RootApp.jsx). Checked before the deep-link redirect
+            // below on purpose — a locked account has nowhere else to go
+            // yet, deep link or not.
+            if (user.must_setup_profile) {
+                navigate("/app/setup-account", { replace: true });
+                return;
+            }
+
             try {
                 const redirect = window.sessionStorage.getItem("sclf-post-login-redirect");
                 if (redirect) {

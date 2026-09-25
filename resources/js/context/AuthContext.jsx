@@ -121,6 +121,20 @@ export function AuthProvider({ children }) {
         setUser((prev) => (prev ? { ...prev, ...patch } : prev));
     };
 
+    // The mandatory first-login setup an admin-created staff account goes
+    // through (SetupAccountPage) — new password + their own name/photo.
+    // Patches the in-memory user with the server's response (in
+    // particular must_setup_profile: false) so ProtectedRoute stops
+    // redirecting back to the setup page the instant this resolves.
+    const completeSetup = async (formData) => {
+        const res = await axios.post('/profile/complete-setup', formData, {
+            silent: true,
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+        updateUser(res.data.user);
+        return res.data;
+    };
+
     const logout = async () => {
         // Fully revoke this device's push subscription on an explicit
         // logout (both the browser side and the server-side row) rather
@@ -143,7 +157,7 @@ export function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, roles, loading, login, verifyTwoFactor, register, logout, updateUser }}>
+        <AuthContext.Provider value={{ user, roles, loading, login, verifyTwoFactor, register, logout, updateUser, completeSetup }}>
             {children}
         </AuthContext.Provider>
     );

@@ -1,0 +1,212 @@
+/*
+ * MobileBottomNav.css
+ * -------------------
+ * Everything here is phone-only. Two safety nets keep desktop/laptop
+ * untouched:
+ *   1. <MobileBottomNav> is only rendered when useIsPhone() is true, so the
+ *      `.ds-bottomnav*` rules below have nothing to style anywhere else.
+ *   2. Every rule that touches an EXISTING shell element is scoped under
+ *      `.ds-shell.ds-phone`, a class DashboardShell only adds on phones.
+ *
+ * Imported by MobileBottomNav.jsx, which DashboardShell.jsx imports AFTER
+ * DashboardShell.css, so at equal specificity these rules win.
+ */
+
+/* ---------- Phone-only shell adjustments ---------- */
+
+.ds-shell.ds-phone {
+    /* Same height the pinned page footer had, so pages get exactly the
+       same amount of vertical room after the swap. */
+    --ds-bottomnav-h: 60px;
+}
+@media (orientation: landscape) and (max-height: 500px) {
+    .ds-shell.ds-phone { --ds-bottomnav-h: 52px; }
+}
+
+/* The sidebar is ALWAYS a slide-over on phones. Normally that comes from
+   the `max-width: 959px` breakpoint, but a large phone turned sideways can
+   be wider than 960px and would otherwise get the persistent desktop
+   column — which would break the Menu tab. These re-assert the slide-over
+   behaviour (identical to the <960px rules) for that case. */
+.ds-shell.ds-phone .ds-sidebar {
+    position: fixed;
+    height: auto;
+    width: min(84vw, 300px);
+    transform: translateX(-100%);
+}
+.ds-shell.ds-phone .ds-sidebar.open { transform: translateX(0); }
+.ds-shell.ds-phone .ds-sidebar-backdrop { display: block; }
+.ds-shell.ds-phone .ds-topbar-brand { display: flex; }
+
+/* Explicit close button in the sidebar (the header's burger is covered by
+   the sidebar while it's open, so without this the only way out was
+   tapping the dim backdrop). Hidden everywhere except phones. */
+.ds-sidebar-close { display: none; }
+.ds-shell.ds-phone .ds-sidebar-close {
+    display: inline-flex;
+    position: absolute;
+    top: max(13px, env(safe-area-inset-top));
+    right: 12px;
+    z-index: 2;
+}
+.ds-shell.ds-phone .ds-brand { padding-right: 48px; }
+
+/* Developer credit — moved here from the pinned page footer, which phones
+   no longer show (the tab bar takes its place). */
+.ds-sidebar-credit {
+    flex-shrink: 0;
+    padding: 8px 6px 10px;
+    text-align: center;
+    font-size: 10.5px;
+    line-height: 1.3;
+}
+.ds-sidebar-credit .ds-footer-credit { white-space: normal; }
+
+/* ---------- The tab bar ---------- */
+
+.ds-bottomnav {
+    /* Defaults = the plain "white" theme; per-theme overrides below. */
+    --bn-bg: rgba(255, 255, 255, 0.97);
+    --bn-border: #c3ccdb;
+    --bn-idle: rgba(11, 18, 32, 0.6);
+    --bn-accent: #4f46e5;
+    --bn-accent-soft: rgba(79, 70, 229, 0.12);
+
+    flex-shrink: 0;
+    position: relative;
+    z-index: 20;
+    display: flex;
+    align-items: stretch;
+    height: calc(var(--ds-bottomnav-h, 60px) + env(safe-area-inset-bottom));
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    background: var(--bn-bg);
+    border-top: 1.5px solid var(--bn-border);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    /* Comes back in after the sidebar has finished sliding closed. */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.06s,
+                opacity 0.22s ease 0.06s,
+                visibility 0s linear 0s;
+}
+
+/* Sidebar open → slide the bar down and out. The space it occupied stays
+   reserved (it's still in the flex column), so the page behind the dim
+   backdrop doesn't jump around when the bar leaves. */
+.ds-bottomnav.is-hidden {
+    transform: translateY(100%);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.16s ease,
+                visibility 0s linear 0.24s;
+}
+
+.ds-shell.dark .ds-bottomnav {
+    --bn-bg: rgba(16, 19, 27, 0.97);
+    --bn-border: #323b4a;
+    --bn-idle: rgba(231, 236, 243, 0.6);
+    --bn-accent: #a5b4fc;
+    --bn-accent-soft: rgba(99, 102, 241, 0.22);
+}
+.ds-shell.maroon .ds-bottomnav {
+    --bn-bg: rgba(254, 247, 248, 0.97);
+    --bn-border: #e8b3bc;
+    --bn-accent: #9f1239;
+    --bn-accent-soft: rgba(159, 18, 57, 0.11);
+}
+.ds-shell.blue .ds-bottomnav {
+    --bn-bg: rgba(245, 249, 255, 0.97);
+    --bn-border: #a9cdf5;
+    --bn-accent: #1d4ed8;
+    --bn-accent-soft: rgba(37, 99, 235, 0.11);
+}
+.ds-shell.yellow .ds-bottomnav {
+    --bn-bg: rgba(254, 250, 240, 0.97);
+    --bn-border: #e6c477;
+    --bn-accent: #b45309;
+    --bn-accent-soft: rgba(217, 119, 6, 0.16);
+}
+
+.ds-bottomnav-item {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--bn-idle);
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: color 0.18s ease;
+}
+
+.ds-bottomnav-icon {
+    width: 52px;
+    height: 28px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, transform 0.12s ease;
+}
+
+.ds-bottomnav-label {
+    max-width: 100%;
+    padding: 0 3px;
+    font-size: 10.5px;
+    font-weight: 650;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ds-bottomnav-item.is-active { color: var(--bn-accent); }
+.ds-bottomnav-item.is-active .ds-bottomnav-icon { background: var(--bn-accent-soft); }
+.ds-bottomnav-item.is-active .ds-bottomnav-label { font-weight: 800; }
+
+/* Press feedback */
+.ds-bottomnav-item:active .ds-bottomnav-icon { transform: scale(0.92); }
+.ds-bottomnav-item:active { color: var(--bn-accent); }
+
+.ds-bottomnav-item:focus-visible {
+    outline: 2px solid var(--bn-accent);
+    outline-offset: -4px;
+    border-radius: 14px;
+}
+
+/* Landscape phones: less vertical room, so a slimmer bar. */
+@media (orientation: landscape) and (max-height: 500px) {
+    .ds-bottomnav-item { gap: 1px; }
+    .ds-bottomnav-icon { width: 46px; height: 24px; }
+    .ds-bottomnav-label { font-size: 10px; }
+}
+
+/* Narrow phones (360px is the most common Android width; 320px the
+   smallest): five tabs share the row, so use slightly smaller labels and
+   drop their side padding so "Found Items" never truncates. */
+@media (max-width: 370px) {
+    .ds-bottomnav-icon { width: 46px; }
+    .ds-bottomnav-label { font-size: 9.5px; letter-spacing: 0; padding: 0; }
+}
+@media (max-width: 340px) {
+    .ds-bottomnav-icon { width: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ds-bottomnav,
+    .ds-bottomnav.is-hidden { transition: opacity 0.01s linear, visibility 0s linear; }
+    .ds-bottomnav.is-hidden { transform: none; }
+    .ds-bottomnav-icon,
+    .ds-bottomnav-item { transition: none; }
+}

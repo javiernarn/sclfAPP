@@ -111,6 +111,7 @@ import {
     LogIn as LogInGlyph,
     Mail as MailGlyph,
     Megaphone as MegaphoneGlyph,
+    Menu as MenuGlyph,
     Package as PackageGlyph,
     PackageCheck as PackageCheckGlyph,
     PackageOpen as PackageOpenGlyph,
@@ -288,6 +289,7 @@ export const ListOrdered = animatedStatic(ListOrderedGlyph, 'ListOrdered');
 export const LogIn = animatedStatic(LogInGlyph, 'LogIn');
 export const Mail = animatedStatic(MailGlyph, 'Mail');
 export const Megaphone = animatedStatic(MegaphoneGlyph, 'Megaphone');
+export const Menu = animatedStatic(MenuGlyph, 'Menu');
 export const Package = animatedStatic(PackageGlyph, 'Package');
 export const PackageCheck = animatedStatic(PackageCheckGlyph, 'PackageCheck');
 export const PackageOpen = animatedStatic(PackageOpenGlyph, 'PackageOpen');

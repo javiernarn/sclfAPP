@@ -50,6 +50,12 @@ class User extends Authenticatable
         'password',
         'campus_id',
         'department_id',
+        // Must be fillable or User::create(['must_setup_profile' => true])
+        // in Admin\UserController::store() gets silently dropped by mass-
+        // assignment protection and every admin-created account ends up
+        // with the column's default (false) instead — no error, just a
+        // row that never triggers the onboarding gate.
+        'must_setup_profile',
     ];
 
     /**
@@ -96,6 +102,12 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            // True only for an admin-created staff account (instructor /
+            // security_officer / admin) that hasn't yet been through
+            // SetupAccountPage. Never true for a student, who self-
+            // registers with their own chosen credentials. See the
+            // must_setup_profile migration and EnsureProfileSetupComplete.
+            'must_setup_profile' => 'boolean',
             // Belt-and-suspenders on top of 'hidden' above: these are
             // encrypted at rest too, so a raw DB dump/backup leak alone
             // doesn't expose a usable TOTP secret or recovery-code hashes.

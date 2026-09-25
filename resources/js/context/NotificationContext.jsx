@@ -89,9 +89,13 @@ export function NotificationProvider({ children }) {
     }, [refreshUnreadCount]);
 
     // Initial load + poll while a session exists; torn down entirely on
-    // logout so a signed-out tab doesn't keep hitting the API.
+    // logout so a signed-out tab doesn't keep hitting the API. Also held
+    // off entirely while an admin-created account is still stuck on the
+    // mandatory SetupAccountPage — EnsureProfileSetupComplete blocks
+    // these endpoints until setup finishes anyway, so polling them here
+    // would just be a silently-failing 423 every 30s for no benefit.
     useEffect(() => {
-        if (!user) {
+        if (!user || user.must_setup_profile) {
             setUnreadCount(0);
             setRecent([]);
             return;
@@ -112,7 +116,7 @@ export function NotificationProvider({ children }) {
             window.removeEventListener('focus', onFocus);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id]);
+    }, [user?.id, user?.must_setup_profile]);
 
     return (
         <NotificationContext.Provider

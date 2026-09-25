@@ -134,6 +134,16 @@ class UserController extends Controller
             'staff_id' => $staffId,
             'profile_picture' => $profilePicturePath,
             'password' => Hash::make($validated['password']),
+            // Every account created through this admin-only endpoint is
+            // instructor/security_officer/admin (see
+            // AdminCreateUserRequest) — none of them self-register, so
+            // whatever the admin just typed here (password, name, photo)
+            // is still theirs to see. Force the account's first login to
+            // go through SetupAccountPage so the user personalizes their
+            // own password/photo/name before anything else is reachable
+            // — after that point the admin no longer knows the live
+            // credentials. See EnsureProfileSetupComplete.
+            'must_setup_profile' => true,
         ]);
 
         $user->assignRole($validated['role']);

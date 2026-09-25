@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuditLogController;
@@ -59,11 +60,19 @@ Route::middleware('throttle:6,1')->group(function () {
 // Protected routes — must be logged in (valid Sanctum token) AND have an
 // account that hasn't been disabled by an administrator, AND (via
 // require.full_access) hold a real session token rather than a
-// still-mid-2FA-challenge pending one.
-Route::middleware(['auth:sanctum', 'account.active', 'require.full_access'])->group(function () {
+// still-mid-2FA-challenge pending one, AND (via profile.setup) have
+// finished the mandatory first-login setup if the admin who created the
+// account left it pending (see EnsureProfileSetupComplete — it allows
+// /me, /logout and /profile/complete-setup through even while pending, so
+// this whole group can still stay in one place).
+Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'profile.setup'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
+
+    // Mandatory first-login setup for an admin-created staff account —
+    // see ProfileController::completeSetup() and SetupAccountPage.jsx.
+    Route::post('/profile/complete-setup', [ProfileController::class, 'completeSetup']);
 
     // Two-factor authentication management (Profile page's Security
     // card). Setup/confirm/disable all require a fully-authenticated

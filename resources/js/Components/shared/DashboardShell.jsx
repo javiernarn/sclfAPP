@@ -10,7 +10,11 @@ import GlobalSearchBar from "./GlobalSearchBar";
 import Tooltip from "./Tooltip";
 import HelpHints from "./HelpHints";
 import NotificationBell from "./NotificationBell";
+import useIsPhone from "../../hooks/useIsPhone";
 import "./DashboardShell.css";
+// Imported AFTER DashboardShell.css on purpose: its phone-only overrides
+// rely on coming later in the cascade.
+import MobileBottomNav from "./MobileBottomNav";
 import {
     LayoutDashboard,
     PackageSearch,
@@ -35,6 +39,7 @@ import {
     AlertTriangle,
     UserCheck,
     Wrench,
+    Menu,
 } from "../icons";
 
 // The five themes offered from the account menu's "Theme" picker. 'white'
@@ -165,6 +170,39 @@ const NAV_BY_ROLE = {
     ],
 };
 
+// Phone-only bottom tab bar (see MobileBottomNav.jsx). Four shortcuts per
+// role — the pages that person opens most — and the fifth tab is always
+// "Menu", which opens the full sidebar above (so everything NAV_BY_ROLE
+// lists is still one tap away). Instructors share the "student" set.
+//
+//   to        must match a route in NAV_BY_ROLE
+//   label     short text shown under the icon (must fit ~60px)
+//   fullLabel optional longer name for screen readers
+//
+// To change what a role gets, just edit its four entries here.
+const MOBILE_TABS_BY_ROLE = {
+    student: [
+        { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+        { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
+        { to: "/app/found-items", label: "Found Items", icon: PackageCheck },
+        { to: "/app/claims", label: "My Claims", icon: ClipboardCheck },
+    ],
+    // Follows the intake → claim → release pipeline an officer works
+    // through. Counter, Inventory, Visitors etc. live under Menu.
+    security_officer: [
+        { to: "/app/security/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+        { to: "/app/security/found-items", label: "Reviews", fullLabel: "Found Item Reviews", icon: PackageCheck },
+        { to: "/app/security/claims", label: "Claims", icon: ClipboardCheck },
+        { to: "/app/security/qr-scanner", label: "Scan", fullLabel: "QR Release Scanner", icon: QrCode },
+    ],
+    admin: [
+        { to: "/app/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+        { to: "/app/security/counter-dashboard", label: "Counter", fullLabel: "Counter Dashboard", icon: ListOrdered },
+        { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
+        { to: "/app/found-items", label: "Found Items", icon: PackageCheck },
+    ],
+};
+
 const COLLAPSE_KEY = "sclf-sidebar-collapsed";
 const DESKTOP_QUERY = "(min-width: 960px)";
 
@@ -183,6 +221,10 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
     const isDark = theme === "black";
     const navigate = useNavigate();
     const location = useLocation();
+    // True only on real phones (touch + phone-sized screen). Everything
+    // phone-specific below is gated on this, so desktop/laptop/tablet
+    // behave exactly as before.
+    const isPhone = useIsPhone();
 
     const [menuOpen, setMenuOpen] = useState(false);
     const [sidebarMenuOpen, setSidebarMenuOpen] = useState(false);
@@ -203,10 +245,17 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
     // left edge and grows upward — the same "pop up near the control that
     // opened it" behavior the header's account menu already has. See the
     // AccountMenu placement prop further down.
-    const [isDesktop, setIsDesktop] = useState(() => {
+    const [isDesktopWidth, setIsDesktop] = useState(() => {
         if (typeof window === "undefined") return true;
         return window.matchMedia(DESKTOP_QUERY).matches;
     });
+    // A phone always uses the slide-over sidebar, even a big one turned
+    // sideways that is wider than the desktop breakpoint. For every
+    // non-phone this is identical to the plain width check.
+    const isDesktop = isDesktopWidth && !isPhone;
+    // The icons-only collapsed rail is a desktop feature; a phone's
+    // slide-over should never inherit it from a saved desktop preference.
+    const railCollapsed = collapsed && !isPhone;
 
     // Top-of-header route progress bar. "idle" | "is-active" | "is-done".
     // Fires on every route change — a sidebar nav click, the account menu's
@@ -280,6 +329,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
     const navItems = NAV_BY_ROLE[navRole];
     const homePath = isAdmin ? "/app/admin/dashboard" : isSecurity ? "/app/security/dashboard" : "/app/dashboard";
     const navLabel = isAdmin ? "Admin" : isSecurity ? "Security Officer" : "Student / Instructor";
+    const mobileTabs = MOBILE_TABS_BY_ROLE[navRole];
 
     const handleLogout = async () => {
         try {
@@ -353,6 +403,22 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
         }
     };
 
+    // Phone sidebar: close it whenever the route changes (browser back
+    // button, a notification deep-link, etc. — link clicks already close it
+    // themselves) and on Escape, so the tab bar always comes back.
+    useEffect(() => {
+        setSidebarOpen(false);
+    }, [location.pathname]);
+
+    useEffect(() => {
+        if (!sidebarOpen) return undefined;
+        const onKey = (e) => {
+            if (e.key === "Escape") setSidebarOpen(false);
+        };
+        document.addEventListener("keydown", onKey);
+        return () => document.removeEventListener("keydown", onKey);
+    }, [sidebarOpen]);
+
     // Close the account dropdown on outside click / Escape instead of the
     // previous onMouseLeave (which closed the menu the instant the mouse
     // drifted off it, before a click could register).
@@ -413,14 +479,24 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
 
     return (
         <>
-        <div className={`ds-shell ds-layout ${theme} ${isDark ? "dark" : "light"}`}>
+        <div className={`ds-shell ds-layout ${theme} ${isDark ? "dark" : "light"} ${isPhone ? "ds-phone" : ""}`}>
                 <div
                     className={`ds-sidebar-backdrop ${sidebarOpen ? "open" : ""}`}
                     onClick={() => setSidebarOpen(false)}
                     aria-hidden={!sidebarOpen}
                 />
 
-                <nav ref={sidebarRef} className={`ds-sidebar ${sidebarOpen ? "open" : ""} ${collapsed ? "collapsed" : ""}`}>
+                <nav id="ds-sidebar" ref={sidebarRef} className={`ds-sidebar ${sidebarOpen ? "open" : ""} ${railCollapsed ? "collapsed" : ""}`}>
+                    {/* Phone-only (CSS hides it elsewhere): explicit close,
+                        which also brings the bottom tab bar back. */}
+                    <button
+                        type="button"
+                        className="ds-icon-btn ds-sidebar-close"
+                        onClick={() => setSidebarOpen(false)}
+                        aria-label="Close menu"
+                    >
+                        <X size={18} />
+                    </button>
                     <Link
                         to={homePath}
                         className="ds-brand"
@@ -467,7 +543,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                                 );
                                 return (
                                     <li key={item.to}>
-                                        {collapsed ? <Tooltip label={item.label} side="right">{link}</Tooltip> : link}
+                                        {railCollapsed ? <Tooltip label={item.label} side="right">{link}</Tooltip> : link}
                                     </li>
                                 );
                             })}
@@ -475,6 +551,24 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
 
                         <div className="ds-sidebar-spacer" />
                     </div>
+
+                    {/* Phones don't show the pinned page footer (the tab bar
+                        replaces it), so the developer credit lives here. */}
+                    {isPhone && (
+                        <div className="ds-sidebar-credit">
+                            <span className="ds-footer-credit">
+                                {"</> "}Developed by{" "}
+                                <a
+                                    href="https://antiquina-folio.vercel.app/"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ds-footer-credit-link"
+                                >
+                                    {"</> "}Antiquina, Jonee John R.
+                                </a>
+                            </span>
+                        </div>
+                    )}
 
                     {/* Single Account control pinned at the very bottom of the
                         sidebar. Opens a menu (Profile / theme / log out) via
@@ -545,7 +639,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                                 aria-label="Account menu"
                                 aria-expanded={sidebarMenuOpen}
                                 aria-haspopup="true"
-                                title={collapsed ? user?.name || "Account" : undefined}
+                                title={railCollapsed ? user?.name || "Account" : undefined}
                             >
                                 <span className="ds-avatar" style={avatarStyle}>{avatarContent}</span>
                                 <div className="ds-user-text" style={{ minWidth: 0 }}>
@@ -565,16 +659,18 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                             aria-hidden="true"
                         />
                         <div className="ds-topbar-left">
-                            <Tooltip label={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
+                            <Tooltip label={isPhone ? "Menu" : railCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
                                 <button
                                     type="button"
                                     className="ds-icon-btn ds-hamburger"
                                     onClick={handleBurgerClick}
-                                    aria-label={collapsed ? "Expand sidebar" : "Toggle sidebar"}
+                                    aria-label={isPhone ? "Open menu" : railCollapsed ? "Expand sidebar" : "Toggle sidebar"}
                                 >
                                     {sidebarOpen ? (
                                         <span className="ds-hamburger-icon" key="x"><X size={18} /></span>
-                                    ) : collapsed ? (
+                                    ) : isPhone ? (
+                                        <span className="ds-hamburger-icon" key="menu"><Menu size={18} /></span>
+                                    ) : railCollapsed ? (
                                         <span className="ds-hamburger-icon" key="open"><PanelLeftOpen size={18} /></span>
                                     ) : (
                                         <span className="ds-hamburger-icon" key="close"><PanelLeftClose size={18} /></span>
@@ -671,6 +767,16 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                         On phones held in portrait, everything collapses down to
                         just the developer credit; landscape phones/tablets and
                         desktop show the full row. */}
+                    {isPhone ? (
+                        <MobileBottomNav
+                            tabs={mobileTabs}
+                            pathname={location.pathname}
+                            hidden={sidebarOpen}
+                            menuOpen={sidebarOpen}
+                            onMenu={() => setSidebarOpen(true)}
+                            sidebarId="ds-sidebar"
+                        />
+                    ) : (
                     <footer className="ds-footer">
                         <div className="ds-footer-inner">
                             <span className="ds-footer-credit">
@@ -708,6 +814,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                             </span>
                         </div>
                     </footer>
+                    )}
                 </div>
             </div>
 
