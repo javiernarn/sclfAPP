@@ -52,7 +52,7 @@ class MatchController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->id !== $reportOwnerId && !$user->hasAnyRole(['security_officer', 'admin'])) {
+        if ($user->id !== $reportOwnerId && !$user->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403, 'You can only view match candidates for a report you filed yourself.');
         }
     }

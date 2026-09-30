@@ -34,7 +34,7 @@ const statusBadgeClass = (status) => {
 export default function ServiceRequestDetail() {
     const { id } = useParams();
     const { user, roles } = useAuth();
-    const isStaff = Array.isArray(roles) && roles.some((r) => ['security_officer', 'admin'].includes(r));
+    const isStaff = Array.isArray(roles) && roles.some((r) => ['security_officer', 'admin', 'staff'].includes(r));
     const toast = useToast();
 
     const [request, setRequest] = useState(null);

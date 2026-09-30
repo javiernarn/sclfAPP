@@ -24,13 +24,13 @@ class AssetController extends Controller
     public function index(Request $request)
     {
         $viewer = $request->user();
-        $isStaff = $viewer->hasAnyRole(['security_officer', 'admin']);
+        $isStaff = $viewer->hasAnyRole(['security_officer', 'admin', 'staff']);
 
         $query = Asset::query()
             ->with(['assignee:id,name', 'building:id,name', 'campus:id,name,code'])
             ->when(!$isStaff, fn ($q) => $q->where('assigned_to', $viewer->id))
             ->when(
-                $isStaff && $viewer->campus_id && !$viewer->hasRole('admin'),
+                $isStaff && $viewer->campus_id && !$viewer->hasAdminAccess(),
                 fn ($q) => $q->where('campus_id', $viewer->campus_id)
             )
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
@@ -88,6 +88,63 @@ class AssetController extends Controller
         ]);
 
         return response()->json(['data' => $asset]);
+    }
+
+    /**
+     * Edit the registry record itself (name/brand/model/serial/location/
+     * value/notes) — distinct from assign/unassign/repair/retire, which
+     * change the asset's *status*. Category and campus are deliberately
+     * not editable here: category feeds the asset-tag prefix at creation
+     * time (see AssetService::generateAssetTag()) and campus scoping is
+     * an assignment concern, not a typo-fix concern.
+     */
+    public function update(Request $request, Asset $asset)
+    {
+        $this->authorize('manage', Asset::class);
+
+        $validated = $request->validate([
+            'building_id' => 'nullable|exists:buildings,id',
+            'name' => 'required|string|max:150',
+            'description' => 'nullable|string|max:2000',
+            'brand' => 'nullable|string|max:100',
+            'model' => 'nullable|string|max:100',
+            'serial_number' => 'nullable|string|max:100',
+            'location_text' => 'nullable|string|max:255',
+            'acquired_at' => 'nullable|date|before_or_equal:today',
+            'value' => 'nullable|numeric|min:0',
+            'condition_notes' => 'nullable|string|max:1000',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $asset = $this->assets->update($asset, $request->user(), $validated);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Asset details updated.', 'data' => $asset]);
+    }
+
+    /**
+     * Remove an asset from the registry entirely (soft delete — see
+     * Asset::class using SoftDeletes). Blocked while it's still assigned
+     * to someone, so a delete can never silently strand a custodian's
+     * equipment record; unassign it first.
+     */
+    public function destroy(Request $request, Asset $asset)
+    {
+        $this->authorize('manage', Asset::class);
+
+        if ($asset->status === Asset::STATUS_ASSIGNED) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This asset is still assigned to someone. Unassign it before deleting.',
+            ], 422);
+        }
+
+        $this->assets->delete($asset, $request->user());
+
+        return response()->json(['success' => true, 'message' => 'Asset deleted.']);
     }
 
     public function assign(Request $request, Asset $asset)

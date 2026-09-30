@@ -22,13 +22,13 @@ class ServiceRequestController extends Controller
     public function index(Request $request)
     {
         $viewer = $request->user();
-        $isStaff = $viewer->hasAnyRole(['security_officer', 'admin']);
+        $isStaff = $viewer->hasAnyRole(['security_officer', 'admin', 'staff']);
 
         $query = ServiceRequest::query()
             ->with(['requester:id,name', 'assignee:id,name', 'department:id,name', 'campus:id,name,code'])
             ->when(!$isStaff, fn ($q) => $q->where('requested_by', $viewer->id))
             ->when(
-                $isStaff && $viewer->campus_id && !$viewer->hasRole('admin'),
+                $isStaff && $viewer->campus_id && !$viewer->hasAdminAccess(),
                 fn ($q) => $q->where('campus_id', $viewer->campus_id)
             )
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))

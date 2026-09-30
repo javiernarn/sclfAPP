@@ -135,7 +135,7 @@ class CounterIntakeService
                 'storage_location_id' => $counter->id,
                 'moved_by' => $officer->id,
                 'action' => InventoryMovement::ACTION_STORED,
-                'notes' => "Checked in at counter {$counter->label} for {$owner->name} ({$owner->student_id}).",
+                'notes' => "Checked in at counter {$counter->label} for {$owner->name} ({$owner->display_id}).",
             ]);
 
             // Owner already confirmed in person -> the claim starts

@@ -27,7 +27,8 @@ const ROLE_META = {
     student: { label: 'Student', idPrefix: null },
     instructor: { label: 'Instructor', idPrefix: 'INS' },
     security_officer: { label: 'Security Officer', idPrefix: 'SEC' },
-    admin: { label: 'Administrator', idPrefix: 'ADM' },
+    staff: { label: 'Staff', idPrefix: 'STF' },
+    admin: { label: 'Admin', idPrefix: 'ADM' },
 };
 
 const emptyForm = {
@@ -376,7 +377,7 @@ export default function AdminUsers() {
         <DashboardShell
             eyebrow="Admin"
             title="User Management"
-            subtitle="Public registration only ever creates Students. Staff and admin accounts are created here."
+            subtitle="Public registration only ever creates Students. Instructor, Security Officer and Staff accounts are created here — there is only one Admin."
         >
             <div className="ds-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
@@ -452,9 +453,10 @@ export default function AdminUsers() {
                             <select id="role" name="role" value={form.role} onChange={handleChange}>
                                 <option value="instructor">Instructor</option>
                                 <option value="security_officer">Security Officer</option>
-                                <option value="admin">Administrator</option>
+                                <option value="staff">Staff</option>
                             </select>
                             <p className="ds-field-hint">
+                                {form.role === 'staff' && 'Staff can view everything but need your approval for every change. '}
                                 Gets an auto-generated ID like <strong>{ROLE_META[form.role]?.idPrefix}-{new Date().getFullYear()}-0001</strong>
                             </p>
                         </div>
@@ -551,7 +553,7 @@ export default function AdminUsers() {
                                                 </div>
                                             </td>
                                             <td className="ds-table-nowrap">{u.email}</td>
-                                            <td className="ds-table-nowrap">{u.roles?.map(r => r.name).join(', ') || 'no role'}</td>
+                                            <td className="ds-table-nowrap">{u.roles?.map(r => ROLE_META[r.name]?.label || r.name).join(', ') || 'no role'}</td>
                                             <td className="ds-table-nowrap">{u.display_id || '—'}</td>
                                             <td>
                                                 {!u.is_active
@@ -631,7 +633,7 @@ export default function AdminUsers() {
                                                 {u.deleted_at && <span className="ds-badge ds-badge-default" style={{ marginLeft: 8 }}>Archived</span>}
                                             </p>
                                             <p className="ds-list-item-meta">
-                                                {u.email} · {u.roles?.map(r => r.name).join(', ') || 'no role'}
+                                                {u.email} · {u.roles?.map(r => ROLE_META[r.name]?.label || r.name).join(', ') || 'no role'}
                                                 {u.display_id && <> · ID: {u.display_id}</>}
                                             </p>
                                         </div>
@@ -783,15 +785,16 @@ export default function AdminUsers() {
                                         name="role"
                                         value={editForm.role}
                                         onChange={handleEditChange}
-                                        disabled={isEditingSelf && editRole === 'admin'}
+                                        disabled={editRole === 'admin'}
                                     >
                                         <option value="student">Student</option>
                                         <option value="instructor">Instructor</option>
                                         <option value="security_officer">Security Officer</option>
-                                        <option value="admin">Administrator</option>
+                                        <option value="staff">Staff</option>
+                                        {editRole === 'admin' && <option value="admin">Admin</option>}
                                     </select>
-                                    {isEditingSelf && editRole === 'admin' && (
-                                        <p className="ds-field-hint">You can't change your own admin role — ask another admin.</p>
+                                    {editRole === 'admin' && (
+                                        <p className="ds-field-hint">There is only one Admin account — its role can't be changed.</p>
                                     )}
                                 </div>
                                 <div className="ds-field">

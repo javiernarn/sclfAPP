@@ -21,11 +21,11 @@ class AssetPolicy
 
     public function view(User $user, Asset $asset): bool
     {
-        return $user->id === $asset->assigned_to || $user->hasAnyRole(['security_officer', 'admin']);
+        return $user->id === $asset->assigned_to || $user->hasAnyRole(['security_officer', 'admin', 'staff']);
     }
 
     public function manage(User $user): bool
     {
-        return $user->hasAnyRole(['security_officer', 'admin']);
+        return $user->hasAnyRole(['security_officer', 'admin', 'staff']);
     }
 }

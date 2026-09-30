@@ -25,3 +25,10 @@ function createBus() {
 export const toastBus = createBus();
 
 export const showToast = (toast) => toastBus.emit(toast);
+
+
+// Fired by axiosConfig.js when the server answers 403 { code: 'approval_required' }
+// — i.e. a staff account tried a write the admin hasn't approved yet.
+// ApprovalRequestModal listens and offers to send the admin a request.
+export const approvalBus = createBus();
+export const requestApproval = (info) => approvalBus.emit(info);

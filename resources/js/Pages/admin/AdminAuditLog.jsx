@@ -3,7 +3,9 @@ import axios from '../../config/axiosConfig';
 import { Link } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ViewToggle from '../../Components/shared/ViewToggle';
+import DeviceIcon from '../../Components/shared/DeviceIcon';
 import useViewMode from '../../hooks/useViewMode';
+import { parseUserAgent } from '../../utils/userAgent';
 
 // This page is sign-in activity only (auth.login / auth.logout), across
 // every account. Everything else an account does — claim status changes,
@@ -51,18 +53,30 @@ export default function AdminAuditLog() {
                                     <th>Action</th>
                                     <th>Description</th>
                                     <th>User</th>
+                                    <th>Device</th>
+                                    <th>IP Address</th>
                                     <th>When</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {logs.map(l => (
+                                {logs.map(l => {
+                                    const ua = parseUserAgent(l.user_agent);
+                                    return (
                                     <tr key={l.id}>
                                         <td className="ds-table-title">{l.action}</td>
                                         <td className="ds-table-sub" style={{ maxWidth: 320, whiteSpace: 'normal' }}>{l.description}</td>
                                         <td className="ds-table-nowrap">{l.user ? l.user.name : '—'}</td>
+                                        <td className="ds-table-nowrap">
+                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                                <DeviceIcon deviceType={ua.deviceType} size={14} />
+                                                {ua.label}
+                                            </span>
+                                        </td>
+                                        <td className="ds-table-nowrap">{l.ip_address || '—'}</td>
                                         <td className="ds-table-nowrap">{new Date(l.created_at).toLocaleString()}</td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -70,17 +84,24 @@ export default function AdminAuditLog() {
 
                 {!loading && logs.length > 0 && view === 'cards' && (
                     <ul className="ds-list">
-                        {logs.map(l => (
+                        {logs.map(l => {
+                            const ua = parseUserAgent(l.user_agent);
+                            return (
                             <li key={l.id} className="ds-list-item">
                                 <div>
                                     <p className="ds-list-item-title">{l.action}</p>
                                     <p className="ds-list-item-meta">
                                         {l.description} {l.user ? `· by ${l.user.name}` : ''}
                                     </p>
+                                    <p className="ds-list-item-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                        <DeviceIcon deviceType={ua.deviceType} size={13} />
+                                        {ua.label} {l.ip_address ? `· ${l.ip_address}` : ''}
+                                    </p>
                                 </div>
                                 <span className="ds-list-item-meta">{new Date(l.created_at).toLocaleString()}</span>
                             </li>
-                        ))}
+                            );
+                        })}
                     </ul>
                 )}
             </div>

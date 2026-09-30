@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StorageLocation extends Model
 {
+    use SoftDeletes;
+
     // 'storage' = the original Room/Cabinet/Shelf/Box shelving.
     // 'counter' = a front-desk spot for items checked in with a known
     // owner, expected back same-day (see CounterIntakeService).

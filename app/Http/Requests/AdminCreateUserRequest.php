@@ -18,7 +18,7 @@ class AdminCreateUserRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'-]+$/u'],
             'email' => ['required', 'email', 'max:255', 'lowercase', 'unique:users'],
             'password' => ['required', 'string', 'min:8'],
-            'role' => ['required', 'in:instructor,security_officer,admin'],
+            'role' => ['required', 'in:instructor,security_officer,staff'],
             // Philippine mobile numbers: 11 digits starting with 09.
             'phone_number' => ['nullable', 'string', 'regex:/^09\d{9}$/', 'unique:users,phone_number'],
             'gender' => ['nullable', 'string', 'in:male,female,other,prefer_not_to_say'],
@@ -36,6 +36,7 @@ class AdminCreateUserRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'role.in' => 'Choose Instructor, Security Officer or Staff. There is only one Admin account and it cannot be duplicated.',
             'first_name.regex' => 'First name can only contain letters, spaces, hyphens and apostrophes.',
             'last_name.regex' => 'Last name can only contain letters, spaces, hyphens and apostrophes.',
             'email.unique' => 'That email address is already in use by another account.',

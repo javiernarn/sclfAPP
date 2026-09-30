@@ -408,8 +408,12 @@ export default function SecurityQrScanner() {
                             <ResultRow icon={Hash} label="Release code" value={result.public_code} />
                             <ResultRow icon={Tag} label="Item" value={result.found_item?.item_name} />
                             <ResultRow icon={Tag} label="Category" value={result.found_item?.category} />
-                            <ResultRow icon={User} label="Released to" value={result.claim?.claimant?.name} />
-                            <ResultRow icon={IdCard} label="Student ID" value={result.claim?.claimant?.student_id} />
+                            <ResultRow icon={User} label="Released to" value={result.claim?.claimant?.name} avatarUser={result.claim?.claimant} />
+                            {/* Was hardcoded to student_id, so releasing to an instructor (who
+                                has a staff_id, not a student_id) showed a blank "Student ID"
+                                field. display_id resolves to whichever ID the claimant actually
+                                has, and the label no longer assumes they're a student. */}
+                            <ResultRow icon={IdCard} label="ID Number" value={result.claim?.claimant?.display_id} />
                             <ResultRow icon={PackageCheck} label="Scanned at" value={result.scanned_at ? new Date(result.scanned_at).toLocaleString() : null} />
                         </div>
 
@@ -423,10 +427,27 @@ export default function SecurityQrScanner() {
     );
 }
 
-function ResultRow({ icon: Icon, label, value }) {
+function ResultRow({ icon: Icon, label, value, avatarUser }) {
+    // When a claimant is passed in, show their actual profile photo in
+    // place of the generic icon (falls back to the icon if they have no
+    // photo on file) so the officer can visually confirm it's the same
+    // person who's standing at the counter, not just match a name.
     return (
         <div className="ds-info-item">
-            <span className="ds-info-icon"><Icon size={16} /></span>
+            {avatarUser ? (
+                <span
+                    className="ds-avatar"
+                    style={{
+                        width: 28, height: 28, fontSize: 11, borderRadius: 9, flexShrink: 0,
+                        backgroundImage: avatarUser.profile_picture_url ? `url(${avatarUser.profile_picture_url})` : undefined,
+                        backgroundSize: 'cover', backgroundPosition: 'center',
+                    }}
+                >
+                    {!avatarUser.profile_picture_url && <Icon size={14} />}
+                </span>
+            ) : (
+                <span className="ds-info-icon"><Icon size={16} /></span>
+            )}
             <div className="ds-info-text">
                 <div className="ds-info-label">{label}</div>
                 <div className="ds-info-value">{value || '—'}</div>

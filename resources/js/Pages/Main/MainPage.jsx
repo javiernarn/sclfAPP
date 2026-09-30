@@ -62,7 +62,7 @@ const MainPage = () => {
                 // to the normal role-based landing below.
             }
 
-            if (roles?.includes("admin")) {
+            if (roles?.includes("admin") || roles?.includes("staff")) {
                 navigate("/app/admin/dashboard", { replace: true });
                 return;
             }

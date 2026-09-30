@@ -193,7 +193,7 @@ class CounterQueueService
     public function cancel(CounterQueueEntry $entry, User $actor): CounterQueueEntry
     {
         $isSelf = $entry->user_id === $actor->id;
-        $isStaff = $actor->hasAnyRole(['security_officer', 'admin']);
+        $isStaff = $actor->hasAnyRole(['security_officer', 'admin', 'staff']);
 
         if (!$isSelf && !$isStaff) {
             throw ValidationException::withMessages([

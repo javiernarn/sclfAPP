@@ -49,7 +49,7 @@ export default function FoundItemDetail() {
     // locks it immediately, before React even re-renders.
     const claimLockRef = useRef(false);
 
-    const isStaff = roles?.includes('security_officer') || roles?.includes('admin');
+    const isStaff = roles?.includes('security_officer') || roles?.includes('admin') || roles?.includes('staff');
 
     useEffect(() => {
         document.title = "Found Item | SCLF - Opol Community College";

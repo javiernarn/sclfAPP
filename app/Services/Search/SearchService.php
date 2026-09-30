@@ -29,10 +29,21 @@ class SearchService
 {
     private const PER_CATEGORY_LIMIT = 5;
 
+    // Mirrors ROLE_META in resources/js/Pages/admin/AdminUsers.jsx — kept
+    // as plain labels (not a shared source) since this is the only other
+    // place in the backend that renders a role as prose.
+    private const ROLE_LABELS = [
+        'student' => 'Student',
+        'instructor' => 'Instructor',
+        'security_officer' => 'Security Officer',
+        'staff' => 'Staff',
+        'admin' => 'Admin',
+    ];
+
     public function search(User $viewer, string $q, int $limit = self::PER_CATEGORY_LIMIT): array
     {
-        $isStaff = $viewer->hasAnyRole(['security_officer', 'admin']);
-        $isAdmin = $viewer->hasRole('admin');
+        $isStaff = $viewer->hasAnyRole(['security_officer', 'admin', 'staff']);
+        $isAdmin = $viewer->hasAdminAccess();
 
         $results = [
             'found_items' => $this->searchFoundItems($viewer, $q, $isStaff, $limit),
@@ -42,14 +53,19 @@ class SearchService
             'service_requests' => $this->searchServiceRequests($viewer, $q, $isStaff, $isAdmin, $limit),
         ];
 
-        // Assets and the visitor log are staff-only surfaces (see
-        // AssetController/VisitorController) — a student searching
-        // shouldn't even see these categories appear, empty or not,
-        // the way an empty-but-present "Assets" section would hint at
-        // a page they can't actually open.
+        // Assets, the visitor log, and the people directory are staff-only
+        // surfaces (see AssetController/VisitorController, and below) — a
+        // student searching shouldn't even see these categories appear,
+        // empty or not, the way an empty-but-present section would hint
+        // at a page they can't actually open. People search in particular
+        // is the security boundary: it's how an officer verifies someone's
+        // ID number (student, instructor, security, or admin — whichever
+        // prefix they typed), and a non-staff account has no legitimate
+        // reason to look up another person's record that way.
         if ($isStaff) {
             $results['assets'] = $this->searchAssets($viewer, $q, $isAdmin, $limit);
             $results['visitors'] = $this->searchVisitors($viewer, $q, $isAdmin, $limit);
+            $results['users'] = $this->searchUsers($viewer, $q, $isAdmin, $limit);
         }
 
         return $results;
@@ -204,6 +220,52 @@ class SearchService
                 'title' => $visitor->full_name,
                 'subtitle' => trim(str_replace('_', ' ', $visitor->purpose) . ' · ' . str_replace('_', ' ', $visitor->status)),
                 'url' => '/app/security/visitors',
+            ])
+            ->all();
+    }
+
+    /**
+     * People directory — the ID-based lookup (student ID, instructor/
+     * security/admin staff ID, or name). Staff-only (see the guard in
+     * search() above), and further scoped the same way Assets/Visitors
+     * already are: a security officer only finds people on their own
+     * campus, an admin finds anyone anywhere. This is deliberately the
+     * one category that can name-match *and* ID-match in the same query
+     * — every other category searches free-text fields, but "search by
+     * ID" was the actual feature being asked for here.
+     */
+    private function searchUsers(User $viewer, string $q, bool $isAdmin, int $limit): array
+    {
+        return User::query()
+            ->where('is_active', true)
+            ->when(
+                $viewer->campus_id && !$isAdmin,
+                fn ($query) => $query->where('campus_id', $viewer->campus_id)
+            )
+            ->where(function ($sub) use ($q) {
+                $sub->where('name', 'like', "%{$q}%")
+                    ->orWhere('student_id', 'like', "%{$q}%")
+                    ->orWhere('staff_id', 'like', "%{$q}%");
+            })
+            ->with('campus:id,name')
+            ->select('id', 'name', 'student_id', 'staff_id', 'profile_picture', 'campus_id')
+            ->limit($limit)
+            ->get()
+            ->map(fn (User $user) => [
+                'id' => $user->id,
+                'title' => $user->name,
+                'subtitle' => trim(
+                    (self::ROLE_LABELS[$user->getRoleNames()->first()] ?? 'User')
+                    . ($user->display_id ? " · {$user->display_id}" : '')
+                    . ($user->campus?->name ? " · {$user->campus->name}" : '')
+                ),
+                // Only admin has a user-detail page to send them to
+                // (see routes/api.php — /admin/users/{user} sits behind
+                // role:admin). A security officer gets the same result
+                // row for identity verification, just without a link
+                // into a page their role can't open.
+                'url' => $isAdmin ? "/app/admin/users/{$user->id}" : null,
+                'avatar' => $user->profile_picture_url,
             ])
             ->all();
     }

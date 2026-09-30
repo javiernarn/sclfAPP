@@ -24,7 +24,7 @@ class DispositionController extends Controller
      */
     public function index(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -34,7 +34,7 @@ class DispositionController extends Controller
             ->where('status', FoundItem::STATUS_UNCLAIMED)
             ->with(['finder:id,name', 'storageLocation:id,code,campus_id'])
             ->when(
-                $viewer->campus_id && !$viewer->hasRole('admin'),
+                $viewer->campus_id && !$viewer->hasAdminAccess(),
                 fn ($q) => $q->where('campus_id', $viewer->campus_id)
             )
             ->orderBy('unclaimed_at')
@@ -42,7 +42,7 @@ class DispositionController extends Controller
 
         $eligibleCount = $this->disposition->eligibleForUnclaimedQuery()
             ->when(
-                $viewer->campus_id && !$viewer->hasRole('admin'),
+                $viewer->campus_id && !$viewer->hasAdminAccess(),
                 fn ($q) => $q->where('campus_id', $viewer->campus_id)
             )
             ->count();
@@ -61,7 +61,7 @@ class DispositionController extends Controller
      */
     public function sweep(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 

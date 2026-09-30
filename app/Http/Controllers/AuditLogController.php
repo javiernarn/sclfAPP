@@ -9,7 +9,7 @@ class AuditLogController extends Controller
 {
     public function index(Request $request)
     {
-        if (!$request->user()->hasRole('admin')) {
+        if (!$request->user()->hasAdminAccess()) {
             abort(403);
         }
 

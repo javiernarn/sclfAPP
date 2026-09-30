@@ -30,7 +30,7 @@ class HistoryController extends Controller
      */
     public function counterReleases(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -47,7 +47,7 @@ class HistoryController extends Controller
                 'securityOfficer:id,name',
                 'storageLocation:id,code,label',
                 'claims' => fn ($q) => $q->orderByDesc('id')->with([
-                    'claimant:id,name,student_id',
+                    'claimant:id,name,student_id,staff_id,profile_picture',
                     'qrRelease.generator:id,name',
                     'qrRelease.scanner:id,name',
                 ]),
@@ -60,6 +60,7 @@ class HistoryController extends Controller
                             'claimant',
                             fn ($cc) => $cc->where('name', 'like', "%{$term}%")
                                 ->orWhere('student_id', 'like', "%{$term}%")
+                                ->orWhere('staff_id', 'like', "%{$term}%")
                         ));
                 });
             })
@@ -117,7 +118,7 @@ class HistoryController extends Controller
      */
     public function releases(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -133,7 +134,7 @@ class HistoryController extends Controller
             ->with([
                 'foundItem:id,item_name,category,image_path,intake_channel,storage_location_id',
                 'foundItem.storageLocation:id,code,label',
-                'claimant:id,name,student_id',
+                'claimant:id,name,student_id,staff_id,profile_picture',
                 'reviewer:id,name',
                 'qrRelease.generator:id,name',
                 'qrRelease.scanner:id,name',
@@ -147,7 +148,8 @@ class HistoryController extends Controller
                 $q->where(function ($qq) use ($term) {
                     $qq->whereHas('foundItem', fn ($f) => $f->where('item_name', 'like', "%{$term}%"))
                         ->orWhereHas('claimant', fn ($c) => $c->where('name', 'like', "%{$term}%")
-                            ->orWhere('student_id', 'like', "%{$term}%"));
+                            ->orWhere('student_id', 'like', "%{$term}%")
+                            ->orWhere('staff_id', 'like', "%{$term}%"));
                 });
             })
             ->when($request->date_from, fn ($q) => $q->whereDate('updated_at', '>=', $request->date_from))

@@ -40,6 +40,7 @@ import {
     UserCheck,
     Wrench,
     Menu,
+    Activity,
 } from "../icons";
 
 // The five themes offered from the account menu's "Theme" picker. 'white'
@@ -146,7 +147,13 @@ const NAV_BY_ROLE = {
         { to: "/app/found-items", label: "Found Items", icon: PackageSearch },
         { to: "/app/claims", label: "Claims", icon: ClipboardCheck },
         { to: "/app/admin/users", label: "Users", icon: UserCircle },
+        // Admin: approve/pending/reject staff requests. Staff: their own requests.
+        { to: "/app/admin/requests", label: "Staff Requests", icon: ClipboardCheck },
         { to: "/app/admin/audit-log", label: "Audit Log", icon: ShieldCheck },
+        // Raw request-level feed (IP/device/spam flags) — deliberately a
+        // separate page from Audit Log above, which is the curated
+        // "what actions happened" trail. See Admin\UserActivityController.
+        { to: "/app/admin/activity", label: "User Activity", icon: Activity },
         // No separate /app/admin/counter-dashboard route exists — this
         // points straight at the security path, which ProtectedRoute
         // already allows admins into (securityRoutes' requiredRoles
@@ -323,12 +330,12 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
     // same spot whether the sidebar is collapsed or expanded.
     const sidebarRef = useRef(null);
 
-    const isAdmin = Array.isArray(roles) && roles.includes("admin");
+    const isAdmin = Array.isArray(roles) && (roles.includes("admin") || roles.includes("staff"));
     const isSecurity = Array.isArray(roles) && roles.includes("security_officer");
     const navRole = isAdmin ? "admin" : isSecurity ? "security_officer" : "student";
     const navItems = NAV_BY_ROLE[navRole];
     const homePath = isAdmin ? "/app/admin/dashboard" : isSecurity ? "/app/security/dashboard" : "/app/dashboard";
-    const navLabel = isAdmin ? "Admin" : isSecurity ? "Security Officer" : "Student / Instructor";
+    const navLabel = isAdmin ? (roles.includes("admin") ? "Admin" : "Staff") : isSecurity ? "Security Officer" : "Student / Instructor";
     const mobileTabs = MOBILE_TABS_BY_ROLE[navRole];
 
     const handleLogout = async () => {

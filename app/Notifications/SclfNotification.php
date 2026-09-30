@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Mail\NotificationMail;
+use App\Models\ActionRequest;
 use App\Models\Asset;
 use App\Models\Claim;
 use App\Models\FoundItem;
@@ -31,9 +32,18 @@ class SclfNotification extends Notification
     public const TYPE_SECURITY_VERIFICATION_COMPLETED = 'security_verification_completed';
     public const TYPE_QUEUE_CALLED = 'queue_called';
     public const TYPE_INCIDENT_ASSIGNED = 'incident_assigned';
+    public const TYPE_INCIDENT_REPORTED = 'incident_reported';
     public const TYPE_SERVICE_REQUEST_ASSIGNED = 'service_request_assigned';
+    public const TYPE_SERVICE_REQUEST_SUBMITTED = 'service_request_submitted';
     public const TYPE_SERVICE_REQUEST_COMPLETED = 'service_request_completed';
     public const TYPE_ASSET_ASSIGNED = 'asset_assigned';
+
+    // Staff <-> Admin approval workflow (see StaffApprovalService).
+    public const TYPE_STAFF_REQUEST_SUBMITTED = 'staff_request_submitted';
+    public const TYPE_STAFF_REQUEST_APPROVED = 'staff_request_approved';
+    public const TYPE_STAFF_REQUEST_REJECTED = 'staff_request_rejected';
+    public const TYPE_STAFF_REQUEST_PENDING = 'staff_request_pending';
+    public const TYPE_STAFF_REQUEST_EXECUTED = 'staff_request_executed';
 
     /**
      * Only these two roles get an email copy of their in-app notification.
@@ -63,9 +73,16 @@ class SclfNotification extends Notification
         self::TYPE_SECURITY_VERIFICATION_COMPLETED => ['Verification Completed', 'info'],
         self::TYPE_QUEUE_CALLED => ["It's Your Turn", 'success'],
         self::TYPE_INCIDENT_ASSIGNED => ['Incident Assigned', 'warning'],
+        self::TYPE_INCIDENT_REPORTED => ['Incident Reported', 'warning'],
         self::TYPE_SERVICE_REQUEST_ASSIGNED => ['Service Request Assigned', 'warning'],
+        self::TYPE_SERVICE_REQUEST_SUBMITTED => ['New Service Request', 'info'],
         self::TYPE_SERVICE_REQUEST_COMPLETED => ['Request Completed', 'success'],
         self::TYPE_ASSET_ASSIGNED => ['Asset Assigned', 'info'],
+        self::TYPE_STAFF_REQUEST_SUBMITTED => ['Approval Needed', 'warning'],
+        self::TYPE_STAFF_REQUEST_APPROVED => ['Request Approved', 'success'],
+        self::TYPE_STAFF_REQUEST_REJECTED => ['Request Rejected', 'danger'],
+        self::TYPE_STAFF_REQUEST_PENDING => ['Request On Hold', 'warning'],
+        self::TYPE_STAFF_REQUEST_EXECUTED => ['Staff Action Done', 'info'],
     ];
 
     /**
@@ -80,6 +97,8 @@ class SclfNotification extends Notification
         SecurityIncident::class => '/app/incidents/%d',
         ServiceRequest::class => '/app/service-requests/%d',
         Asset::class => '/app/security/assets/%d',
+        // One page for both sides: admin sees the queue, staff see "My Requests".
+        ActionRequest::class => '/app/admin/requests?request=%d',
     ];
 
     public function __construct(

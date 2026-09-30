@@ -13,6 +13,8 @@ class AssetMovement extends Model
     public const ACTION_RETURNED_FROM_REPAIR = 'returned_from_repair';
     public const ACTION_RETIRED = 'retired';
     public const ACTION_REPORTED_LOST = 'reported_lost';
+    public const ACTION_DETAILS_UPDATED = 'details_updated';
+    public const ACTION_DELETED = 'deleted';
 
     protected $fillable = [
         'asset_id', 'from_user_id', 'to_user_id', 'moved_by', 'action', 'notes',

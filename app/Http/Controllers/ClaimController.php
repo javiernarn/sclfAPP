@@ -31,7 +31,7 @@ class ClaimController extends Controller
 
         // Students/instructor only ever see their own claims. Staff see everything,
         // scoped by their own status filter if provided.
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             $query->where('claimant_id', $request->user()->id);
         }
 
@@ -59,7 +59,7 @@ class ClaimController extends Controller
         $this->authorize('view', $claim);
 
         $claim->load([
-            'foundItem', 'lostItem', 'claimant:id,name,email,student_id',
+            'foundItem', 'lostItem', 'claimant:id,name,email,student_id,staff_id,profile_picture',
             'reviewer:id,name', 'evidence.submitter:id,name', 'qrRelease',
         ]);
 
@@ -147,7 +147,7 @@ class ClaimController extends Controller
      */
     public function destroyCancelledForUser(Request $request, User $user)
     {
-        abort_unless($request->user()->hasRole('admin'), 403);
+        abort_unless($request->user()->hasAdminAccess(), 403);
 
         $count = $this->claims->deleteCancelledForUser($user);
 

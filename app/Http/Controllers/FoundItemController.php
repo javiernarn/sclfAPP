@@ -32,7 +32,7 @@ class FoundItemController extends Controller
             // everything (Counter/Inventory pages query this table directly
             // by status/location, not through this general listing).
             ->when(
-                !$request->user()->hasAnyRole(['security_officer', 'admin']),
+                !$request->user()->hasAnyRole(['security_officer', 'admin', 'staff']),
                 fn ($q) => $q->where(function ($sub) {
                     $sub->whereNull('intake_channel')
                         ->orWhere('intake_channel', '!=', FoundItem::CHANNEL_COUNTER_INTAKE);

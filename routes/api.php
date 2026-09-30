@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\UserActivityController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\TwoFactorController;
+use App\Http\Controllers\ActionRequestController;
 use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AnalyticsController;
@@ -65,7 +67,10 @@ Route::middleware('throttle:6,1')->group(function () {
 // account left it pending (see EnsureProfileSetupComplete — it allows
 // /me, /logout and /profile/complete-setup through even while pending, so
 // this whole group can still stay in one place).
-Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'profile.setup'])->group(function () {
+// `staff.approval` is last on purpose: staff pass every role check below (so they
+// can read what an admin reads), then this refuses any write that the admin
+// hasn't approved. See RequireStaffApproval.
+Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'profile.setup', 'staff.approval'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/change-password', [AuthController::class, 'changePassword']);
@@ -113,6 +118,9 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     // Claimant downloads/re-downloads their own release QR (offline-friendly pass).
     Route::post('/claims/{claim}/download-release', [ClaimController::class, 'downloadRelease']);
 
+    // Personal dashboard analytics (student/instructor) — only the caller's own records.
+    Route::get('/analytics/me', [AnalyticsController::class, 'me']);
+
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount']);
@@ -146,6 +154,10 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     Route::get('/security-incidents', [SecurityIncidentController::class, 'index']);
     Route::post('/security-incidents', [SecurityIncidentController::class, 'store']);
     Route::get('/security-incidents/{securityIncident}', [SecurityIncidentController::class, 'show']);
+    // Editing your own fresh report lives here (any authenticated user);
+    // the policy itself is what actually restricts it to the reporter
+    // while status is still 'reported', or to staff short of closed.
+    Route::patch('/security-incidents/{securityIncident}', [SecurityIncidentController::class, 'update']);
 
     // Service Requests — filing is open to any authenticated user, same
     // "my requests" vs "everything" self-scoping as Security Incidents
@@ -174,12 +186,14 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     Route::delete('/counter/queue/{queueEntry}', [CounterController::class, 'cancelQueueEntry']);
 
     // --- Security Officer / Admin only ---
-    Route::middleware('role:security_officer,admin')->group(function () {
+    Route::middleware('role:security_officer,admin,staff')->group(function () {
         Route::post('/found-items/{foundItem}/verify', [FoundItemController::class, 'verify']);
 
         Route::get('/storage-locations', [StorageLocationController::class, 'index']);
         Route::post('/storage-locations', [StorageLocationController::class, 'store']);
         Route::patch('/storage-locations/{storageLocation}/capacity', [StorageLocationController::class, 'updateCapacity']);
+        Route::patch('/storage-locations/{storageLocation}', [StorageLocationController::class, 'update']);
+        Route::delete('/storage-locations/{storageLocation}', [StorageLocationController::class, 'destroy']);
         Route::post('/found-items/{foundItem}/assign-storage', [StorageLocationController::class, 'assign']);
         Route::post('/found-items/{foundItem}/move-storage', [StorageLocationController::class, 'move']);
 
@@ -252,12 +266,18 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         Route::post('/security-incidents/{securityIncident}/resolve', [SecurityIncidentController::class, 'resolve']);
         Route::post('/security-incidents/{securityIncident}/close', [SecurityIncidentController::class, 'close']);
         Route::post('/security-incidents/{securityIncident}/reopen', [SecurityIncidentController::class, 'reopen']);
+        // Admin-only in practice — SecurityIncidentPolicy::delete() enforces
+        // that regardless of this route sitting in the officer+admin group.
+        Route::delete('/security-incidents/{securityIncident}', [SecurityIncidentController::class, 'destroy']);
 
         // Visitor Management — front-desk check-in/out log, fully
         // officer/admin-only (no student-facing side to this one).
         Route::get('/visitors', [VisitorController::class, 'index']);
         Route::post('/visitors', [VisitorController::class, 'store']);
         Route::post('/visitors/{visitor}/check-out', [VisitorController::class, 'checkOut']);
+        Route::patch('/visitors/{visitor}', [VisitorController::class, 'update']);
+        // Admin-only in practice — enforced inline in the controller.
+        Route::delete('/visitors/{visitor}', [VisitorController::class, 'destroy']);
 
         // Service Requests — managing the lifecycle (assign/start/
         // complete/close/reopen). Filing, viewing, and self-cancelling
@@ -272,6 +292,8 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         // lost. Viewing (including a custodian's own "My Assets") lives
         // in the any-authenticated-user group above.
         Route::post('/assets', [AssetController::class, 'store']);
+        Route::patch('/assets/{asset}', [AssetController::class, 'update']);
+        Route::delete('/assets/{asset}', [AssetController::class, 'destroy']);
         Route::post('/assets/{asset}/assign', [AssetController::class, 'assign']);
         Route::post('/assets/{asset}/unassign', [AssetController::class, 'unassign']);
         Route::post('/assets/{asset}/send-for-repair', [AssetController::class, 'sendForRepair']);
@@ -281,6 +303,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         // Custodian lookup for the Asset assign form — see ReferenceDataController::lookupUser().
         Route::middleware('throttle:30,1')->get('/users/lookup', [\App\Http\Controllers\ReferenceDataController::class, 'lookupUser']);
 
+        Route::get('/analytics/dashboard', [AnalyticsController::class, 'dashboard']);
         Route::get('/analytics/overview', [AnalyticsController::class, 'overview']);
         Route::get('/analytics/categories', [AnalyticsController::class, 'categories']);
         Route::get('/analytics/high-risk-locations', [AnalyticsController::class, 'highRiskLocations']);
@@ -288,8 +311,18 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         Route::get('/analytics/peak-hours', [AnalyticsController::class, 'peakHours']);
     });
 
-    // --- Admin only ---
-    Route::middleware('role:admin')->group(function () {
+    // --- Approval requests (staff files them, admin reviews them) ---
+    Route::middleware('role:admin,staff')->group(function () {
+        Route::get('/action-requests', [ActionRequestController::class, 'index']);
+        Route::post('/action-requests', [ActionRequestController::class, 'store']);
+        Route::delete('/action-requests/{actionRequest}', [ActionRequestController::class, 'cancel']);
+    });
+
+    // Only the one admin decides: Approve / Pending / Reject.
+    Route::middleware('role:admin')->patch('/admin/action-requests/{actionRequest}', [ActionRequestController::class, 'updateStatus']);
+
+    // --- Admin + Staff (staff are read-only here unless a request was approved) ---
+    Route::middleware('role:admin,staff')->group(function () {
         Route::get('/admin-test', function () {
             return response()->json(['message' => 'Welcome, Admin! This endpoint is protected.']);
         });
@@ -310,6 +343,14 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         Route::post('/admin/users/{id}/restore', [AdminUserController::class, 'restore']);
         // audit log
         Route::get('/audit-logs', [AuditLogController::class, 'index']);
+
+        // User Activity — device/IP/spam monitoring. Separate from
+        // /audit-logs (curated business events): this is the raw
+        // request-level feed recorded by TrackUserActivity, used for
+        // "who's actually using this, from where, and does it look like
+        // abuse" rather than "what did this account do".
+        Route::get('/admin/activity', [UserActivityController::class, 'index']);
+        Route::get('/admin/activity/users/{user}/summary', [UserActivityController::class, 'summary']);
 
         // Departments — campus-scoped org units, distinct from users.course
         // (free-text academic program). See the departments migration.

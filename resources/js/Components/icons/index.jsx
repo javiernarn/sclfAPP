@@ -89,9 +89,11 @@ import {
 // Raw static glyphs from lucide-react, aliased so they don't collide with
 // the animated exports of the same name below.
 import {
+    Activity as ActivityGlyph,
     AlertTriangle as AlertTriangleGlyph,
     ArrowRightLeft as ArrowRightLeftGlyph,
     BellOff as BellOffGlyph,
+    Bot as BotGlyph,
     Building2 as Building2Glyph,
     Calendar as CalendarGlyph,
     Camera as CameraGlyph,
@@ -100,11 +102,13 @@ import {
     FlipHorizontal as FlipHorizontalGlyph,
     FlipVertical as FlipVerticalGlyph,
     Gift as GiftGlyph,
+    Globe as GlobeGlyph,
     Handshake as HandshakeGlyph,
     Hash as HashGlyph,
     Inbox as InboxGlyph,
     Info as InfoGlyph,
     KeyRound as KeyRoundGlyph,
+    Laptop as LaptopGlyph,
     LayoutDashboard as LayoutDashboardGlyph,
     LayoutList as LayoutListGlyph,
     ListOrdered as ListOrderedGlyph,
@@ -112,6 +116,7 @@ import {
     Mail as MailGlyph,
     Megaphone as MegaphoneGlyph,
     Menu as MenuGlyph,
+    Monitor as MonitorGlyph,
     Package as PackageGlyph,
     PackageCheck as PackageCheckGlyph,
     PackageOpen as PackageOpenGlyph,
@@ -127,6 +132,7 @@ import {
     Smartphone as SmartphoneGlyph,
     Table2 as Table2Glyph,
     Tag as TagGlyph,
+    Tablet as TabletGlyph,
     Trash2 as Trash2Glyph,
     UserCircle as UserCircleGlyph,
     UserPlus as UserPlusGlyph,
@@ -314,3 +320,9 @@ export const XCircle = animatedStatic(XCircleGlyph, 'XCircle');
 export const ZoomIn = animatedStatic(ZoomInGlyph, 'ZoomIn');
 export const ZoomOut = animatedStatic(ZoomOutGlyph, 'ZoomOut');
 export const Image = animatedStatic(ImageGlyph, 'Image');
+export const Globe = animatedStatic(GlobeGlyph, 'Globe');
+export const Monitor = animatedStatic(MonitorGlyph, 'Monitor');
+export const Tablet = animatedStatic(TabletGlyph, 'Tablet');
+export const Laptop = animatedStatic(LaptopGlyph, 'Laptop');
+export const Activity = animatedStatic(ActivityGlyph, 'Activity');
+export const Bot = animatedStatic(BotGlyph, 'Bot');

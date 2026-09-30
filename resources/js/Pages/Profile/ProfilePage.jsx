@@ -50,12 +50,13 @@ export default function ProfilePage() {
         .join('');
 
     const ROLE_LABELS = {
-        admin: 'Administrator',
+        admin: 'Admin',
+        staff: 'Staff',
         security_officer: 'Security Officer',
         instructor: 'Instructor',
         student: 'Student',
     };
-    const primaryRole = ['admin', 'security_officer', 'instructor', 'student']
+    const primaryRole = ['admin', 'staff', 'security_officer', 'instructor', 'student']
         .find((r) => Array.isArray(roles) && roles.includes(r));
     const roleLabel = ROLE_LABELS[primaryRole] || 'Member';
 

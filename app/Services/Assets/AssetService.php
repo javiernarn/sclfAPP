@@ -101,6 +101,70 @@ class AssetService
     }
 
     /**
+     * Edit the registry record's descriptive fields — name, brand, model,
+     * serial number, where it physically lives, value, notes. Deliberately
+     * does not touch status/assignment/campus: those change through their
+     * own dedicated actions above so the AssetMovement trail stays
+     * meaningful (a details fix isn't a "movement" of the asset).
+     */
+    public function update(Asset $asset, User $officer, array $data): Asset
+    {
+        return DB::transaction(function () use ($asset, $officer, $data) {
+            $before = $asset->only(array_keys($data));
+
+            $asset->update($data);
+
+            AssetMovement::create([
+                'asset_id' => $asset->id,
+                'moved_by' => $officer->id,
+                'action' => AssetMovement::ACTION_DETAILS_UPDATED,
+                'notes' => 'Details edited by ' . $officer->name . '.',
+            ]);
+
+            $this->audit->log(
+                'asset.updated',
+                $asset,
+                "Asset {$asset->asset_tag} details edited by {$officer->name}.",
+                before: $before,
+                after: $asset->only(array_keys($data)),
+                actor: $officer,
+            );
+
+            return $asset->fresh();
+        });
+    }
+
+    /**
+     * Remove an asset from the registry (soft delete). The controller
+     * already blocks this while status is 'assigned'; this is the last
+     * line of defense in case something calls the service directly.
+     */
+    public function delete(Asset $asset, User $officer): void
+    {
+        if ($asset->status === Asset::STATUS_ASSIGNED) {
+            throw ValidationException::withMessages(['status' => 'This asset is still assigned to someone. Unassign it before deleting.']);
+        }
+
+        DB::transaction(function () use ($asset, $officer) {
+            AssetMovement::create([
+                'asset_id' => $asset->id,
+                'moved_by' => $officer->id,
+                'action' => AssetMovement::ACTION_DELETED,
+                'notes' => "Deleted from registry by {$officer->name}.",
+            ]);
+
+            $this->audit->log(
+                'asset.deleted',
+                $asset,
+                "Asset {$asset->asset_tag} ({$asset->name}) deleted from registry by {$officer->name}.",
+                actor: $officer,
+            );
+
+            $asset->delete();
+        });
+    }
+
+    /**
      * Hand an asset to a custodian. Blocked once retired/lost (terminal —
      * see Asset::TERMINAL_STATUSES); allowed from in_storage, in_repair
      * (returning straight to a person rather than the shelf), or

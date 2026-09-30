@@ -24,21 +24,21 @@ class FoundItemPolicy
 
     public function verify(User $user, FoundItem $foundItem): bool
     {
-        return $user->hasAnyRole(['security_officer', 'admin']);
+        return $user->hasAnyRole(['security_officer', 'admin', 'staff']);
     }
 
     public function manageStorage(User $user): bool
     {
-        return $user->hasAnyRole(['security_officer', 'admin']);
+        return $user->hasAnyRole(['security_officer', 'admin', 'staff']);
     }
 
     public function update(User $user, FoundItem $foundItem): bool
     {
-        return $user->id === $foundItem->user_id || $user->hasAnyRole(['admin', 'security_officer']);
+        return $user->id === $foundItem->user_id || $user->hasAnyRole(['admin', 'staff', 'security_officer']);
     }
 
     public function delete(User $user, FoundItem $foundItem): bool
     {
-        return $user->hasRole('admin');
+        return $user->hasAdminAccess();
     }
 }

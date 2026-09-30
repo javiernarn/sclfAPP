@@ -14,7 +14,7 @@ class ServiceRequestPolicy
 
     public function view(User $user, ServiceRequest $serviceRequest): bool
     {
-        return $user->id === $serviceRequest->requested_by || $user->hasAnyRole(['security_officer', 'admin']);
+        return $user->id === $serviceRequest->requested_by || $user->hasAnyRole(['security_officer', 'admin', 'staff']);
     }
 
     public function create(User $user): bool
@@ -24,7 +24,7 @@ class ServiceRequestPolicy
 
     public function manage(User $user): bool
     {
-        return $user->hasAnyRole(['security_officer', 'admin']);
+        return $user->hasAnyRole(['security_officer', 'admin', 'staff']);
     }
 
     /**
@@ -33,6 +33,6 @@ class ServiceRequestPolicy
      */
     public function cancel(User $user, ServiceRequest $serviceRequest): bool
     {
-        return $user->id === $serviceRequest->requested_by || $user->hasAnyRole(['security_officer', 'admin']);
+        return $user->id === $serviceRequest->requested_by || $user->hasAnyRole(['security_officer', 'admin', 'staff']);
     }
 }

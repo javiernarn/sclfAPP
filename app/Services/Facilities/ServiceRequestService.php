@@ -67,8 +67,41 @@ class ServiceRequestService
                 actor: $requester,
             );
 
+            $this->notifyOnSubmit($request, $requester);
+
             return $request;
         });
+    }
+
+    /**
+     * A brand-new request needs someone to actually see it before it can
+     * be picked up (see assign()) — this is that "someone's watching the
+     * intake queue" nudge. Facilities/IT/maintenance work is a Staff
+     * (the "admin" role — see AdminUsers.jsx's ROLE_META) job, not a
+     * security one, so Staff is who gets notified first. Security only
+     * steps in as a fallback so a request never silently sits unseen —
+     * e.g. a satellite campus with no Staff account of its own yet.
+     * Deliberately either/or rather than both every time: paging Security
+     * for every leaking faucet would just train them to ignore this
+     * notification type.
+     */
+    protected function notifyOnSubmit(ServiceRequest $request, User $requester): void
+    {
+        $recipients = User::role('admin')->get();
+
+        if ($recipients->isEmpty()) {
+            $recipients = User::role('security_officer')->get();
+        }
+
+        foreach ($recipients as $recipient) {
+            $recipient->notify(new SclfNotification(
+                type: SclfNotification::TYPE_SERVICE_REQUEST_SUBMITTED,
+                title: 'New Service Request',
+                message: "\"{$request->title}\" was submitted by {$requester->name}.",
+                relatedType: ServiceRequest::class,
+                relatedId: $request->id,
+            ));
+        }
     }
 
     /**
@@ -82,7 +115,7 @@ class ServiceRequestService
             throw ValidationException::withMessages(['status' => 'This request is already closed or cancelled.']);
         }
 
-        if (!$staff->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$staff->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             throw ValidationException::withMessages(['staff' => 'Requests can only be assigned to staff accounts.']);
         }
 

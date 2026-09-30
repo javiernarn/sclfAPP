@@ -26,7 +26,7 @@ class VisitorController extends Controller
      */
     public function index(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -39,7 +39,7 @@ class VisitorController extends Controller
         $query = $query
             ->with(['checkedInBy:id,name', 'checkedOutBy:id,name', 'campus:id,name,code'])
             ->when(
-                $viewer->campus_id && !$viewer->hasRole('admin'),
+                $viewer->campus_id && !$viewer->hasAdminAccess(),
                 fn ($q) => $q->where('campus_id', $viewer->campus_id)
             )
             ->when($request->filled('search'), function ($q) use ($request) {
@@ -51,7 +51,7 @@ class VisitorController extends Controller
             'data' => $query->paginate(20),
             'currently_on_campus' => $this->visitors->currentlyOnCampusQuery()
                 ->when(
-                    $viewer->campus_id && !$viewer->hasRole('admin'),
+                    $viewer->campus_id && !$viewer->hasAdminAccess(),
                     fn ($q) => $q->where('campus_id', $viewer->campus_id)
                 )
                 ->count(),
@@ -60,7 +60,7 @@ class VisitorController extends Controller
 
     public function store(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -84,9 +84,60 @@ class VisitorController extends Controller
         return response()->json(['success' => true, 'message' => "{$visitor->full_name} checked in.", 'data' => $visitor], 201);
     }
 
+    /**
+     * Correct a logged entry's details (name, ID, purpose, host, badge,
+     * notes) — for fixing a mistake at intake, not for checking someone
+     * out (see checkOut() below).
+     */
+    public function update(Request $request, Visitor $visitor)
+    {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
+            abort(403);
+        }
+
+        if (!$request->user()->canOperateInCampus($visitor->campus_id)) {
+            abort(403, 'That visitor was checked in at a different campus than your account.');
+        }
+
+        $validated = $request->validate([
+            'full_name' => 'required|string|max:150',
+            'id_presented' => 'nullable|string|max:100',
+            'id_number' => 'nullable|string|max:100',
+            'purpose' => 'required|string|in:' . implode(',', Visitor::PURPOSES),
+            'host_name' => 'nullable|string|max:150',
+            'host_department' => 'nullable|string|max:150',
+            'badge_number' => 'nullable|string|max:50',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        try {
+            $visitor = $this->visitors->update($visitor, $request->user(), $validated);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Visitor entry updated.', 'data' => $visitor]);
+    }
+
+    /**
+     * Remove a mistaken log entry outright. Admin-only — unlike editing a
+     * typo, deleting a front-desk record entirely is a step up in
+     * sensitivity, same reasoning as SecurityIncidentPolicy::delete().
+     */
+    public function destroy(Request $request, Visitor $visitor)
+    {
+        if (!$request->user()->hasAdminAccess()) {
+            abort(403);
+        }
+
+        $this->visitors->delete($visitor, $request->user());
+
+        return response()->json(['success' => true, 'message' => 'Visitor entry deleted.']);
+    }
+
     public function checkOut(Request $request, Visitor $visitor)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 

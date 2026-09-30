@@ -60,8 +60,92 @@ class IncidentService
                 actor: $reporter,
             );
 
+            $this->notifyOnReport($incident, $reporter);
+
             return $incident;
         });
+    }
+
+    /**
+     * Unlike a service request (see ServiceRequestService::notifyOnSubmit(),
+     * which pages Staff OR Security, never both), a security incident goes
+     * out to both roles at once — the two jobs here aren't interchangeable:
+     * Security is who actually has to respond and handle it, while Staff
+     * (the "admin" role) needs to know a case exists on their campus
+     * regardless of who ends up working it, same as they'd want visibility
+     * into any other campus-wide record.
+     */
+    protected function notifyOnReport(SecurityIncident $incident, User $reporter): void
+    {
+        $recipients = User::role(['admin', 'security_officer'])->get();
+
+        foreach ($recipients as $recipient) {
+            $recipient->notify(new SclfNotification(
+                type: SclfNotification::TYPE_INCIDENT_REPORTED,
+                title: 'Security Incident Reported',
+                message: "\"{$incident->title}\" was reported by {$reporter->name}.",
+                relatedType: SecurityIncident::class,
+                relatedId: $incident->id,
+            ));
+        }
+    }
+
+    /**
+     * Edit a report's descriptive fields. Authorization (who's allowed to
+     * touch it in its current state) is entirely SecurityIncidentPolicy's
+     * job — this just re-validates category/severity and applies the
+     * change, same split of responsibility as everywhere else in this
+     * service.
+     */
+    public function update(SecurityIncident $incident, User $actor, array $data): SecurityIncident
+    {
+        if (!in_array($data['category'], SecurityIncident::CATEGORIES, true)) {
+            throw ValidationException::withMessages(['category' => 'Invalid incident category.']);
+        }
+
+        if (!in_array($data['severity'] ?? SecurityIncident::SEVERITY_LOW, SecurityIncident::SEVERITIES, true)) {
+            throw ValidationException::withMessages(['severity' => 'Invalid severity.']);
+        }
+
+        return DB::transaction(function () use ($incident, $actor, $data) {
+            $before = $incident->only(array_keys($data));
+
+            $incident->update([
+                'category' => $data['category'],
+                'severity' => $data['severity'] ?? $incident->severity,
+                'title' => $data['title'],
+                'description' => $data['description'],
+                'location_text' => $data['location_text'] ?? null,
+                'occurred_at' => $data['occurred_at'],
+            ]);
+
+            $this->audit->log(
+                'incident.updated',
+                $incident,
+                "Security incident #{$incident->id} edited by {$actor->name}.",
+                before: $before,
+                after: $incident->only(array_keys($data)),
+                actor: $actor,
+            );
+
+            return $incident->fresh();
+        });
+    }
+
+    /**
+     * Permanently remove a report (soft delete). Admin-only, gated by
+     * SecurityIncidentPolicy::delete() at the controller.
+     */
+    public function delete(SecurityIncident $incident, User $actor): void
+    {
+        $this->audit->log(
+            'incident.deleted',
+            $incident,
+            "Security incident #{$incident->id} ({$incident->title}) deleted by {$actor->name}.",
+            actor: $actor,
+        );
+
+        $incident->delete();
     }
 
     /**
@@ -78,7 +162,7 @@ class IncidentService
             throw ValidationException::withMessages(['status' => 'Closed incidents cannot be reassigned.']);
         }
 
-        if (!$officer->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$officer->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             throw ValidationException::withMessages(['officer' => 'Incidents can only be assigned to security staff.']);
         }
 

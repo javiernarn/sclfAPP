@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { Link } from 'react-router-dom';
-import { AlertTriangle, ShieldAlert, Plus, ChevronRight } from '../../Components/icons';
+import { Link, useNavigate } from 'react-router-dom';
+import { AlertTriangle, ShieldAlert, Plus, ChevronRight, Eye } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import ViewToggle from '../../Components/shared/ViewToggle';
+import useViewMode from '../../hooks/useViewMode';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -45,13 +47,15 @@ const statusLabel = (status) => STATUS_OPTIONS.find((o) => o.value === status)?.
 
 export default function IncidentsList() {
     const { roles } = useAuth();
-    const isStaff = Array.isArray(roles) && roles.some((r) => ['security_officer', 'admin'].includes(r));
+    const isStaff = Array.isArray(roles) && roles.some((r) => ['security_officer', 'admin', 'staff'].includes(r));
     const toast = useToast();
+    const navigate = useNavigate();
 
     const [incidents, setIncidents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState('');
     const [severity, setSeverity] = useState('');
+    const [view, setView] = useViewMode('incidents');
 
     useEffect(() => {
         document.title = "Security Incidents | SCLF - Opol Community College";
@@ -100,6 +104,13 @@ export default function IncidentsList() {
             )}
 
             <div className="ds-card">
+                <div className="ds-list-head-row" style={{ marginBottom: 0 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 800, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '.02em' }}>
+                        {incidents.length} {incidents.length === 1 ? 'incident' : 'incidents'}
+                    </h3>
+                    <ViewToggle mode={view} onChange={setView} />
+                </div>
+
                 {loading && <div className="ds-skeleton" />}
                 {!loading && incidents.length === 0 && (
                     <div className="ds-empty">
@@ -107,30 +118,86 @@ export default function IncidentsList() {
                         {isStaff ? 'No incidents match these filters.' : "You haven't reported any incidents yet."}
                     </div>
                 )}
-                {!loading && incidents.length > 0 && (
+
+                {!loading && incidents.length > 0 && view === 'table' && (
+                    <div className="ds-table-wrap">
+                        <table className="ds-table">
+                            <thead>
+                                <tr>
+                                    <th>Incident</th>
+                                    <th>{isStaff ? 'Reported By' : 'Assigned To'}</th>
+                                    <th>Severity</th>
+                                    <th>Status</th>
+                                    <th>Occurred</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {incidents.map((incident) => (
+                                    <tr key={incident.id} className="is-clickable" onClick={() => navigate(`/app/incidents/${incident.id}`)}>
+                                        <td>
+                                            <div className="ds-table-cell-main">
+                                                <span className="ds-thumb">
+                                                    <ShieldAlert size={17} />
+                                                </span>
+                                                <div style={{ minWidth: 0 }}>
+                                                    <div className="ds-table-title">{incident.title}</div>
+                                                    <div className="ds-table-sub">
+                                                        {incident.category?.replace(/_/g, ' ')}
+                                                        {incident.campus?.code ? ` · ${incident.campus.code}` : ''}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="ds-table-nowrap">
+                                            {isStaff ? (incident.reporter?.name || '—') : (incident.assignee?.name || 'Unassigned')}
+                                        </td>
+                                        <td><span className={severityBadgeClass(incident.severity)}>{incident.severity}</span></td>
+                                        <td><span className={statusBadgeClass(incident.status)}>{statusLabel(incident.status)}</span></td>
+                                        <td className="ds-table-nowrap">{new Date(incident.occurred_at).toLocaleString()}</td>
+                                        <td>
+                                            <div className="ds-table-actions">
+                                                <span className="ds-btn ds-btn-view ds-btn-sm">
+                                                    <Eye size={13} /> View
+                                                </span>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {!loading && incidents.length > 0 && view === 'cards' && (
                     <ul className="ds-list">
                         {incidents.map((incident) => (
                             <li key={incident.id} className="ds-list-item">
-                                <Link to={`/app/incidents/${incident.id}`} className="ds-list-item-main" style={{ minWidth: 0 }}>
-                                    <div style={{ minWidth: 0 }}>
-                                        <p className="ds-list-item-title">{incident.title}</p>
-                                        <p className="ds-list-item-meta">
-                                            {incident.category?.replace(/_/g, ' ')}
-                                            {incident.campus?.code ? ` · ${incident.campus.code}` : ''}
-                                            {isStaff && incident.reporter?.name ? ` · Reported by ${incident.reporter.name}` : ''}
-                                            {incident.assignee?.name ? ` · Assigned to ${incident.assignee.name}` : ''}
-                                        </p>
-                                        <p className="ds-list-item-meta">
-                                            <AlertTriangle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
-                                            {new Date(incident.occurred_at).toLocaleString()}
-                                        </p>
+                                <Link to={`/app/incidents/${incident.id}`} className="ds-list-item-link">
+                                    <div className="ds-list-item-main">
+                                        <span className="ds-thumb">
+                                            <ShieldAlert size={19} />
+                                        </span>
+                                        <div style={{ minWidth: 0 }}>
+                                            <p className="ds-list-item-title">{incident.title}</p>
+                                            <p className="ds-list-item-meta">
+                                                {incident.category?.replace(/_/g, ' ')}
+                                                {incident.campus?.code ? ` · ${incident.campus.code}` : ''}
+                                                {isStaff && incident.reporter?.name ? ` · Reported by ${incident.reporter.name}` : ''}
+                                                {incident.assignee?.name ? ` · Assigned to ${incident.assignee.name}` : ''}
+                                            </p>
+                                            <p className="ds-list-item-meta">
+                                                <AlertTriangle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
+                                                {new Date(incident.occurred_at).toLocaleString()}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="ds-list-item-side">
+                                        <span className={severityBadgeClass(incident.severity)}>{incident.severity}</span>
+                                        <span className={statusBadgeClass(incident.status)}>{statusLabel(incident.status)}</span>
+                                        <ChevronRight size={16} />
                                     </div>
                                 </Link>
-                                <div className="ds-list-item-side" style={{ gap: 8 }}>
-                                    <span className={severityBadgeClass(incident.severity)}>{incident.severity}</span>
-                                    <span className={statusBadgeClass(incident.status)}>{statusLabel(incident.status)}</span>
-                                    <ChevronRight size={16} />
-                                </div>
                             </li>
                         ))}
                     </ul>

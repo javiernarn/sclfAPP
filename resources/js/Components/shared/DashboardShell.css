@@ -1259,7 +1259,14 @@ body { overflow: hidden; }
  * ========================================================================== */
 .ds-history-cards { display: none; }
 @media (max-width: 720px) {
-    .ds-table-wrap { display: none; }
+    /* Scoped to History's own wrapper class, not the shared .ds-table-wrap
+       used by every other list page — those use a JS view-mode toggle
+       (see useViewMode/ViewToggle) and must stay visible when a phone
+       user explicitly picks "Table", horizontal scroll and all. This used
+       to target .ds-table-wrap directly, which silently blanked out the
+       table on every other page under 720px regardless of what view the
+       user had picked. */
+    .ds-history-table-wrap { display: none; }
     .ds-history-cards { display: flex; flex-direction: column; gap: 10px; }
 }
 .ds-history-card { padding: 14px 16px; border-radius: 14px; }

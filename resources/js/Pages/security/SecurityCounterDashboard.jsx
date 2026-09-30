@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { OwnerAvatar } from './SecurityCounter';
 import {
     ListOrdered,
     UserCircle,
@@ -16,7 +17,10 @@ import {
     ChevronUp,
     Users,
     PackageCheck,
+    Hourglass,
+    Activity,
 } from '../../Components/icons';
+import { KpiCard, ChartCard, DonutChart, RankedBars, LiveBadge, usePolling } from '../../Components/charts';
 
 // Status a counter can be in — mirrors StorageLocation::STATUSES on the
 // backend exactly (see the status migration + CounterIntakeService,
@@ -234,14 +238,17 @@ function QueuePanel({ counter, toast }) {
                                     style={{ paddingLeft: 32 }}
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
-                                    placeholder="School ID or name"
+                                    placeholder="Student/staff ID or name"
                                 />
                             </div>
                         ) : (
                             <div className="ds-list-item">
                                 <div className="ds-list-item-main">
-                                    <UserCircle size={18} style={{ opacity: 0.6, marginRight: 6 }} />
-                                    <span className="ds-list-item-title">{picked.name}</span>
+                                    <OwnerAvatar user={picked} />
+                                    <div>
+                                        <span className="ds-list-item-title">{picked.name}</span>
+                                        {picked.display_id && <p className="ds-list-item-meta">{picked.display_id}</p>}
+                                    </div>
                                 </div>
                                 <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={() => setPicked(null)}>Change</button>
                             </div>
@@ -253,8 +260,11 @@ function QueuePanel({ counter, toast }) {
                                     <li key={u.id} className="ds-list-item" style={{ cursor: 'pointer' }}
                                         onClick={() => { setPicked(u); setResults([]); setQuery(''); }}>
                                         <div className="ds-list-item-main">
-                                            <UserCircle size={18} style={{ opacity: 0.6, marginRight: 6 }} />
-                                            <span className="ds-list-item-title">{u.name}</span>
+                                            <OwnerAvatar user={u} />
+                                            <div>
+                                                <span className="ds-list-item-title">{u.name}</span>
+                                                {u.display_id && <p className="ds-list-item-meta">{u.display_id}</p>}
+                                            </div>
                                         </div>
                                         <button type="button" className="ds-btn ds-btn-primary ds-btn-sm">Select</button>
                                     </li>
@@ -291,7 +301,7 @@ function QueuePanel({ counter, toast }) {
                                     </p>
                                     <p className="ds-list-item-meta">
                                         {PURPOSE_OPTIONS.find((p) => p.value === entry.purpose)?.label || entry.purpose || 'No purpose given'}
-                                        {entry.requester?.student_id ? ` · ${entry.requester.student_id}` : ''}
+                                        {entry.requester?.display_id ? ` · ${entry.requester.display_id}` : ''}
                                     </p>
                                 </div>
                             </div>
@@ -333,34 +343,53 @@ function QueuePanel({ counter, toast }) {
 export default function SecurityCounterDashboard() {
     const toast = useToast();
     const { roles } = useAuth();
-    const isAdmin = Array.isArray(roles) && roles.includes('admin');
+    const isAdmin = Array.isArray(roles) && (roles.includes('admin') || roles.includes('staff'));
 
-    const [counters, setCounters] = useState([]);
-    const [loading, setLoading] = useState(true);
+    // Polls /counter/dashboard every 15s — the same live-refresh pattern as
+    // the Security / Admin dashboards, so every counter card, queue count
+    // and KPI here stays current without a manual refresh.
+    const { data, loading, error, updatedAt, refresh } = usePolling('/counter/dashboard', { interval: 15000 });
+    const counters = data?.data || [];
+
+    // A status change (Open/Closed/Maintenance) is applied optimistically
+    // so the badge flips instantly, then the next poll (or an immediate
+    // refresh) reconciles with the server.
+    const [overrides, setOverrides] = useState({});
+    useEffect(() => { setOverrides({}); }, [updatedAt]);
+    const displayCounters = counters.map((c) => (overrides[c.id] ? { ...c, status: overrides[c.id] } : c));
+
     const [openQueueFor, setOpenQueueFor] = useState(null);
 
     useEffect(() => {
         document.title = 'Counter Dashboard | SCLF - Opol Community College';
     }, []);
 
-    const load = () => {
-        setLoading(true);
-        axios.get('/counter/dashboard')
-            .then((res) => setCounters(res.data.data))
-            .catch(() => toast.error('Could not load the counter dashboard.', { title: 'Failed to load' }))
-            .finally(() => setLoading(false));
-    };
-    useEffect(load, []);
-
     const handleStatusChange = async (counter, status) => {
         try {
             await axios.patch(`/storage-locations/${counter.id}/status`, { status });
-            setCounters((cs) => cs.map((c) => (c.id === counter.id ? { ...c, status } : c)));
+            setOverrides((o) => ({ ...o, [counter.id]: status }));
             toast.success(`${counter.label || counter.code} is now ${status}.`, { title: 'Status updated' });
+            refresh();
         } catch (err) {
             toast.error(err?.response?.data?.message || 'Could not update status.', { title: 'Failed' });
         }
     };
+
+    // Aggregate every counter's queue into campus-wide totals for the KPI
+    // row, a status-mix donut, and a "busiest counter" ranking.
+    const agg = useMemo(() => {
+        let waiting = 0, called = 0, serving = 0, checkedInToday = 0, officers = 0;
+        const busiest = displayCounters.map((c) => {
+            const q = c.queue_counts || {};
+            const w = Number(q.waiting || 0), cl = Number(q.called || 0), sv = Number(q.serving || 0);
+            waiting += w; called += cl; serving += sv;
+            checkedInToday += Number(c.checked_in_today_count || 0);
+            officers += c.current_officers?.length || 0;
+            return { label: c.label || c.code, value: w + cl + sv };
+        }).filter((c) => c.value > 0).sort((a, b) => b.value - a.value).slice(0, 6);
+
+        return { waiting, called, serving, checkedInToday, officers, busiest, activeTotal: waiting + called + serving };
+    }, [displayCounters]);
 
     return (
         <DashboardShell
@@ -368,11 +397,50 @@ export default function SecurityCounterDashboard() {
             title="Counter Dashboard"
             subtitle="Live status for every counter you can operate: who's on shift, today's activity, and the walk-in queue."
         >
-            {loading && [...Array(2)].map((_, i) => <div key={i} className="ds-skeleton" style={{ height: 180, marginBottom: 16 }} />)}
-            {!loading && counters.length === 0 && (
+            <div className="ch-toolbar">
+                <LiveBadge updatedAt={updatedAt} error={error} />
+            </div>
+
+            {loading && !data && [...Array(2)].map((_, i) => <div key={i} className="ds-skeleton" style={{ height: 180, marginBottom: 16 }} />)}
+
+            {!loading && data && counters.length === 0 && (
                 <div className="ds-empty">No counters set up yet — add one from the Counter page.</div>
             )}
-            {!loading && counters.map((counter) => (
+
+            {!loading && data && counters.length > 0 && (
+                <>
+                    <div className="ch-kpi-grid">
+                        <KpiCard icon={Hourglass} label="Waiting Now" value={agg.waiting} color="var(--ch-4)" goodWhen="down" />
+                        <KpiCard icon={PlayCircle} label="Being Served" value={agg.serving} color="var(--ch-2)" />
+                        <KpiCard icon={PackageCheck} label="Checked In Today" value={agg.checkedInToday} color="var(--ch-3)" />
+                        <KpiCard icon={Users} label="Officers On Shift" value={agg.officers} color="var(--ch-1)" />
+                    </div>
+
+                    <div className="ch-row cols-2-1">
+                        <ChartCard title="Busiest Counters" subtitle="Counters ranked by people currently in queue." icon={ListOrdered}>
+                            <RankedBars items={agg.busiest} empty="No one in any queue right now" />
+                        </ChartCard>
+                        <ChartCard title="Queue Mix" subtitle="Waiting vs. called vs. serving, campus-wide." icon={Activity}>
+                            {agg.activeTotal > 0 ? (
+                                <DonutChart
+                                    centerLabel="In queue"
+                                    size={150}
+                                    thickness={17}
+                                    data={[
+                                        { label: 'Waiting', value: agg.waiting, color: 'var(--ch-4)' },
+                                        { label: 'Called', value: agg.called, color: 'var(--ch-2)' },
+                                        { label: 'Serving', value: agg.serving, color: 'var(--ch-3)' },
+                                    ]}
+                                />
+                            ) : (
+                                <p className="ch-empty">Every queue is empty 🎉</p>
+                            )}
+                        </ChartCard>
+                    </div>
+                </>
+            )}
+
+            {!loading && data && displayCounters.map((counter) => (
                 <React.Fragment key={counter.id}>
                     <CounterCard
                         counter={counter}

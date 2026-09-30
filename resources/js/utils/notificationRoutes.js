@@ -10,6 +10,7 @@ export const NOTIFICATION_ROUTE_FOR_TYPE = {
     'App\\Models\\SecurityIncident': (id) => `/app/incidents/${id}`,
     'App\\Models\\ServiceRequest': (id) => `/app/service-requests/${id}`,
     'App\\Models\\Asset': (id) => `/app/security/assets/${id}`,
+    'App\\Models\\ActionRequest': (id) => `/app/admin/requests?request=${id}`,
 };
 
 // A notification's `data` payload (see SclfNotification::toArray) always

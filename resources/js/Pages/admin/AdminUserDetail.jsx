@@ -5,10 +5,14 @@ import {
     ArrowLeft, UserCircle, Mail, Phone, IdCard, ShieldCheck, Calendar,
     VenetianMask, MapPin, GraduationCap, LogIn, LogOut, History,
     PackageSearch, ClipboardCheck, Ban, Trash2, PackageCheck, QrCode,
+    Globe, ShieldAlert, Activity,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ImageViewer from '../../Components/shared/ImageViewer';
+import DeviceIcon from '../../Components/shared/DeviceIcon';
 import { useAuth } from '../../context/AuthContext';
+import { useConfirm } from '../../context/ConfirmContext';
+import { parseUserAgent } from '../../utils/userAgent';
 
 const InfoItem = ({ icon: Icon, label, value }) => (
     <div className="ds-info-item">
@@ -24,7 +28,7 @@ const ROLE_LABELS = {
     student: 'Student',
     instructor: 'Instructor',
     security_officer: 'Security Officer',
-    admin: 'Administrator',
+    admin: 'Staff',
 };
 
 // Only these two actions count as a "sign-in event" for the Login /
@@ -49,6 +53,10 @@ export default function AdminUserDetail() {
 
     const [cleaningClaims, setCleaningClaims] = useState(false);
     const [cleanupMessage, setCleanupMessage] = useState('');
+    const confirm = useConfirm();
+
+    const [activitySummary, setActivitySummary] = useState(null);
+    const [activityLoading, setActivityLoading] = useState(true);
 
     useEffect(() => {
         document.title = "User Details | SCLF - Opol Community College";
@@ -70,10 +78,13 @@ export default function AdminUserDetail() {
     const deleteCancelledClaims = async () => {
         const count = user?.cancelled_claims_count ?? 0;
         if (count === 0) return;
-        if (!window.confirm(
-            `Permanently delete ${count} cancelled claim(s) for ${user.name}? ` +
-            `Their related notifications will be removed too. This cannot be undone.`
-        )) return;
+        const ok = await confirm({
+            title: 'Delete cancelled claims?',
+            message: `Permanently delete ${count} cancelled claim(s) for ${user.name}? Their related notifications will be removed too. This cannot be undone.`,
+            confirmLabel: 'Delete claims',
+            tone: 'danger',
+        });
+        if (!ok) return;
 
         setCleaningClaims(true);
         setCleanupMessage('');
@@ -93,6 +104,14 @@ export default function AdminUserDetail() {
         axios.get('/audit-logs', { params: { user_id: id } })
             .then((res) => setLogs(res.data.data || []))
             .finally(() => setLogsLoading(false));
+    }, [id]);
+
+    useEffect(() => {
+        setActivityLoading(true);
+        axios.get(`/admin/activity/users/${id}/summary`, { params: { days: 30 } })
+            .then((res) => setActivitySummary(res.data.data))
+            .catch(() => setActivitySummary(null))
+            .finally(() => setActivityLoading(false));
     }, [id]);
 
     const authLogs = useMemo(() => logs.filter((l) => AUTH_ACTIONS.has(l.action)), [logs]);
@@ -243,6 +262,68 @@ export default function AdminUserDetail() {
             )}
 
             <div className="ds-card">
+                <div className="ds-card-title-icon" style={{ fontSize: 15.5, fontWeight: 800 }}>
+                    <Activity size={17} /> Devices &amp; IP Addresses
+                </div>
+                <p className="ds-card-desc">
+                    Every device and IP address this account has been seen on in the last 30 days,
+                    from the raw request log (separate from sign-in events above). A flagged count
+                    here means some of that traffic tripped the automatic spam/abuse thresholds —
+                    see <Link to="/app/admin/activity">User Activity</Link> for the full, filterable feed.
+                </p>
+
+                {activityLoading && <div className="ds-skeleton" />}
+
+                {!activityLoading && !activitySummary && (
+                    <div className="ds-empty">No request activity recorded for this account yet.</div>
+                )}
+
+                {!activityLoading && activitySummary && (
+                    <>
+                        <div className="ds-info-grid">
+                            <InfoItem icon={Activity} label="Requests (30 days)" value={activitySummary.total_requests} />
+                            <InfoItem icon={Globe} label="Distinct IP Addresses" value={activitySummary.distinct_ip_count} />
+                            <InfoItem icon={UserCircle} label="Distinct Devices" value={activitySummary.distinct_device_count} />
+                            <InfoItem
+                                icon={ShieldAlert}
+                                label="Flagged Requests"
+                                value={activitySummary.flagged_requests > 0
+                                    ? <span style={{ color: '#dc2626', fontWeight: 700 }}>{activitySummary.flagged_requests}</span>
+                                    : 0}
+                            />
+                        </div>
+
+                        {activitySummary.ip_addresses?.length > 0 && (
+                            <div style={{ marginTop: 14 }}>
+                                <p className="ds-list-item-meta" style={{ marginBottom: 6, fontWeight: 700 }}>IP addresses used</p>
+                                <div className="ds-chip-row">
+                                    {activitySummary.ip_addresses.map((ip) => (
+                                        <span key={ip.ip_address} className="ds-badge ds-badge-default ds-badge-icon" title={`Last seen ${new Date(ip.last_seen).toLocaleString()}`}>
+                                            <Globe size={12} /> {ip.ip_address} · {ip.hits}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {activitySummary.devices?.length > 0 && (
+                            <div style={{ marginTop: 14 }}>
+                                <p className="ds-list-item-meta" style={{ marginBottom: 6, fontWeight: 700 }}>Devices used</p>
+                                <div className="ds-chip-row">
+                                    {activitySummary.devices.map((d, idx) => (
+                                        <span key={idx} className="ds-badge ds-badge-default ds-badge-icon" title={`Last seen ${new Date(d.last_seen).toLocaleString()}`}>
+                                            <DeviceIcon deviceType={d.device_type} size={12} />
+                                            {[d.platform, d.browser].filter(Boolean).join(' · ') || 'Unknown'} · {d.hits}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+
+            <div className="ds-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
                     <div className="ds-card-title-icon" style={{ fontSize: 15.5, fontWeight: 800 }}>
                         <History size={17} /> Login / Logout History
@@ -274,7 +355,9 @@ export default function AdminUserDetail() {
                 )}
                 {!logsLoading && visibleLogs.length > 0 && (
                     <ul className="ds-list">
-                        {visibleLogs.map((l) => (
+                        {visibleLogs.map((l) => {
+                            const ua = parseUserAgent(l.user_agent);
+                            return (
                             <li key={l.id} className="ds-list-item">
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                                     <span className="ds-thumb" style={{ width: 34, height: 34, flexShrink: 0 }}>
@@ -289,11 +372,26 @@ export default function AdminUserDetail() {
                                                     : l.action}
                                         </p>
                                         <p className="ds-list-item-meta">{l.description}</p>
+                                        {(l.ip_address || l.user_agent) && (
+                                            <p className="ds-list-item-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginTop: 2 }}>
+                                                {l.user_agent && (
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                                        <DeviceIcon deviceType={ua.deviceType} size={12} /> {ua.label}
+                                                    </span>
+                                                )}
+                                                {l.ip_address && (
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                                        <Globe size={12} /> {l.ip_address}
+                                                    </span>
+                                                )}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                                 <span className="ds-list-item-meta">{new Date(l.created_at).toLocaleString()}</span>
                             </li>
-                        ))}
+                            );
+                        })}
                     </ul>
                 )}
 

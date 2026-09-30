@@ -14,7 +14,7 @@ class ClaimPolicy
 
     public function view(User $user, Claim $claim): bool
     {
-        return $user->id === $claim->claimant_id || $user->hasAnyRole(['security_officer', 'admin']);
+        return $user->id === $claim->claimant_id || $user->hasAnyRole(['security_officer', 'admin', 'staff']);
     }
 
     public function create(User $user): bool
@@ -29,12 +29,12 @@ class ClaimPolicy
 
     public function review(User $user, Claim $claim): bool
     {
-        return $user->hasAnyRole(['security_officer', 'admin']);
+        return $user->hasAnyRole(['security_officer', 'admin', 'staff']);
     }
 
     public function cancel(User $user, Claim $claim): bool
     {
-        return $user->id === $claim->claimant_id || $user->hasRole('admin');
+        return $user->id === $claim->claimant_id || $user->hasAdminAccess();
     }
 
     // Admin-only: permanently remove a claim record from the list (e.g.
@@ -42,12 +42,12 @@ class ClaimPolicy
     // `cancel`, which just transitions status — this actually deletes.
     public function delete(User $user, Claim $claim): bool
     {
-        return $user->hasRole('admin');
+        return $user->hasAdminAccess();
     }
 
     public function generateRelease(User $user, Claim $claim): bool
     {
-        return $user->hasAnyRole(['security_officer', 'admin']);
+        return $user->hasAnyRole(['security_officer', 'admin', 'staff']);
     }
 
     // Only the claimant may download their own release QR — this is their

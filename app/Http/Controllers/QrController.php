@@ -25,7 +25,7 @@ class QrController extends Controller
     // isn't on the hot path for a normal successful scan.
     public function decodeImage(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403, 'Only Security Officers may release items.');
         }
 
@@ -105,7 +105,7 @@ class QrController extends Controller
 
     public function scan(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403, 'Only Security Officers may release items.');
         }
 
@@ -138,7 +138,14 @@ class QrController extends Controller
             'success' => true,
             'message' => 'Item released successfully. Case closed.',
             'data' => $qr->load([
-                'claim.claimant:id,name,student_id',
+                // staff_id + profile_picture are needed even though the
+                // scan result never shows them directly: they feed the
+                // claimant's display_id / profile_picture_url accessors,
+                // which is what the "Released to" card actually renders
+                // (an instructor claimant has a staff_id, not a
+                // student_id, so selecting student_id alone left the ID
+                // blank whenever the claim wasn't a student's).
+                'claim.claimant:id,name,student_id,staff_id,profile_picture',
                 'foundItem:id,item_name,category,image_path,storage_location_id',
             ]),
         ]);
@@ -146,7 +153,7 @@ class QrController extends Controller
 
     public function revoke(Request $request, QrRelease $qrRelease)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 

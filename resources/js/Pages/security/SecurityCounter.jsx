@@ -5,6 +5,29 @@ import DashboardShell from '../../Components/shared/DashboardShell';
 import { useToast } from '../../context/ToastContext';
 import { Search, UserCircle, PackageCheck, Info, RotateCcw, ArrowRight } from '../../Components/icons';
 
+// Small avatar used in the owner-search results and the selected-owner
+// row: shows the person's actual profile photo when one is on file,
+// falling back to their initials (never the generic UserCircle icon,
+// which looked identical for every result and made scanning a name list
+// slower for the officer).
+export function OwnerAvatar({ user }) {
+    const initials = (user?.name || '?')
+        .split(' ').filter(Boolean).slice(0, 2)
+        .map((p) => p[0]?.toUpperCase()).join('');
+    return (
+        <span
+            className="ds-avatar"
+            style={{
+                width: 32, height: 32, fontSize: 12, borderRadius: 10, flexShrink: 0, marginRight: 8,
+                backgroundImage: user?.profile_picture_url ? `url(${user.profile_picture_url})` : undefined,
+                backgroundSize: 'cover', backgroundPosition: 'center',
+            }}
+        >
+            {!user?.profile_picture_url && (initials || <UserCircle size={18} />)}
+        </span>
+    );
+}
+
 // The counter check-in flow, in three steps: find the owner, describe the
 // item + pick where it's being held, submit. Kept as one page (not a
 // wizard) since a guard doing this ten times a shift benefits more from
@@ -154,7 +177,7 @@ export default function SecurityCounter() {
                 <>
                     <div className="ds-card">
                         <h3>1. Find the owner</h3>
-                        <p className="ds-card-desc">Search by school ID or name.</p>
+                        <p className="ds-card-desc">Search by student/staff ID or name.</p>
                         {!owner ? (
                             <>
                                 <div className="ds-field">
@@ -164,7 +187,7 @@ export default function SecurityCounter() {
                                             style={{ paddingLeft: 32 }}
                                             value={query}
                                             onChange={(e) => setQuery(e.target.value)}
-                                            placeholder="e.g. 2021-2-04062 or Juan Dela Cruz"
+                                            placeholder="e.g. 2021-2-04062, INS-2026-0001, or Juan Dela Cruz"
                                         />
                                     </div>
                                 </div>
@@ -174,10 +197,10 @@ export default function SecurityCounter() {
                                         {results.map((u) => (
                                             <li key={u.id} className="ds-list-item" style={{ cursor: 'pointer' }} onClick={() => pickOwner(u)}>
                                                 <div className="ds-list-item-main">
-                                                    <UserCircle size={22} style={{ opacity: 0.6, marginRight: 8 }} />
+                                                    <OwnerAvatar user={u} />
                                                     <div>
                                                         <p className="ds-list-item-title">{u.name}</p>
-                                                        <p className="ds-list-item-meta">{u.student_id || 'No ID on file'}{u.course ? ` · ${u.course}` : ''}</p>
+                                                        <p className="ds-list-item-meta">{u.display_id || 'No ID on file'}{u.course ? ` · ${u.course}` : ''}</p>
                                                     </div>
                                                 </div>
                                                 <button type="button" className="ds-btn ds-btn-primary">Select</button>
@@ -192,10 +215,10 @@ export default function SecurityCounter() {
                         ) : (
                             <div className="ds-list-item">
                                 <div className="ds-list-item-main">
-                                    <UserCircle size={22} style={{ opacity: 0.6, marginRight: 8 }} />
+                                    <OwnerAvatar user={owner} />
                                     <div>
                                         <p className="ds-list-item-title">{owner.name}</p>
-                                        <p className="ds-list-item-meta">{owner.student_id || 'No ID on file'}{owner.course ? ` · ${owner.course}` : ''}</p>
+                                        <p className="ds-list-item-meta">{owner.display_id || 'No ID on file'}{owner.course ? ` · ${owner.course}` : ''}</p>
                                     </div>
                                 </div>
                                 <button type="button" className="ds-btn ds-btn-secondary" onClick={() => setOwner(null)}>Change</button>

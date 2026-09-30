@@ -87,6 +87,52 @@ class VisitorService
     }
 
     /**
+     * Correct a front-desk entry — a mistyped name, wrong host, etc.
+     * Doesn't touch status/checked_in_at/checked_out_at; those are
+     * checkIn()/checkOut()'s job, not a details fix.
+     */
+    public function update(Visitor $visitor, User $officer, array $data): Visitor
+    {
+        if (!in_array($data['purpose'], Visitor::PURPOSES, true)) {
+            throw ValidationException::withMessages(['purpose' => 'Invalid visit purpose.']);
+        }
+
+        return DB::transaction(function () use ($visitor, $officer, $data) {
+            $before = $visitor->only(array_keys($data));
+
+            $visitor->update($data);
+
+            $this->audit->log(
+                'visitor.updated',
+                $visitor,
+                "Visitor entry for {$visitor->full_name} edited by {$officer->name}.",
+                before: $before,
+                after: $visitor->only(array_keys($data)),
+                actor: $officer,
+            );
+
+            return $visitor->fresh();
+        });
+    }
+
+    /**
+     * Remove an erroneous log entry (soft delete) — e.g. a duplicate
+     * check-in, or one entered for the wrong person entirely. Admin-only,
+     * gated at the controller.
+     */
+    public function delete(Visitor $visitor, User $officer): void
+    {
+        $this->audit->log(
+            'visitor.deleted',
+            $visitor,
+            "Visitor entry for {$visitor->full_name} deleted by {$officer->name}.",
+            actor: $officer,
+        );
+
+        $visitor->delete();
+    }
+
+    /**
      * Everyone still on campus right now — the default view of the
      * Visitors page before an officer switches to the full history.
      */

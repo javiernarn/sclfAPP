@@ -30,7 +30,7 @@ class CounterAssignmentService
      */
     public function assign(StorageLocation $location, User $officer, User $assignedBy): StorageLocationOfficer
     {
-        if (!$officer->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$officer->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             throw ValidationException::withMessages([
                 'user_id' => ['Only a security officer or admin can be assigned to a counter.'],
             ]);

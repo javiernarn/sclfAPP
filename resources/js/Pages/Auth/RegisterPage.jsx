@@ -42,13 +42,34 @@ import {
     Info,
 } from '../../Components/icons';
 
-const COURSES = [
-   'BSIT — Bachelor of Science in Information Technology',
-    // 'BSCS — Bachelor of Science in Computer Science',
-    'BSBA — Bachelor of Science in Business Administration (Major in M.M)',
-    'BSBA — Bachelor of Science in Business Administration (Major in F.M)',
-    'BEED — Bachelor of Elementary Education',
-    'BSEd — Bachelor of Secondary Education (Major in English)',
+// Grouped by department/college so the dropdown reads the way the
+// school's own catalog does — CTE / CIT / CBA — instead of one flat,
+// unlabeled list of programs. Each group's label is the college name;
+// each option's value is still the plain "CODE — Full name" string
+// RegisterPage has always stored in `course` (and AuthController just
+// validates as free-text — see AuthController::register()), so existing
+// accounts and this dropdown's values stay compatible either way.
+const COURSE_GROUPS = [
+    {
+        college: 'College of Teacher Education (CTE)',
+        courses: [
+            'BEED — Bachelor of Elementary Education',
+            'BSEd — Bachelor of Secondary Education (Major in English)',
+        ],
+    },
+    {
+        college: 'College of Information Technology (CIT)',
+        courses: [
+            'BSIT — Bachelor of Science in Information Technology',
+        ],
+    },
+    {
+        college: 'College of Business Administration (CBA)',
+        courses: [
+            'BSBA — Bachelor of Science in Business Administration (Major in Marketing Management)',
+            'BSBA — Bachelor of Science in Business Administration (Major in Financial Management)',
+        ],
+    },
 ];
 
 const INITIAL_FORM = {
@@ -534,8 +555,12 @@ export default function RegisterPage() {
                                 <label className="lg-row-label"><GraduationCap size={12} strokeWidth={2.5} /> Course <span className="lg-required">*</span></label>
                                 <LedgerSelect id="course" name="course" value={form.course} onChange={handleChange} required>
                                     <option value="" disabled>Select your course</option>
-                                    {COURSES.map((c) => (
-                                        <option key={c} value={c}>{c}</option>
+                                    {COURSE_GROUPS.map((group) => (
+                                        <optgroup key={group.college} label={group.college}>
+                                            {group.courses.map((c) => (
+                                                <option key={c} value={c}>{c}</option>
+                                            ))}
+                                        </optgroup>
                                     ))}
                                 </LedgerSelect>
                             </div>

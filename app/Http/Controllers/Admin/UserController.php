@@ -153,7 +153,7 @@ class UserController extends Controller
             $user,
             "User #{$user->id} created with role '{$validated['role']}'" .
                 ($staffId ? " (ID {$staffId})" : '') .
-                ' by admin #' . $request->user()->id
+                ' by ' . ($request->user()->isAdmin() ? 'admin' : 'staff') . ' #' . $request->user()->id
         );
 
         return response()->json([
@@ -207,7 +207,7 @@ class UserController extends Controller
             'gender' => 'sometimes|nullable|string|in:male,female,other,prefer_not_to_say',
             'campus_id' => 'sometimes|nullable|exists:campuses,id',
             'is_active' => 'sometimes|boolean',
-            'role' => 'sometimes|in:student,instructor,security_officer,admin',
+            'role' => 'sometimes|in:student,instructor,security_officer,staff,admin',
             'profile_picture' => ['sometimes', 'nullable', 'image', 'max:5120'],
         ], [
             'email.unique' => 'That email address is already in use by another account.',
@@ -217,13 +217,25 @@ class UserController extends Controller
             'last_name.regex' => 'Last name can only contain letters, spaces, hyphens and apostrophes.',
         ]);
 
+        // One admin, ever. Nobody can be promoted to admin, and the admin
+        // account itself is never edited/demoted by anyone but the admin.
+        if (($validated['role'] ?? null) === 'admin' && !$user->isAdmin()) {
+            abort(422, 'There is only one Admin account. Use the Staff role for everyone else.');
+        }
+        if ($user->isAdmin() && !$request->user()->isAdmin()) {
+            abort(403, 'Only the Admin can change the Admin account.');
+        }
+        if ($user->isAdmin() && isset($validated['role']) && $validated['role'] !== 'admin') {
+            abort(422, 'The Admin account cannot be given another role.');
+        }
+
         // Guard against an admin accidentally locking themselves out by
         // stripping their own admin role through this generic form — the
         // dedicated disable/restore endpoints already have their own
         // "can't disable yourself" guard; this mirrors that for roles.
         if (
             isset($validated['role']) && $validated['role'] !== 'admin'
-            && $user->id === $request->user()->id && $user->hasRole('admin')
+            && $user->id === $request->user()->id && $user->isAdmin()
         ) {
             abort(422, 'You cannot remove your own admin role.');
         }
@@ -292,6 +304,9 @@ class UserController extends Controller
         if ($user->id === $request->user()->id) {
             abort(422, 'You cannot disable your own account.');
         }
+        if ($user->isAdmin()) {
+            abort(403, 'The Admin account cannot be disabled.');
+        }
 
         // Disabling ≠ deleting. We intentionally do NOT soft-delete here:
         // a soft-deleted user disappears from every relationship query
@@ -318,6 +333,10 @@ class UserController extends Controller
         $user = User::withTrashed()->findOrFail($id);
 
         $this->authorize('update', $user);
+
+        if ($user->isAdmin() && !$request->user()->isAdmin()) {
+            abort(403, 'Only the Admin can change the Admin account.');
+        }
 
         if ($user->trashed()) {
             $user->restore();

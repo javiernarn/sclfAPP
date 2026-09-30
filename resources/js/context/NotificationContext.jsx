@@ -9,6 +9,9 @@ const NotificationContext = createContext(null);
 // enough not to hammer the API — the same tradeoff the existing web push
 // system exists to cover for anything more time-critical than this.
 const POLL_MS = 30000;
+// Admin <-> staff approval requests are waiting on a person, so those two
+// roles check for new notifications more often.
+const POLL_MS_APPROVAL_ROLES = 10000;
 
 // Small preview list shown in the bell's dropdown — the full history
 // still lives at /app/notifications (NotificationsPage), which paginates
@@ -30,7 +33,8 @@ const PREVIEW_LIMIT = 8;
  * free — there's nothing role-specific in this file.
  */
 export function NotificationProvider({ children }) {
-    const { user } = useAuth();
+    const { user, roles } = useAuth();
+    const approvalRole = Array.isArray(roles) && (roles.includes('admin') || roles.includes('staff'));
     const [unreadCount, setUnreadCount] = useState(0);
     const [recent, setRecent] = useState([]);
     const [loadingRecent, setLoadingRecent] = useState(false);
@@ -103,7 +107,7 @@ export function NotificationProvider({ children }) {
 
         refreshUnreadCount();
 
-        pollRef.current = setInterval(refreshUnreadCount, POLL_MS);
+        pollRef.current = setInterval(refreshUnreadCount, approvalRole ? POLL_MS_APPROVAL_ROLES : POLL_MS);
 
         // Also catch up immediately when the tab regains focus — covers
         // the common case of a notification arriving while the browser
@@ -116,7 +120,7 @@ export function NotificationProvider({ children }) {
             window.removeEventListener('focus', onFocus);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user?.id, user?.must_setup_profile]);
+    }, [user?.id, user?.must_setup_profile, approvalRole]);
 
     return (
         <NotificationContext.Provider

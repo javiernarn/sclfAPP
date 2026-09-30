@@ -24,9 +24,16 @@ const TONE_FOR_TYPE = {
     security_verification_completed: 'ds-badge-review',
     queue_called: 'ds-badge-found',
     incident_assigned: 'ds-badge-pending',
+    incident_reported: 'ds-badge-pending',
     service_request_assigned: 'ds-badge-pending',
+    service_request_submitted: 'ds-badge-review',
     service_request_completed: 'ds-badge-found',
     asset_assigned: 'ds-badge-review',
+    staff_request_submitted: 'ds-badge-pending',
+    staff_request_approved: 'ds-badge-found',
+    staff_request_rejected: 'ds-badge-rejected',
+    staff_request_pending: 'ds-badge-pending',
+    staff_request_executed: 'ds-badge-review',
 };
 
 // Short "3m ago" / "2h ago" / "5d ago" style relative timestamp — falls

@@ -24,13 +24,13 @@ class SecurityIncidentController extends Controller
     public function index(Request $request)
     {
         $viewer = $request->user();
-        $isStaff = $viewer->hasAnyRole(['security_officer', 'admin']);
+        $isStaff = $viewer->hasAnyRole(['security_officer', 'admin', 'staff']);
 
         $query = SecurityIncident::query()
             ->with(['reporter:id,name', 'assignee:id,name', 'campus:id,name,code'])
             ->when(!$isStaff, fn ($q) => $q->where('reported_by', $viewer->id))
             ->when(
-                $isStaff && $viewer->campus_id && !$viewer->hasRole('admin'),
+                $isStaff && $viewer->campus_id && !$viewer->hasAdminAccess(),
                 fn ($q) => $q->where('campus_id', $viewer->campus_id)
             )
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
@@ -76,6 +76,49 @@ class SecurityIncidentController extends Controller
         ]);
 
         return response()->json(['data' => $securityIncident]);
+    }
+
+    /**
+     * Edit a report's details. The reporter may fix their own report only
+     * while it's brand new (still 'reported' — see
+     * SecurityIncidentPolicy::update()); staff can edit anytime short of
+     * closed. Status itself doesn't change here — that's assign/resolve/
+     * close/reopen's job.
+     */
+    public function update(Request $request, SecurityIncident $securityIncident)
+    {
+        $this->authorize('update', $securityIncident);
+
+        $validated = $request->validate([
+            'category' => 'required|string|in:' . implode(',', SecurityIncident::CATEGORIES),
+            'severity' => 'nullable|string|in:' . implode(',', SecurityIncident::SEVERITIES),
+            'title' => 'required|string|max:150',
+            'description' => 'required|string|max:5000',
+            'location_text' => 'nullable|string|max:255',
+            'occurred_at' => 'required|date|before_or_equal:now',
+        ]);
+
+        try {
+            $incident = $this->incidents->update($securityIncident, $request->user(), $validated);
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+        }
+
+        return response()->json(['success' => true, 'message' => 'Report updated.', 'data' => $incident]);
+    }
+
+    /**
+     * Admin-only: permanently remove an incident report (soft delete).
+     * See SecurityIncidentPolicy::delete() for why this is more
+     * restricted than 'manage'.
+     */
+    public function destroy(Request $request, SecurityIncident $securityIncident)
+    {
+        $this->authorize('delete', $securityIncident);
+
+        $this->incidents->delete($securityIncident, $request->user());
+
+        return response()->json(['success' => true, 'message' => 'Incident deleted.']);
     }
 
     public function assign(Request $request, SecurityIncident $securityIncident)

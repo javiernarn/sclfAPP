@@ -69,7 +69,7 @@ class StorageLocationController extends Controller
 
     public function store(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -109,7 +109,7 @@ class StorageLocationController extends Controller
      */
     public function updateCapacity(Request $request, StorageLocation $storageLocation)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -130,6 +130,99 @@ class StorageLocationController extends Controller
         );
 
         return response()->json(['success' => true, 'data' => $storageLocation]);
+    }
+
+    /**
+     * Edit a location's descriptive details — label, room/cabinet/shelf/
+     * box, code, and its open/closed/maintenance status. Type, campus and
+     * capacity are deliberately out of scope here: type changes what list
+     * a location shows up in (would silently move counter locations into
+     * the shelving grid or vice-versa), campus is an operational-scope
+     * concern, and capacity already has its own dedicated endpoint above.
+     */
+    public function update(Request $request, StorageLocation $storageLocation)
+    {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
+            abort(403);
+        }
+
+        if (!$request->user()->canOperateInCampus($storageLocation->campus_id)) {
+            abort(403, 'That storage location belongs to a different campus than your account.');
+        }
+
+        $validated = $request->validate([
+            'label' => 'nullable|string|max:100|required_if:type,' . StorageLocation::TYPE_COUNTER,
+            'room' => 'nullable|string|max:100',
+            'cabinet' => 'nullable|string|max:100',
+            'shelf' => 'nullable|string|max:100',
+            'box' => 'nullable|string|max:100',
+            'code' => 'required|string|max:100|unique:storage_locations,code,' . $storageLocation->id,
+            'status' => 'nullable|in:' . implode(',', StorageLocation::STATUSES),
+        ]);
+
+        $before = $storageLocation->only(array_keys($validated));
+        $storageLocation->update($validated);
+        $storageLocation->load('creator:id,name');
+
+        $this->audit->log(
+            'storage.updated',
+            $storageLocation,
+            "Storage location {$storageLocation->code} edited by {$request->user()->name}.",
+            before: $before,
+            after: $storageLocation->only(array_keys($validated)),
+        );
+
+        return response()->json(['success' => true, 'message' => 'Location updated.', 'data' => $storageLocation]);
+    }
+
+    /**
+     * Retire a storage location entirely. Blocked while anything is still
+     * physically sitting there or actively queued at it, so deleting one
+     * can never orphan an item's shelf reference or strand someone in
+     * line — move the items / clear the queue first, mirroring how
+     * AssetController::destroy() blocks on 'assigned'.
+     */
+    public function destroy(Request $request, StorageLocation $storageLocation)
+    {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
+            abort(403);
+        }
+
+        if (!$request->user()->canOperateInCampus($storageLocation->campus_id)) {
+            abort(403, 'That storage location belongs to a different campus than your account.');
+        }
+
+        if ($storageLocation->currentItemCount() > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This location still has items assigned to it. Move them out before deleting.',
+            ], 422);
+        }
+
+        $activeQueueCount = $storageLocation->queueEntries()
+            ->whereNotIn('status', [
+                \App\Models\CounterQueueEntry::STATUS_COMPLETED,
+                \App\Models\CounterQueueEntry::STATUS_CANCELLED,
+                \App\Models\CounterQueueEntry::STATUS_NO_SHOW,
+            ])
+            ->count();
+
+        if ($activeQueueCount > 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This location still has people waiting in its queue.',
+            ], 422);
+        }
+
+        $this->audit->log(
+            'storage.deleted',
+            $storageLocation,
+            "Storage location {$storageLocation->code} deleted by {$request->user()->name}."
+        );
+
+        $storageLocation->delete();
+
+        return response()->json(['success' => true, 'message' => 'Location deleted.']);
     }
 
     public function assign(Request $request, FoundItem $foundItem)

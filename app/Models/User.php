@@ -24,7 +24,11 @@ class User extends Authenticatable
      * registration (YYYY-N-NNNNN), not system-generated.
      */
     public const STAFF_ID_PREFIXES = [
+        // "admin" is the single real administrator (seeded, never created
+        // from the UI). "staff" is the limited, approval-gated role that
+        // admins create from Users — see RequireStaffApproval.
         'admin' => 'ADM',
+        'staff' => 'STF',
         'security_officer' => 'SEC',
         'instructor' => 'INS',
     ];
@@ -208,7 +212,7 @@ class User extends Authenticatable
      */
     public function canOperateInCampus(?int $campusId): bool
     {
-        if ($this->hasRole('admin')) {
+        if ($this->hasAdminAccess()) {
             return true;
         }
 
@@ -217,6 +221,23 @@ class User extends Authenticatable
         }
 
         return $this->campus_id === $campusId;
+    }
+
+    /**
+     * The one admin, or a staff account. Staff read everything an admin can
+     * (this is what the read-side role checks use); what staff cannot do is
+     * WRITE without approval — that is enforced in one place, the
+     * RequireStaffApproval middleware, not by these checks.
+     */
+    public function hasAdminAccess(): bool
+    {
+        return $this->hasAnyRole(['admin', 'staff']);
+    }
+
+    /** Only the real administrator — the sole account that approves staff requests. */
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('admin');
     }
 
     public function lostItems()

@@ -43,10 +43,10 @@ const HINTS_BY_ROLE = {
     },
     admin: {
         title: 'How SCLF works for you',
-        intro: "You're signed in as Administrator. You have oversight of the whole system:",
+        intro: "You're signed in as Staff. You have oversight of the whole system:",
         items: [
             { icon: LayoutDashboard, label: 'Dashboard', text: 'System-wide activity: reports filed, claims in progress, and items awaiting verification.' },
-            { icon: Users, label: 'User Management', text: 'Create Instructor, Security Officer, and Admin accounts here. Students self-register — you never need to create student accounts manually.' },
+            { icon: Users, label: 'User Management', text: 'Create Instructor, Security Officer, and Staff accounts here. Students self-register — you never need to create student accounts manually.' },
             { icon: ShieldCheck, label: 'Audit Log', text: 'A read-only trail of who did what and when — account changes, claim approvals, item edits.' },
             { icon: Boxes, label: 'Inventory & Claims', text: 'The same tools Security uses, with full edit and override access.' },
         ],

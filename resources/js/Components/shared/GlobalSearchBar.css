@@ -99,7 +99,8 @@
 
 .ds-global-search-result {
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 8px;
     width: 100%;
     text-align: left;
     padding: 8px;
@@ -111,6 +112,19 @@
 }
 .ds-shell.light .ds-global-search-result:hover { background: rgba(15, 23, 42, 0.06); }
 .ds-shell.dark .ds-global-search-result:hover { background: rgba(255,255,255,0.08); }
+.ds-global-search-result:disabled { cursor: default; }
+.ds-shell.light .ds-global-search-result:disabled:hover { background: transparent; }
+.ds-shell.dark .ds-global-search-result:disabled:hover { background: transparent; }
+
+.ds-global-search-result-avatar {
+    width: 28px; height: 28px; font-size: 11px; border-radius: 9px; flex-shrink: 0;
+}
+
+.ds-global-search-result-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
 
 .ds-global-search-result-title { font-size: 13.5px; font-weight: 700; }
 .ds-global-search-result-subtitle { font-size: 12px; opacity: 0.6; text-transform: capitalize; }

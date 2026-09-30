@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { useToast } from '../../context/ToastContext';
-import { UserCircle, PackageCheck, PackageOpen, QrCode, CheckCircle2, Archive, AlertTriangle } from '../../Components/icons';
+import { useConfirm } from '../../context/ConfirmContext';
+import { UserCircle, PackageCheck, PackageOpen, QrCode, CheckCircle2, Archive, AlertTriangle, Pencil, Trash2, Check, X } from '../../Components/icons';
 
 // Per-location status breakdown, so a guard glancing at this list — not
 // just the one who shelved it — can tell at a glance whether what's listed
@@ -107,6 +108,142 @@ function CapacityEditor({ location, onSaved }) {
             <button className="ds-btn ds-btn-secondary" disabled={saving} onClick={save}>
                 Set capacity
             </button>
+        </div>
+    );
+}
+
+// Inline edit/delete controls for a storage location card. `type` decides
+// which fields are meaningful — a counter spot's identity is really just
+// its label, while shelving cares about the room/cabinet/shelf/box chain.
+// Delete is left to the backend to actually block (still-shelved items or
+// an active queue); this just surfaces whatever message comes back.
+function LocationEditor({ location, type, onSaved, onDeleted }) {
+    const [editing, setEditing] = useState(false);
+    const [form, setForm] = useState(null);
+    const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
+    const toast = useToast();
+    const confirm = useConfirm();
+
+    const startEditing = () => {
+        setForm({
+            label: location.label || '',
+            room: location.room || '',
+            cabinet: location.cabinet || '',
+            shelf: location.shelf || '',
+            box: location.box || '',
+            code: location.code || '',
+            status: location.status || 'open',
+        });
+        setEditing(true);
+    };
+
+    const save = async () => {
+        setSaving(true);
+        try {
+            await axios.patch(`/storage-locations/${location.id}`, form);
+            toast.success('Location updated.', { title: 'Saved' });
+            setEditing(false);
+            onSaved();
+        } catch (err) {
+            const errors = err?.response?.data?.errors;
+            const message = errors ? Object.values(errors).flat().join('\n') : (err?.response?.data?.message || 'Could not update this location.');
+            toast.error(message, { title: 'Could not save' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const remove = async () => {
+        const ok = await confirm({
+            title: 'Delete this location?',
+            message: `Remove ${location.code} entirely? This only works while nothing is shelved there and no one's queued at it.`,
+            confirmLabel: 'Delete location',
+            tone: 'danger',
+        });
+        if (!ok) return;
+
+        setDeleting(true);
+        try {
+            await axios.delete(`/storage-locations/${location.id}`);
+            toast.success('Location deleted.', { title: 'Deleted' });
+            onDeleted();
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Could not delete this location.', { title: 'Delete failed' });
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    if (!editing) {
+        return (
+            <div className="ds-list-item-side" style={{ marginTop: 8 }}>
+                <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={startEditing}>
+                    <Pencil size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> Edit
+                </button>
+                <button type="button" className="ds-btn ds-btn-danger ds-btn-sm" disabled={deleting} onClick={remove}>
+                    <Trash2 size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> {deleting ? 'Deleting…' : 'Delete'}
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="ds-form-row ds-form-row-2">
+                <div className="ds-field">
+                    <label>Code</label>
+                    <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+                </div>
+                {type === 'counter' ? (
+                    <div className="ds-field">
+                        <label>Label</label>
+                        <input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+                    </div>
+                ) : (
+                    <div className="ds-field">
+                        <label>Room</label>
+                        <input value={form.room} onChange={(e) => setForm({ ...form, room: e.target.value })} />
+                    </div>
+                )}
+            </div>
+            {type !== 'counter' && (
+                <div className="ds-form-row ds-form-row-2">
+                    <div className="ds-field">
+                        <label>Cabinet</label>
+                        <input value={form.cabinet} onChange={(e) => setForm({ ...form, cabinet: e.target.value })} />
+                    </div>
+                    <div className="ds-field">
+                        <label>Shelf</label>
+                        <input value={form.shelf} onChange={(e) => setForm({ ...form, shelf: e.target.value })} />
+                    </div>
+                </div>
+            )}
+            <div className="ds-form-row ds-form-row-2">
+                {type !== 'counter' && (
+                    <div className="ds-field">
+                        <label>Box</label>
+                        <input value={form.box} onChange={(e) => setForm({ ...form, box: e.target.value })} />
+                    </div>
+                )}
+                <div className="ds-field">
+                    <label>Status</label>
+                    <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                        <option value="open">Open</option>
+                        <option value="closed">Closed</option>
+                        <option value="maintenance">Maintenance</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" className="ds-btn ds-btn-primary ds-btn-sm" disabled={saving} onClick={save}>
+                    <Check size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> Save
+                </button>
+                <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" disabled={saving} onClick={() => setEditing(false)}>
+                    <X size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> Cancel
+                </button>
+            </div>
         </div>
     );
 }
@@ -367,6 +504,7 @@ export default function SecurityInventory() {
                             </div>
                             <LocationStatusChips location={l} />
                             <CapacityEditor location={l} onSaved={load} />
+                            <LocationEditor location={l} type="storage" onSaved={load} onDeleted={load} />
                         </div>
                     ))}
                 </div>
@@ -393,6 +531,7 @@ export default function SecurityInventory() {
                                 Added by {l.creator?.name || 'Unknown (legacy entry)'}
                             </p>
                             <LocationStatusChips location={l} />
+                            <LocationEditor location={l} type="counter" onSaved={load} onDeleted={load} />
                         </div>
                     ))}
                 </div>

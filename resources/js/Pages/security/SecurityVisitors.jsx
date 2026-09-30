@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { UserCheck, UserX, Users, Clock, LogOut } from '../../Components/icons';
+import { UserCheck, UserX, Users, Clock, LogOut, Pencil, Trash2, Check, X } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { useToast } from '../../context/ToastContext';
+import { useConfirm } from '../../context/ConfirmContext';
+import { useAuth } from '../../context/AuthContext';
 
 const PURPOSE_OPTIONS = [
     { value: 'meeting', label: 'Meeting' },
@@ -18,9 +20,14 @@ const EMPTY_FORM = {
     host_name: '', host_department: '', badge_number: '', notes: '',
 };
 
-function VisitorRow({ visitor, onCheckedOut }) {
+function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin }) {
     const [busy, setBusy] = useState(false);
+    const [editing, setEditing] = useState(false);
+    const [form, setForm] = useState(null);
+    const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const toast = useToast();
+    const confirm = useConfirm();
 
     const checkOut = async () => {
         setBusy(true);
@@ -34,6 +41,114 @@ function VisitorRow({ visitor, onCheckedOut }) {
             setBusy(false);
         }
     };
+
+    const startEditing = () => {
+        setForm({
+            full_name: visitor.full_name || '',
+            id_presented: visitor.id_presented || '',
+            id_number: visitor.id_number || '',
+            purpose: visitor.purpose || 'meeting',
+            host_name: visitor.host_name || '',
+            host_department: visitor.host_department || '',
+            badge_number: visitor.badge_number || '',
+            notes: visitor.notes || '',
+        });
+        setEditing(true);
+    };
+
+    const save = async () => {
+        setSaving(true);
+        try {
+            const res = await axios.patch(`/visitors/${visitor.id}`, form);
+            toast.success('Visitor entry updated.', { title: 'Saved' });
+            setEditing(false);
+            onUpdated(res.data.data);
+        } catch (err) {
+            const errors = err?.response?.data?.errors;
+            const message = errors ? Object.values(errors).flat().join('\n') : (err?.response?.data?.message || 'Could not update this entry.');
+            toast.error(message, { title: 'Could not save' });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const remove = async () => {
+        const ok = await confirm({
+            title: 'Delete this visitor entry?',
+            message: `Remove the log entry for ${visitor.full_name} entirely? This cannot be undone.`,
+            confirmLabel: 'Delete entry',
+            tone: 'danger',
+        });
+        if (!ok) return;
+
+        setDeleting(true);
+        try {
+            await axios.delete(`/visitors/${visitor.id}`);
+            toast.success('Visitor entry deleted.', { title: 'Deleted' });
+            onDeleted(visitor.id);
+        } catch (err) {
+            toast.error(err?.response?.data?.message || 'Could not delete this entry.', { title: 'Delete failed' });
+        } finally {
+            setDeleting(false);
+        }
+    };
+
+    if (editing) {
+        return (
+            <li className="ds-list-item" style={{ flexDirection: 'column', alignItems: 'stretch' }}>
+                <div className="ds-form-row ds-form-row-2">
+                    <div className="ds-field">
+                        <label>Full name</label>
+                        <input value={form.full_name} maxLength={150} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+                    </div>
+                    <div className="ds-field">
+                        <label>Purpose</label>
+                        <select value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })}>
+                            {PURPOSE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        </select>
+                    </div>
+                </div>
+                <div className="ds-form-row ds-form-row-2">
+                    <div className="ds-field">
+                        <label>ID presented</label>
+                        <input value={form.id_presented} maxLength={100} onChange={(e) => setForm({ ...form, id_presented: e.target.value })} />
+                    </div>
+                    <div className="ds-field">
+                        <label>ID number</label>
+                        <input value={form.id_number} maxLength={100} onChange={(e) => setForm({ ...form, id_number: e.target.value })} />
+                    </div>
+                </div>
+                <div className="ds-form-row ds-form-row-2">
+                    <div className="ds-field">
+                        <label>Host</label>
+                        <input value={form.host_name} maxLength={150} onChange={(e) => setForm({ ...form, host_name: e.target.value })} />
+                    </div>
+                    <div className="ds-field">
+                        <label>Host's department</label>
+                        <input value={form.host_department} maxLength={150} onChange={(e) => setForm({ ...form, host_department: e.target.value })} />
+                    </div>
+                </div>
+                <div className="ds-form-row ds-form-row-2">
+                    <div className="ds-field">
+                        <label>Badge number</label>
+                        <input value={form.badge_number} maxLength={50} onChange={(e) => setForm({ ...form, badge_number: e.target.value })} />
+                    </div>
+                    <div className="ds-field">
+                        <label>Notes</label>
+                        <input value={form.notes} maxLength={1000} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                    </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                    <button type="button" className="ds-btn ds-btn-primary ds-btn-sm" disabled={saving} onClick={save}>
+                        <Check size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> Save
+                    </button>
+                    <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" disabled={saving} onClick={() => setEditing(false)}>
+                        <X size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> Cancel
+                    </button>
+                </div>
+            </li>
+        );
+    }
 
     return (
         <li className="ds-list-item">
@@ -55,21 +170,31 @@ function VisitorRow({ visitor, onCheckedOut }) {
                     </p>
                 </div>
             </div>
-            {visitor.status === 'checked_in' && (
-                <div className="ds-list-item-side">
+            <div className="ds-list-item-side">
+                {visitor.status === 'checked_in' && (
                     <button className="ds-btn ds-btn-secondary" disabled={busy} onClick={checkOut}>
                         <LogOut size={14} style={{ verticalAlign: -2, marginRight: 4 }} /> Check Out
                     </button>
-                </div>
-            )}
-            {visitor.status === 'checked_out' && (
-                <span className="ds-badge ds-badge-default">Checked out</span>
-            )}
+                )}
+                {visitor.status === 'checked_out' && (
+                    <span className="ds-badge ds-badge-default">Checked out</span>
+                )}
+                <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={startEditing} title="Edit entry">
+                    <Pencil size={13} />
+                </button>
+                {isAdmin && (
+                    <button type="button" className="ds-btn ds-btn-danger ds-btn-sm" disabled={deleting} onClick={remove} title="Delete entry">
+                        <Trash2 size={13} />
+                    </button>
+                )}
+            </div>
         </li>
     );
 }
 
 export default function SecurityVisitors() {
+    const { roles } = useAuth();
+    const isAdmin = Array.isArray(roles) && (roles.includes('admin') || roles.includes('staff'));
     const [form, setForm] = useState(EMPTY_FORM);
     const [visitors, setVisitors] = useState([]);
     const [onCampusCount, setOnCampusCount] = useState(0);
@@ -133,6 +258,20 @@ export default function SecurityVisitors() {
             setVisitors((prev) => prev.filter((v) => v.id !== updated.id));
         }
         setOnCampusCount((c) => Math.max(0, c - 1));
+    };
+
+    const updateAfterEdit = (updated) => {
+        setVisitors((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
+    };
+
+    const removeAfterDelete = (visitorId) => {
+        setVisitors((prev) => {
+            const removed = prev.find((v) => v.id === visitorId);
+            if (removed?.status === 'checked_in') {
+                setOnCampusCount((c) => Math.max(0, c - 1));
+            }
+            return prev.filter((v) => v.id !== visitorId);
+        });
     };
 
     return (
@@ -219,7 +358,14 @@ export default function SecurityVisitors() {
                 {!loading && visitors.length > 0 && (
                     <ul className="ds-list">
                         {visitors.map((v) => (
-                            <VisitorRow key={v.id} visitor={v} onCheckedOut={updateAfterCheckOut} />
+                            <VisitorRow
+                                key={v.id}
+                                visitor={v}
+                                onCheckedOut={updateAfterCheckOut}
+                                onUpdated={updateAfterEdit}
+                                onDeleted={removeAfterDelete}
+                                isAdmin={isAdmin}
+                            />
                         ))}
                     </ul>
                 )}

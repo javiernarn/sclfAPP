@@ -4,6 +4,7 @@ import { useAuth } from './context/AuthContext';
 import { publicRoutes, adminRoutes, securityRoutes, studentRoutes } from './routes';
 import MainPage from './Pages/Main/MainPage';
 import SetupAccountPage from './Pages/Profile/SetupAccountPage';
+import ApprovalRequestModal from './Components/shared/ApprovalRequestModal';
 import useServiceWorkerNavigation from './hooks/useServiceWorkerNavigation';
 
 const SETUP_PATH = '/app/setup-account';
@@ -56,6 +57,7 @@ export default function RootApp() {
         // (see routes/index.js) — MainPage doubles as the loading screen
         // elsewhere in the app, so reuse it here for a consistent feel.
         <Suspense fallback={<MainPage />}>
+            <ApprovalRequestModal />
             <Routes>
                 {/* "/" always shows the loading screen first, which then decides
                     whether to send the visitor to /login or to their dashboard. */}
@@ -73,13 +75,13 @@ export default function RootApp() {
 
                 {securityRoutes.map(({ path, component: Component }) => (
                     <Route key={path} path={path} element={
-                        <ProtectedRoute requiredRoles={['security_officer', 'admin']}><Component /></ProtectedRoute>
+                        <ProtectedRoute requiredRoles={['security_officer', 'admin', 'staff']}><Component /></ProtectedRoute>
                     } />
                 ))}
 
                 {adminRoutes.map(({ path, component: Component }) => (
                     <Route key={path} path={path} element={
-                        <ProtectedRoute requiredRoles={['admin']}><Component /></ProtectedRoute>
+                        <ProtectedRoute requiredRoles={['admin', 'staff']}><Component /></ProtectedRoute>
                     } />
                 ))}
 

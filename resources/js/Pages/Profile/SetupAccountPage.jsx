@@ -32,7 +32,8 @@ const GENDER_OPTIONS = [
 ];
 
 const ROLE_LABELS = {
-    admin: 'Administrator',
+    admin: 'Admin',
+    staff: 'Staff',
     security_officer: 'Security Officer',
     instructor: 'Instructor',
 };

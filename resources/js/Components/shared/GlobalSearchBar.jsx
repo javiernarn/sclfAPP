@@ -12,14 +12,22 @@ const CATEGORY_LABELS = {
     service_requests: 'Service Requests',
     assets: 'Assets',
     visitors: 'Visitors',
+    users: 'People',
 };
 
 // Header search box: type 2+ characters, get back a handful of matches
 // per category (each already scoped server-side to what this user is
-// allowed to see — see SearchService). This is a "jump to the thing I'm
-// thinking of" box, not a full search experience — there's no pagination
-// here on purpose, someone who needs to page through results already has
-// each section's own list page with its own filters.
+// allowed to see — see SearchService). Non-staff (student/instructor)
+// search everything their own account can already reach — their claims,
+// their reports, items, etc. — but never the "People" category: looking
+// someone else up by student/staff ID is a staff-only action, gated the
+// same way Assets/Visitors already are. Security officers and admins can
+// search People too (by name or by ID — student, instructor, security,
+// or admin prefix, whichever was typed), scoped to their own campus
+// unless they're an admin. This is a "jump to the thing I'm thinking of"
+// box, not a full search experience — there's no pagination here on
+// purpose, someone who needs to page through results already has each
+// section's own list page with its own filters.
 export default function GlobalSearchBar() {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState(null);
@@ -113,10 +121,25 @@ export default function GlobalSearchBar() {
                                     type="button"
                                     key={`${key}-${item.id}`}
                                     className="ds-global-search-result"
-                                    onClick={() => goTo(item.url)}
+                                    // Staff-only "People" rows can come back without a url — a
+                                    // security officer sees the match (name, ID, campus) for
+                                    // identity verification, but there's no user-detail page
+                                    // their role can open, so the row isn't clickable.
+                                    disabled={!item.url}
+                                    onClick={() => item.url && goTo(item.url)}
                                 >
-                                    <span className="ds-global-search-result-title">{item.title}</span>
-                                    {item.subtitle && <span className="ds-global-search-result-subtitle">{item.subtitle}</span>}
+                                    {item.avatar !== undefined && (
+                                        <span
+                                            className="ds-avatar ds-global-search-result-avatar"
+                                            style={item.avatar ? { backgroundImage: `url(${item.avatar})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
+                                        >
+                                            {!item.avatar && (item.title || '?').split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]?.toUpperCase()).join('')}
+                                        </span>
+                                    )}
+                                    <span className="ds-global-search-result-text">
+                                        <span className="ds-global-search-result-title">{item.title}</span>
+                                        {item.subtitle && <span className="ds-global-search-result-subtitle">{item.subtitle}</span>}
+                                    </span>
                                 </button>
                             ))}
                         </div>

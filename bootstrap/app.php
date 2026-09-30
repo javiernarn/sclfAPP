@@ -27,6 +27,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'account.active' => \App\Http\Middleware\EnsureAccountActive::class,
             'require.full_access' => \App\Http\Middleware\RequireFullAccess::class,
             'profile.setup' => \App\Http\Middleware\EnsureProfileSetupComplete::class,
+            'staff.approval' => \App\Http\Middleware\RequireStaffApproval::class,
+        ]);
+
+        // Runs after the route so it can capture the response status code,
+        // and after auth so $request->user() is populated when present —
+        // see App\Http\Middleware\TrackUserActivity for what it records.
+        $middleware->appendToGroup('api', [
+            \App\Http\Middleware\TrackUserActivity::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

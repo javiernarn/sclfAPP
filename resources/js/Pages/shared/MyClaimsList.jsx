@@ -19,8 +19,8 @@ const FILTERS = [
 
 export default function MyClaimsList() {
     const { roles } = useAuth();
-    const isStaff = roles?.includes('security_officer') || roles?.includes('admin');
-    const isAdmin = roles?.includes('admin');
+    const isStaff = roles?.includes('security_officer') || roles?.includes('admin') || roles?.includes('staff');
+    const isAdmin = roles?.includes('admin') || roles?.includes('staff');
     const toast = useToast();
     const confirm = useConfirm();
     const navigate = useNavigate();

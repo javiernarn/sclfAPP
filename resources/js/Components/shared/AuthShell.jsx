@@ -138,16 +138,20 @@ export default function AuthShell({
 
                 {/* ============ RIGHT: RECORD CARD ============ */}
                 <main className="lg-stage">
-                    <button type="button" className="lg-theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
-                        {isDark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
-                    </button>
-
-                    <div className="lg-stage-inner">
+                    {/* App bar: logo + name on the left, theme toggle on the
+                        opposite (right) side. On desktop/landscape only the
+                        toggle shows, in its usual top-right spot. */}
+                    <header className="lg-appbar">
                         <Link to="/" className="lg-mobile-brand">
                             <img src={logo} alt="SCLF" {...guardImageEvents} />
                             <span>SCLF Office<span>Opol Community College</span></span>
                         </Link>
+                        <button type="button" className="lg-theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
+                            {isDark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
+                        </button>
+                    </header>
 
+                    <div className="lg-stage-inner">
                         <div className={`lg-card${wide ? " is-wide" : ""}`}>
                             <div className="lg-card-tab-strip">
                                 <span className="lg-card-ref">REF. {caseNumber}</span>
@@ -169,7 +173,7 @@ export default function AuthShell({
                         </div>
 
                         <p className="lg-stage-legal">
-                            Entries in this ledger are encrypted in transit and reviewed only by authorized Admin.
+                            Entries in this ledger are encrypted in transit and reviewed only by authorized Staff and Admin.
                         </p>
                     </div>
                 </main>
@@ -485,8 +489,9 @@ const LEDGER_CSS = `
     }
     .lg-stage-inner { position: relative; width: 100%; max-width: 420px; margin: auto; display: flex; flex-direction: column; align-items: center; }
 
+    .lg-appbar { position: absolute; top: 14px; right: 14px; z-index: 3; display: flex; align-items: center; }
     .lg-theme-toggle {
-        position: absolute; top: 14px; right: 14px; z-index: 3;
+        flex-shrink: 0;
         width: 32px; height: 32px; border-radius: 10px; cursor: pointer;
         display: inline-flex; align-items: center; justify-content: center;
     }
@@ -588,6 +593,21 @@ const LEDGER_CSS = `
     .lg-input[aria-invalid="true"] { border-bottom-color: var(--lg-danger); }
     .lg-input::placeholder { opacity: 0.35; }
     .lg-select { appearance: none; -webkit-appearance: none; cursor: pointer; }
+    /* Open dropdown lists are drawn by the browser, so they ignore the card's
+       colours (light text on a white list in dark mode). Set the scheme and
+       colour options + college headings explicitly for both themes. */
+    .lg-wrap.dark .lg-select { color-scheme: dark; }
+    .lg-wrap.light .lg-select { color-scheme: light; }
+    .lg-wrap.dark .lg-select option,
+    .lg-wrap.dark .lg-select optgroup { background-color: #161b26; color: #f1f5fb; }
+    .lg-wrap.light .lg-select option,
+    .lg-wrap.light .lg-select optgroup { background-color: #ffffff; color: #111827; }
+    .lg-select optgroup { font-style: normal; font-weight: 700; }
+    .lg-select optgroup option { font-weight: 400; }
+    .lg-wrap.dark .lg-select optgroup { color: #93b4ff; }
+    .lg-wrap.light .lg-select optgroup { color: #1d4ed8; }
+    .lg-wrap.dark .lg-select option:disabled { color: #8b95a7; }
+    .lg-wrap.light .lg-select option:disabled { color: #6b7280; }
 
     .lg-password-wrap { position: relative; display: flex; align-items: center; }
     .lg-password-wrap .lg-input { padding-right: 30px; }
@@ -705,4 +725,127 @@ const LEDGER_CSS = `
         .lg-subtitle { display: none; }
     }
     @media (prefers-reduced-motion: reduce) { .lg-card, .lg-rail-blob { animation: none !important; } }
+
+    /* =====================================================================
+       MOBILE APP UI  (phones, portrait only — desktop/landscape untouched)
+       App bar on top, borderless form centred, legal line pinned to bottom.
+       Palette follows the logo blue (#003078): dark = navy centre with
+       lighter-blue glowing edges, light = pale sky / white-blue.
+       ===================================================================== */
+    @media (max-width: 767px) and (orientation: portrait) {
+        .lg-wrap { --lg-accent: #2563eb; --lg-accent-2: #38bdf8; --lg-accent-3: #1d4ed8; }
+        .lg-wrap.dark { --lg-accent: #60a5fa; --lg-accent-3: #3b82f6; }
+
+        .lg-wrap.light {
+            color: #0a1a3a;
+            background:
+                radial-gradient(120% 55% at 50% -8%, rgba(37,99,235,0.16), transparent 62%),
+                radial-gradient(100% 45% at 50% 112%, rgba(56,189,248,0.20), transparent 62%),
+                linear-gradient(180deg, #f5f9ff 0%, #e8f1ff 100%);
+        }
+        .lg-wrap.dark {
+            color: #e6efff;
+            background:
+                radial-gradient(ellipse 85% 75% at 50% 50%, #030c1f 38%, #0a2d6e 100%),
+                #030c1f;
+        }
+
+        .lg-stage {
+            flex-direction: column; align-items: stretch; justify-content: flex-start;
+            padding: 0;
+        }
+
+        /* ---- App bar ---- */
+        .lg-appbar {
+            position: sticky; top: 0; right: auto; z-index: 5;
+            width: 100%; justify-content: space-between; gap: 12px;
+            padding: calc(env(safe-area-inset-top, 0px) + 10px) 18px 10px;
+            -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+        }
+        .lg-wrap.light .lg-appbar { background: rgba(240,246,255,0.72); border-bottom: 1px solid rgba(37,99,235,0.10); }
+        .lg-wrap.dark .lg-appbar { background: rgba(3,12,31,0.6); border-bottom: 1px solid rgba(96,165,250,0.14); }
+
+        .lg-appbar .lg-mobile-brand { display: flex; margin: 0; gap: 11px; min-width: 0; }
+        .lg-appbar .lg-mobile-brand img { width: 42px; height: 42px; border-radius: 0; }
+        .lg-appbar .lg-mobile-brand > span { font-size: 15px; font-weight: 800; line-height: 1.2; letter-spacing: 0.01em; }
+        .lg-appbar .lg-mobile-brand > span span { font-size: 10px; margin-top: 2px; opacity: 0.7; letter-spacing: 0.09em; }
+
+        .lg-theme-toggle { width: 42px; height: 42px; border-radius: 14px; }
+        .lg-wrap.light .lg-theme-toggle { background: #fff; border-color: #cfe0fa; color: #1d4ed8; box-shadow: 0 4px 12px rgba(37,99,235,0.10); }
+        .lg-wrap.dark .lg-theme-toggle { background: rgba(96,165,250,0.12); border-color: rgba(96,165,250,0.28); color: #bfdbfe; }
+
+        /* ---- Body: form in the middle, legal pinned to bottom ---- */
+        .lg-stage-inner {
+            flex: 1 1 auto; max-width: none; width: 100%; margin: 0;
+            padding: 0 22px; align-items: stretch;
+        }
+
+        /* Remove the boxed card — the form sits directly on the screen. */
+        .lg-card,
+        .lg-card.is-wide,
+        .lg-wrap.light .lg-card,
+        .lg-wrap.dark .lg-card {
+            width: 100%; max-width: 440px; margin: auto;
+            background: transparent; border: none; box-shadow: none; border-radius: 0;
+        }
+
+        .lg-card-tab-strip { padding: 18px 0 12px; border-bottom: none !important; font-size: 10.5px; }
+        .lg-card-status {
+            padding: 4px 10px; border-radius: 999px; font-weight: 700;
+            background: rgba(22,163,74,0.12); color: var(--lg-ok);
+        }
+
+        .lg-card-head { padding: 4px 0 2px; }
+        .lg-title { font-size: 28px; line-height: 1.2; margin-bottom: 8px; }
+        .lg-subtitle { display: block; font-size: 14px; line-height: 1.55; opacity: 0.72; }
+
+        .lg-card-body { padding: 14px 0 6px; }
+
+        .lg-row { padding: 9px 0; gap: 12px; }
+        .lg-wrap .lg-row + .lg-row { border-top: none; }
+        .lg-row-index {
+            width: 24px; height: 24px; padding-top: 0; margin-top: 1px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 8px; font-size: 10.5px; opacity: 1;
+            background: rgba(37,99,235,0.12); color: var(--lg-accent);
+        }
+        .lg-row-label { font-size: 11.5px; margin-bottom: 8px; opacity: 0.7; }
+        .lg-row-hint { font-size: 11.5px; margin-top: 7px; opacity: 0.62; }
+
+        /* App-style filled inputs (16px font stops iOS zoom-on-focus) */
+        .lg-input {
+            height: 52px; padding: 0 16px; font-size: 16px;
+            border-radius: 14px; -webkit-appearance: none; appearance: none;
+        }
+        .lg-wrap.light .lg-input { background: #fff; border: 1.5px solid #cfe0fa; }
+        .lg-wrap.dark .lg-input { background: rgba(96,165,250,0.07); border: 1.5px solid rgba(96,165,250,0.24); }
+        .lg-wrap .lg-input:focus { border-color: var(--lg-accent); box-shadow: 0 0 0 4px rgba(37,99,235,0.16); }
+        .lg-wrap .lg-input[aria-invalid="true"] { border-color: var(--lg-danger); }
+        .lg-input::placeholder { opacity: 0.4; }
+
+        .lg-wrap .lg-password-wrap .lg-input { padding-right: 52px; }
+        .lg-eye {
+            right: 4px; bottom: auto; top: 50%; transform: translateY(-50%);
+            width: 44px; height: 44px; padding: 0; justify-content: center; align-items: center;
+        }
+
+        .lg-row-checkbox { padding-top: 4px; }
+        .lg-remember, .lg-forgot { font-size: 13.5px; }
+        .lg-remember input { width: 19px; height: 19px; }
+
+        .lg-submit {
+            height: 54px; padding: 0 16px; margin-top: 12px; border-radius: 16px; font-size: 15px;
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 55%, #0ea5e9 130%);
+            box-shadow: 0 12px 26px rgba(29,78,216,0.34);
+        }
+        .lg-ghost { height: 54px; padding: 0 16px; border-radius: 16px; }
+
+        .lg-card-foot { padding: 20px 0 6px; text-align: center; font-size: 14px; border-top: none !important; }
+
+        .lg-stage-legal {
+            max-width: 440px; width: 100%; margin: 0 auto;
+            padding: 18px 4px calc(env(safe-area-inset-bottom, 0px) + 16px);
+            font-size: 11px; opacity: 0.62; line-height: 1.55;
+        }
+    }
 `;

@@ -135,7 +135,7 @@ function CounterHistoryTab() {
 
             {!loading && rows.length > 0 && (
                 <>
-                    <div className="ds-table-wrap">
+                    <div className="ds-table-wrap ds-history-table-wrap">
                         <table className="ds-table">
                             <thead>
                                 <tr>
@@ -157,7 +157,7 @@ function CounterHistoryTab() {
                                         </td>
                                         <td>
                                             <div className="ds-table-title">{r.owner?.name || '—'}</div>
-                                            <div className="ds-table-sub">{r.owner?.student_id || ''}</div>
+                                            <div className="ds-table-sub">{r.owner?.display_id || ''}</div>
                                         </td>
                                         <td className="ds-table-nowrap">
                                             <div>{r.checked_in_at ? new Date(r.checked_in_at).toLocaleString() : '—'}</div>
@@ -195,7 +195,7 @@ function CounterHistoryTab() {
                                     <span className="ds-history-card-label">Owner</span>
                                     <span className="ds-history-card-value">
                                         <div className="ds-table-title">{r.owner?.name || '—'}</div>
-                                        <div className="ds-table-sub">{r.owner?.student_id || ''}</div>
+                                        <div className="ds-table-sub">{r.owner?.display_id || ''}</div>
                                     </span>
                                 </div>
                                 <div className="ds-history-card-row">
@@ -307,7 +307,7 @@ function LostFoundHistoryTab() {
 
             {!loading && rows.length > 0 && (
                 <>
-                    <div className="ds-table-wrap">
+                    <div className="ds-table-wrap ds-history-table-wrap">
                         <table className="ds-table">
                             <thead>
                                 <tr>
@@ -328,7 +328,7 @@ function LostFoundHistoryTab() {
                                         </td>
                                         <td>
                                             <div className="ds-table-title">{r.claimant?.name || '—'}</div>
-                                            <div className="ds-table-sub">{r.claimant?.student_id || ''}</div>
+                                            <div className="ds-table-sub">{r.claimant?.display_id || ''}</div>
                                         </td>
                                         <td className="ds-table-nowrap">
                                             {r.reviewed_at ? (
@@ -369,7 +369,7 @@ function LostFoundHistoryTab() {
                                     <span className="ds-history-card-label">Claimant</span>
                                     <span className="ds-history-card-value">
                                         <div className="ds-table-title">{r.claimant?.name || '—'}</div>
-                                        <div className="ds-table-sub">{r.claimant?.student_id || ''}</div>
+                                        <div className="ds-table-sub">{r.claimant?.display_id || ''}</div>
                                     </span>
                                 </div>
                                 <div className="ds-history-card-row">
@@ -412,7 +412,7 @@ function LostFoundHistoryTab() {
 export default function SecurityHistory() {
     const [tab, setTab] = useState('counter');
     const { roles } = useAuth();
-    const isAdminOnly = Array.isArray(roles) && roles.includes('admin') && !roles.includes('security_officer');
+    const isAdminOnly = Array.isArray(roles) && (roles.includes('admin') || roles.includes('staff')) && !roles.includes('security_officer');
     const activeTabDef = TABS.find(t => t.key === tab) ?? TABS[0];
 
     useEffect(() => {

@@ -24,11 +24,11 @@ class LostItemPolicy
 
     public function update(User $user, LostItem $lostItem): bool
     {
-        return $user->id === $lostItem->user_id || $user->hasAnyRole(['admin', 'security_officer']);
+        return $user->id === $lostItem->user_id || $user->hasAnyRole(['admin', 'staff', 'security_officer']);
     }
 
     public function delete(User $user, LostItem $lostItem): bool
     {
-        return $user->id === $lostItem->user_id || $user->hasRole('admin');
+        return $user->id === $lostItem->user_id || $user->hasAdminAccess();
     }
 }

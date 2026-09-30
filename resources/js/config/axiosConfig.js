@@ -1,7 +1,7 @@
 import axios from 'axios';
 import secureLocalStorage from 'react-secure-storage';
 import { BASE_URL } from './constant';
-import { showToast } from '../utils/eventBus';
+import { showToast, requestApproval } from '../utils/eventBus';
 import { humanizeValidationErrors } from '../utils/validators';
 import { disablePush } from '../utils/push';
 
@@ -94,14 +94,18 @@ instance.interceptors.response.use(
         const statusCode = error.response?.status || null;
         const originalRequest = error.config;
 
-        if (error.config?.silent) {
-            return Promise.reject(error);
-        }
-
         // Silent refresh path — never on 403 (that's a real permissions
         // problem, not an expired token) and never for a request that's
         // already been retried once or is itself hitting an auth endpoint
         // (avoids an infinite loop if refresh itself starts 401ing).
+        //
+        // Deliberately runs even for `silent: true` requests (background
+        // polls like the notification badge). `silent` means "don't pop a
+        // toast for this one" — it never meant "don't ever recover from
+        // this or log out when the session is actually dead." A silent
+        // request that skipped this block entirely used to just 401
+        // forever on every poll once the token went stale, with no way
+        // to self-heal or ever redirect to login.
         const isAuthEndpoint = ['/login', '/token/refresh', '/2fa/login-verify'].some((p) =>
             originalRequest?.url?.includes(p)
         );
@@ -151,6 +155,12 @@ instance.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        // Everything below this line is toast-popup noise, not session
+        // recovery — this is the one place `silent` is meant to apply.
+        if (error.config?.silent) {
+            return Promise.reject(error);
+        }
+
         if (statusCode === 422) {
             const rawErrors = error.response?.data?.errors;
             const messages = rawErrors ? humanizeValidationErrors(rawErrors) : [error.response?.data?.message || 'Validation error.'];
@@ -158,6 +168,26 @@ instance.interceptors.response.use(
                 type: 'error',
                 title: messages.length > 1 ? 'Please check the highlighted fields' : 'Something needs your attention',
                 message: messages.join('\n'),
+            });
+            return Promise.reject(error);
+        }
+
+        if (statusCode === 403 && error.response?.data?.code === 'approval_required') {
+            // Staff account: not an error to shout about — offer to ask the admin.
+            let payload = null;
+            try {
+                const raw = originalRequest?.data;
+                if (typeof raw === 'string') payload = JSON.parse(raw);
+                else if (typeof FormData !== 'undefined' && raw instanceof FormData) {
+                    payload = {};
+                    raw.forEach((v, k) => { if (typeof v === 'string') payload[k] = v; });
+                }
+            } catch { /* body wasn't JSON — the admin just won't get a preview */ }
+
+            requestApproval({
+                method: (originalRequest?.method || 'post').toUpperCase(),
+                path: 'api/' + String(originalRequest?.url || '').replace(/^\/+/, '').split('?')[0],
+                payload,
             });
             return Promise.reject(error);
         }

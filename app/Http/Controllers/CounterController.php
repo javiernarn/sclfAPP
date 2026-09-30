@@ -35,9 +35,14 @@ class CounterController extends Controller
             ->where('is_active', true)
             ->where(function ($q) use ($request) {
                 $q->where('student_id', 'like', "%{$request->q}%")
+                    ->orWhere('staff_id', 'like', "%{$request->q}%")
                     ->orWhere('name', 'like', "%{$request->q}%");
             })
-            ->select('id', 'name', 'student_id', 'course', 'profile_picture')
+            // staff_id is required here even though it's never displayed
+            // directly — it feeds the student_id/staff_id fallback on the
+            // model's display_id accessor, which is what the UI actually
+            // shows (instructors have a staff_id, not a student_id).
+            ->select('id', 'name', 'student_id', 'staff_id', 'course', 'profile_picture')
             ->limit(10)
             ->get();
 
@@ -54,7 +59,7 @@ class CounterController extends Controller
      */
     public function checkIn(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -101,7 +106,7 @@ class CounterController extends Controller
      */
     public function assignOfficer(Request $request, StorageLocation $storageLocation)
     {
-        if (!$request->user()->hasRole('admin')) {
+        if (!$request->user()->hasAdminAccess()) {
             abort(403);
         }
 
@@ -121,7 +126,7 @@ class CounterController extends Controller
      */
     public function unassignOfficer(Request $request, StorageLocation $storageLocation, User $user)
     {
-        if (!$request->user()->hasRole('admin')) {
+        if (!$request->user()->hasAdminAccess()) {
             abort(403);
         }
 
@@ -138,7 +143,7 @@ class CounterController extends Controller
      */
     public function dashboard(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -149,7 +154,7 @@ class CounterController extends Controller
             ->where('type', StorageLocation::TYPE_COUNTER)
             ->with('campus:id,name')
             ->when(
-                $viewer->campus_id && !$viewer->hasRole('admin'),
+                $viewer->campus_id && !$viewer->hasAdminAccess(),
                 fn ($q) => $q->where('campus_id', $viewer->campus_id)
             )
             ->withCount([
@@ -183,7 +188,7 @@ class CounterController extends Controller
      */
     public function updateStatus(Request $request, StorageLocation $storageLocation)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -218,7 +223,7 @@ class CounterController extends Controller
         $requester = $request->user();
 
         if (!empty($validated['user_id']) && (int) $validated['user_id'] !== $requester->id) {
-            if (!$requester->hasAnyRole(['security_officer', 'admin'])) {
+            if (!$requester->hasAnyRole(['security_officer', 'admin', 'staff'])) {
                 abort(403, 'Only a security officer or admin can add someone else to the queue.');
             }
             $requester = User::findOrFail($validated['user_id']);
@@ -250,14 +255,17 @@ class CounterController extends Controller
      */
     public function listQueue(Request $request, StorageLocation $storageLocation)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
         $entries = CounterQueueEntry::query()
             ->where('storage_location_id', $storageLocation->id)
             ->whereDate('created_at', now()->toDateString())
-            ->with('requester:id,name,student_id,profile_picture', 'handledBy:id,name')
+            // Same reasoning as searchOwners() above: staff_id is needed
+            // for the requester's display_id accessor to resolve for
+            // instructor walk-ins, not just students.
+            ->with('requester:id,name,student_id,staff_id,profile_picture', 'handledBy:id,name')
             ->orderBy('ticket_number')
             ->get();
 
@@ -266,7 +274,7 @@ class CounterController extends Controller
 
     public function callNextInQueue(Request $request, StorageLocation $storageLocation)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -281,7 +289,7 @@ class CounterController extends Controller
 
     public function callQueueEntry(Request $request, CounterQueueEntry $queueEntry)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -290,7 +298,7 @@ class CounterController extends Controller
 
     public function startServingQueueEntry(Request $request, CounterQueueEntry $queueEntry)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -299,7 +307,7 @@ class CounterController extends Controller
 
     public function completeQueueEntry(Request $request, CounterQueueEntry $queueEntry)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 
@@ -308,7 +316,7 @@ class CounterController extends Controller
 
     public function markQueueEntryNoShow(Request $request, CounterQueueEntry $queueEntry)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin'])) {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
 

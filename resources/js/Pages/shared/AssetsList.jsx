@@ -30,7 +30,7 @@ const statusLabel = (status) => STATUS_OPTIONS.find((o) => o.value === status)?.
 
 export default function AssetsList() {
     const { roles } = useAuth();
-    const isStaff = Array.isArray(roles) && roles.some((r) => ['security_officer', 'admin'].includes(r));
+    const isStaff = Array.isArray(roles) && roles.some((r) => ['security_officer', 'admin', 'staff'].includes(r));
     const toast = useToast();
 
     const [assets, setAssets] = useState([]);

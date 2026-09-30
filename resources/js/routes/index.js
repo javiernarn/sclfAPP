@@ -7,6 +7,8 @@ import AdminDashboard from '../Pages/admin/AdminDashboard';
 import AdminUsers from '../Pages/admin/AdminUsers';
 import AdminUserDetail from '../Pages/admin/AdminUserDetail';
 import AdminAuditLog from '../Pages/admin/AdminAuditLog';
+import AdminUserActivity from '../Pages/admin/AdminUserActivity';
+import AdminActionRequests from '../Pages/admin/AdminActionRequests';
 import StudentDashboard from '../Pages/student/StudentDashboard';
 import LostItemsList from '../Pages/student/LostItemsList';
 import LostItemCreate from '../Pages/student/LostItemCreate';
@@ -56,7 +58,9 @@ const adminRoutes = [
     { path: '/app/admin/dashboard', component: AdminDashboard },
     { path: '/app/admin/users', component: AdminUsers },
     { path: '/app/admin/users/:id', component: AdminUserDetail },
+    { path: '/app/admin/requests', component: AdminActionRequests },
     { path: '/app/admin/audit-log', component: AdminAuditLog },
+    { path: '/app/admin/activity', component: AdminUserActivity },
     // Reuses the same page/endpoints Security uses at /app/security/history —
     // HistoryController already allows both security_officer and admin
     // (see routes/api.php), this just gives admins their own nav entry
