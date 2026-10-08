@@ -7,6 +7,7 @@ import {
     Check, X, ArrowLeft,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import AttachmentGallery from '../../Components/shared/AttachmentGallery';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm, useDiscardConfirm } from '../../context/ConfirmContext';
@@ -324,6 +325,8 @@ export default function IncidentDetail() {
                     </div>
                 )}
             </div>
+
+            <AttachmentGallery attachments={incident.attachments} />
 
             {(incident.status === 'resolved' || incident.status === 'closed') && (
                 <div className="ds-card">

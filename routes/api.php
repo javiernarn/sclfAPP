@@ -21,6 +21,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PushController;
 use App\Http\Controllers\QrController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\ReportAttachmentController;
 use App\Http\Controllers\SecurityIncidentController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\StorageLocationController;
@@ -165,6 +166,10 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     // the role-restricted group below) since a requester — not just
     // staff — can call one off; ServiceRequestPolicy::cancel() covers
     // both cases.
+    // Photo/video evidence attached to either of the above — private disk,
+    // authorized against the parent report on every request.
+    Route::get('/report-attachments/{attachment}', [ReportAttachmentController::class, 'show']);
+
     Route::get('/service-requests', [ServiceRequestController::class, 'index']);
     Route::post('/service-requests', [ServiceRequestController::class, 'store']);
     Route::get('/service-requests/{serviceRequest}', [ServiceRequestController::class, 'show']);

@@ -882,6 +882,7 @@ body { overflow: hidden; }
 
 .ds-fieldset { border: none; margin: 0; padding: 0; min-width: 0; }
 .ds-fieldset:disabled .ds-field input,
+.ds-fieldset:disabled .ds-field select,
 .ds-fieldset:disabled .ds-field textarea {
     opacity: 0.55; cursor: not-allowed; background: rgba(127,127,127,0.08);
 }

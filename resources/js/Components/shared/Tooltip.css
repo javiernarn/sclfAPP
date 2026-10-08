@@ -9,19 +9,32 @@
     z-index: 10050;
     max-width: 220px;
     width: max-content;
-    background: #1b1f2e;
-    color: #f4f6fb;
+    /* Default (light theme) — overridden per theme below. */
+    --tt-bg: #1b1f2e;
+    --tt-fg: #f4f6fb;
+    --tt-border: transparent;
+    --tt-shadow: rgba(0, 0, 0, 0.22);
+    background: var(--tt-bg);
+    color: var(--tt-fg);
+    border: 1px solid var(--tt-border);
     font-family: var(--font-body, 'Inter', sans-serif);
     font-size: 12px;
     line-height: 1.4;
     font-weight: 500;
     padding: 6px 10px;
     border-radius: 8px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 8px 20px var(--tt-shadow);
     pointer-events: none;
     animation: sclf-tooltip-in 0.12s ease both;
     text-align: center;
 }
+
+/* ---- Theme colors (match each theme's accent gradient) ---- */
+.sclf-tooltip--light  { --tt-bg: #1b1f2e; --tt-fg: #f4f6fb; --tt-shadow: rgba(15, 23, 42, 0.25); }
+.sclf-tooltip--dark   { --tt-bg: #e7ecf3; --tt-fg: #0b1220; --tt-border: rgba(255, 255, 255, 0.35); --tt-shadow: rgba(0, 0, 0, 0.55); }
+.sclf-tooltip--maroon { --tt-bg: linear-gradient(135deg, #7f1d2e, #9f1239 55%, #dc2626); --tt-fg: #fff5f6; --tt-border: rgba(255, 255, 255, 0.18); --tt-shadow: rgba(159, 18, 57, 0.40); }
+.sclf-tooltip--blue   { --tt-bg: linear-gradient(135deg, #1e40af, #2563eb 55%, #38bdf8); --tt-fg: #f3f8ff; --tt-border: rgba(255, 255, 255, 0.18); --tt-shadow: rgba(37, 99, 235, 0.40); }
+.sclf-tooltip--yellow { --tt-bg: linear-gradient(135deg, #b45309, #d97706 55%, #f59e0b); --tt-fg: #1c1408; --tt-border: rgba(255, 255, 255, 0.25); --tt-shadow: rgba(217, 119, 6, 0.40); }
 
 @keyframes sclf-tooltip-in {
     from { opacity: 0; }

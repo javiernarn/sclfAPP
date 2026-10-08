@@ -62,6 +62,11 @@ class SecurityIncident extends Model
         self::CATEGORY_OTHER,
     ];
 
+    // Photos/videos always travel with the report — including the fresh()
+    // copy the lifecycle endpoints (assign/resolve/close/…) return — so the
+    // detail page never loses them after an action.
+    protected $with = ['attachments'];
+
     protected $fillable = [
         'campus_id',
         'reported_by',
@@ -104,6 +109,11 @@ class SecurityIncident extends Model
     public function resolver()
     {
         return $this->belongsTo(User::class, 'resolved_by');
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(ReportAttachment::class, 'attachable')->orderBy('id');
     }
 
     public function relatedFoundItem()

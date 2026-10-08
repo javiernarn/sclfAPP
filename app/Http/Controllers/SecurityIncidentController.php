@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ReportAttachment;
 use App\Models\SecurityIncident;
 use App\Models\User;
+use App\Services\Attachments\ReportAttachmentService;
 use App\Services\Incidents\IncidentService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -12,6 +14,7 @@ class SecurityIncidentController extends Controller
 {
     public function __construct(
         protected IncidentService $incidents,
+        protected ReportAttachmentService $attachments,
     ) {
     }
 
@@ -52,7 +55,7 @@ class SecurityIncidentController extends Controller
             'location_text' => 'nullable|string|max:255',
             'occurred_at' => 'required|date|before_or_equal:now',
             'related_found_item_id' => 'nullable|exists:found_items,id',
-        ]);
+        ] + ReportAttachment::rules(), ReportAttachment::messages());
 
         try {
             $incident = $this->incidents->report($request->user(), $validated);
@@ -60,7 +63,22 @@ class SecurityIncidentController extends Controller
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         }
 
-        return response()->json(['success' => true, 'data' => $incident], 201);
+        // Optional photo/video evidence. The report itself is already
+        // saved, so a storage hiccup here is surfaced as a warning rather
+        // than failing (and losing) the whole report.
+        $attachmentError = null;
+        try {
+            $this->attachments->attach($incident, $request->user(), $request->file('attachments', []));
+        } catch (\Throwable $e) {
+            report($e);
+            $attachmentError = 'Your report was filed, but the photos/videos could not be saved. You can tell Security directly or file a new report with them.';
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $incident,
+            'attachment_error' => $attachmentError,
+        ], 201);
     }
 
     public function show(Request $request, SecurityIncident $securityIncident)
@@ -73,6 +91,7 @@ class SecurityIncidentController extends Controller
             'resolver:id,name',
             'campus:id,name,code',
             'relatedFoundItem:id,item_name,status',
+            'attachments',
         ]);
 
         return response()->json(['data' => $securityIncident]);

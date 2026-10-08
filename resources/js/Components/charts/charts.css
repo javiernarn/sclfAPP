@@ -18,9 +18,9 @@
     --ch-tip-bg: #e7ecf3; --ch-tip-fg: #0b1220;
     --ch-good: #4ade80; --ch-bad: #f87171;
 }
-.ds-shell.maroon { --ch-1: #b91c1c; --ch-2: #f97316; --ch-3: #7f1d2e; --ch-4: #d97706; --ch-5: #db2777; --ch-6: #9a3412; }
-.ds-shell.blue   { --ch-1: #2563eb; --ch-2: #0ea5e9; --ch-3: #1e40af; --ch-4: #14b8a6; --ch-5: #7c3aed; --ch-6: #0369a1; }
-.ds-shell.yellow { --ch-1: #d97706; --ch-2: #b45309; --ch-3: #ca8a04; --ch-4: #ea580c; --ch-5: #84cc16; --ch-6: #92400e; }
+.ds-shell.maroon { --ch-1: #b91c1c; --ch-2: #f97316; --ch-3: #7f1d2e; --ch-4: #d97706; --ch-5: #db2777; --ch-6: #9a3412; --ch-tip-bg: linear-gradient(135deg, #7f1d2e, #9f1239 55%, #dc2626); --ch-tip-fg: #fff5f6; }
+.ds-shell.blue   { --ch-1: #2563eb; --ch-2: #0ea5e9; --ch-3: #1e40af; --ch-4: #14b8a6; --ch-5: #7c3aed; --ch-6: #0369a1; --ch-tip-bg: linear-gradient(135deg, #1e40af, #2563eb 55%, #38bdf8); --ch-tip-fg: #f3f8ff; }
+.ds-shell.yellow { --ch-1: #d97706; --ch-2: #b45309; --ch-3: #ca8a04; --ch-4: #ea580c; --ch-5: #84cc16; --ch-6: #92400e; --ch-tip-bg: linear-gradient(135deg, #b45309, #d97706 55%, #f59e0b); --ch-tip-fg: #1c1408; }
 
 /* ---- layout ---- */
 .ch-row { display: grid; gap: 16px; margin-bottom: 16px; }
@@ -79,7 +79,7 @@
 .ch-ranked li.is-open .ch-ranked-row span { white-space: normal; overflow: visible; }
 .ch-tip b { display: block; margin-bottom: 4px; font-size: 11.5px; opacity: .8; }
 .ch-tip div { display: flex; align-items: center; gap: 6px; line-height: 1.6; }
-.ch-tip div i { width: 8px; height: 8px; border-radius: 3px; flex-shrink: 0; }
+.ch-tip div i { width: 8px; height: 8px; border-radius: 3px; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255,255,255,.55); }
 .ch-tip div span { margin-left: auto; padding-left: 12px; font-weight: 800; }
 /* Phones / tablets (touch = coarse pointer): larger, easier-to-read tooltip that never overflows the screen */
 @media (pointer: coarse), (max-width: 600px) {

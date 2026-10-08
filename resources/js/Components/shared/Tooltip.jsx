@@ -5,6 +5,28 @@ import './Tooltip.css';
 const GAP = 8;
 const EDGE_PADDING = 8;
 
+// The tooltip renders through a portal into <body>, i.e. OUTSIDE .ds-shell,
+// so it can't inherit the active theme. Instead we look at the trigger's
+// nearest .ds-shell (classes: maroon | blue | yellow | dark | light) and pass
+// the matching theme name down as a modifier class. On pages without a shell
+// (login/register) we fall back to the plain white/black theme cookie.
+const COLOR_THEMES = ['maroon', 'blue', 'yellow'];
+const detectTheme = (el) => {
+    const shell = el?.closest?.('.ds-shell');
+    if (shell) {
+        const hit = COLOR_THEMES.find((t) => shell.classList.contains(t));
+        if (hit) return hit;
+        return shell.classList.contains('dark') ? 'dark' : 'light';
+    }
+    if (typeof document !== 'undefined') {
+        const m = document.cookie.match(/(?:^|; )sclf-theme=([^;]*)/);
+        const v = m ? decodeURIComponent(m[1]) : 'white';
+        if (COLOR_THEMES.includes(v)) return v;
+        return v === 'black' ? 'dark' : 'light';
+    }
+    return 'light';
+};
+
 /**
  * Wrap any icon-only (or otherwise unlabeled) control so people can still
  * tell what it does — especially on the collapsed sidebar / topbar where
@@ -66,7 +88,7 @@ export default function Tooltip({ label, children, side = 'bottom', delay = 350 
             left = rect.left + rect.width / 2;
         }
 
-        return { top, left, placement, triggerRect: rect };
+        return { top, left, placement, triggerRect: rect, theme: detectTheme(trigger) };
     };
 
     const show = () => {
@@ -155,7 +177,7 @@ export default function Tooltip({ label, children, side = 'bottom', delay = 350 
                     ref={tooltipRef}
                     role="tooltip"
                     id={id}
-                    className={`sclf-tooltip sclf-tooltip-${coords.placement}`}
+                    className={`sclf-tooltip sclf-tooltip-${coords.placement} sclf-tooltip--${coords.theme || 'light'}`}
                     style={{ top: coords.top, left: coords.left, transform }}
                 >
                     {label}

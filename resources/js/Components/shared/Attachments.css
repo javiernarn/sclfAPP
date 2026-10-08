@@ -1,0 +1,83 @@
+/*
+ * Attachments.css — styles for <AttachmentPicker> and <AttachmentGallery>.
+ * Accent colors follow the active dashboard theme (.ds-shell.maroon / .blue /
+ * .yellow / .dark), same palette as the buttons and nav highlights.
+ */
+.ds-shell { --att-accent: #2563eb; --att-border: #b9c4d6; --att-bg: rgba(100, 116, 139, 0.07); --att-muted: #64748b; }
+.ds-shell.dark   { --att-accent: #818cf8; --att-border: #3a4457; --att-bg: rgba(148, 163, 184, 0.08); --att-muted: #94a3b8; }
+.ds-shell.maroon { --att-accent: #b91c1c; --att-border: #e8b3bc; }
+.ds-shell.blue   { --att-accent: #2563eb; --att-border: #a9cdf5; }
+.ds-shell.yellow { --att-accent: #d97706; --att-border: #e6c477; }
+
+/* ---------- picker ---------- */
+.att-picker .att-file-input { display: none; }
+
+.att-drop {
+    width: 100%;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 18px 14px;
+    border: 1.5px dashed var(--att-border);
+    border-radius: 12px;
+    background: var(--att-bg);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+    text-align: center;
+    transition: border-color .15s, background .15s;
+}
+.att-drop:hover:not(:disabled) { border-color: var(--att-accent); background: color-mix(in srgb, var(--att-accent) 8%, transparent); }
+.att-drop:disabled { opacity: .55; cursor: not-allowed; }
+.att-drop svg { color: var(--att-accent); }
+.att-drop-title { font-weight: 700; font-size: 14px; }
+.att-drop-hint { font-size: 12px; color: var(--att-muted); max-width: 46ch; }
+
+.att-previews, .att-grid {
+    list-style: none; margin: 12px 0 0; padding: 0;
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+}
+.att-grid { margin-top: 8px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+
+.att-preview-media, .att-tile-media {
+    position: relative;
+    width: 100%; aspect-ratio: 4 / 3;
+    border-radius: 10px; overflow: hidden;
+    border: 1.5px solid var(--att-border);
+    background: #000;
+}
+.att-preview-media img, .att-preview-media video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.att-preview-name, .att-tile-name { margin-top: 6px; font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.att-preview-size, .att-tile-size { font-size: 11px; color: var(--att-muted); }
+
+.att-remove {
+    position: absolute; top: 6px; right: 6px;
+    width: 26px; height: 26px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 0; cursor: pointer;
+    background: rgba(15, 23, 42, .78); color: #fff;
+}
+.att-remove:hover:not(:disabled) { background: #dc2626; }
+
+.att-badge {
+    position: absolute; left: 6px; bottom: 6px;
+    font-size: 10px; font-weight: 800; letter-spacing: .06em;
+    padding: 2px 6px; border-radius: 6px;
+    background: var(--att-accent); color: #fff;
+    pointer-events: none;
+}
+.ds-shell.yellow .att-badge { color: #1c1408; }
+
+/* ---------- gallery ---------- */
+.att-tile-media.iv-box { background: var(--att-bg); }
+.att-tile-media.iv-box img { object-fit: cover; }
+.att-tile-placeholder { display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--att-muted); background: var(--att-bg); }
+.att-tile-video video { width: 100%; height: 100%; object-fit: contain; background: #000; }
+.att-play {
+    position: absolute; inset: 0; width: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    border: 0; cursor: pointer; font: inherit; font-size: 12px; font-weight: 700;
+    color: #fff; background: linear-gradient(135deg, #1e293b, #0f172a);
+}
+.att-play svg { color: #fff; }
+.att-play:hover:not(:disabled) { background: linear-gradient(135deg, #334155, #1e293b); }
+.att-play:disabled { cursor: progress; opacity: .85; }

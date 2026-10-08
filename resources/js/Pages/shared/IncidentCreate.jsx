@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { useNavigate } from 'react-router-dom';
+import { Lock, ShieldAlert } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import FormSkeleton from '../../Components/shared/FormSkeleton';
 import { useToast } from '../../context/ToastContext';
+import AttachmentPicker from '../../Components/shared/AttachmentPicker';
+import { useConfirm } from '../../context/ConfirmContext';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
 const CATEGORY_OPTIONS = [
@@ -42,16 +45,27 @@ const EMPTY_FORM = {
     occurred_at: nowLocal(),
 };
 
+const LEGITIMACY_NOTICE =
+    "Before you continue: only file an incident report for something that actually happened. Security and the administrators " +
+    "act on what you write here, so please describe it accurately and honestly rather than guessing, exaggerating, or filling " +
+    "it in as a test. This report is kept as an official campus record, and any photos or videos you attach can be viewed by " +
+    "Security, Admin and Staff. Reports that turn out to be false, exaggerated, or submitted as a joke waste response time, " +
+    "are treated as misuse of the system, and accounts that repeatedly do this may be suspended or disabled. By clicking " +
+    "\"I Agree, Unlock Form\" you're confirming this report is genuine.";
+
 export default function IncidentCreate() {
     const [form, setForm] = useState(EMPTY_FORM);
+    const [files, setFiles] = useState([]);
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [pageLoading, setPageLoading] = useState(true);
     const navigate = useNavigate();
     const toast = useToast();
+    const confirm = useConfirm();
+    const [unlocked, setUnlocked] = useState(false);
 
-    const isDirty = Object.entries(form).some(([key, value]) => value !== EMPTY_FORM[key]);
+    const isDirty = files.length > 0 || Object.entries(form).some(([key, value]) => value !== EMPTY_FORM[key]);
     const { guardedAction } = useUnsavedChangesGuard(isDirty, {
         message: "You've started filling out this incident report. If you leave now, what you've entered will be discarded.",
     });
@@ -74,15 +88,39 @@ export default function IncidentCreate() {
 
     const handleCancel = () => guardedAction(() => navigate('/app/incidents'));
 
+    const handleUnlockRequest = async () => {
+        const agreed = await confirm({
+            title: 'Make sure this report is genuine',
+            message: LEGITIMACY_NOTICE,
+            confirmLabel: 'I Agree, Unlock Form',
+            cancelLabel: 'Cancel',
+            tone: 'danger',
+        });
+        if (agreed) setUnlocked(true);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!unlocked) return;
         setError('');
         setFieldErrors({});
         setLoading(true);
         try {
             const payload = { ...form, occurred_at: form.occurred_at ? new Date(form.occurred_at).toISOString() : null };
-            const res = await axios.post('/security-incidents', payload, { silent: true });
-            toast.success('Your incident report has been submitted.', { title: 'Report filed' });
+            // Multipart so optional photos/videos can ride along with the report.
+            const data = new FormData();
+            Object.entries(payload).forEach(([k, v]) => { if (v !== null && v !== '') data.append(k, v); });
+            files.forEach((f) => data.append('attachments[]', f));
+            const res = await axios.post('/security-incidents', data, {
+                silent: true,
+                headers: { 'Content-Type': 'multipart/form-data' },
+                timeout: 300000, // videos can take a while on mobile data
+            });
+            if (res.data.attachment_error) {
+                toast.warning(res.data.attachment_error, { title: 'Report filed' });
+            } else {
+                toast.success('Your incident report has been submitted.', { title: 'Report filed' });
+            }
             navigate(`/app/incidents/${res.data.data.id}`);
         } catch (err) {
             if (err?.approvalHandled) return; // approval dialog is showing
@@ -109,6 +147,17 @@ export default function IncidentCreate() {
             ) : (
                 <form className="ds-card" onSubmit={handleSubmit}>
                     {error && <div className="ds-error">{error}</div>}
+
+                    {!unlocked && (
+                        <div className="ds-lock-banner">
+                            <div className="ds-lock-banner-icon"><Lock size={18} /></div>
+                            <div className="ds-lock-banner-text">
+                                <strong>Fields are locked.</strong> Tap <em>Add Report</em> and confirm the notice to fill this in.
+                            </div>
+                        </div>
+                    )}
+
+                    <fieldset disabled={!unlocked} className="ds-fieldset">
 
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
@@ -158,14 +207,27 @@ export default function IncidentCreate() {
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 10 }}>
-                        <button type="button" className="ds-btn ds-btn-secondary" onClick={handleCancel} disabled={loading}>
-                            Cancel
+                    <AttachmentPicker files={files} onChange={setFiles} disabled={loading}
+                        hint={`Photos or a short video of the scene help Security understand what happened. Up to 5 files · photos 10 MB · videos 50 MB`} />
+                    {fieldErrors.attachments && <p className="ds-field-error">{fieldErrors.attachments}</p>}
+
+                    </fieldset>
+
+                    {unlocked ? (
+                        <div style={{ display: 'flex', gap: 10 }}>
+                            <button type="button" className="ds-btn ds-btn-secondary" onClick={handleCancel} disabled={loading}>
+                                Cancel
+                            </button>
+                            <button type="submit" className="ds-btn ds-btn-primary ds-btn-block" disabled={loading}>
+                                {loading ? 'Submitting…' : 'Submit Report'}
+                            </button>
+                        </div>
+                    ) : (
+                        <button type="button" className="ds-btn ds-btn-primary ds-btn-block" onClick={handleUnlockRequest}>
+                            <ShieldAlert size={16} style={{ marginRight: 6, verticalAlign: -3 }} />
+                            Add Report
                         </button>
-                        <button type="submit" className="ds-btn ds-btn-primary ds-btn-block" disabled={loading}>
-                            {loading ? 'Submitting…' : 'Submit Report'}
-                        </button>
-                    </div>
+                    )}
                 </form>
             )}
         </DashboardShell>

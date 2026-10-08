@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ReportAttachment;
 use App\Models\ServiceRequest;
 use App\Models\User;
+use App\Services\Attachments\ReportAttachmentService;
 use App\Services\Facilities\ServiceRequestService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -12,6 +14,7 @@ class ServiceRequestController extends Controller
 {
     public function __construct(
         protected ServiceRequestService $requests,
+        protected ReportAttachmentService $attachments,
     ) {
     }
 
@@ -50,7 +53,7 @@ class ServiceRequestController extends Controller
             'description' => 'required|string|max:5000',
             'location_text' => 'nullable|string|max:255',
             'department_id' => 'nullable|exists:departments,id',
-        ]);
+        ] + ReportAttachment::rules(), ReportAttachment::messages());
 
         try {
             $serviceRequest = $this->requests->submit($request->user(), $validated);
@@ -58,7 +61,20 @@ class ServiceRequestController extends Controller
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         }
 
-        return response()->json(['success' => true, 'data' => $serviceRequest], 201);
+        // Optional photo/video evidence — see SecurityIncidentController::store().
+        $attachmentError = null;
+        try {
+            $this->attachments->attach($serviceRequest, $request->user(), $request->file('attachments', []));
+        } catch (\Throwable $e) {
+            report($e);
+            $attachmentError = 'Your request was filed, but the photos/videos could not be saved. Please describe the problem in the details or file a new request with them.';
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $serviceRequest,
+            'attachment_error' => $attachmentError,
+        ], 201);
     }
 
     public function show(Request $request, ServiceRequest $serviceRequest)
@@ -72,6 +88,7 @@ class ServiceRequestController extends Controller
             'cancelledBy:id,name',
             'department:id,name',
             'campus:id,name,code',
+            'attachments',
         ]);
 
         return response()->json(['data' => $serviceRequest]);

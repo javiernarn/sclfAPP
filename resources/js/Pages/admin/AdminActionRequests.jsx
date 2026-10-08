@@ -1,7 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import StaffRequestDetailsModal from '../../Components/shared/StaffRequestDetailsModal';
+import { Eye } from '../../Components/icons';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -33,6 +35,18 @@ export default function AdminActionRequests() {
     const focusId = Number(searchParams.get('request')) || null;
     const [status, setStatus] = useState(isAdmin && !focusId ? 'pending' : '');
     const [busyId, setBusyId] = useState(null);
+    // Which request's full details are open, plus the theme classes of the
+    // page it was opened from (the modal is portaled outside the themed shell).
+    const [detail, setDetail] = useState({ id: null, shellClass: 'light' });
+    const detailRow = rows.find((r) => r.id === detail.id) || null;
+
+    const openDetails = (row, e) => {
+        const shell = e.currentTarget.closest('.ds-shell');
+        const classes = ['maroon', 'blue', 'yellow'].filter((c) => shell?.classList.contains(c));
+        classes.push(shell?.classList.contains('dark') ? 'dark' : 'light');
+        setDetail({ id: row.id, shellClass: classes.join(' ') });
+    };
+    const closeDetails = () => setDetail((d) => ({ ...d, id: null }));
 
     useEffect(() => { document.title = 'Staff Requests | SCLF - Opol Community College'; }, []);
 
@@ -45,8 +59,18 @@ export default function AdminActionRequests() {
 
     useEffect(() => { load(); }, [load]);
 
-    const review = async (row, next) => {
-        let note = null;
+    // Arriving from a notification: open that request's full details once.
+    const autoOpened = useRef(false);
+    useEffect(() => {
+        if (!focusId || autoOpened.current || !rows.some((r) => r.id === focusId)) return;
+        autoOpened.current = true;
+        const shell = document.querySelector('.ds-shell:not(.srd-root)');
+        const classes = ['maroon', 'blue', 'yellow'].filter((c) => shell?.classList.contains(c));
+        classes.push(shell?.classList.contains('dark') ? 'dark' : 'light');
+        setDetail({ id: focusId, shellClass: classes.join(' ') });
+    }, [focusId, rows]);
+
+    const review = async (row, next, note = null) => {
         if (next === 'rejected') {
             const ok = await confirm({
                 title: 'Reject this request?',
@@ -143,6 +167,9 @@ export default function AdminActionRequests() {
                                         <td className="ds-table-nowrap">{new Date(r.created_at).toLocaleString()}</td>
                                         <td>
                                             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                                <button type="button" className="ds-btn ds-btn-sm ds-btn-secondary" onClick={(e) => openDetails(r, e)}>
+                                                    <Eye size={14} style={{ verticalAlign: -2, marginRight: 4 }} /> Details
+                                                </button>
                                                 {isAdmin && r.status !== 'executed' && (
                                                     <>
                                                         <button className="ds-btn ds-btn-sm ds-btn-success" disabled={busyId === r.id || r.status === 'approved'} onClick={() => review(r, 'approved')}>Approve</button>
@@ -162,6 +189,17 @@ export default function AdminActionRequests() {
                     </div>
                 )}
             </div>
+
+            {detailRow && (
+                <StaffRequestDetailsModal
+                    row={detailRow}
+                    shellClass={detail.shellClass}
+                    isAdmin={isAdmin}
+                    busy={busyId === detailRow.id}
+                    onReview={review}
+                    onClose={closeDetails}
+                />
+            )}
         </DashboardShell>
     );
 }

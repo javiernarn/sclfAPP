@@ -6,6 +6,7 @@ import {
     CheckCircle2, RotateCcw, UserPlus, Lock, PlayCircle, XCircle, Building2,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import AttachmentGallery from '../../Components/shared/AttachmentGallery';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -191,6 +192,8 @@ export default function ServiceRequestDetail() {
                     <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{request.description}</p>
                 </div>
             </div>
+
+            <AttachmentGallery attachments={request.attachments} />
 
             {(request.status === 'completed' || request.status === 'closed') && (
                 <div className="ds-card">

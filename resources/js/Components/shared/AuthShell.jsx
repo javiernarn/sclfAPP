@@ -4,6 +4,7 @@ import { Sun, Moon, ShieldCheck, Eye, EyeOff, CheckCircle2, XCircle } from "../i
 import { useAppTheme } from "../../hooks/useAppTheme";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
 import logo from "../../assets/images/site-logo.png";
+import occBg from "../../assets/images/occ.webp";
 
 /**
  * ============================================================================
@@ -49,6 +50,11 @@ const buildCaseNumber = (prefix) => {
     return `SCLF-${y}-${prefix}-${serial}`;
 };
 
+// Remembers whether the Login dropdown was opened, so coming back to the
+// login page from Forgot Password / Register keeps the form open. Lives in
+// module memory, so a fresh page load still starts closed.
+let gateOpenMemory = false;
+
 const RAIL_FACTS = [
     "Every report is timestamped the moment it's filed.",
     "Matches are surfaced automatically across campus desks.",
@@ -70,7 +76,17 @@ export default function AuthShell({
     wide = false,
     tabs, // optional folder-tab step index for the register wizard
     centerHead = false, // center the title/subtitle — used by success/confirmation states
+    // --- Optional "gate" mode (used by Login only) -----------------------
+    // bgImage: photo painted behind the RIGHT side only (rail untouched).
+    // gate: show "Welcome, to <gateName>" + a transparent Login dropdown
+    //       first; the card slides open when the dropdown is clicked.
+    bgImage = occBg, // every auth page gets the campus photo (desktop/laptop only)
+    gate = false,
+    gateName = "Opol Community College",
+    gateLabel = "Login",
+    gateDefaultOpen = false,
 }) {
+    const [gateOpen, setGateOpen] = useState(gateDefaultOpen || gateOpenMemory);
     const { theme, toggleTheme } = useAppTheme();
     const isDark = theme === "black";
     const [caseNumber] = useState(() => buildCaseNumber(caseSeed));
@@ -137,7 +153,10 @@ export default function AuthShell({
                 </aside>
 
                 {/* ============ RIGHT: RECORD CARD ============ */}
-                <main className="lg-stage">
+                <main
+                    className={`lg-stage${bgImage ? " has-bg" : ""}${gate ? " has-gate" : ""}`}
+                    style={bgImage ? { "--lg-stage-img": `url(${bgImage})` } : undefined}
+                >
                     {/* App bar: logo + name on the left, theme toggle on the
                         opposite (right) side. On desktop/landscape only the
                         toggle shows, in its usual top-right spot. */}
@@ -151,6 +170,63 @@ export default function AuthShell({
                         </button>
                     </header>
 
+                    {gate ? (
+                        <div className="lg-stage-inner lg-gate">
+                            <div className="lg-gate-bar">
+                                <span className="lg-gate-welcome">
+                                    <span className="lg-gw lg-gw-white">Welcome,</span>{" "}
+                                    <span className="lg-gw lg-gw-white">to</span>{" "}
+                                    <strong className="lg-gate-name">{gateName}</strong>
+                                </span>
+                                <button
+                                    type="button"
+                                    className={`lg-gate-toggle${gateOpen ? " is-open" : ""}`}
+                                    onClick={() => setGateOpen((v) => { gateOpenMemory = !v; return !v; })}
+                                    aria-expanded={gateOpen}
+                                    aria-controls="lg-gate-panel"
+                                >
+                                    {gateLabel}
+                                    <svg className="lg-gate-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div id="lg-gate-panel" className={`lg-gate-panel${gateOpen ? " is-open" : ""}`}>
+                                <div className="lg-gate-panel-inner">
+                                    <div className={`lg-card${wide ? " is-wide" : ""}`}>
+                                        <div className="lg-card-tab-strip">
+                                            <span className="lg-card-ref">REF. {caseNumber}</span>
+                                            <span className="lg-card-status">
+                                                <span className="lg-dot" /> Live Session
+                                            </span>
+                                        </div>
+
+                                        {tabs && <div className="lg-folder-tabs">{tabs}</div>}
+
+                                        <div className={`lg-card-head${centerHead ? " is-centered" : ""}`}>
+                                            <div className="lg-title-row">
+                                                <h1 className="lg-title">{title}</h1>
+                                                <span className="lg-live-pill">
+                                                    <span className="lg-dot" /> Live Session
+                                                </span>
+                                            </div>
+                                            {subtitle && <p className="lg-subtitle">{subtitle}</p>}
+                                        </div>
+
+                                        <div className="lg-card-body">{children}</div>
+
+                                        {footer && <div className="lg-card-foot">{footer}</div>}
+                                    </div>
+
+
+                                    <p className="lg-stage-legal">
+                                        Entries in this ledger are encrypted in transit and reviewed only by authorized Staff and Admin.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
                     <div className="lg-stage-inner">
                         <div className={`lg-card${wide ? " is-wide" : ""}`}>
                             <div className="lg-card-tab-strip">
@@ -176,6 +252,7 @@ export default function AuthShell({
                             Entries in this ledger are encrypted in transit and reviewed only by authorized Staff and Admin.
                         </p>
                     </div>
+                    )}
                 </main>
             </div>
 
@@ -365,9 +442,9 @@ export function LedgerGhostButton({ children, ...props }) {
  * ========================================================================= */
 const LEDGER_CSS = `
     :root {
-        --lg-accent: #4f46e5;
-        --lg-accent-2: #0ea5e9;
-        --lg-accent-3: #7c3aed;
+        --lg-accent: #2563eb;
+        --lg-accent-2: #38bdf8;
+        --lg-accent-3: #1d4ed8;
         --lg-ok: #16a34a;
         --lg-danger: #ef4444;
     }
@@ -380,22 +457,23 @@ const LEDGER_CSS = `
             "Helvetica Neue", Arial, sans-serif;
         transition: background 0.4s ease, color 0.4s ease;
     }
-    /* Same base surface as DashboardShell / MainPage: soft cyan + violet
+    /* Same base surface as DashboardShell / MainPage: soft cyan + blue
        glows over a near-white (light) or near-black (dark) canvas — so the
        public auth pages read as the same product as the logged-in app. */
     .lg-wrap.light {
         color: #0b1220;
         background:
             radial-gradient(900px 500px at 100% -10%, rgba(14,165,233,0.12), transparent 60%),
-            radial-gradient(900px 500px at -10% 110%, rgba(124,58,237,0.12), transparent 60%),
+            radial-gradient(900px 500px at -10% 110%, rgba(37,99,235,0.12), transparent 60%),
             #f4f7fb;
     }
     .lg-wrap.dark {
-        color: #e7ecf3;
+        --lg-accent: #60a5fa; --lg-accent-3: #3b82f6;
+        color: #e6efff;
         background:
             radial-gradient(900px 500px at 100% -10%, rgba(14,165,233,0.16), transparent 60%),
-            radial-gradient(900px 500px at -10% 110%, rgba(124,58,237,0.18), transparent 60%),
-            #0a0c12;
+            radial-gradient(900px 500px at -10% 110%, rgba(37,99,235,0.20), transparent 60%),
+            #050d22;
     }
 
     /* ============ LEDGER RAIL (left) ============ */
@@ -412,8 +490,8 @@ const LEDGER_CSS = `
         overflow: hidden;
         background:
             radial-gradient(650px 420px at 12% 6%, rgba(255,255,255,0.14), transparent 60%),
-            radial-gradient(550px 460px at 105% 105%, rgba(14,165,233,0.4), transparent 60%),
-            linear-gradient(165deg, #4338ca 0%, #4f46e5 45%, #7c3aed 78%, #0ea5e9 130%);
+            radial-gradient(550px 460px at 105% 105%, rgba(56,189,248,0.30), transparent 60%),
+            linear-gradient(165deg, #0b2a6f 0%, #1d4ed8 55%, #2f7bff 100%);
     }
     @media (orientation: landscape) { .lg-rail { display: flex; } }
     @media (orientation: landscape) and (max-height: 380px) { .lg-rail { display: none; } }
@@ -426,8 +504,8 @@ const LEDGER_CSS = `
         pointer-events: none;
     }
     .lg-rail-blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.45; pointer-events: none; animation: lg-float 17s ease-in-out infinite; }
-    .lg-rail-blob-1 { width: 260px; height: 260px; background: #a5b4fc; top: -70px; left: -60px; }
-    .lg-rail-blob-2 { width: 300px; height: 300px; background: #67e8f9; bottom: -110px; right: -80px; animation-duration: 21s; }
+    .lg-rail-blob-1 { width: 260px; height: 260px; background: #93c5fd; top: -70px; left: -60px; }
+    .lg-rail-blob-2 { width: 300px; height: 300px; background: #7dd3fc; bottom: -110px; right: -80px; animation-duration: 21s; }
     @keyframes lg-float { 0%,100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-16px) scale(1.05); } }
 
     .lg-rail-top { position: relative; z-index: 1; }
@@ -496,7 +574,7 @@ const LEDGER_CSS = `
         display: inline-flex; align-items: center; justify-content: center;
     }
     .lg-wrap.light .lg-theme-toggle { background: #fff; border: 1px solid #e2e8f0; color: #0b1220; }
-    .lg-wrap.dark .lg-theme-toggle { background: rgba(255,255,255,0.08); border: 1px solid #242a36; color: #e7ecf3; }
+    .lg-wrap.dark .lg-theme-toggle { background: rgba(96,165,250,0.12); border: 1px solid rgba(96,165,250,0.28); color: #e6efff; }
 
     .lg-mobile-brand { display: none; align-items: center; gap: 9px; text-decoration: none; color: inherit; margin-bottom: 18px; }
     .lg-mobile-brand img { width: 30px; height: 30px; object-fit: contain; border-radius: 9px; }
@@ -514,7 +592,7 @@ const LEDGER_CSS = `
     @keyframes lg-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
     .lg-wrap.light .lg-card { background: #fff; border: 1px solid #e2e8f0; box-shadow: 0 24px 48px -18px rgba(15,23,42,0.16), 0 2px 8px rgba(15,23,42,0.04); }
-    .lg-wrap.dark .lg-card { background: #10131b; border: 1px solid #242a36; box-shadow: 0 24px 48px -18px rgba(0,0,0,0.55); }
+    .lg-wrap.dark .lg-card { background: #08193f; border: 1px solid rgba(96,165,250,0.28); box-shadow: 0 24px 48px -18px rgba(0,0,0,0.6); }
 
     .lg-card-tab-strip {
         display: flex; align-items: center; justify-content: space-between;
@@ -523,7 +601,7 @@ const LEDGER_CSS = `
         font-size: 10px; letter-spacing: 0.05em;
     }
     .lg-wrap.light .lg-card-tab-strip { border-bottom: 1px solid #eef1f6; color: #64748b; }
-    .lg-wrap.dark .lg-card-tab-strip { border-bottom: 1px solid #1c212c; color: #7d8797; }
+    .lg-wrap.dark .lg-card-tab-strip { border-bottom: 1px solid rgba(96,165,250,0.20); color: #93b4e6; }
     .lg-card-status { display: inline-flex; align-items: center; gap: 5px; }
     .lg-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--lg-ok); box-shadow: 0 0 0 2px rgba(22,163,74,0.18); }
 
@@ -534,6 +612,17 @@ const LEDGER_CSS = `
         background: linear-gradient(135deg, var(--lg-accent), var(--lg-accent-3) 50%, var(--lg-accent-2));
         -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
     }
+    .lg-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 6px; }
+    .lg-title-row .lg-title { margin: 0; }
+    .lg-live-pill {
+        display: none; align-items: center; gap: 6px; flex-shrink: 0;
+        padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+        font-family: "SFMono-Regular", "JetBrains Mono", "Courier New", monospace;
+        font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em;
+        background: rgba(22,163,74,0.14); color: #16a34a;
+    }
+    .lg-wrap.dark .lg-live-pill { background: rgba(74,222,128,0.14); color: #4ade80; }
+    .lg-live-pill .lg-dot { width: 6px; height: 6px; }
     .lg-subtitle { font-size: 12.5px; line-height: 1.55; opacity: 0.65; margin: 0; }
 
     .lg-card-body { padding: 16px 24px 22px; }
@@ -541,7 +630,7 @@ const LEDGER_CSS = `
         padding: 14px 24px; font-size: 12.5px;
     }
     .lg-wrap.light .lg-card-foot { border-top: 1px solid #eef1f6; }
-    .lg-wrap.dark .lg-card-foot { border-top: 1px solid #1c212c; }
+    .lg-wrap.dark .lg-card-foot { border-top: 1px solid rgba(96,165,250,0.20); }
     .lg-card-foot a { color: var(--lg-accent); font-weight: 700; text-decoration: none; }
     .lg-card-foot a:hover { text-decoration: underline; }
 
@@ -565,7 +654,7 @@ const LEDGER_CSS = `
     /* ============ LEDGER ROWS ============ */
     .lg-row { display: flex; gap: 12px; padding: 12px 0; align-items: flex-start; }
     .lg-wrap.light .lg-row + .lg-row { border-top: 1px solid #f1f4f9; }
-    .lg-wrap.dark .lg-row + .lg-row { border-top: 1px solid #1c212c; }
+    .lg-wrap.dark .lg-row + .lg-row { border-top: 1px solid rgba(96,165,250,0.14); }
     .lg-row-index {
         flex-shrink: 0; width: 20px; padding-top: 2px;
         font-family: "SFMono-Regular", "JetBrains Mono", "Courier New", monospace;
@@ -588,7 +677,7 @@ const LEDGER_CSS = `
         transition: border-color 0.18s ease;
     }
     .lg-wrap.light .lg-input { border-bottom: 1.5px solid #d9e0ec; }
-    .lg-wrap.dark .lg-input { border-bottom: 1.5px solid #2a3140; }
+    .lg-wrap.dark .lg-input { border-bottom: 1.5px solid rgba(96,165,250,0.38); }
     .lg-input:focus { border-bottom-color: var(--lg-accent); }
     .lg-input[aria-invalid="true"] { border-bottom-color: var(--lg-danger); }
     .lg-input::placeholder { opacity: 0.35; }
@@ -599,7 +688,7 @@ const LEDGER_CSS = `
     .lg-wrap.dark .lg-select { color-scheme: dark; }
     .lg-wrap.light .lg-select { color-scheme: light; }
     .lg-wrap.dark .lg-select option,
-    .lg-wrap.dark .lg-select optgroup { background-color: #161b26; color: #f1f5fb; }
+    .lg-wrap.dark .lg-select optgroup { background-color: #0b2050; color: #f1f5fb; }
     .lg-wrap.light .lg-select option,
     .lg-wrap.light .lg-select optgroup { background-color: #ffffff; color: #111827; }
     .lg-select optgroup { font-style: normal; font-weight: 700; }
@@ -631,7 +720,7 @@ const LEDGER_CSS = `
         display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative;
     }
     .lg-wrap.light .lg-avatar-frame { background: #f4f7fb; border: 1.5px dashed #c7cfe0; }
-    .lg-wrap.dark .lg-avatar-frame { background: #161a24; border: 1.5px dashed #2a3140; }
+    .lg-wrap.dark .lg-avatar-frame { background: rgba(96,165,250,0.08); border: 1.5px dashed rgba(96,165,250,0.35); }
     .lg-avatar-frame img { width: 100%; height: 100%; object-fit: cover; }
     .lg-avatar-frame:hover { border-color: var(--lg-accent); }
     .lg-avatar-actions { display: flex; flex-direction: column; gap: 3px; }
@@ -647,8 +736,8 @@ const LEDGER_CSS = `
 
     /* ============ CHECKLIST ============ */
     .lg-checklist { margin: 14px 0 4px; padding: 11px 13px; border-radius: 12px; }
-    .lg-wrap.light .lg-checklist { background: rgba(79,70,229,0.06); border: 1px solid rgba(79,70,229,0.16); }
-    .lg-wrap.dark .lg-checklist { background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.2); }
+    .lg-wrap.light .lg-checklist { background: rgba(37,99,235,0.06); border: 1px solid rgba(37,99,235,0.16); }
+    .lg-wrap.dark .lg-checklist { background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.22); }
     .lg-checklist-title { display: block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6; margin-bottom: 7px; }
     .lg-checklist-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }
     .lg-checklist-item { display: flex; align-items: center; gap: 6px; font-size: 11.5px; opacity: 0.5; }
@@ -686,7 +775,7 @@ const LEDGER_CSS = `
         border: none; border-radius: 12px; cursor: pointer;
         color: #fff;
         background: linear-gradient(135deg, var(--lg-accent), var(--lg-accent-3) 50%, var(--lg-accent-2));
-        box-shadow: 0 10px 24px rgba(79,70,229,0.3);
+        box-shadow: 0 10px 24px rgba(37,99,235,0.32);
         font-size: 13.5px; font-weight: 700;
         letter-spacing: 0.03em; text-transform: uppercase;
         transition: opacity 0.18s ease, transform 0.08s ease;
@@ -701,9 +790,9 @@ const LEDGER_CSS = `
         text-transform: uppercase; letter-spacing: 0.03em; flex-shrink: 0;
     }
     .lg-wrap.light .lg-ghost { border: 1.5px solid #d9e0ec; color: #0b1220; }
-    .lg-wrap.dark .lg-ghost { border: 1.5px solid #2a3140; color: #e7ecf3; }
+    .lg-wrap.dark .lg-ghost { border: 1.5px solid rgba(96,165,250,0.38); color: #e6efff; }
     .lg-wrap.light .lg-ghost:hover { background: #f4f7fb; }
-    .lg-wrap.dark .lg-ghost:hover { background: rgba(255,255,255,0.05); }
+    .lg-wrap.dark .lg-ghost:hover { background: rgba(96,165,250,0.10); }
 
     .lg-actions-row { display: flex; gap: 10px; align-items: center; }
     .lg-actions-row .lg-submit { flex: 1; margin-top: 0; }
@@ -847,5 +936,138 @@ const LEDGER_CSS = `
             padding: 18px 4px calc(env(safe-area-inset-bottom, 0px) + 16px);
             font-size: 11px; opacity: 0.62; line-height: 1.55;
         }
+    }
+
+    /* ============ GATE MODE (Login) ============
+       Phones / small screens: gate bar hidden, panel always open, no photo
+       -> exactly the original login. Desktop & laptop only (wide, landscape,
+       tall enough) get the photo + sliding Login dropdown, with no scrolling. */
+    .lg-gate-bar { display: none; }
+    .lg-gate-panel, .lg-gate-panel-inner { display: contents; }
+
+    @media (min-width: 768px) and (orientation: landscape) and (min-height: 500px) {
+        .lg-stage.has-gate { overflow: hidden; align-items: flex-start; }
+        .lg-stage.has-bg {
+            background-image:
+                linear-gradient(to bottom, rgba(2,8,23,0.55) 0, rgba(2,8,23,0) 240px),
+                var(--lg-stage-img);
+            background-size: cover; background-position: center; background-repeat: no-repeat;
+        }
+        .lg-stage.has-gate .lg-stage-inner { max-width: 560px; margin: 0 auto; padding-top: 18px; }
+        .lg-stage.has-bg .lg-stage-legal { color: #fff; opacity: 0.85; text-shadow: 0 1px 4px rgba(0,0,0,0.8); margin-top: 8px; }
+
+        /* Slightly transparent form card so the photo shows through. */
+        /* Logo blues (OCC seal) for accents; same blue family as the left rail. */
+        .lg-wrap { --lg-accent: #1d4ed8; --lg-accent-2: #38bdf8; --lg-accent-3: #2563eb; }
+        .lg-wrap.light .lg-card {
+            background: rgba(214,228,252,0.80);
+            border-color: rgba(47,95,208,0.40);
+            color: #0a1f4d;
+            -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+        }
+        .lg-wrap.light .lg-card-tab-strip { border-bottom-color: rgba(47,95,208,0.22); color: #35508f; }
+        .lg-wrap.light .lg-card-foot { border-top-color: rgba(47,95,208,0.22); }
+        .lg-wrap.light .lg-row + .lg-row { border-top-color: rgba(47,95,208,0.16); }
+        .lg-wrap.light .lg-input { border-bottom-color: rgba(47,95,208,0.40); }
+        .lg-wrap.light .lg-input:focus { border-bottom-color: var(--lg-accent); }
+        /* Dark theme: deep navy that matches the blues in the photo. */
+        .lg-wrap.dark .lg-card {
+            background: rgba(7,24,64,0.80);
+            border-color: rgba(96,165,250,0.30);
+            color: #e6efff;
+            -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+        }
+        .lg-wrap.dark .lg-card-tab-strip { border-bottom-color: rgba(96,165,250,0.20); color: #93b4e6; }
+        .lg-wrap.dark .lg-card-foot { border-top-color: rgba(96,165,250,0.20); }
+        .lg-wrap.dark .lg-row + .lg-row { border-top-color: rgba(96,165,250,0.14); }
+        .lg-wrap.dark .lg-input { border-bottom-color: rgba(96,165,250,0.38); }
+        .lg-wrap.dark .lg-input:focus { border-bottom-color: #60a5fa; }
+        .lg-wrap.dark { --lg-accent: #60a5fa; --lg-accent-3: #3b82f6; }
+
+        .lg-gate-bar {
+            width: 100%; display: flex; align-items: center; justify-content: center;
+            flex-wrap: wrap; gap: 10px 14px; color: #fff; text-align: center;
+        }
+        .lg-gate-welcome {
+            font-size: clamp(20px, 2.35vw, 30px); font-weight: 800; letter-spacing: 0.01em; line-height: 1.2;
+            white-space: nowrap;
+            -webkit-font-smoothing: antialiased; text-rendering: geometricPrecision;
+        }
+        .lg-gate-welcome strong { font-weight: 800; }
+        /* Solid blue (no gradient), shallow crisp 3D edge: hard steps, one tight shadow. */
+        .lg-gate-name {
+            color: #2f7bff;
+            background: none; -webkit-background-clip: border-box; background-clip: border-box;
+            -webkit-text-fill-color: #2f7bff;
+            filter: none;
+            text-shadow:
+                1px 1px 0 #1d56d8,
+                2px 2px 0 #1a4bc0,
+                3px 3px 0 #153a9c,
+                4px 5px 3px rgba(0,0,0,0.45);
+        }
+        /* "Welcome, to": same white, same shallow 3D edge in navy. */
+        .lg-gw-white {
+            color: #ffffff;
+            text-shadow:
+                1px 1px 0 #b9cdf2,
+                2px 2px 0 #4f78c8,
+                3px 3px 0 #1b3a85,
+                4px 5px 3px rgba(0,0,0,0.45);
+        }
+        .lg-gw-yellow { color: #facc15; }
+        .lg-gw-blue { color: #60a5fa; }
+        .lg-gw-red { color: #f87171; }
+        /* Transparent on purpose: the photo behind stays fully visible. */
+        .lg-gate-toggle {
+            display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+            padding: 8px 16px; border-radius: 999px;
+            background: transparent; color: #fff;
+            border: 1.5px solid rgba(255,255,255,0.75);
+            font-size: 13.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+            text-shadow: 0 1px 6px rgba(0,0,0,0.7);
+            transition: background 0.25s ease, border-color 0.25s ease;
+        }
+        .lg-gate-toggle:hover, .lg-gate-toggle.is-open { background: rgba(255,255,255,0.14); border-color: #fff; }
+        .lg-gate-toggle:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+        .lg-gate-chevron { transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1); }
+        .lg-gate-toggle.is-open .lg-gate-chevron { transform: rotate(180deg); }
+
+        /* Slide: animate row height 0fr -> 1fr (+ fade/lift). */
+        .lg-gate-panel {
+            width: 100%; display: grid; grid-template-rows: 0fr;
+            opacity: 0; transform: translateY(-10px); visibility: hidden;
+            transition: grid-template-rows 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                        opacity 0.4s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+                        visibility 0s linear 0.55s;
+        }
+        .lg-gate-panel.is-open {
+            grid-template-rows: 1fr; opacity: 1; transform: translateY(0); visibility: visible;
+            transition-delay: 0s;
+        }
+        .lg-gate-panel-inner { min-height: 0; overflow: hidden; display: flex; flex-direction: column; align-items: center; padding: 14px 4px 4px; }
+        .lg-gate-panel .lg-card { animation: none; }
+
+        /* Keep everything inside the screen so nothing needs scrolling. */
+        .lg-gate .lg-card-tab-strip { padding: 7px 18px; }
+        .lg-gate .lg-card-head { padding: 14px 24px 2px; }
+        .lg-gate .lg-card-body { padding: 8px 24px 14px; }
+        .lg-gate .lg-row { padding: 8px 0; }
+        .lg-gate .lg-card-foot { padding: 10px 24px; }
+    }
+    @media (min-width: 768px) and (orientation: landscape) and (min-height: 500px) and (max-height: 780px) {
+        .lg-gate .lg-subtitle { display: none; }
+    }
+    @media (min-width: 768px) and (orientation: landscape) and (min-height: 500px) and (max-height: 640px) {
+        .lg-gate .lg-card-tab-strip, .lg-gate .lg-row-hint { display: none; }
+        .lg-gate .lg-row { padding: 5px 0; }
+        /* The top strip is hidden here, so show Live Session beside the title. */
+        .lg-gate .lg-live-pill { display: inline-flex; }
+    }
+    @media (max-width: 700px) {
+        .lg-gate-welcome { white-space: normal; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .lg-gate-panel, .lg-gate-chevron { transition: none !important; }
     }
 `;

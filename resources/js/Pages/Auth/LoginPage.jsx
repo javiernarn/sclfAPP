@@ -17,6 +17,7 @@ import AuthShell, {
     LedgerButton,
 } from '../../Components/shared/AuthShell';
 import { Mail, Lock } from '../../Components/icons';
+import occBg from '../../assets/images/occ.webp';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -165,6 +166,11 @@ export default function LoginPage() {
             subtitle="Sign in to check on lost items and everything the campus has found."
             railHeadline="Welcome back to the SCLF office."
             railNote="One record, one login — everything you've reported or claimed lives under a single account."
+            bgImage={occBg}
+            gate
+            gateName="Opol Community College"
+            gateLabel="Login"
+            gateDefaultOpen={sessionExpired || !!redirectParam}
             footer={<>No record on file? <Link to="/register">Open a new case file</Link></>}
         >
             {sessionExpired && (

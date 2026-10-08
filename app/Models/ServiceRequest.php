@@ -69,6 +69,11 @@ class ServiceRequest extends Model
         self::PRIORITY_URGENT,
     ];
 
+    // Photos/videos always travel with the report — including the fresh()
+    // copy the lifecycle endpoints (assign/resolve/close/…) return — so the
+    // detail page never loses them after an action.
+    protected $with = ['attachments'];
+
     protected $fillable = [
         'campus_id',
         'requested_by',
@@ -122,6 +127,11 @@ class ServiceRequest extends Model
     public function cancelledBy()
     {
         return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    public function attachments()
+    {
+        return $this->morphMany(ReportAttachment::class, 'attachable')->orderBy('id');
     }
 
     public function isTerminal(): bool
