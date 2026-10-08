@@ -79,6 +79,7 @@ export default function SecurityAssetCreate() {
             toast.success(`${res.data.data.name} registered as ${res.data.data.asset_tag}.`, { title: 'Asset registered' });
             navigate(`/app/security/assets/${res.data.data.id}`);
         } catch (err) {
+            if (err?.approvalHandled) return; // approval dialog is showing
             const errors = err?.response?.data?.errors;
             const message = errors
                 ? Object.values(errors).flat().join('\n')

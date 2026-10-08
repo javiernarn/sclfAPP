@@ -22,6 +22,7 @@ import NotificationsPage from '../Pages/shared/NotificationsPage';
 import ProfilePage from '../Pages/Profile/ProfilePage';
 import SecurityDashboard from '../Pages/security/SecurityDashboard';
 import SecurityFoundItemsReview from '../Pages/security/SecurityFoundItemsReview';
+import SecurityMatches from '../Pages/security/SecurityMatches';
 import SecurityInventory from '../Pages/security/SecurityInventory';
 import SecurityCounter from '../Pages/security/SecurityCounter';
 import SecurityCounterDashboard from '../Pages/security/SecurityCounterDashboard';
@@ -71,6 +72,8 @@ const adminRoutes = [
 const securityRoutes = [
     { path: '/app/security/dashboard', component: SecurityDashboard },
     { path: '/app/security/found-items', component: SecurityFoundItemsReview },
+    // Match queue for whoever handles lost & found (security / admin / staff).
+    { path: '/app/security/matches', component: SecurityMatches },
     { path: '/app/security/claims', component: MyClaimsList },
     { path: '/app/security/qr-scanner', component: SecurityQrScanner },
     { path: '/app/security/inventory', component: SecurityInventory },

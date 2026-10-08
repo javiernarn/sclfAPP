@@ -601,9 +601,15 @@ body { overflow: hidden; }
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     width: 100%;
-    padding: 28px max(16px, env(safe-area-inset-right)) 48px max(16px, env(safe-area-inset-left));
-    padding-bottom: max(48px, env(safe-area-inset-bottom));
+    padding: 28px max(16px, env(safe-area-inset-right)) 16px max(16px, env(safe-area-inset-left));
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
 }
+/* The last card/section on a page carries its own bottom margin (18px) for
+   spacing between stacked cards. At the very end of the page that margin
+   just stacks on top of the pane's padding and leaves a big empty gap above
+   the footer, so drop it for whatever is last. Applies to every page. */
+.ds-main > :last-child,
+.ds-main > :last-child > :last-child { margin-bottom: 0; }
 /* ---------- Footer ---------- */
 /* Sits below .ds-main as a sibling in the .ds-content flex column, exactly
    like .ds-topbar sits above it — flex-shrink: 0 means it keeps its own
@@ -835,15 +841,16 @@ body { overflow: hidden; }
    for errors/danger (#ef4444), matching the auth pages' `.lg-required`. */
 .ds-required { color: #ef4444; opacity: 1; margin-left: 2px; }
 .ds-field input,
+.ds-field select,
 .ds-field textarea {
     width: 100%; padding: 11px 14px; border-radius: 12px;
     font-size: 16px; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease;
     box-sizing: border-box; font-family: inherit; resize: vertical;
     -webkit-appearance: none; appearance: none;
 }
-.ds-shell.light .ds-field input, .ds-shell.light .ds-field textarea { background: #fff; border: 1.5px solid #b9c4d6; color: #0b1220; }
-.ds-shell.dark .ds-field input, .ds-shell.dark .ds-field textarea { background: #0f131c; border: 1.5px solid #3a4457; color: #e7ecf3; }
-.ds-field input:focus, .ds-field textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.18); }
+.ds-shell.light .ds-field input, .ds-shell.light .ds-field select, .ds-shell.light .ds-field textarea { background: #fff; border: 1.5px solid #b9c4d6; color: #0b1220; }
+.ds-shell.dark .ds-field input, .ds-shell.dark .ds-field select, .ds-shell.dark .ds-field textarea { background: #0f131c; border: 1.5px solid #3a4457; color: #e7ecf3; }
+.ds-field input:focus, .ds-field select:focus, .ds-field textarea:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.18); }
 .ds-form-row { display: grid; grid-template-columns: 1fr; gap: 0; }
 @media (min-width: 560px) {
     .ds-form-row-2 { grid-template-columns: 1fr 1fr; gap: 0 14px; }

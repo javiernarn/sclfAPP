@@ -55,7 +55,7 @@ export default function AssetsList() {
     useEffect(load, [status, search]);
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={() => load()} refreshing={loading}
             eyebrow="Assets"
             title={isStaff ? 'Asset Registry' : 'My Assets'}
             subtitle={isStaff

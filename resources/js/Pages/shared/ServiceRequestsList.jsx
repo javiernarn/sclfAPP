@@ -78,7 +78,7 @@ export default function ServiceRequestsList() {
     useEffect(load, [status, priority]);
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={() => load()} refreshing={loading}
             eyebrow="Facilities"
             title={isStaff ? 'Service Requests' : 'My Service Requests'}
             subtitle={isStaff

@@ -5,6 +5,7 @@ import DashboardShell from '../../Components/shared/DashboardShell';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { useAuth } from '../../context/AuthContext';
+import { COURSE_GROUPS } from '../../config/courseGroups';
 
 const PURPOSE_OPTIONS = [
     { value: 'meeting', label: 'Meeting' },
@@ -19,6 +20,24 @@ const EMPTY_FORM = {
     full_name: '', id_presented: '', id_number: '', purpose: 'meeting',
     host_name: '', host_department: '', badge_number: '', notes: '',
 };
+
+function DepartmentSelect({ value, onChange, name }) {
+    // Keep any older free-text value selectable so editing an existing visitor doesn't blank it out.
+    const known = COURSE_GROUPS.some((g) => g.courses.includes(value));
+    return (
+        <select name={name} value={value} onChange={onChange}>
+            <option value="">Select department / course</option>
+            {value && !known && <option value={value}>{value}</option>}
+            {COURSE_GROUPS.map((group) => (
+                <optgroup key={group.college} label={group.college}>
+                    {group.courses.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                    ))}
+                </optgroup>
+            ))}
+        </select>
+    );
+}
 
 function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin }) {
     const [busy, setBusy] = useState(false);
@@ -125,7 +144,7 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin }) {
                     </div>
                     <div className="ds-field">
                         <label>Host's department</label>
-                        <input value={form.host_department} maxLength={150} onChange={(e) => setForm({ ...form, host_department: e.target.value })} />
+                        <DepartmentSelect value={form.host_department} onChange={(e) => setForm({ ...form, host_department: e.target.value })} />
                     </div>
                 </div>
                 <div className="ds-form-row ds-form-row-2">
@@ -240,6 +259,7 @@ export default function SecurityVisitors() {
             setForm(EMPTY_FORM);
             load();
         } catch (err) {
+            if (err?.approvalHandled) return; // approval dialog is showing
             const errors = err?.response?.data?.errors;
             const message = errors
                 ? Object.values(errors).flat().join('\n')
@@ -275,7 +295,7 @@ export default function SecurityVisitors() {
     };
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={() => load()} refreshing={loading}
             eyebrow="Security"
             title="Visitor Management"
             subtitle="Log visitors in and out at the counter, and see who's currently on campus."
@@ -321,7 +341,7 @@ export default function SecurityVisitors() {
                         </div>
                         <div className="ds-field">
                             <label>Host's department</label>
-                            <input name="host_department" value={form.host_department} onChange={handleChange} maxLength={150} />
+                            <DepartmentSelect name="host_department" value={form.host_department} onChange={handleChange} />
                         </div>
                     </div>
                     <div className="ds-form-row ds-form-row-2">

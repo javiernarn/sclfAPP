@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, AlertTriangle, XCircle, Info, X } from '../Components/icons';
-import { toastBus } from '../utils/eventBus';
+import { toastBus, approvalBus } from '../utils/eventBus';
 import { useAppTheme } from '../hooks/useAppTheme';
 import '../Components/shared/Toast.css';
 
@@ -25,6 +25,11 @@ let uid = 0;
 export function ToastProvider({ children }) {
     const [toasts, setToasts] = useState([]);
     const timers = useRef({});
+    // When a staff write is blocked, the approval dialog opens. Pages usually also
+    // toast "could not do X" in their catch — suppress that for a moment so the
+    // staff member sees one clear prompt instead of two messages.
+    const lastApprovalAt = useRef(0);
+    useEffect(() => approvalBus.subscribe(() => { lastApprovalAt.current = Date.now(); }), []);
     // Plain, colorless card — its only visual variant is light/dark, same
     // as every other surface in the app (dashboard shell, ledger auth
     // pages) — plus a per-type outline color (see Toast.css), so an
@@ -42,6 +47,7 @@ export function ToastProvider({ children }) {
 
     const show = useCallback((toast) => {
         const type = toast.type && ICONS[toast.type] ? toast.type : 'info';
+        if (type === 'error' && Date.now() - lastApprovalAt.current < 2500) return null;
         const id = toast.id || `toast-${++uid}`;
         const duration = toast.duration ?? DEFAULT_DURATION[type];
 

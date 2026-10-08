@@ -14,7 +14,7 @@ import {
 export default function StudentDashboard() {
     const { user, roles } = useAuth();
     const isInstructor = Array.isArray(roles) && roles.includes('instructor');
-    const { data, loading, error, updatedAt } = usePolling('/analytics/me', { interval: 20000 });
+    const { data, loading, error, updatedAt, refresh } = usePolling('/analytics/me', { interval: 20000 });
 
     useEffect(() => {
         document.title = "Dashboard | SCLF - Opol Community College";
@@ -38,7 +38,7 @@ export default function StudentDashboard() {
     const incByStatus = data?.incidents_by_status || {};
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={refresh}
             eyebrow={isInstructor ? 'Instructor Portal' : 'Student Portal'}
             title={`Welcome back, ${user?.name?.split(' ')[0] || 'there'} 👋`}
             subtitle="Report items you've lost, or check what's been found around campus."

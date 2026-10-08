@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import RefreshButton from "./RefreshButton";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useAppTheme } from "../../hooks/useAppTheme";
@@ -41,6 +42,7 @@ import {
     Wrench,
     Menu,
     Activity,
+    Handshake,
 } from "../icons";
 
 // The five themes offered from the account menu's "Theme" picker. 'white'
@@ -130,6 +132,10 @@ const NAV_BY_ROLE = {
         { to: "/app/security/counter", label: "Counter", icon: PackageCheck },
         { to: "/app/security/counter-dashboard", label: "Counter Dashboard", icon: ListOrdered },
         { to: "/app/security/found-items", label: "Found Item Reviews", icon: PackageSearch },
+        // Security is the hands-on handler of lost & found, so it sees the
+        // lost reports too and works the match queue (not just found reviews).
+        { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
+        { to: "/app/security/matches", label: "Matches", icon: Handshake },
         { to: "/app/security/claims", label: "Claims", icon: ClipboardCheck },
         { to: "/app/security/inventory", label: "Inventory", icon: Boxes },
         { to: "/app/security/unclaimed-items", label: "Unclaimed Items", icon: AlertTriangle },
@@ -145,10 +151,13 @@ const NAV_BY_ROLE = {
         { to: "/app/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
         { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
         { to: "/app/found-items", label: "Found Items", icon: PackageSearch },
+        // Same match queue Security works (admin oversees; staff can view,
+        // actions need admin approval).
+        { to: "/app/security/matches", label: "Matches", icon: Handshake },
         { to: "/app/claims", label: "Claims", icon: ClipboardCheck },
         { to: "/app/admin/users", label: "Users", icon: UserCircle },
         // Admin: approve/pending/reject staff requests. Staff: their own requests.
-        { to: "/app/admin/requests", label: "Staff Requests", icon: ClipboardCheck },
+        { to: "/app/admin/requests", label: "Staff Requests", icon: ClipboardCheck, adminOnly: true },
         { to: "/app/admin/audit-log", label: "Audit Log", icon: ShieldCheck },
         // Raw request-level feed (IP/device/spam flags) — deliberately a
         // separate page from Audit Log above, which is the curated
@@ -211,6 +220,12 @@ const MOBILE_TABS_BY_ROLE = {
 };
 
 const COLLAPSE_KEY = "sclf-sidebar-collapsed";
+
+// Every page renders its own <DashboardShell>, so the sidebar is rebuilt on
+// each navigation and its scroll position would reset to the top (hiding
+// links near the bottom, like Notifications). This module-level value
+// survives those remounts so the sidebar stays exactly where it was.
+let savedNavScrollTop = 0;
 const DESKTOP_QUERY = "(min-width: 960px)";
 
 // Shared branded shell for every "logged in" screen (student + admin).
@@ -218,7 +233,7 @@ const DESKTOP_QUERY = "(min-width: 960px)";
 // the main content pane scrolls. Sidebar is fully visible on its own —
 // no internal scrollbar — and can collapse to icons-only on desktop via
 // the header burger, or slide over as an overlay on mobile.
-const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
+const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshing = false, children }) => {
     const { user, roles, logout } = useAuth();
     const { theme, setTheme } = useAppTheme();
     const toast = useToast();
@@ -329,13 +344,20 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
     // rather than from wherever the trigger button sits, so it lands in the
     // same spot whether the sidebar is collapsed or expanded.
     const sidebarRef = useRef(null);
+    const navScrollRef = useRef(null);
+
 
     const isAdmin = Array.isArray(roles) && (roles.includes("admin") || roles.includes("staff"));
     const isSecurity = Array.isArray(roles) && roles.includes("security_officer");
     const navRole = isAdmin ? "admin" : isSecurity ? "security_officer" : "student";
-    const navItems = NAV_BY_ROLE[navRole];
+    // Items flagged adminOnly (e.g. Staff Requests) are hidden from staff.
+    const isStaffOnly = Array.isArray(roles) && roles.includes("staff") && !roles.includes("admin");
+    const navItems = useMemo(
+        () => NAV_BY_ROLE[navRole].filter((item) => !(item.adminOnly && isStaffOnly)),
+        [navRole, isStaffOnly]
+    );
     const homePath = isAdmin ? "/app/admin/dashboard" : isSecurity ? "/app/security/dashboard" : "/app/dashboard";
-    const navLabel = isAdmin ? (roles.includes("admin") ? "Admin" : "Staff") : isSecurity ? "Security Officer" : "Student / Instructor";
+    const navLabel = isAdmin ? (roles.includes("admin") ? "Admin" : "Staff") : isSecurity ? "Security Officer" : roles.includes("instructor") ? "Instructor" : "Student";
     const mobileTabs = MOBILE_TABS_BY_ROLE[navRole];
 
     const handleLogout = async () => {
@@ -370,6 +392,30 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
     }, [location.pathname, navItems]);
 
     const isActive = (item) => item.to === activeNavTo;
+
+    // Restore the sidebar's scroll position after a route change, and make
+    // sure the active link is visible (e.g. when opened directly on a page
+    // whose link sits below the fold).
+    useLayoutEffect(() => {
+        const el = navScrollRef.current;
+        if (!el) return;
+        el.scrollTop = savedNavScrollTop;
+        const activeLink = el.querySelector(".ds-nav-link.active");
+        if (activeLink) {
+            // Measure with bounding rects, NOT offsetTop: in the collapsed
+            // icon rail each link sits inside a positioned tooltip wrapper,
+            // so offsetTop is relative to that wrapper (~0) and would
+            // wrongly scroll the sidebar back to the top.
+            const c = el.getBoundingClientRect();
+            const r = activeLink.getBoundingClientRect();
+            if (r.height > 0) {
+                if (r.top < c.top) el.scrollTop += r.top - c.top - 8;
+                else if (r.bottom > c.bottom) el.scrollTop += r.bottom - c.bottom + 8;
+            }
+        }
+        savedNavScrollTop = el.scrollTop;
+        // navItems.length: the role's links can arrive after the first render.
+    }, [navItems.length, railCollapsed]);
 
     const initials = (user?.name || "?")
         .split(" ")
@@ -531,7 +577,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                         .ds-nav-scroll in the CSS) so it doesn't look like a
                         classic browser scrollbar wedged into the sidebar —
                         scrolling still works via touch/drag/wheel. */}
-                    <div className="ds-nav-scroll">
+                    <div className="ds-nav-scroll" ref={navScrollRef} onScroll={(e) => { savedNavScrollTop = e.currentTarget.scrollTop; }}>
                         <ul className="ds-nav">
                             {navItems.map((item) => {
                                 const Icon = item.icon;
@@ -754,14 +800,19 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, children }) => {
                     </header>
 
                     <main className="ds-main">
-                        {(title || actions) && (
+                        {(title || actions || onRefresh) && (
                             <div className="ds-header">
                                 <div className="ds-header-text">
                                     {eyebrow && <span className="ds-eyebrow">{eyebrow}</span>}
                                     {title && <h1 className="ds-title">{title}</h1>}
                                     {subtitle && <p className="ds-subtitle">{subtitle}</p>}
                                 </div>
-                                {actions && <div className="ds-actions">{actions}</div>}
+                                {(actions || onRefresh) && (
+                                    <div className="ds-actions">
+                                        {onRefresh && <RefreshButton onRefresh={onRefresh} loading={refreshing} />}
+                                        {actions}
+                                    </div>
+                                )}
                             </div>
                         )}
 

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Models\Role;
 
 class AdminSeeder extends Seeder
 {
@@ -25,6 +26,20 @@ class AdminSeeder extends Seeder
             return;
         }
 
+        // There is only ever one Admin. Once the real administrator has
+        // changed the email during first-login setup, the .env email no
+        // longer matches any row — without this guard a re-seed would
+        // quietly create a second admin with the old placeholder email.
+        $existingAdmin = Role::where('name', 'admin')->where('guard_name', 'web')->exists()
+            ? User::role('admin')->first()
+            : null;
+
+        if ($existingAdmin && $existingAdmin->email !== $email) {
+            $this->command?->info("An administrator already exists ({$existingAdmin->email}); not creating another.");
+
+            return;
+        }
+
         $admin = User::firstOrCreate(
             ['email' => $email],
             [
@@ -35,11 +50,28 @@ class AdminSeeder extends Seeder
                 'is_active' => true,
                 'email_verified_at' => now(),
                 'profile_picture' => 'profile-pictures/admin-avatar.jpeg',
+                // The seeded account carries the installer's placeholder
+                // details. The school's real administrator completes
+                // SetupAccountPage on first login — Admin ID, name, email,
+                // phone, photo and a new password — before anything else.
+                'must_setup_profile' => true,
             ]
         );
 
-        // Keep the avatar in sync even if the admin row already existed
-        // from a previous seed run.
+        // Re-running the seeder must never overwrite what the real admin
+        // typed in during setup. .env values are only (re)applied while the
+        // account is brand new or still waiting for its first-login setup.
+        if (!$admin->must_setup_profile) {
+            $this->command?->info("Initial administrator already set up: {$email}");
+
+            if (!$admin->hasRole('admin')) {
+                $admin->assignRole('admin');
+            }
+
+            return;
+        }
+
+        // Keep the avatar in sync while setup is still pending.
         if ($admin->profile_picture !== 'profile-pictures/admin-avatar.jpeg') {
             $admin->update(['profile_picture' => 'profile-pictures/admin-avatar.jpeg']);
         }

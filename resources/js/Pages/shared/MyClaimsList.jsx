@@ -35,14 +35,16 @@ export default function MyClaimsList() {
         document.title = "Claims | SCLF - Opol Community College";
     }, []);
 
-    useEffect(() => {
+    const load = () => {
         setLoading(true);
         setError('');
         axios.get('/claims', { params: status ? { status } : {} })
             .then(res => setClaims(res.data.data))
             .catch(() => setError('Could not load claims.'))
             .finally(() => setLoading(false));
-    }, [status]);
+    };
+
+    useEffect(load, [status]);
 
     const handleDelete = async (e, claim) => {
         e.preventDefault();
@@ -70,7 +72,7 @@ export default function MyClaimsList() {
     };
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={() => load()} refreshing={loading}
             eyebrow="Lost & Found"
             title={isStaff ? 'All Claims' : 'My Claims'}
             subtitle={isStaff ? 'Every claim submitted campus-wide.' : 'Track the status of items you\'ve claimed.'}

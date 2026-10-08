@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 /**
  * Approval requests between the single admin and staff accounts.
  *
- *  - staff:  file a request, see their own, cancel a pending one
+ *  - staff:  file a request, cancel a pending one (the admin is notified of both)
  *  - admin:  see every request, set it to pending / approved / rejected
  */
 class ActionRequestController extends Controller
@@ -101,7 +101,7 @@ class ActionRequestController extends Controller
         abort_unless($actionRequest->requester_id === $request->user()->id, 403);
         abort_unless($actionRequest->status === ActionRequest::STATUS_PENDING, 422, 'Only pending requests can be withdrawn.');
 
-        $actionRequest->delete();
+        $this->approvals->withdraw($actionRequest, $request->user());
 
         return response()->json(['success' => true, 'message' => 'Request withdrawn.']);
     }

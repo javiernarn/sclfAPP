@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import { useAuth } from '../../context/AuthContext';
 
 const levelBadge = (level) => {
     const map = {
@@ -16,6 +17,11 @@ const levelBadge = (level) => {
 export default function LostItemMatches() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { roles } = useAuth();
+    // Security / admin / staff open this page from a "new lost report"
+    // notification to review candidates — they are not the owner, so no
+    // "View & Claim" / "Not mine"; the Matches queue is where they act.
+    const isHandler = ['security_officer', 'admin', 'staff'].some((r) => roles?.includes(r));
     const [matches, setMatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -54,14 +60,20 @@ export default function LostItemMatches() {
         <DashboardShell
             eyebrow="Lost & Found"
             title="Potential Matches"
-            subtitle="Our matching engine flags candidates by rule-based scoring. Security still verifies ownership before anything is released."
+            subtitle={isHandler
+                ? 'Candidates the matching engine flagged for this lost report. Act on them from the Matches queue.'
+                : 'Our matching engine flags candidates by rule-based scoring. Security still verifies ownership before anything is released.'}
         >
             <div className="ds-card">
                 {error && <div className="ds-error">{error}</div>}
                 {loading && (<><div className="ds-skeleton" /><div className="ds-skeleton" /></>)}
 
                 {!loading && matches.length === 0 && (
-                    <div className="ds-empty">No potential matches yet. We'll notify you as soon as one turns up.</div>
+                    <div className="ds-empty">
+                        {isHandler
+                            ? 'No candidates for this report yet. They appear here as soon as a matching found item is stored.'
+                            : "No potential matches yet. We'll notify you as soon as one turns up."}
+                    </div>
                 )}
 
                 {!loading && matches.length > 0 && (
@@ -75,16 +87,29 @@ export default function LostItemMatches() {
                                         {' · '}Score {m.score}/100
                                     </p>
                                     <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                                        <Link to={`/app/found-items/${m.found_item_id}`} className="ds-btn ds-btn-primary">
-                                            View & Claim
-                                        </Link>
-                                        <button
-                                            className="ds-btn ds-btn-secondary"
-                                            onClick={() => dismiss(m.id)}
-                                            disabled={dismissingId === m.id}
-                                        >
-                                            {dismissingId === m.id ? 'Dismissing…' : 'Not mine'}
-                                        </button>
+                                        {isHandler ? (
+                                            <>
+                                                <Link to={`/app/found-items/${m.found_item_id}`} className="ds-btn ds-btn-secondary">
+                                                    View found item
+                                                </Link>
+                                                <Link to="/app/security/matches" className="ds-btn ds-btn-primary">
+                                                    Open Matches queue
+                                                </Link>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Link to={`/app/found-items/${m.found_item_id}`} className="ds-btn ds-btn-primary">
+                                                    View & Claim
+                                                </Link>
+                                                <button
+                                                    className="ds-btn ds-btn-secondary"
+                                                    onClick={() => dismiss(m.id)}
+                                                    disabled={dismissingId === m.id}
+                                                >
+                                                    {dismissingId === m.id ? 'Dismissing…' : 'Not mine'}
+                                                </button>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                                 <span className={levelBadge(m.match_level)}>{m.match_level.replace('_', ' ')}</span>

@@ -19,6 +19,7 @@ import {
     PackageCheck,
     Hourglass,
     Activity,
+    RefreshCw,
 } from '../../Components/icons';
 import { KpiCard, ChartCard, DonutChart, RankedBars, LiveBadge, usePolling } from '../../Components/charts';
 
@@ -221,9 +222,14 @@ function QueuePanel({ counter, toast }) {
         <div className="ds-card" style={{ marginTop: -8 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
                 <h4 style={{ margin: 0 }}>Queue at {counter.label || counter.code}</h4>
-                <button type="button" className="ds-btn ds-btn-primary ds-btn-sm" onClick={callNext}>
-                    <PhoneCall size={14} /> Call next
-                </button>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={() => load()} disabled={loading} title="Reload the latest queue">
+                        <RefreshCw size={14} className={loading ? 'ds-spin' : ''} /> {loading ? 'Refreshing…' : 'Refresh'}
+                    </button>
+                    <button type="button" className="ds-btn ds-btn-primary ds-btn-sm" onClick={callNext}>
+                        <PhoneCall size={14} /> Call next
+                    </button>
+                </div>
             </div>
 
             <form onSubmit={addWalkIn} style={{ marginBottom: 16, paddingBottom: 16, borderBottom: '1px solid var(--border, #e5e5e5)' }}>
@@ -392,7 +398,7 @@ export default function SecurityCounterDashboard() {
     }, [displayCounters]);
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={refresh}
             eyebrow="Security"
             title="Counter Dashboard"
             subtitle="Live status for every counter you can operate: who's on shift, today's activity, and the walk-in queue."

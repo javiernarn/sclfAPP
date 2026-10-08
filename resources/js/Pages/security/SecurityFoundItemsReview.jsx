@@ -39,7 +39,7 @@ export default function SecurityFoundItemsReview() {
     };
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={() => load()} refreshing={loading}
             eyebrow="Security"
             title="Found Item Reviews"
             subtitle="Verify incoming found-item reports before they're stored and matched."

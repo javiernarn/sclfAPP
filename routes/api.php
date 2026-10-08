@@ -189,6 +189,11 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     Route::middleware('role:security_officer,admin,staff')->group(function () {
         Route::post('/found-items/{foundItem}/verify', [FoundItemController::class, 'verify']);
 
+        // Lost & found match queue — the handlers' (security / admin / staff)
+        // view of every pairing the matching engine recorded.
+        Route::get('/matches', [MatchController::class, 'index']);
+        Route::post('/matches/{match}/notify-owner', [MatchController::class, 'notifyOwner']);
+
         Route::get('/storage-locations', [StorageLocationController::class, 'index']);
         Route::post('/storage-locations', [StorageLocationController::class, 'store']);
         Route::patch('/storage-locations/{storageLocation}/capacity', [StorageLocationController::class, 'updateCapacity']);
@@ -312,8 +317,9 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     });
 
     // --- Approval requests (staff files them, admin reviews them) ---
+    // Only the admin can open the request list; staff can no longer view it.
+    Route::middleware('role:admin')->get('/action-requests', [ActionRequestController::class, 'index']);
     Route::middleware('role:admin,staff')->group(function () {
-        Route::get('/action-requests', [ActionRequestController::class, 'index']);
         Route::post('/action-requests', [ActionRequestController::class, 'store']);
         Route::delete('/action-requests/{actionRequest}', [ActionRequestController::class, 'cancel']);
     });

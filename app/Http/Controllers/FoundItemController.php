@@ -79,6 +79,14 @@ class FoundItemController extends Controller
 
         $this->audit->log('found_item.created', $item, "Found item #{$item->id} reported.");
 
+        // Security / admin / staff need to know a found report is waiting
+        // for review. A notification failure must never lose the report.
+        try {
+            app(\App\Services\Notifications\LostFoundHandlerNotifier::class)->foundReported($item);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Found item report submitted. It will be reviewed by Security.',

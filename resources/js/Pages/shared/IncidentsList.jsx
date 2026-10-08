@@ -74,7 +74,7 @@ export default function IncidentsList() {
     useEffect(load, [status, severity]);
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={() => load()} refreshing={loading}
             eyebrow="Security"
             title={isStaff ? 'Security Incidents' : 'My Incident Reports'}
             subtitle={isStaff

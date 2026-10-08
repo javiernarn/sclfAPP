@@ -14,7 +14,12 @@ function ProtectedRoute({ children, requiredRoles }) {
     const location = useLocation();
 
     if (loading) return <MainPage />;
-    if (!user) return <Navigate to="/login" replace />;
+    if (!user) {
+        // Keep where they were headed (e.g. a tapped push notification) so
+        // login can send them straight back there.
+        const dest = location.pathname + location.search;
+        return <Navigate to={`/login?redirect=${encodeURIComponent(dest)}`} replace />;
+    }
 
     // Admin-created staff accounts (instructor/security_officer/admin)
     // must finish SetupAccountPage — their own password/photo/name —
@@ -27,7 +32,17 @@ function ProtectedRoute({ children, requiredRoles }) {
     }
 
     if (requiredRoles && !requiredRoles.some((r) => roles.includes(r))) {
-        return <Navigate to="/app/dashboard" replace />;
+        // Send them to THEIR own home, not a generic dashboard — otherwise a
+        // staff/security account that hits a page it can't open lands on
+        // the Student Portal.
+        const home = roles.includes('admin') || roles.includes('staff')
+            ? '/app/admin/dashboard'
+            : roles.includes('security_officer')
+                ? '/app/security/dashboard'
+                : (roles.includes('student') || roles.includes('instructor'))
+                    ? '/app/dashboard'
+                    : '/app/profile'; // no known role: a page every account can open (avoids a redirect loop)
+        return <Navigate to={home} replace />;
     }
 
     return children;
@@ -70,7 +85,11 @@ export default function RootApp() {
                 <Route path={SETUP_PATH} element={<SetupRoute><SetupAccountPage /></SetupRoute>} />
 
                 {studentRoutes.map(({ path, component: Component }) => (
-                    <Route key={path} path={path} element={<ProtectedRoute><Component /></ProtectedRoute>} />
+                    <Route key={path} path={path} element={
+                        // The personal dashboard is the Student/Instructor home only;
+                        // admin, staff and security each have their own.
+                        <ProtectedRoute requiredRoles={path === '/app/dashboard' ? ['student', 'instructor'] : undefined}><Component /></ProtectedRoute>
+                    } />
                 ))}
 
                 {securityRoutes.map(({ path, component: Component }) => (
@@ -81,7 +100,8 @@ export default function RootApp() {
 
                 {adminRoutes.map(({ path, component: Component }) => (
                     <Route key={path} path={path} element={
-                        <ProtectedRoute requiredRoles={['admin', 'staff']}><Component /></ProtectedRoute>
+                        // Staff Requests is the admin's review queue — staff can't open it.
+                        <ProtectedRoute requiredRoles={path === '/app/admin/requests' ? ['admin'] : ['admin', 'staff']}><Component /></ProtectedRoute>
                     } />
                 ))}
 

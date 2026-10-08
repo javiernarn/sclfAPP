@@ -5,8 +5,13 @@ import { useToast } from '../../context/ToastContext';
 import {
     filterNameInput,
     filterPhoneInput,
+    filterStaffIdInput,
+    normalizeEmailInput,
     isValidPhone,
+    isValidStaffId,
+    isValidEmail,
     FORMAT_ERRORS,
+    FORMAT_HINTS,
 } from '../../utils/validators';
 import AuthShell, {
     LedgerRow,
@@ -21,7 +26,7 @@ import AuthShell, {
     LedgerButton,
     LedgerGhostButton,
 } from '../../Components/shared/AuthShell';
-import { User, Phone, VenetianMask, Lock, Camera, Check } from '../../Components/icons';
+import { User, Phone, VenetianMask, Lock, Camera, Check, IdCard, Mail, MapPin } from '../../Components/icons';
 
 const GENDER_OPTIONS = [
     { value: '', label: 'Prefer not to say / skip' },
@@ -38,9 +43,20 @@ const ROLE_LABELS = {
     instructor: 'Instructor',
 };
 
+// What the ID number is called for each role on this form.
+const ID_LABELS = {
+    admin: 'Admin ID',
+    staff: 'Staff ID',
+    security_officer: 'Security Officer ID',
+    instructor: 'Instructor ID',
+};
+
 const INITIAL_FORM = {
     first_name: '',
     last_name: '',
+    staff_id: '',
+    email: '',
+    address: '',
     phone_number: '',
     gender: '',
     password: '',
@@ -51,22 +67,26 @@ const INITIAL_FORM = {
 // since setup has fewer fields than registration. Each step's copy is
 // generated with the account's role folded in (see buildStepMeta) so the
 // rail still reads as tailored to "you", not a generic wizard.
-const buildStepMeta = (roleLabel) => [
+const buildStepMeta = (roleLabel, idLabel, isAdmin) => [
     {
         key: 'identity',
         label: 'Identity',
         title: <>Welcome — let's confirm <span className="accent">you</span></>,
-        subtitle: `An administrator created this ${roleLabel} account. Start with your photo and name.`,
+        subtitle: `This ${roleLabel} account was set up for you. Add your photo, name and your own ${idLabel}.`,
         railHeadline: 'One last entry before you\u2019re in.',
-        railNote: 'Whatever you set across this form — photo, name, password — replaces what the administrator entered when creating your account.',
+        railNote: `Whatever you set across this form — photo, name, ${idLabel}, password — replaces the placeholder details entered when the account was created.`,
     },
     {
         key: 'contact',
         label: 'Contact',
         title: <>How can we <span className="accent">reach you</span></>,
-        subtitle: 'Optional, but helps staff and notifications reach the right person.',
+        subtitle: isAdmin
+            ? 'Use your own email address — it is what you will sign in with. Phone, gender and address are optional.'
+            : 'Optional, but helps staff and notifications reach the right person.',
         railHeadline: 'Stay reachable on campus.',
-        railNote: 'Your phone number and gender are optional here and can always be updated later from your profile.',
+        railNote: isAdmin
+            ? 'This replaces the placeholder email the system was installed with. Phone, gender and address are optional and can be updated later from your profile.'
+            : 'Your phone number, gender and address are optional here and can always be updated later from your profile.',
     },
     {
         key: 'security',
@@ -105,6 +125,11 @@ export default function SetupAccountPage() {
         ...INITIAL_FORM,
         first_name: user?.first_name || '',
         last_name: user?.last_name || '',
+        // Prefilled with the placeholder the system generated (or the
+        // seeded Admin ID) so the person only has to correct it.
+        staff_id: user?.staff_id || '',
+        email: user?.email || '',
+        address: user?.address || '',
         phone_number: user?.phone_number || '',
         gender: user?.gender || '',
     });
@@ -116,8 +141,12 @@ export default function SetupAccountPage() {
     const [banner, setBanner] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const roleLabel = ROLE_LABELS[roles?.find((r) => ROLE_LABELS[r])] || 'Staff';
-    const STEP_META = buildStepMeta(roleLabel);
+    const primaryRole = roles?.find((r) => ROLE_LABELS[r]);
+    const roleLabel = ROLE_LABELS[primaryRole] || 'Staff';
+    const idLabel = ID_LABELS[primaryRole] || 'ID number';
+    // Only the single seeded Admin may replace the email on this form.
+    const isAdmin = !!roles?.includes('admin');
+    const STEP_META = buildStepMeta(roleLabel, idLabel, isAdmin);
     const meta = STEP_META[step - 1];
 
     useEffect(() => {
@@ -147,6 +176,8 @@ export default function SetupAccountPage() {
         let next = value;
         if (name === 'first_name' || name === 'last_name') next = filterNameInput(value);
         if (name === 'phone_number') next = filterPhoneInput(value);
+        if (name === 'staff_id') next = filterStaffIdInput(value);
+        if (name === 'email') next = normalizeEmailInput(value);
         setForm((prev) => ({ ...prev, [name]: next }));
         setFieldErrors((prev) => (prev[name] ? { ...prev, [name]: undefined } : prev));
     };
@@ -206,13 +237,17 @@ export default function SetupAccountPage() {
                 toast.error('Please upload a profile picture so staff can verify you at a glance.', { title: 'Photo required' });
                 return false;
             }
-            if (!form.first_name.trim() || !form.last_name.trim()) {
-                if (!form.first_name.trim()) nextFieldErrors.first_name = 'First name is required.';
-                if (!form.last_name.trim()) nextFieldErrors.last_name = 'Last name is required.';
-            }
+            if (!form.first_name.trim()) nextFieldErrors.first_name = 'First name is required.';
+            if (!form.last_name.trim()) nextFieldErrors.last_name = 'Last name is required.';
+            if (!form.staff_id.trim()) nextFieldErrors.staff_id = `${idLabel} is required.`;
+            else if (!isValidStaffId(form.staff_id)) nextFieldErrors.staff_id = FORMAT_ERRORS.staffId;
         }
 
         if (step === 2) {
+            if (isAdmin) {
+                if (!form.email.trim()) nextFieldErrors.email = 'Email address is required.';
+                else if (!isValidEmail(form.email)) nextFieldErrors.email = FORMAT_ERRORS.genericEmail;
+            }
             if (form.phone_number && !isValidPhone(form.phone_number)) {
                 nextFieldErrors.phone_number = FORMAT_ERRORS.phone;
             }
@@ -252,6 +287,9 @@ export default function SetupAccountPage() {
             const data = new FormData();
             data.append('first_name', form.first_name);
             data.append('last_name', form.last_name);
+            data.append('staff_id', form.staff_id);
+            if (isAdmin) data.append('email', form.email);
+            if (form.address.trim()) data.append('address', form.address.trim());
             if (form.phone_number) data.append('phone_number', form.phone_number);
             if (form.gender) data.append('gender', form.gender);
             data.append('password', form.password);
@@ -274,8 +312,8 @@ export default function SetupAccountPage() {
                 }));
                 // Send them back to whichever step holds the conflicting
                 // field, instead of leaving them stuck on step 3.
-                if (errors.first_name || errors.last_name || errors.profile_picture) setStep(1);
-                else if (errors.phone_number || errors.gender) setStep(2);
+                if (errors.first_name || errors.last_name || errors.staff_id || errors.profile_picture) setStep(1);
+                else if (errors.email || errors.address || errors.phone_number || errors.gender) setStep(2);
             }
             setBanner(
                 (errors && Object.values(errors).flat()[0]) ||
@@ -389,13 +427,52 @@ export default function SetupAccountPage() {
                                     {fieldErrors.last_name && <span className="lg-row-hint lg-row-error-text">{fieldErrors.last_name}</span>}
                                 </div>
                             </LedgerRowPair>
+
+                            <LedgerRow
+                                index={3}
+                                label={<>{idLabel} <span className="lg-required">*</span></>}
+                                icon={IdCard}
+                                hint={!fieldErrors.staff_id ? `${FORMAT_HINTS.staffId} Change the one shown if it isn't yours.` : undefined}
+                                error={fieldErrors.staff_id}
+                            >
+                                <LedgerInput
+                                    name="staff_id"
+                                    value={form.staff_id}
+                                    onChange={handleChange}
+                                    autoComplete="off"
+                                    placeholder="e.g. ADMIN-09874589"
+                                    aria-invalid={!!fieldErrors.staff_id}
+                                    required
+                                />
+                            </LedgerRow>
                         </>
                     )}
 
                     {step === 2 && (
                         <>
+                            {isAdmin && (
+                                <LedgerRow
+                                    index={1}
+                                    label={<>Email address <span className="lg-required">*</span></>}
+                                    icon={Mail}
+                                    hint={!fieldErrors.email ? 'You will sign in with this email from now on.' : undefined}
+                                    error={fieldErrors.email}
+                                >
+                                    <LedgerInput
+                                        type="email"
+                                        name="email"
+                                        value={form.email}
+                                        onChange={handleChange}
+                                        autoComplete="email"
+                                        aria-invalid={!!fieldErrors.email}
+                                        autoFocus
+                                        required
+                                    />
+                                </LedgerRow>
+                            )}
+
                             <LedgerRow
-                                index={1}
+                                index={isAdmin ? 2 : 1}
                                 label="Phone number"
                                 icon={Phone}
                                 hint={!fieldErrors.phone_number ? 'Optional — 09171234567 format.' : undefined}
@@ -409,16 +486,26 @@ export default function SetupAccountPage() {
                                     autoComplete="tel"
                                     placeholder="09XXXXXXXXX"
                                     aria-invalid={!!fieldErrors.phone_number}
-                                    autoFocus
+                                    autoFocus={!isAdmin}
                                 />
                             </LedgerRow>
 
-                            <LedgerRow index={2} label="Gender" icon={VenetianMask} hint="Optional.">
+                            <LedgerRow index={isAdmin ? 3 : 2} label="Gender" icon={VenetianMask} hint="Optional.">
                                 <LedgerSelect name="gender" value={form.gender} onChange={handleChange}>
                                     {GENDER_OPTIONS.map((g) => (
                                         <option key={g.value} value={g.value}>{g.label}</option>
                                     ))}
                                 </LedgerSelect>
+                            </LedgerRow>
+
+                            <LedgerRow index={isAdmin ? 4 : 3} label="Address" icon={MapPin} hint="Optional." error={fieldErrors.address}>
+                                <LedgerInput
+                                    name="address"
+                                    value={form.address}
+                                    onChange={handleChange}
+                                    autoComplete="street-address"
+                                    placeholder="Your current address"
+                                />
                             </LedgerRow>
                         </>
                     )}

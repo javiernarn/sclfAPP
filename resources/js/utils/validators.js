@@ -15,7 +15,18 @@ export const STUDENT_ID_REGEX = /^\d{4}-\d-\d{5}$/;
 // (lowercase letters only in each name segment, dot separated).
 export const SCHOOL_EMAIL_REGEX = /^occ\.[a-z]+\.[a-z]+@gmail\.com$/;
 
+// Staff / security / instructor / admin ID numbers are whatever the school
+// issued (e.g. ADMIN-09874589, SEC-2026-0001, 2019-0042) — letters, digits,
+// dash, dot, underscore and slash, 3-50 characters, mirroring
+// ProfileController::completeSetup().
+export const STAFF_ID_REGEX = /^[A-Za-z0-9][A-Za-z0-9._\/-]{2,49}$/;
+
+// Loose email shape check (admin setup). Students keep the stricter
+// school-email convention above.
+export const GENERIC_EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export const FORMAT_HINTS = {
+    staffId: 'Your school-issued ID number: letters, numbers, dashes, dots or slashes (3-50 characters).',
     phone: 'Philippine mobile number: 11 digits starting with 09, e.g. 09171234567.',
     studentId: 'Format: YYYY-N-NNNNN, e.g. 2021-2-04062.',
     email: 'Format: occ.lastname.firstname@gmail.com (all lowercase).',
@@ -24,6 +35,8 @@ export const FORMAT_HINTS = {
 };
 
 export const FORMAT_ERRORS = {
+    staffId: 'Use 3-50 letters, numbers, dashes, dots or slashes, e.g. ADMIN-09874589.',
+    genericEmail: 'Enter a valid email address.',
     phone: 'Enter a valid Philippine mobile number, e.g. 09171234567.',
     studentId: 'Use the format YYYY-N-NNNNN, e.g. 2021-2-04062.',
     email: 'Use the format occ.lastname.firstname@gmail.com.',
@@ -36,6 +49,8 @@ export const FORMAT_ERRORS = {
 export const isValidPhone = (value) => PH_PHONE_REGEX.test(String(value || '').trim());
 export const isValidStudentId = (value) => STUDENT_ID_REGEX.test(String(value || '').trim());
 export const isValidSchoolEmail = (value) => SCHOOL_EMAIL_REGEX.test(String(value || '').trim().toLowerCase());
+export const isValidStaffId = (value) => STAFF_ID_REGEX.test(String(value || '').trim());
+export const isValidEmail = (value) => GENERIC_EMAIL_REGEX.test(String(value || '').trim());
 export const isNameLike = (value) => /^[a-zA-Z\u00C0-\u017F\s'-]*$/.test(value ?? '');
 export const isDigitsOnly = (value) => /^[0-9]*$/.test(value ?? '');
 
@@ -73,6 +88,9 @@ export const filterStudentIdInput = (value) => {
     return out;
 };
 
+// ID number: uppercase, and drop anything an ID can't contain.
+export const filterStaffIdInput = (value) => String(value || '').toUpperCase().replace(/[^A-Z0-9._/-]/g, '').slice(0, 50);
+
 // Lowercases + strips whitespace as the person types an email — doesn't
 // block anything (emails have too many valid shapes to filter live), but
 // normalizes so "Occ.Delacruz.Juan@Gmail.com " and the lowercase version
@@ -92,6 +110,7 @@ export const filterDigitsInput = (value) => String(value || '').replace(/\D/g, '
 const FIELD_LABELS = {
     email: 'email address',
     student_id: 'student ID',
+    staff_id: 'ID number',
     phone_number: 'phone number',
     name: 'name',
 };

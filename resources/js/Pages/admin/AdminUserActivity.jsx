@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import axios from '../../config/axiosConfig';
 import { Link } from 'react-router-dom';
+import useRoleLabel from '../../hooks/useRoleLabel';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import DeviceIcon from '../../Components/shared/DeviceIcon';
 import ViewToggle from '../../Components/shared/ViewToggle';
@@ -56,6 +57,7 @@ function Pagination({ meta, onPage }) {
 // from where/what device, and does any of it look like spam or abuse",
 // not "what did this account officially do".
 export default function AdminUserActivity() {
+    const { label: roleLabel } = useRoleLabel();
     const toast = useToast();
     const [rows, setRows] = useState([]);
     const [meta, setMeta] = useState(null);
@@ -96,7 +98,7 @@ export default function AdminUserActivity() {
 
     return (
         <DashboardShell
-            eyebrow="Admin"
+            eyebrow={roleLabel || 'Admin'}
             title="User Activity"
             subtitle="Every request hitting the app, with the device and IP address it came from — flagged automatically when the volume looks like spam or abuse rather than normal browsing."
             actions={

@@ -68,7 +68,7 @@ function StatSection({ icon: SectionIcon, iconClass, title, desc, stats, values,
 
 export default function SecurityDashboard() {
     const [days, setDays] = useState(14);
-    const { data, loading, error, updatedAt } = usePolling('/analytics/dashboard', { interval: 12000, params: { days } });
+    const { data, loading, error, updatedAt, refresh } = usePolling('/analytics/dashboard', { interval: 12000, params: { days } });
 
     useEffect(() => {
         document.title = "Security Dashboard | SCLF - Opol Community College";
@@ -80,7 +80,7 @@ export default function SecurityDashboard() {
     const incidentsBySeverity = data?.incidents_by_severity || {};
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={refresh}
             eyebrow="Security"
             title="Security Officer Dashboard"
             subtitle="Found item reports and counter activity, kept separate so it's clear which is which."
@@ -128,7 +128,7 @@ export default function SecurityDashboard() {
                     <div className="ch-kpi-grid">
                         <KpiCard icon={Hourglass} label="Claims Waiting" value={summary.summary?.claims_waiting} color="var(--ch-4)" goodWhen="down" />
                         <KpiCard icon={ShieldAlert} label="Suspicious Claims" value={summary.summary?.suspicious_claims} color="var(--ch-bad)" goodWhen="down" />
-                        <KpiCard icon={PackageCheck} label="Found Items" value={kpi.found?.value} prev={kpi.found?.prev} series={kpi.found?.series} color="var(--ch-2)" hint={`last ${days} days`} />
+                        <KpiCard icon={PackageCheck} label="Found Reports" value={kpi.found?.value} prev={kpi.found?.prev} series={kpi.found?.series} color="var(--ch-2)" hint={`online, last ${days} days`} />
                         <KpiCard icon={Boxes} label="Claims Filed" value={kpi.claims?.value} prev={kpi.claims?.prev} series={kpi.claims?.series} color="var(--ch-3)" hint={`last ${days} days`} />
                     </div>
 
@@ -136,11 +136,12 @@ export default function SecurityDashboard() {
                     <div className="ch-row cols-2-1">
                         <ChartCard
                             title="Intake Trend"
-                            subtitle="Lost reports vs. found items, day by day."
+                            subtitle="Lost reports, online found reports and counter check-ins, day by day."
                             icon={Activity}
                             legend={[
                                 { key: 'lost', label: 'Lost', color: 'var(--ch-1)' },
                                 { key: 'found', label: 'Found', color: 'var(--ch-2)' },
+                                { key: 'counter', label: 'Counter', color: 'var(--ch-4)' },
                             ]}
                         >
                             <AreaChart
@@ -149,6 +150,7 @@ export default function SecurityDashboard() {
                                 series={[
                                     { key: 'lost', label: 'Lost', color: 'var(--ch-1)' },
                                     { key: 'found', label: 'Found', color: 'var(--ch-2)' },
+                                    { key: 'counter', label: 'Counter', color: 'var(--ch-4)' },
                                 ]}
                             />
                         </ChartCard>

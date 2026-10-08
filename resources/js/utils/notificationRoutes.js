@@ -18,6 +18,12 @@ export const NOTIFICATION_ROUTE_FOR_TYPE = {
 // falls back to the Notifications list itself for anything else (or a
 // type not in the map above).
 export function routeForNotification(n) {
+    // A notification can carry its own role-aware deep link (e.g. handlers
+    // are sent to the review queue) — it wins over the per-model route.
+    const link = n?.data?.link;
+    if (typeof link === 'string' && link.startsWith('/app/')) {
+        return link;
+    }
     const relatedType = n?.data?.related_type;
     const relatedId = n?.data?.related_id;
     if (relatedType && relatedId && NOTIFICATION_ROUTE_FOR_TYPE[relatedType]) {

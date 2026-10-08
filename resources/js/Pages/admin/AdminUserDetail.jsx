@@ -7,6 +7,7 @@ import {
     PackageSearch, ClipboardCheck, Ban, Trash2, PackageCheck, QrCode,
     Globe, ShieldAlert, Activity,
 } from '../../Components/icons';
+import useRoleLabel from '../../hooks/useRoleLabel';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ImageViewer from '../../Components/shared/ImageViewer';
 import DeviceIcon from '../../Components/shared/DeviceIcon';
@@ -28,7 +29,8 @@ const ROLE_LABELS = {
     student: 'Student',
     instructor: 'Instructor',
     security_officer: 'Security Officer',
-    admin: 'Staff',
+    staff: 'Staff',
+    admin: 'Admin',
 };
 
 // Only these two actions count as a "sign-in event" for the Login /
@@ -42,6 +44,7 @@ export default function AdminUserDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user: currentUser } = useAuth();
+    const { label: roleLabel } = useRoleLabel();
 
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -132,7 +135,7 @@ export default function AdminUserDetail() {
 
     if (loading) {
         return (
-            <DashboardShell eyebrow="Admin" title="User Details">
+            <DashboardShell eyebrow={roleLabel || 'Admin'} title="User Details">
                 <div className="ds-card"><div className="ds-skeleton" /><div className="ds-skeleton" /></div>
             </DashboardShell>
         );
@@ -140,7 +143,7 @@ export default function AdminUserDetail() {
 
     if (!user) {
         return (
-            <DashboardShell eyebrow="Admin" title="User Details">
+            <DashboardShell eyebrow={roleLabel || 'Admin'} title="User Details">
                 <div className="ds-card"><div className="ds-error">{error || 'Account not found.'}</div></div>
             </DashboardShell>
         );
@@ -148,9 +151,9 @@ export default function AdminUserDetail() {
 
     return (
         <DashboardShell
-            eyebrow="Admin"
+            eyebrow={roleLabel || 'Admin'}
             title={user.name}
-            subtitle="Full profile details and sign-in history — visible to admins only."
+            subtitle="Full profile details and sign-in history — visible to Admin and Staff only."
             actions={
                 <span className="ds-badge ds-badge-default">
                     {ROLE_LABELS[roleName] || 'No role'}

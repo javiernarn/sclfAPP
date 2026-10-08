@@ -82,6 +82,18 @@ class LostItemController extends Controller
 
         $matches = $this->matcher->runForLostItem($lostItem);
 
+        // Tell the lost & found handlers (security / admin / staff) there is
+        // a new report, and — if the engine found real candidates — that
+        // there is a match to review. Failure to notify must never lose
+        // the report itself.
+        try {
+            $handlers = app(\App\Services\Notifications\LostFoundHandlerNotifier::class);
+            $handlers->lostReported($lostItem);
+            $handlers->matchesFound($matches);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
         if (count($matches) > 0) {
             $lostItem->update(['status' => LostItem::STATUS_MATCHED]);
 

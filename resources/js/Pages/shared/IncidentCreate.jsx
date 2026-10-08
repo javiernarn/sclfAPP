@@ -85,6 +85,7 @@ export default function IncidentCreate() {
             toast.success('Your incident report has been submitted.', { title: 'Report filed' });
             navigate(`/app/incidents/${res.data.data.id}`);
         } catch (err) {
+            if (err?.approvalHandled) return; // approval dialog is showing
             const errors = err?.response?.data?.errors;
             const message = errors
                 ? Object.values(errors).flat().join('\n')

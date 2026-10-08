@@ -36,7 +36,7 @@ export default function NotificationsPage() {
 
     const openNotification = async (n) => {
         if (!n.read_at) await markAsRead(n.id);
-        const hasRelated = Boolean(n.data?.related_type && n.data?.related_id);
+        const hasRelated = Boolean((n.data?.related_type && n.data?.related_id) || n.data?.link);
         if (hasRelated) navigate(routeForNotification(n)); else load();
     };
 
@@ -46,7 +46,7 @@ export default function NotificationsPage() {
     };
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={() => load()} refreshing={loading}
             eyebrow="Lost & Found"
             title="Notifications"
             actions={<button className="ds-btn ds-btn-secondary" onClick={markAllRead}>Mark all as read</button>}

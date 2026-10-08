@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import useRoleLabel from '../../hooks/useRoleLabel';
 import { Link } from 'react-router-dom';
 import {
     ClipboardList, Handshake, Users, ShieldCheck, ScrollText,
@@ -20,8 +21,9 @@ const RANGE_OPTIONS = [
 
 export default function AdminDashboard() {
     const { user } = useAuth();
+    const { isStaff, label: roleLabel } = useRoleLabel();
     const [days, setDays] = useState(14);
-    const { data, loading, error, updatedAt } = usePolling('/analytics/dashboard', { interval: 15000, params: { days } });
+    const { data, loading, error, updatedAt, refresh } = usePolling('/analytics/dashboard', { interval: 15000, params: { days } });
 
     useEffect(() => {
         document.title = "Admin Dashboard | SCLF - Opol Community College";
@@ -29,7 +31,7 @@ export default function AdminDashboard() {
 
     if (loading && !data) {
         return (
-            <DashboardShell eyebrow="Admin Portal" title={`Welcome, ${user?.name?.split(' ')[0] || 'Admin'} 👋`} subtitle="Oversee lost & found reports across Opol Community College.">
+            <DashboardShell eyebrow={`${roleLabel || 'Admin'} Portal`} title={`Welcome, ${user?.name?.split(' ')[0] || roleLabel || 'Admin'} 👋`} subtitle="Oversee lost & found reports across Opol Community College.">
                 <DashboardSkeleton statCount={4} cardCount={2} />
             </DashboardShell>
         );
@@ -41,9 +43,9 @@ export default function AdminDashboard() {
     const q = data?.queue || {};
 
     return (
-        <DashboardShell
-            eyebrow="Admin Portal"
-            title={`Welcome, ${user?.name?.split(' ')[0] || 'Admin'} 👋`}
+        <DashboardShell onRefresh={refresh}
+            eyebrow={`${roleLabel || 'Admin'} Portal`}
+            title={`Welcome, ${user?.name?.split(' ')[0] || roleLabel || 'Admin'} 👋`}
             subtitle="Oversee lost & found reports across Opol Community College."
         >
             <div className="ch-toolbar">
@@ -54,7 +56,7 @@ export default function AdminDashboard() {
             {/* ---- Headline KPIs ---- */}
             <div className="ch-kpi-grid">
                 <KpiCard icon={ClipboardList} label="Lost Reports" value={kpi.lost?.value} prev={kpi.lost?.prev} series={kpi.lost?.series} color="var(--ch-1)" hint={`last ${days} days`} />
-                <KpiCard icon={PackageSearch} label="Found Items" value={kpi.found?.value} prev={kpi.found?.prev} series={kpi.found?.series} color="var(--ch-2)" hint={`last ${days} days`} />
+                <KpiCard icon={PackageSearch} label="Found Reports" value={kpi.found?.value} prev={kpi.found?.prev} series={kpi.found?.series} color="var(--ch-2)" hint={`online, last ${days} days`} />
                 <KpiCard icon={Handshake} label="Claims Filed" value={kpi.claims?.value} prev={kpi.claims?.prev} series={kpi.claims?.series} color="var(--ch-3)" hint={`last ${days} days`} />
                 <KpiCard icon={CircleCheck} label="Items Recovered" value={kpi.recovered?.value} prev={kpi.recovered?.prev} series={kpi.recovered?.series} color="var(--ch-good)" hint={`last ${days} days`} />
             </div>
@@ -63,11 +65,12 @@ export default function AdminDashboard() {
             <div className="ch-row cols-2-1">
                 <ChartCard
                     title="Activity Trend"
-                    subtitle="Lost reports, found items and claims filed, day by day."
+                    subtitle="Lost reports, online found reports, counter check-ins and claims filed, day by day."
                     icon={Activity}
                     legend={[
                         { key: 'lost', label: 'Lost', color: 'var(--ch-1)' },
                         { key: 'found', label: 'Found', color: 'var(--ch-2)' },
+                        { key: 'counter', label: 'Counter', color: 'var(--ch-4)' },
                         { key: 'claims', label: 'Claims', color: 'var(--ch-3)' },
                     ]}
                 >
@@ -77,6 +80,7 @@ export default function AdminDashboard() {
                         series={[
                             { key: 'lost', label: 'Lost', color: 'var(--ch-1)' },
                             { key: 'found', label: 'Found', color: 'var(--ch-2)' },
+                            { key: 'counter', label: 'Counter', color: 'var(--ch-4)' },
                             { key: 'claims', label: 'Claims', color: 'var(--ch-3)' },
                         ]}
                     />
@@ -155,9 +159,9 @@ export default function AdminDashboard() {
             </div>
 
             <div className="ds-card">
-                <div className="ds-card-title ds-card-title-icon"><ShieldCheck size={18} strokeWidth={2} /> This page is admin-only</div>
+                <div className="ds-card-title ds-card-title-icon"><ShieldCheck size={18} strokeWidth={2} /> {isStaff ? 'This page is for Admin and Staff' : 'This page is admin-only'}</div>
                 <p className="ds-card-desc" style={{ marginBottom: 0 }}>
-                    You're signed in as <strong>{user?.email}</strong> with administrator access.
+                    You're signed in as <strong>{user?.email}</strong> {isStaff ? 'with staff access — you can view everything, but changes need the admin\'s approval.' : 'with administrator access.'}
                 </p>
             </div>
         </DashboardShell>

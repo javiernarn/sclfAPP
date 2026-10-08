@@ -155,6 +155,32 @@ instance.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        if (statusCode === 403 && error.response?.data?.code === 'approval_required') {
+            // Staff account: not an error to shout about — offer to ask the admin.
+            let payload = null;
+            try {
+                const raw = originalRequest?.data;
+                if (typeof raw === 'string') payload = JSON.parse(raw);
+                else if (typeof FormData !== 'undefined' && raw instanceof FormData) {
+                    payload = {};
+                    raw.forEach((v, k) => { if (typeof v === 'string') payload[k] = v; });
+                }
+            } catch { /* body wasn't JSON — the admin just won't get a preview */ }
+
+            // Multipart edits are sent as POST with a spoofed _method=PUT/PATCH/DELETE;
+            // the server routes on the spoofed verb, so the request must record that one.
+            const spoofed = payload && typeof payload._method === 'string' ? payload._method.toUpperCase() : null;
+            if (payload) delete payload._method;
+
+            requestApproval({
+                method: spoofed || (originalRequest?.method || 'post').toUpperCase(),
+                path: 'api/' + String(originalRequest?.url || '').replace(/^\/+/, '').split('?')[0],
+                payload,
+            });
+            error.approvalHandled = true;
+            return Promise.reject(error);
+        }
+
         // Everything below this line is toast-popup noise, not session
         // recovery — this is the one place `silent` is meant to apply.
         if (error.config?.silent) {
@@ -168,26 +194,6 @@ instance.interceptors.response.use(
                 type: 'error',
                 title: messages.length > 1 ? 'Please check the highlighted fields' : 'Something needs your attention',
                 message: messages.join('\n'),
-            });
-            return Promise.reject(error);
-        }
-
-        if (statusCode === 403 && error.response?.data?.code === 'approval_required') {
-            // Staff account: not an error to shout about — offer to ask the admin.
-            let payload = null;
-            try {
-                const raw = originalRequest?.data;
-                if (typeof raw === 'string') payload = JSON.parse(raw);
-                else if (typeof FormData !== 'undefined' && raw instanceof FormData) {
-                    payload = {};
-                    raw.forEach((v, k) => { if (typeof v === 'string') payload[k] = v; });
-                }
-            } catch { /* body wasn't JSON — the admin just won't get a preview */ }
-
-            requestApproval({
-                method: (originalRequest?.method || 'post').toUpperCase(),
-                path: 'api/' + String(originalRequest?.url || '').replace(/^\/+/, '').split('?')[0],
-                payload,
             });
             return Promise.reject(error);
         }

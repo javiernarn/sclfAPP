@@ -41,36 +41,7 @@ import {
     Check,
     Info,
 } from '../../Components/icons';
-
-// Grouped by department/college so the dropdown reads the way the
-// school's own catalog does — CTE / CIT / CBA — instead of one flat,
-// unlabeled list of programs. Each group's label is the college name;
-// each option's value is still the plain "CODE — Full name" string
-// RegisterPage has always stored in `course` (and AuthController just
-// validates as free-text — see AuthController::register()), so existing
-// accounts and this dropdown's values stay compatible either way.
-const COURSE_GROUPS = [
-    {
-        college: 'College of Teacher Education (CTE)',
-        courses: [
-            'BEED — Bachelor of Elementary Education',
-            'BSEd — Bachelor of Secondary Education (Major in English)',
-        ],
-    },
-    {
-        college: 'College of Information Technology (CIT)',
-        courses: [
-            'BSIT — Bachelor of Science in Information Technology',
-        ],
-    },
-    {
-        college: 'College of Business Administration (CBA)',
-        courses: [
-            'BSBA — Bachelor of Science in Business Administration (Major in Marketing Management)',
-            'BSBA — Bachelor of Science in Business Administration (Major in Financial Management)',
-        ],
-    },
-];
+import { COURSE_GROUPS } from '../../config/courseGroups';
 
 const INITIAL_FORM = {
     first_name: '',
@@ -192,6 +163,7 @@ export default function RegisterPage() {
         }
 
         setProfileFile(file);
+        setFieldErrors((prev) => (prev.profile_picture ? { ...prev, profile_picture: undefined } : prev));
         const reader = new FileReader();
         reader.onload = () => setProfileImage(reader.result);
         reader.readAsDataURL(file);
@@ -231,16 +203,31 @@ export default function RegisterPage() {
     const validateStep = async () => {
         const nextFieldErrors = {};
 
+        // The form is noValidate (so we control the messages), which also
+        // switches off the browser's own "required" check — every required
+        // field is therefore enforced here. Whitespace-only counts as empty.
+        const isBlank = (v) => !String(v ?? '').trim();
+
         if (step === 1) {
+            if (isBlank(form.first_name)) nextFieldErrors.first_name = 'First name is required.';
+            if (isBlank(form.last_name)) nextFieldErrors.last_name = 'Last name is required.';
             if (!profileFile) {
+                nextFieldErrors.profile_picture = 'Profile picture is required.';
                 toast.error('Please upload a profile picture before continuing.', { title: 'Photo required' });
+            }
+            if (Object.keys(nextFieldErrors).length > 0) {
+                setFieldErrors(nextFieldErrors);
                 return false;
             }
         }
 
         if (step === 2) {
-            if (!isValidSchoolEmail(form.email)) nextFieldErrors.email = FORMAT_ERRORS.email;
-            if (!isValidPhone(form.phone_number)) nextFieldErrors.phone_number = FORMAT_ERRORS.phone;
+            if (isBlank(form.email)) nextFieldErrors.email = 'Email address is required.';
+            else if (!isValidSchoolEmail(form.email)) nextFieldErrors.email = FORMAT_ERRORS.email;
+            if (isBlank(form.phone_number)) nextFieldErrors.phone_number = 'Phone number is required.';
+            else if (!isValidPhone(form.phone_number)) nextFieldErrors.phone_number = FORMAT_ERRORS.phone;
+            if (isBlank(form.gender)) nextFieldErrors.gender = 'Please select your gender.';
+            if (isBlank(form.address)) nextFieldErrors.address = 'Current address is required.';
 
             // Don't bother hitting the network for a field that's already
             // known to be malformed — fix the shape first.
@@ -261,8 +248,11 @@ export default function RegisterPage() {
         }
 
         if (step === 3) {
-            if (!isValidStudentId(form.student_id)) {
-                setFieldErrors({ student_id: FORMAT_ERRORS.studentId });
+            if (isBlank(form.student_id)) nextFieldErrors.student_id = 'Student ID is required.';
+            else if (!isValidStudentId(form.student_id)) nextFieldErrors.student_id = FORMAT_ERRORS.studentId;
+            if (isBlank(form.course)) nextFieldErrors.course = 'Please select your course.';
+            if (Object.keys(nextFieldErrors).length > 0) {
+                setFieldErrors(nextFieldErrors);
                 return false;
             }
 
@@ -298,6 +288,14 @@ export default function RegisterPage() {
         }
 
         // Final step — extra cross-field checks the browser can't do.
+        if (!form.password) {
+            setFieldErrors((prev) => ({ ...prev, password: 'Password is required.' }));
+            return;
+        }
+        if (!form.password_confirmation) {
+            setFieldErrors((prev) => ({ ...prev, password_confirmation: 'Please confirm your password.' }));
+            return;
+        }
         if (!isPasswordValid) {
             setFieldErrors((prev) => ({ ...prev, password: 'Password does not meet the requirements below.' }));
             return;
@@ -350,8 +348,9 @@ export default function RegisterPage() {
                 setFieldErrors(perField);
                 // Send them back to whichever step holds the conflicting
                 // field, instead of leaving them stuck on step 4.
-                if (errors.email || errors.phone_number) setStep(2);
-                else if (errors.student_id) setStep(3);
+                if (errors.first_name || errors.last_name || errors.profile_picture) setStep(1);
+                else if (errors.email || errors.phone_number || errors.gender || errors.address) setStep(2);
+                else if (errors.student_id || errors.course) setStep(3);
             } else {
                 const message = err.response?.data?.message || 'Registration failed.';
                 toast.error(message);
@@ -400,7 +399,7 @@ export default function RegisterPage() {
                 <div key={step} className="rp-step-panel">
                     {step === 1 && (
                         <>
-                            <LedgerRow index={1} label={<>Profile photo <span className="lg-required">*</span></>} icon={Camera}>
+                            <LedgerRow index={1} label={<>Profile photo <span className="lg-required">*</span></>} icon={Camera} error={fieldErrors.profile_picture}>
                                 <div className="lg-avatar-row">
                                     <div className="lg-avatar-frame" onClick={handlePickPhoto} role="button" tabIndex={0} aria-required="true">
                                         {profileImage ? (
@@ -441,9 +440,11 @@ export default function RegisterPage() {
                                         onChange={handleChange}
                                         autoComplete="given-name"
                                         autoFocus
+                                        aria-invalid={!!fieldErrors.first_name}
                                         required
                                         title={FORMAT_HINTS.name}
                                     />
+                                    {fieldErrors.first_name && <span className="lg-row-hint lg-row-error-text">{fieldErrors.first_name}</span>}
                                 </div>
                                 <div>
                                     <label className="lg-row-label"><User size={12} strokeWidth={2.5} /> Last name <span className="lg-required">*</span></label>
@@ -453,9 +454,11 @@ export default function RegisterPage() {
                                         value={form.last_name}
                                         onChange={handleChange}
                                         autoComplete="family-name"
+                                        aria-invalid={!!fieldErrors.last_name}
                                         required
                                         title={FORMAT_HINTS.name}
                                     />
+                                    {fieldErrors.last_name && <span className="lg-row-hint lg-row-error-text">{fieldErrors.last_name}</span>}
                                 </div>
                             </LedgerRowPair>
                         </>
@@ -516,10 +519,11 @@ export default function RegisterPage() {
                                             </label>
                                         ))}
                                     </div>
+                                    {fieldErrors.gender && <span className="lg-row-hint lg-row-error-text">{fieldErrors.gender}</span>}
                                 </div>
                             </LedgerRowPair>
 
-                            <LedgerRow index={3} label={<>Current address <span className="lg-required">*</span></>} icon={MapPin}>
+                            <LedgerRow index={3} label={<>Current address <span className="lg-required">*</span></>} icon={MapPin} error={fieldErrors.address}>
                                 <LedgerInput
                                     id="address"
                                     name="address"
@@ -527,6 +531,7 @@ export default function RegisterPage() {
                                     onChange={handleChange}
                                     autoComplete="street-address"
                                     placeholder="Enter your complete address"
+                                    aria-invalid={!!fieldErrors.address}
                                     required
                                 />
                             </LedgerRow>
@@ -553,7 +558,7 @@ export default function RegisterPage() {
                             </div>
                             <div>
                                 <label className="lg-row-label"><GraduationCap size={12} strokeWidth={2.5} /> Course <span className="lg-required">*</span></label>
-                                <LedgerSelect id="course" name="course" value={form.course} onChange={handleChange} required>
+                                <LedgerSelect id="course" name="course" value={form.course} onChange={handleChange} aria-invalid={!!fieldErrors.course} required>
                                     <option value="" disabled>Select your course</option>
                                     {COURSE_GROUPS.map((group) => (
                                         <optgroup key={group.college} label={group.college}>
@@ -563,6 +568,7 @@ export default function RegisterPage() {
                                         </optgroup>
                                     ))}
                                 </LedgerSelect>
+                                {fieldErrors.course && <span className="lg-row-hint lg-row-error-text">{fieldErrors.course}</span>}
                             </div>
                         </LedgerRowPair>
                     )}

@@ -50,6 +50,10 @@ class RequireStaffApproval
             ], 403);
         }
 
+        if ($mismatch = $this->approvals->lockedFieldMismatch($approval, $request)) {
+            return response()->json(['code' => 'approval_mismatch', 'message' => $mismatch], 403);
+        }
+
         $response = $next($request);
 
         // Only spend the approval if the action really went through — a

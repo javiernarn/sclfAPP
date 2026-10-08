@@ -80,6 +80,7 @@ export default function FoundItemCreate() {
             toast.success('Thank you — your found item report has been submitted for verification.', { title: 'Report filed' });
             navigate('/app/found-items');
         } catch (err) {
+            if (err?.approvalHandled) return; // approval dialog is showing
             const errors = err?.response?.data?.errors;
             const message = errors
                 ? Object.values(errors).flat().join('\n')

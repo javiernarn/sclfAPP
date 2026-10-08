@@ -34,6 +34,22 @@ class User extends Authenticatable
     ];
 
     /**
+     * Who works the lost & found desk. The Security Officer is the hands-on
+     * handler (verifies found reports, reviews matches and claims, releases
+     * items); the Admin oversees and can do everything; Staff can see the
+     * same screens read-only (writes need admin approval, see
+     * RequireStaffApproval). See LOST_FOUND_NOTIFIED_ROLES for who gets alerts.
+     */
+    public const LOST_FOUND_HANDLER_ROLES = ['security_officer', 'admin', 'staff'];
+
+    /**
+     * The subset of handlers who get a notification-bell alert when
+     * something is reported. The Admin is deliberately left out so the bell
+     * isn't flooded — they can still open the queues and act on them.
+     */
+    public const LOST_FOUND_NOTIFIED_ROLES = ['security_officer', 'staff'];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -179,6 +195,31 @@ class User extends Authenticatable
      * frontend Profile page and Admin user list so each role only
      * ever sees "its own" ID field instead of every field at once.
      */
+    /**
+     * Active accounts that handle lost & found reports and matches.
+     *
+     * Security officers tied to a campus are only included for reports on
+     * that campus (or reports with no campus); officers with no campus, the
+     * Admin and Staff see everything — same rule as User::canOperateInCampus().
+     */
+    public function scopeLostFoundHandlers($query, ?int $campusId = null, ?int $exceptUserId = null)
+    {
+        return $query
+            ->where('users.is_active', true)
+            ->role(self::LOST_FOUND_NOTIFIED_ROLES)
+            ->when($exceptUserId, fn ($q) => $q->where('users.id', '!=', $exceptUserId))
+            // A report with no campus reaches every handler. A report on a
+            // campus reaches Staff, officers with no campus, and
+            // officers assigned to that campus.
+            ->when($campusId, function ($q) use ($campusId) {
+                $q->where(function ($w) use ($campusId) {
+                    $w->whereHas('roles', fn ($r) => $r->whereIn('name', ['staff']))
+                        ->orWhereNull('users.campus_id')
+                        ->orWhere('users.campus_id', $campusId);
+                });
+            });
+    }
+
     public function getDisplayIdAttribute(): ?string
     {
         return $this->student_id ?: $this->staff_id;

@@ -34,15 +34,19 @@ export default function LostItemsList() {
         document.title = "Lost Items | SCLF - Opol Community College";
     }, []);
 
-    useEffect(() => {
+    const load = () => {
+        setLoading(true);
+        setError('');
         axios.get('/lost-items')
             .then(res => setItems(res.data.data))
             .catch(() => setError('Could not load lost items right now.'))
             .finally(() => setLoading(false));
-    }, []);
+    };
+
+    useEffect(load, []);
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={() => load()} refreshing={loading}
             eyebrow="Lost & Found"
             title="Lost Items"
             subtitle="Everything the community has reported lost around campus."

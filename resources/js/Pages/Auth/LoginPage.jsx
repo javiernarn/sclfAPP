@@ -32,7 +32,7 @@ export default function LoginPage() {
     // it's scoped to server-side (see RequireFullAccess middleware).
     const [twoFactorChallenge, setTwoFactorChallenge] = useState(null); // { tempToken } | null
     const [code, setCode] = useState('');
-    const { login, verifyTwoFactor } = useAuth();
+    const { login, verifyTwoFactor, user: currentUser, loading: authLoading } = useAuth();
     const toast = useToast();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -46,6 +46,16 @@ export default function LoginPage() {
     // built server-side in SclfNotification::actionUrl()), but validated
     // again here regardless before it's trusted.
     const redirectParam = searchParams.get('redirect');
+    // Id of the account the notification (email link) was sent to.
+    const uidParam = searchParams.get('uid');
+
+    // Already signed in and opened an emailed link: go straight to the page,
+    // but only if the link was meant for this account.
+    useEffect(() => {
+        if (authLoading || !currentUser || !redirectParam || !/^\/(?!\/)/.test(redirectParam)) return;
+        if (uidParam && String(currentUser.id) !== String(uidParam)) return; // someone else's link: show login
+        navigate(redirectParam, { replace: true });
+    }, [authLoading, currentUser, redirectParam, uidParam, navigate]);
 
     useEffect(() => {
         document.title = 'Login | SCLF - Opol Community College';
@@ -85,6 +95,8 @@ export default function LoginPage() {
             // the three known routes below.
             if (redirectParam && /^\/(?!\/)/.test(redirectParam)) {
                 window.sessionStorage.setItem('sclf-post-login-redirect', redirectParam);
+                if (uidParam) window.sessionStorage.setItem('sclf-post-login-uid', uidParam);
+                else window.sessionStorage.removeItem('sclf-post-login-uid');
             }
         } catch (e) {
             // ignore storage errors (private mode etc.) — worst case

@@ -76,6 +76,7 @@ export default function ServiceRequestCreate() {
             toast.success('Your service request has been submitted.', { title: 'Request filed' });
             navigate(`/app/service-requests/${res.data.data.id}`);
         } catch (err) {
+            if (err?.approvalHandled) return; // approval dialog is showing
             const errors = err?.response?.data?.errors;
             const message = errors
                 ? Object.values(errors).flat().join('\n')

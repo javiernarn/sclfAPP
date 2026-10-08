@@ -51,7 +51,15 @@ class InventoryService
             ));
 
             if ($approved) {
-                $this->matcher->runForFoundItem($item->fresh());
+                $matches = $this->matcher->runForFoundItem($item->fresh());
+
+                // The found item is now in the pool — let the handlers know
+                // if it lines up with anything already reported lost.
+                try {
+                    app(\App\Services\Notifications\LostFoundHandlerNotifier::class)->matchesFound($matches);
+                } catch (\Throwable $e) {
+                    report($e);
+                }
             }
 
             return $item->fresh();

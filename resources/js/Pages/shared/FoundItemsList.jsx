@@ -84,7 +84,7 @@ export default function FoundItemsList() {
     }, [q]);
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={() => load(q, { initial: true })} refreshing={loading || searching}
             eyebrow="Lost & Found"
             title="Found Items"
             subtitle="Verified items currently being held by Security, ready to be matched with an owner."

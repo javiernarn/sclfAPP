@@ -140,7 +140,7 @@ class StaffApprovalTest extends TestCase
         $this->actingWithToken($staff)->patchJson("/api/admin/action-requests/{$id}", ['status' => 'approved'])->assertStatus(403);
         $this->actingWithToken($other)->patchJson("/api/admin/action-requests/{$id}", ['status' => 'approved'])->assertStatus(403);
 
-        $this->actingWithToken($other)->getJson('/api/action-requests')->assertOk()->assertJsonCount(0, 'data');
+        $this->actingWithToken($other)->getJson('/api/action-requests')->assertStatus(403);
         $this->actingWithToken($admin)->getJson('/api/action-requests')->assertOk()->assertJsonCount(1, 'data');
     }
 
@@ -226,5 +226,169 @@ class StaffApprovalTest extends TestCase
             'App\\Models\\ActionRequest',
             $admin->notifications()->where('data->type', 'staff_request_submitted')->first()->data['related_type']
         );
+    }
+
+    /** Notifications created in the same second tie on created_at, so look them up by type. */
+    private function notificationOfType(User $user, string $type)
+    {
+        return $user->notifications()->where('data->type', $type)->first();
+    }
+
+    public function test_staff_cannot_manage_other_staff_or_hand_out_the_staff_role(): void
+    {
+        $staff = $this->userWithRole('staff');
+        $otherStaff = $this->userWithRole('staff');
+        $instructor = $this->userWithRole('instructor');
+
+        // Exempt from the approval gate on purpose: these must fail on role
+        // rules alone, even if an approval existed.
+        $this->actingWithToken($staff)->getJson('/api/admin/users')->assertOk();
+
+        $admin = $this->userWithRole('admin');
+        foreach ([['DELETE', $otherStaff], ['PUT', $instructor]] as [$method, $target]) {
+            $path = "api/admin/users/{$target->id}";
+            $id = $this->actingWithToken($staff)->postJson('/api/action-requests', [
+                'method' => $method, 'path' => $path, 'reason' => 'x y z',
+                'payload' => ['role' => 'staff'],
+            ])->json('data.id');
+            $this->actingWithToken($admin)->patchJson("/api/admin/action-requests/{$id}", ['status' => 'approved'])->assertOk();
+        }
+
+        $this->actingWithToken($staff)->deleteJson("/api/admin/users/{$otherStaff->id}")->assertStatus(403);
+        $this->assertTrue($otherStaff->fresh()->is_active);
+
+        $this->actingWithToken($staff)->putJson("/api/admin/users/{$instructor->id}", ['role' => 'staff'])->assertStatus(403);
+        $this->assertFalse($instructor->fresh()->hasRole('staff'));
+    }
+
+    public function test_admin_bell_hears_about_staff_requests_and_withdrawals(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $staff = $this->userWithRole('staff');
+
+        $id = $this->actingWithToken($staff)->postJson('/api/action-requests', [
+            'method' => 'POST', 'path' => 'api/admin/users', 'reason' => 'need a new instructor',
+            'payload' => ['role' => 'instructor'],
+        ])->assertCreated()->json('data.id');
+
+        $note = $this->notificationOfType($admin, 'staff_request_submitted');
+        $this->assertNotNull($note);
+        $this->assertStringContainsString('Create', $note->data['title']);
+
+        $this->actingWithToken($staff)->deleteJson("/api/action-requests/{$id}")->assertOk();
+
+        $withdrawn = $this->notificationOfType($admin, 'staff_request_withdrawn');
+        $this->assertNotNull($withdrawn);
+        $this->assertSame('/app/admin/requests', $withdrawn->data['link']);
+    }
+
+    public function test_staff_create_user_is_blocked_then_allowed_once_after_approval(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $staff = $this->userWithRole('staff');
+
+        $body = [
+            'first_name' => 'Ina', 'last_name' => 'Cruz', 'email' => 'ina.cruz@example.com',
+            'password' => 'password123', 'role' => 'instructor',
+        ];
+
+        $this->actingWithToken($staff)->postJson('/api/admin/users', $body)
+            ->assertStatus(403)->assertJson(['code' => 'approval_required']);
+
+        $id = $this->actingWithToken($staff)->postJson('/api/action-requests', [
+            'method' => 'POST', 'path' => 'api/admin/users', 'reason' => 'new hire',
+            'payload' => ['role' => 'instructor'],
+        ])->json('data.id');
+        $this->actingWithToken($admin)->patchJson("/api/admin/action-requests/{$id}", ['status' => 'approved'])->assertOk();
+
+        $this->actingWithToken($staff)->postJson('/api/admin/users', $body)->assertCreated();
+        $this->assertNotNull($this->notificationOfType($admin, 'staff_request_executed'));
+    }
+
+    public function test_staff_can_confirm_and_reject_matches_without_admin_approval(): void
+    {
+        $staff = $this->userWithRole('staff');
+
+        // Matches are handled by staff directly (no approval_required gate),
+        // so a missing match is a plain 404, never a 403 approval error.
+        foreach (['notify-owner', 'dismiss'] as $action) {
+            $response = $this->actingWithToken($staff)->postJson("/api/matches/999999/{$action}");
+            $response->assertNotFound();
+            $this->assertNotSame('approval_required', $response->json('code'));
+        }
+
+        // And asking the admin for approval on them is pointless.
+        $this->actingWithToken($staff)->postJson('/api/action-requests', [
+            'method' => 'POST', 'path' => 'api/matches/42/dismiss', 'reason' => 'please allow',
+        ])->assertStatus(422);
+    }
+
+    public function test_found_item_review_and_disable_requests_get_readable_summaries_and_notify_the_admin(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $staff = $this->userWithRole('staff');
+        $target = $this->userWithRole('instructor');
+
+        $cases = [
+            ['POST', 'api/found-items/7/verify', 'Review found item report #7'],
+            ['DELETE', "api/admin/users/{$target->id}", "Disable user #{$target->id}"],
+        ];
+
+        foreach ($cases as [$method, $path, $expected]) {
+            $summary = $this->actingWithToken($staff)->postJson('/api/action-requests', [
+                'method' => $method, 'path' => $path, 'reason' => 'please allow',
+            ])->assertCreated()->json('data.summary');
+
+            $this->assertStringContainsString($expected, $summary);
+        }
+
+        $this->assertSame(count($cases), $admin->notifications()->where('data->type', 'staff_request_submitted')->count());
+    }
+
+    public function test_approval_to_create_an_instructor_cannot_create_a_security_officer(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $staff = $this->userWithRole('staff');
+
+        $body = [
+            'first_name' => 'Ina', 'last_name' => 'Cruz', 'email' => 'ina.cruz@example.com',
+            'password' => 'password123', 'role' => 'security_officer',
+        ];
+
+        // Asking without saying which role is refused: the admin must know what they approve.
+        $this->actingWithToken($staff)->postJson('/api/action-requests', [
+            'method' => 'POST', 'path' => 'api/admin/users', 'reason' => 'new hire',
+        ])->assertStatus(422);
+
+        $id = $this->actingWithToken($staff)->postJson('/api/action-requests', [
+            'method' => 'POST', 'path' => 'api/admin/users', 'reason' => 'new hire',
+            'payload' => ['role' => 'instructor'],
+        ])->assertCreated()->json('data.id');
+        $this->actingWithToken($admin)->patchJson("/api/admin/action-requests/{$id}", ['status' => 'approved'])->assertOk();
+
+        // Instructor approval, security officer attempt: refused, and the approval is NOT spent.
+        $this->actingWithToken($staff)->postJson('/api/admin/users', $body)
+            ->assertStatus(403)->assertJson(['code' => 'approval_mismatch']);
+        $this->assertDatabaseMissing('users', ['email' => 'ina.cruz@example.com']);
+        $this->assertSame('approved', ActionRequest::find($id)->status);
+
+        // The approved role still works, exactly once.
+        $this->actingWithToken($staff)->postJson('/api/admin/users', array_merge($body, ['role' => 'instructor']))->assertCreated();
+        $this->assertTrue(User::where('email', 'ina.cruz@example.com')->first()->hasRole('instructor'));
+        $this->assertFalse(User::where('email', 'ina.cruz@example.com')->first()->hasRole('security_officer'));
+    }
+
+    public function test_create_request_summary_names_the_requested_role(): void
+    {
+        $admin = $this->userWithRole('admin');
+        $staff = $this->userWithRole('staff');
+
+        $this->actingWithToken($staff)->postJson('/api/action-requests', [
+            'method' => 'POST', 'path' => 'api/admin/users', 'reason' => 'new hire',
+            'payload' => ['role' => 'instructor'],
+        ])->assertCreated();
+
+        $this->assertStringContainsString('Instructor', ActionRequest::first()->summary);
+        $this->assertStringContainsString('Instructor', $this->notificationOfType($admin, 'staff_request_submitted')->data['message']);
     }
 }

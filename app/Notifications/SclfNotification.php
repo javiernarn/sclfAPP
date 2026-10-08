@@ -38,12 +38,18 @@ class SclfNotification extends Notification
     public const TYPE_SERVICE_REQUEST_COMPLETED = 'service_request_completed';
     public const TYPE_ASSET_ASSIGNED = 'asset_assigned';
 
+    // Sent to the lost & found handlers (see User::LOST_FOUND_HANDLER_ROLES).
+    public const TYPE_LOST_REPORTED = 'lost_reported';
+    public const TYPE_FOUND_REPORTED = 'found_reported';
+    public const TYPE_MATCH_FOR_REVIEW = 'match_for_review';
+
     // Staff <-> Admin approval workflow (see StaffApprovalService).
     public const TYPE_STAFF_REQUEST_SUBMITTED = 'staff_request_submitted';
     public const TYPE_STAFF_REQUEST_APPROVED = 'staff_request_approved';
     public const TYPE_STAFF_REQUEST_REJECTED = 'staff_request_rejected';
     public const TYPE_STAFF_REQUEST_PENDING = 'staff_request_pending';
     public const TYPE_STAFF_REQUEST_EXECUTED = 'staff_request_executed';
+    public const TYPE_STAFF_REQUEST_WITHDRAWN = 'staff_request_withdrawn';
 
     /**
      * Only these two roles get an email copy of their in-app notification.
@@ -78,11 +84,15 @@ class SclfNotification extends Notification
         self::TYPE_SERVICE_REQUEST_SUBMITTED => ['New Service Request', 'info'],
         self::TYPE_SERVICE_REQUEST_COMPLETED => ['Request Completed', 'success'],
         self::TYPE_ASSET_ASSIGNED => ['Asset Assigned', 'info'],
+        self::TYPE_LOST_REPORTED => ['New Lost Report', 'info'],
+        self::TYPE_FOUND_REPORTED => ['Found Item To Review', 'warning'],
+        self::TYPE_MATCH_FOR_REVIEW => ['Match To Review', 'warning'],
         self::TYPE_STAFF_REQUEST_SUBMITTED => ['Approval Needed', 'warning'],
         self::TYPE_STAFF_REQUEST_APPROVED => ['Request Approved', 'success'],
         self::TYPE_STAFF_REQUEST_REJECTED => ['Request Rejected', 'danger'],
         self::TYPE_STAFF_REQUEST_PENDING => ['Request On Hold', 'warning'],
         self::TYPE_STAFF_REQUEST_EXECUTED => ['Staff Action Done', 'info'],
+        self::TYPE_STAFF_REQUEST_WITHDRAWN => ['Request Withdrawn', 'info'],
     ];
 
     /**
@@ -97,7 +107,7 @@ class SclfNotification extends Notification
         SecurityIncident::class => '/app/incidents/%d',
         ServiceRequest::class => '/app/service-requests/%d',
         Asset::class => '/app/security/assets/%d',
-        // One page for both sides: admin sees the queue, staff see "My Requests".
+        // Admin-only queue; staff are sent to their notifications instead (see StaffApprovalService).
         ActionRequest::class => '/app/admin/requests?request=%d',
     ];
 
@@ -159,7 +169,7 @@ class SclfNotification extends Notification
             body: $this->message,
             badge: $badge,
             tone: $tone,
-            actionUrl: $this->actionUrl(),
+            actionUrl: $this->actionUrl($notifiable->id ?? null),
             userEmail: $notifiable->email,
         );
     }
@@ -203,6 +213,14 @@ class SclfNotification extends Notification
      */
     protected function spaUrl(): string
     {
+        // A notification may carry its own in-app deep link (role-aware —
+        // e.g. handlers are sent to the review queue instead of the
+        // owner-facing page the related model would normally open).
+        $link = $this->extra['link'] ?? null;
+        if (is_string($link) && str_starts_with($link, '/app/')) {
+            return $link;
+        }
+
         return ($this->relatedType && $this->relatedId && isset(self::ROUTES[$this->relatedType]))
             ? sprintf(self::ROUTES[$this->relatedType], $this->relatedId)
             : '/app/notifications';
@@ -218,8 +236,12 @@ class SclfNotification extends Notification
      * more specific to point at (or the type isn't one of the three
      * routable models above).
      */
-    protected function actionUrl(): string
+    protected function actionUrl(?int $userId = null): string
     {
-        return rtrim(config('app.url'), '/') . '/login?redirect=' . urlencode($this->spaUrl());
+        // uid = the account this notification belongs to. After login the SPA
+        // only follows the redirect when the signed-in user's id matches, so a
+        // link meant for one account never drops another account on that page.
+        return rtrim(config('app.url'), '/') . '/login?redirect=' . urlencode($this->spaUrl())
+            . ($userId ? '&uid=' . $userId : '');
     }
 }

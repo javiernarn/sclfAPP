@@ -59,7 +59,16 @@ export default function HelpHints({ roles, navRole, isDark }) {
 
     const isInstructor = Array.isArray(roles) && roles.includes('instructor');
     const key = isInstructor && navRole === 'student' ? 'instructor' : (HINTS_BY_ROLE[navRole] ? navRole : 'student');
-    const content = HINTS_BY_ROLE[key];
+    const isStaffOnly = Array.isArray(roles) && roles.includes('staff') && !roles.includes('admin');
+    const baseContent = HINTS_BY_ROLE[key];
+    const content = key === 'admin'
+        ? {
+            ...baseContent,
+            intro: isStaffOnly
+                ? "You're signed in as Staff. You can view the whole system, but any change needs the Admin's approval:"
+                : "You're signed in as Admin. You have oversight of the whole system:",
+        }
+        : baseContent;
 
     return (
         <>

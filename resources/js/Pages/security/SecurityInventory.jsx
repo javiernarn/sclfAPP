@@ -367,7 +367,7 @@ export default function SecurityInventory() {
     };
 
     return (
-        <DashboardShell eyebrow="Security" title="Inventory" subtitle="Storage locations and items awaiting shelving.">
+        <DashboardShell onRefresh={() => load()} refreshing={loading} eyebrow="Security" title="Inventory" subtitle="Storage locations and items awaiting shelving.">
             <div className="ds-card">
                 <h3>Items Awaiting Storage</h3>
                 {loading && <div className="ds-skeleton" />}

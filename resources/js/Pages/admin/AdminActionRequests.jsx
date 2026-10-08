@@ -82,7 +82,7 @@ export default function AdminActionRequests() {
     };
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={() => load()} refreshing={loading}
             eyebrow={isAdmin ? 'Admin' : 'Staff'}
             title={isAdmin ? 'Staff Requests' : 'My Requests'}
             subtitle={isAdmin

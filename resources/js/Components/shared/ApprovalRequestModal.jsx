@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { Link } from 'react-router-dom';
 import { approvalBus } from '../../utils/eventBus';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
@@ -80,8 +79,8 @@ export default function ApprovalRequestModal() {
                     <>
                         <h3 id="approval-title" className="sclf-confirm-title">Request sent</h3>
                         <p className="sclf-confirm-message">
-                            The admin has been asked. Track it under <Link to="/app/admin/requests" onClick={close}>My Requests</Link>;
-                            when it shows Approved, repeat the action.
+                            The admin has been notified. You'll get a notification when it is approved or rejected —
+                            once approved, come back and repeat the action.
                         </p>
                         <div className="sclf-confirm-actions">
                             <button type="button" className="sclf-confirm-btn" onClick={close} autoFocus>Got it</button>

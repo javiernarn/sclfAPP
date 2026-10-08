@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { Link } from 'react-router-dom';
+import useRoleLabel from '../../hooks/useRoleLabel';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ViewToggle from '../../Components/shared/ViewToggle';
 import DeviceIcon from '../../Components/shared/DeviceIcon';
@@ -17,6 +18,7 @@ import { parseUserAgent } from '../../utils/userAgent';
 const AUTH_ACTIONS = ['auth.login', 'auth.logout'];
 
 export default function AdminAuditLog() {
+    const { label: roleLabel } = useRoleLabel();
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [view, setView] = useViewMode('audit-log');
@@ -25,15 +27,18 @@ export default function AdminAuditLog() {
         document.title = "Audit Log | SCLF - Opol Community College";
     }, []);
 
-    useEffect(() => {
+    const load = () => {
+        setLoading(true);
         axios.get('/audit-logs', { params: { actions: AUTH_ACTIONS } })
             .then(res => setLogs(res.data.data))
             .finally(() => setLoading(false));
-    }, []);
+    };
+
+    useEffect(load, []);
 
     return (
-        <DashboardShell
-            eyebrow="Admin"
+        <DashboardShell onRefresh={() => load()} refreshing={loading}
+            eyebrow={roleLabel || 'Admin'}
             title="Audit Log"
             subtitle="Sign-in activity across every account, most recent first. For everything else an account has done, open that user's page and check its Activity tab."
         >

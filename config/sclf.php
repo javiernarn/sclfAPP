@@ -63,6 +63,16 @@ return [
     */
     'staff_approval' => [
         'ttl_hours' => env('SCLF_STAFF_APPROVAL_TTL_HOURS', 24),
+
+        // Request fields that are frozen at approval time. The admin approves
+        // "create an Instructor", so the staff member can only create an
+        // Instructor with that approval - not a Security Officer. Keyed by
+        // "METHOD route-uri"; the value is the list of input fields whose
+        // value must equal what was in the request the admin approved.
+        'locked_fields' => [
+            'POST api/admin/users' => ['role'],
+            'PUT api/admin/users/{user}' => ['role'],
+        ],
         'exempt_paths' => [
             'api/logout',
             'api/change-password',
@@ -72,6 +82,10 @@ return [
             'api/push/*',
             'api/action-requests',
             'api/action-requests/*',
+            // Staff handle the Matches queue themselves, just like the admin:
+            // confirm a match (notify the owner) or reject it (dismiss).
+            'api/matches/*/notify-owner',
+            'api/matches/*/dismiss',
         ],
     ],
 

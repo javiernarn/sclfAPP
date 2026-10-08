@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { useNavigate } from 'react-router-dom';
+import useRoleLabel from '../../hooks/useRoleLabel';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import Tooltip from '../../Components/shared/Tooltip';
 import ViewToggle from '../../Components/shared/ViewToggle';
@@ -43,6 +44,7 @@ const emptyEditForm = {
 
 export default function AdminUsers() {
     const { user: currentUser } = useAuth();
+    const { label: roleLabel, isAdmin: viewerIsAdmin } = useRoleLabel();
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -194,6 +196,7 @@ export default function AdminUsers() {
             clearEditPhoto();
             load();
         } catch (err) {
+            if (err?.approvalHandled) return; // approval dialog is showing
             const errors = err?.response?.data?.errors;
             if (errors) {
                 setEditErrors(Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, v[0]])));
@@ -312,6 +315,7 @@ export default function AdminUsers() {
             setFieldErrors({});
             load();
         } catch (err) {
+            if (err?.approvalHandled) return; // approval dialog is showing
             const errors = err?.response?.data?.errors;
             if (errors) {
                 setFieldErrors(Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, v[0]])));
@@ -374,8 +378,8 @@ export default function AdminUsers() {
     };
 
     return (
-        <DashboardShell
-            eyebrow="Admin"
+        <DashboardShell onRefresh={() => load()} refreshing={loading}
+            eyebrow={roleLabel || 'Admin'}
             title="User Management"
             subtitle="Public registration only ever creates Students. Instructor, Security Officer and Staff accounts are created here — there is only one Admin."
         >
@@ -453,7 +457,7 @@ export default function AdminUsers() {
                             <select id="role" name="role" value={form.role} onChange={handleChange}>
                                 <option value="instructor">Instructor</option>
                                 <option value="security_officer">Security Officer</option>
-                                <option value="staff">Staff</option>
+                                {viewerIsAdmin && <option value="staff">Staff</option>}
                             </select>
                             <p className="ds-field-hint">
                                 {form.role === 'staff' && 'Staff can view everything but need your approval for every change. '}
@@ -790,7 +794,7 @@ export default function AdminUsers() {
                                         <option value="student">Student</option>
                                         <option value="instructor">Instructor</option>
                                         <option value="security_officer">Security Officer</option>
-                                        <option value="staff">Staff</option>
+                                        {(viewerIsAdmin || editRole === 'staff') && <option value="staff">Staff</option>}
                                         {editRole === 'admin' && <option value="admin">Admin</option>}
                                     </select>
                                     {editRole === 'admin' && (

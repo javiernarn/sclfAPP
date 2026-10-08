@@ -123,6 +123,12 @@ class UserController extends Controller
             $profilePicturePath = $request->file('profile_picture')->store('profile-pictures', 'public');
         }
 
+        // Staff accounts are the admin's to create — a Staff member can
+        // never mint another Staff (or anything above their own level).
+        if ($validated['role'] === 'staff' && !$request->user()->isAdmin()) {
+            abort(403, 'Only the Admin can create Staff accounts.');
+        }
+
         $user = User::create([
             'name' => trim($validated['first_name'] . ' ' . $validated['last_name']),
             'first_name' => $validated['first_name'],
@@ -225,6 +231,11 @@ class UserController extends Controller
         if ($user->isAdmin() && !$request->user()->isAdmin()) {
             abort(403, 'Only the Admin can change the Admin account.');
         }
+        // Staff may not touch other Staff accounts, nor hand out the Staff role.
+        $this->guardStaffTarget($request, $user);
+        if (($validated['role'] ?? null) === 'staff' && !$user->hasRole('staff') && !$request->user()->isAdmin()) {
+            abort(403, 'Only the Admin can give someone the Staff role.');
+        }
         if ($user->isAdmin() && isset($validated['role']) && $validated['role'] !== 'admin') {
             abort(422, 'The Admin account cannot be given another role.');
         }
@@ -307,6 +318,7 @@ class UserController extends Controller
         if ($user->isAdmin()) {
             abort(403, 'The Admin account cannot be disabled.');
         }
+        $this->guardStaffTarget($request, $user);
 
         // Disabling ≠ deleting. We intentionally do NOT soft-delete here:
         // a soft-deleted user disappears from every relationship query
@@ -337,6 +349,7 @@ class UserController extends Controller
         if ($user->isAdmin() && !$request->user()->isAdmin()) {
             abort(403, 'Only the Admin can change the Admin account.');
         }
+        $this->guardStaffTarget($request, $user);
 
         if ($user->trashed()) {
             $user->restore();
@@ -347,5 +360,19 @@ class UserController extends Controller
         $this->audit->log('user.enabled', $user, "User #{$user->id} re-enabled by admin #" . $request->user()->id);
 
         return response()->json(['success' => true, 'message' => 'Account re-enabled.', 'data' => $user->fresh()]);
+    }
+
+    /**
+     * Only the Admin may edit, disable or re-enable a Staff account. A Staff
+     * member acting on their own account is also blocked here — self-service
+     * changes go through the Profile page instead.
+     */
+    protected function guardStaffTarget(Request $request, User $target): void
+    {
+        $actor = $request->user();
+
+        if (!$actor->isAdmin() && $target->hasRole('staff')) {
+            abort(403, 'Only the Admin can manage Staff accounts.');
+        }
     }
 }

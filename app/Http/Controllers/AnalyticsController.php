@@ -17,6 +17,37 @@ use Illuminate\Support\Facades\DB;
 
 class AnalyticsController extends Controller
 {
+    // ---------------------------------------------------------------------
+    // Single source of truth for channel scoping. Every dashboard number goes
+    // through these so Admin, Staff, Security and Student can't disagree.
+    //
+    // A Counter check-in creates a FoundItem (intake_channel = counter_intake)
+    // AND an auto-approved Claim for the known owner. Neither is an online
+    // "found report" nor a claim someone "filed", so they are kept out of
+    // Found Items / Claims Filed and shown as their own Counter series.
+    // ---------------------------------------------------------------------
+
+    /** Found items reported online by finders (needs review). */
+    protected function reportItems()
+    {
+        return FoundItem::query()->where('found_items.intake_channel', FoundItem::CHANNEL_ONLINE_REPORT);
+    }
+
+    /** Found items checked in at the Counter for a known owner. */
+    protected function counterItems()
+    {
+        return FoundItem::query()->where('found_items.intake_channel', FoundItem::CHANNEL_COUNTER_INTAKE);
+    }
+
+    /** Claims someone actually filed (excludes counter check-in auto-claims). */
+    protected function filedClaims()
+    {
+        return Claim::query()->whereHas(
+            'foundItem',
+            fn ($q) => $q->where('found_items.intake_channel', '!=', FoundItem::CHANNEL_COUNTER_INTAKE)
+        );
+    }
+
     public function overview(Request $request)
     {
         if (!$request->user()->hasAnyRole(['admin', 'staff', 'security_officer'])) {
@@ -72,8 +103,9 @@ class AnalyticsController extends Controller
             return [
                 'month' => $month,
                 'lost' => LostItem::whereYear('created_at', $year)->whereMonth('created_at', $mon)->count(),
-                'found' => FoundItem::whereYear('created_at', $year)->whereMonth('created_at', $mon)->count(),
-                'claims' => Claim::whereYear('created_at', $year)->whereMonth('created_at', $mon)->count(),
+                'found' => $this->reportItems()->whereYear('created_at', $year)->whereMonth('created_at', $mon)->count(),
+                'counter' => $this->counterItems()->whereYear('created_at', $year)->whereMonth('created_at', $mon)->count(),
+                'claims' => $this->filedClaims()->whereYear('claims.created_at', $year)->whereMonth('claims.created_at', $mon)->count(),
                 'recovered' => LostItem::where('status', LostItem::STATUS_CLOSED)
                     ->whereYear('updated_at', $year)->whereMonth('updated_at', $mon)->count(),
                 'rejected' => Claim::where('status', Claim::STATUS_REJECTED)
@@ -111,8 +143,8 @@ class AnalyticsController extends Controller
         // check-ins for known owners — two very different workflows. Every
         // stat below is scoped to one channel or the other so the dashboard
         // can show them as two separate sections instead of one blended one.
-        $reportItems = FoundItem::where('intake_channel', FoundItem::CHANNEL_ONLINE_REPORT);
-        $counterItems = FoundItem::where('intake_channel', FoundItem::CHANNEL_COUNTER_INTAKE);
+        $reportItems = $this->reportItems();
+        $counterItems = $this->counterItems();
 
         return [
             'lost_today' => LostItem::whereDate('created_at', today())->count(),
@@ -121,7 +153,7 @@ class AnalyticsController extends Controller
             'recovery_rate' => $totalLost > 0 ? round(($recovered / $totalLost) * 100, 1) : 0,
             'average_recovery_days' => $this->averageRecoveryDays(),
             'total_lost' => $totalLost,
-            'total_found' => FoundItem::count(),
+            'total_found' => (clone $reportItems)->count(),
             'total_recovered' => $recovered,
 
             // --- Found Item Reports (strangers turning items in online,
@@ -139,7 +171,7 @@ class AnalyticsController extends Controller
             // released back to them later via Claims/QR scan. ---
             'counter' => [
                 'checked_in_today' => (clone $counterItems)->whereDate('created_at', today())->count(),
-                'awaiting_release' => (clone $counterItems)->where('status', '!=', FoundItem::STATUS_RELEASED)->count(),
+                'awaiting_release' => (clone $counterItems)->whereIn('status', FoundItem::ON_SHELF_STATUSES)->count(),
                 'released' => (clone $counterItems)->where('status', FoundItem::STATUS_RELEASED)->count(),
                 'total' => (clone $counterItems)->count(),
             ],
@@ -147,9 +179,9 @@ class AnalyticsController extends Controller
             // Deprecated combined fields — kept around in case anything
             // else still reads them, but the dashboards now read the
             // channel-scoped `found_reports` / `counter` blocks above.
-            'found_today' => FoundItem::whereDate('created_at', today())->count(),
-            'items_pending_verification' => FoundItem::where('verification_status', 'pending')->count(),
-            'items_released' => FoundItem::where('status', FoundItem::STATUS_RELEASED)->count(),
+            'found_today' => (clone $reportItems)->whereDate('created_at', today())->count(),
+            'items_pending_verification' => (clone $reportItems)->where('verification_status', 'pending')->count(),
+            'items_released' => (clone $reportItems)->where('status', FoundItem::STATUS_RELEASED)->count(),
         ];
     }
 
@@ -201,7 +233,9 @@ class AnalyticsController extends Controller
             return [
                 'label' => $m->format('M'),
                 'reports' => LostItem::where('user_id', $uid)->whereYear('created_at', $m->year)->whereMonth('created_at', $m->month)->count(),
-                'claims' => Claim::where('claimant_id', $uid)->whereYear('created_at', $m->year)->whereMonth('created_at', $m->month)->count(),
+                // Claims the person actually filed; the auto-approved claim a
+                // counter check-in creates for them is not one they filed.
+                'claims' => $this->filedClaims()->where('claimant_id', $uid)->whereYear('claims.created_at', $m->year)->whereMonth('claims.created_at', $m->month)->count(),
             ];
         })->values();
 
@@ -236,7 +270,9 @@ class AnalyticsController extends Controller
             'recent' => $recent,
             'campus' => [
                 'recovery_rate' => $totalLost > 0 ? round(($recoveredAll / $totalLost) * 100, 1) : 0,
-                'items_on_shelf' => FoundItem::whereIn('status', FoundItem::ON_SHELF_STATUSES)->count(),
+                // Counter check-ins are reserved for a known owner, so they are
+                // not "unclaimed items on the shelf" for everyone else.
+                'items_on_shelf' => $this->reportItems()->whereIn('status', FoundItem::ON_SHELF_STATUSES)->count(),
             ],
         ];
 
@@ -257,8 +293,9 @@ class AnalyticsController extends Controller
 
         $series = [
             'lost' => $this->dailySeries(LostItem::query(), 'created_at', $from, $days * 2),
-            'found' => $this->dailySeries(FoundItem::query(), 'created_at', $from, $days * 2),
-            'claims' => $this->dailySeries(Claim::query(), 'created_at', $from, $days * 2),
+            'found' => $this->dailySeries($this->reportItems(), 'found_items.created_at', $from, $days * 2),
+            'counter' => $this->dailySeries($this->counterItems(), 'found_items.created_at', $from, $days * 2),
+            'claims' => $this->dailySeries($this->filedClaims(), 'claims.created_at', $from, $days * 2),
             'recovered' => $this->dailySeries(LostItem::where('status', LostItem::STATUS_CLOSED), 'updated_at', $from, $days * 2),
         ];
 
@@ -281,6 +318,7 @@ class AnalyticsController extends Controller
                 'label' => Carbon::parse($row['date'])->format('M j'),
                 'lost' => $row['count'],
                 'found' => $series['found'][$days + $i]['count'],
+                'counter' => $series['counter'][$days + $i]['count'],
                 'claims' => $series['claims'][$days + $i]['count'],
             ];
         }
@@ -302,7 +340,7 @@ class AnalyticsController extends Controller
             'kpis' => $kpis,
             'trend' => $trend,
             'summary' => $this->summary(),
-            'claims_by_status' => Claim::select('status', DB::raw('count(*) as c'))->groupBy('status')->pluck('c', 'status'),
+            'claims_by_status' => $this->filedClaims()->select('claims.status', DB::raw('count(*) as c'))->groupBy('claims.status')->pluck('c', 'status'),
             'categories' => LostItem::select('category', DB::raw('count(*) as total'))
                 ->whereNotNull('category')->groupBy('category')->orderByDesc('total')->limit(6)->get(),
             'locations' => LostItem::select('location_lost', DB::raw('count(*) as total'))
@@ -312,7 +350,8 @@ class AnalyticsController extends Controller
                 return [
                     'label' => $m->format('M'),
                     'lost' => LostItem::whereYear('created_at', $m->year)->whereMonth('created_at', $m->month)->count(),
-                    'found' => FoundItem::whereYear('created_at', $m->year)->whereMonth('created_at', $m->month)->count(),
+                    'found' => $this->reportItems()->whereYear('created_at', $m->year)->whereMonth('created_at', $m->month)->count(),
+                    'counter' => $this->counterItems()->whereYear('created_at', $m->year)->whereMonth('created_at', $m->month)->count(),
                     'recovered' => LostItem::where('status', LostItem::STATUS_CLOSED)
                         ->whereYear('updated_at', $m->year)->whereMonth('updated_at', $m->month)->count(),
                 ];
@@ -322,9 +361,11 @@ class AnalyticsController extends Controller
                 ->select('severity', DB::raw('count(*) as c'))->groupBy('severity')->pluck('c', 'severity'),
             'service_requests_by_status' => ServiceRequest::select('status', DB::raw('count(*) as c'))->groupBy('status')->pluck('c', 'status'),
             'queue' => [
-                'waiting' => CounterQueueEntry::where('status', CounterQueueEntry::STATUS_WAITING)->count(),
-                'called' => CounterQueueEntry::where('status', CounterQueueEntry::STATUS_CALLED)->count(),
-                'serving' => CounterQueueEntry::where('status', CounterQueueEntry::STATUS_SERVING)->count(),
+                // Today's tickets only, matching CounterController::dashboard();
+                // otherwise an old ticket nobody closed shows as "Waiting" forever.
+                'waiting' => (clone $todayQueue)->where('status', CounterQueueEntry::STATUS_WAITING)->count(),
+                'called' => (clone $todayQueue)->where('status', CounterQueueEntry::STATUS_CALLED)->count(),
+                'serving' => (clone $todayQueue)->where('status', CounterQueueEntry::STATUS_SERVING)->count(),
                 'completed_today' => (clone $todayQueue)->where('status', CounterQueueEntry::STATUS_COMPLETED)->count(),
                 'no_show_today' => (clone $todayQueue)->where('status', CounterQueueEntry::STATUS_NO_SHOW)->count(),
                 'avg_wait_minutes' => $waits->isEmpty() ? null : round($waits->avg(), 1),
@@ -348,7 +389,7 @@ class AnalyticsController extends Controller
             ->map(fn ($i) => ['type' => 'lost', 'title' => $i->item_name, 'at' => $i->created_at]);
         $found = FoundItem::latest()->limit(6)->get(['id', 'item_name', 'intake_channel', 'created_at'])
             ->map(fn ($i) => ['type' => $i->intake_channel === FoundItem::CHANNEL_COUNTER_INTAKE ? 'counter' : 'found', 'title' => $i->item_name, 'at' => $i->created_at]);
-        $claims = Claim::with('foundItem:id,item_name')->latest()->limit(6)->get()
+        $claims = $this->filedClaims()->with('foundItem:id,item_name')->latest('claims.created_at')->limit(6)->get()
             ->map(fn ($c) => ['type' => 'claim', 'title' => optional($c->foundItem)->item_name ?? 'Item', 'status' => $c->status, 'at' => $c->created_at]);
 
         return $lost->concat($found)->concat($claims)

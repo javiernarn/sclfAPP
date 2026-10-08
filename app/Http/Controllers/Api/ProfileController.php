@@ -29,6 +29,14 @@ class ProfileController extends Controller
      * and photo — rather than just acknowledging a notice. Phone/gender
      * stay optional (same as the admin "Create Account" form) since not
      * every role or campus collects those.
+     *
+     * The ID number (staff_id) is theirs to enter here too. Accounts start
+     * with a system-generated placeholder (SEC-2026-0001, or the seeded
+     * admin's .env value), but the real person knows their real school ID,
+     * so it is required and editable — uniqueness is still enforced.
+     * The one seeded Admin account can additionally replace its email
+     * (the seed value belongs to whoever installed the system, not to the
+     * school's actual administrator).
      */
     public function completeSetup(Request $request)
     {
@@ -44,9 +52,35 @@ class ProfileController extends Controller
             }
         }
 
+        // Normalise before validating so the uniqueness checks compare what
+        // will actually be stored: IDs are kept uppercase, emails lowercase.
+        if ($request->filled('staff_id')) {
+            $request->merge(['staff_id' => strtoupper(trim((string) $request->input('staff_id')))]);
+        }
+        if ($request->filled('email')) {
+            $request->merge(['email' => strtolower(trim((string) $request->input('email')))]);
+        }
+
+        // Same normalisation for the optional address.
+        if ($request->has('address') && trim((string) $request->input('address')) === '') {
+            $request->merge(['address' => null]);
+        }
+
+        $emailRules = $user->isAdmin()
+            ? ['required', 'email', 'max:255', 'lowercase', Rule::unique('users', 'email')->ignore($user->id)]
+            : ['prohibited'];
+
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'-]+$/u'],
             'last_name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'-]+$/u'],
+            // ID number shown on the account (Admin ID / Staff ID / ...).
+            'staff_id' => [
+                'required', 'string', 'min:3', 'max:50',
+                'regex:/^[A-Za-z0-9][A-Za-z0-9._\/-]*$/',
+                Rule::unique('users', 'staff_id')->ignore($user->id),
+            ],
+            'email' => $emailRules,
+            'address' => ['nullable', 'string', 'max:255'],
             'phone_number' => [
                 'nullable', 'string', 'regex:/^09\d{9}$/',
                 Rule::unique('users', 'phone_number')->ignore($user->id),
@@ -60,6 +94,11 @@ class ProfileController extends Controller
             'phone_number.regex' => 'Enter a valid Philippine mobile number, e.g. 09171234567.',
             'phone_number.unique' => 'That phone number is already linked to another account.',
             'profile_picture.required' => 'Please add a profile photo so staff can verify you at a glance.',
+            'staff_id.required' => 'Please enter your ID number.',
+            'staff_id.regex' => 'ID number can only contain letters, numbers, dashes, dots and slashes.',
+            'staff_id.unique' => 'That ID number is already registered to another account.',
+            'email.unique' => 'That email address is already in use by another account.',
+            'email.prohibited' => 'Only the Admin can change the email address during setup.',
         ]);
 
         if (Hash::check($validated['password'], $user->password)) {
@@ -75,10 +114,15 @@ class ProfileController extends Controller
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'],
             'name' => trim($validated['first_name'] . ' ' . $validated['last_name']),
+            'staff_id' => $validated['staff_id'],
+            'address' => $validated['address'] ?? null,
             'phone_number' => $validated['phone_number'] ?? null,
             'gender' => $validated['gender'] ?? null,
             'profile_picture' => $profilePicturePath,
         ]);
+        if ($user->isAdmin() && isset($validated['email'])) {
+            $user->email = $validated['email'];
+        }
         $user->password = Hash::make($validated['password']);
         $user->must_setup_profile = false;
         $user->save();
@@ -91,8 +135,16 @@ class ProfileController extends Controller
         // token (there shouldn't be any yet, but this matches the same
         // "a password change invalidates old sessions" rule used by
         // AuthController::changePassword()) and keep only this request's.
-        $currentTokenId = $user->currentAccessToken()?->id;
-        $user->tokens()->where('id', '!=', $currentTokenId)->delete();
+        // A real login has a PersonalAccessToken with an id. Session/test
+        // auth (actingAs) uses a TransientToken that has none, so read it
+        // defensively and, in that case, revoke every stored token.
+        $currentToken = $user->currentAccessToken();
+        $currentTokenId = $currentToken instanceof \Laravel\Sanctum\PersonalAccessToken
+            ? $currentToken->getKey()
+            : null;
+        $user->tokens()
+            ->when($currentTokenId, fn ($q) => $q->where('id', '!=', $currentTokenId))
+            ->delete();
 
         $this->audit->log(
             'user.completed_setup',

@@ -52,8 +52,12 @@ const MainPage = () => {
 
             try {
                 const redirect = window.sessionStorage.getItem("sclf-post-login-redirect");
-                if (redirect) {
-                    window.sessionStorage.removeItem("sclf-post-login-redirect");
+                const forUid = window.sessionStorage.getItem("sclf-post-login-uid");
+                window.sessionStorage.removeItem("sclf-post-login-redirect");
+                window.sessionStorage.removeItem("sclf-post-login-uid");
+                // A link addressed to a different account (uid mismatch) is
+                // dropped: this person lands on their own dashboard instead.
+                if (redirect && (!forUid || String(user.id) === String(forUid))) {
                     navigate(redirect, { replace: true });
                     return;
                 }

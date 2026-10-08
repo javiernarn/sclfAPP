@@ -136,7 +136,7 @@ export default function SecurityUnclaimedItems() {
     const removeFromList = (id) => setItems((prev) => prev.filter((i) => i.id !== id));
 
     return (
-        <DashboardShell
+        <DashboardShell onRefresh={() => load()} refreshing={loading}
             eyebrow="Security"
             title="Unclaimed Items"
             subtitle="Items whose retention period expired with no claim — dispose of them, or restore one if the owner turns up."

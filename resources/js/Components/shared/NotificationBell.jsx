@@ -13,6 +13,9 @@ import { routeForNotification } from '../../utils/notificationRoutes';
 // this map hasn't been kept in sync with.
 const TONE_FOR_TYPE = {
     potential_match: 'ds-badge-review',
+    lost_reported: 'ds-badge-review',
+    found_reported: 'ds-badge-pending',
+    match_for_review: 'ds-badge-pending',
     claim_submitted: 'ds-badge-review',
     claim_approved: 'ds-badge-found',
     claim_rejected: 'ds-badge-rejected',
@@ -34,6 +37,7 @@ const TONE_FOR_TYPE = {
     staff_request_rejected: 'ds-badge-rejected',
     staff_request_pending: 'ds-badge-pending',
     staff_request_executed: 'ds-badge-review',
+    staff_request_withdrawn: 'ds-badge-default',
 };
 
 // Short "3m ago" / "2h ago" / "5d ago" style relative timestamp — falls

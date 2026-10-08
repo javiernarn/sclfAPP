@@ -8,10 +8,12 @@ const NotificationContext = createContext(null);
 // Short enough that a new notification shows up without a reload, long
 // enough not to hammer the API — the same tradeoff the existing web push
 // system exists to cover for anything more time-critical than this.
-const POLL_MS = 30000;
+const POLL_MS = 60000;
 // Admin <-> staff approval requests are waiting on a person, so those two
 // roles check for new notifications more often.
-const POLL_MS_APPROVAL_ROLES = 10000;
+const POLL_MS_APPROVAL_ROLES = 30000;
+// Ignore focus/visibility catch-up checks that come right after a poll.
+const MIN_GAP_MS = 5000;
 
 // Small preview list shown in the bell's dropdown — the full history
 // still lives at /app/notifications (NotificationsPage), which paginates
@@ -39,15 +41,24 @@ export function NotificationProvider({ children }) {
     const [recent, setRecent] = useState([]);
     const [loadingRecent, setLoadingRecent] = useState(false);
     const pollRef = useRef(null);
+    const inFlightRef = useRef(false);
+    const lastRunRef = useRef(0);
 
     const refreshUnreadCount = useCallback(async () => {
         if (!user) return;
+        // Never stack requests: on a slow server (e.g. php artisan serve)
+        // a poll can outlast its interval, and overlapping ones pile up.
+        if (inFlightRef.current) return;
+        inFlightRef.current = true;
+        lastRunRef.current = Date.now();
         try {
             const { data } = await axios.get('/notifications/unread-count', { silent: true });
             setUnreadCount(data.unread_count || 0);
         } catch {
             // Best-effort — a failed poll just tries again next interval,
             // no need to surface it to the person.
+        } finally {
+            inFlightRef.current = false;
         }
     }, [user]);
 
@@ -97,7 +108,7 @@ export function NotificationProvider({ children }) {
     // off entirely while an admin-created account is still stuck on the
     // mandatory SetupAccountPage — EnsureProfileSetupComplete blocks
     // these endpoints until setup finishes anyway, so polling them here
-    // would just be a silently-failing 423 every 30s for no benefit.
+    // would just be a silently-failing 423 every poll for no benefit.
     useEffect(() => {
         if (!user || user.must_setup_profile) {
             setUnreadCount(0);
@@ -107,17 +118,28 @@ export function NotificationProvider({ children }) {
 
         refreshUnreadCount();
 
-        pollRef.current = setInterval(refreshUnreadCount, approvalRole ? POLL_MS_APPROVAL_ROLES : POLL_MS);
+        // Skip the timer tick while the tab is hidden — nobody is looking at
+        // the bell, and the focus/visibility catch-up below refreshes it
+        // the moment they come back.
+        pollRef.current = setInterval(() => {
+            if (document.hidden) return;
+            refreshUnreadCount();
+        }, approvalRole ? POLL_MS_APPROVAL_ROLES : POLL_MS);
 
-        // Also catch up immediately when the tab regains focus — covers
-        // the common case of a notification arriving while the browser
-        // was in the background/another tab.
-        const onFocus = () => refreshUnreadCount();
-        window.addEventListener('focus', onFocus);
+        // Catch up when the tab regains focus/visibility, but not if a
+        // poll just ran (focus + visibilitychange often fire together).
+        const catchUp = () => {
+            if (document.hidden) return;
+            if (Date.now() - lastRunRef.current < MIN_GAP_MS) return;
+            refreshUnreadCount();
+        };
+        window.addEventListener('focus', catchUp);
+        document.addEventListener('visibilitychange', catchUp);
 
         return () => {
             clearInterval(pollRef.current);
-            window.removeEventListener('focus', onFocus);
+            window.removeEventListener('focus', catchUp);
+            document.removeEventListener('visibilitychange', catchUp);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id, user?.must_setup_profile, approvalRole]);
