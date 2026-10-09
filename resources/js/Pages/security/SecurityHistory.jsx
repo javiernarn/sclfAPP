@@ -432,7 +432,7 @@ export default function SecurityHistory() {
                     the label on the right always mirrors that same choice (same
                     `tab` state drives both), so there's no reading one button while
                     a different table is actually showing. */}
-                <div className="ds-list-head-row" style={{ marginBottom: 0 }}>
+                <div className="ds-list-head-row">
                     <div className="ds-view-toggle" role="group" aria-label="Switch history type">
                         {TABS.map(t => {
                             const Icon = t.icon;

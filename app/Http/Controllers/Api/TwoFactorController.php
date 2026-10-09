@@ -119,7 +119,10 @@ class TwoFactorController extends Controller
 
         $pair = $this->tokens->issue($user, $request);
 
+        $firstLogin = $user->recordLogin();
+
         return response()->json([
+            'first_login' => $firstLogin,
             'user' => $user->only(
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
                 'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course',

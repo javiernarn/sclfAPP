@@ -28,7 +28,7 @@ class ServiceRequestController extends Controller
         $isStaff = $viewer->hasAnyRole(['security_officer', 'admin', 'staff']);
 
         $query = ServiceRequest::query()
-            ->with(['requester:id,name', 'assignee:id,name', 'department:id,name', 'campus:id,name,code'])
+            ->with(['requester:id,name', 'assignee:id,name', 'assignee.roles:id,name', 'department:id,name', 'campus:id,name,code'])
             ->when(!$isStaff, fn ($q) => $q->where('requested_by', $viewer->id))
             ->when(
                 $isStaff && $viewer->campus_id && !$viewer->hasAdminAccess(),
@@ -84,6 +84,7 @@ class ServiceRequestController extends Controller
         $serviceRequest->load([
             'requester:id,name,email',
             'assignee:id,name',
+            'assignee.roles:id,name',
             'completedBy:id,name',
             'cancelledBy:id,name',
             'department:id,name',

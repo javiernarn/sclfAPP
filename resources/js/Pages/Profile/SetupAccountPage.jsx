@@ -21,7 +21,6 @@ import AuthShell, {
     LedgerPasswordInput,
     LedgerBanner,
     StrengthTicks,
-    RequirementChecklist,
     PasswordMatchNote,
     LedgerButton,
     LedgerGhostButton,
@@ -274,7 +273,7 @@ export default function SetupAccountPage() {
 
         // Final step — password checks the browser can't do on its own.
         if (!isPasswordValid) {
-            setFieldErrors({ password: 'Password does not meet the requirements below.' });
+            setFieldErrors({ password: 'Use 8+ characters with an uppercase letter, a lowercase letter and a number.' });
             return;
         }
         if (!passwordsMatch) {
@@ -299,6 +298,9 @@ export default function SetupAccountPage() {
             await completeSetup(data);
 
             toast.success("Your account is set up — welcome to SCLF!", { title: 'All set' });
+            // This already is their welcome — don't stack a second
+            // "Welcome" toast when the dashboard mounts.
+            try { window.sessionStorage.removeItem('sclf-login-toast'); } catch (e) { /* ignore */ }
             // Same trick used after login/register: land on "/" and let
             // MainPage's role-based redirect (admin/security/instructor)
             // take it from there.
@@ -353,6 +355,7 @@ export default function SetupAccountPage() {
     return (
         <AuthShell
             wide
+            compact
             docType="ACCOUNT SETUP"
             caseSeed="SETUP"
             tabs={tabs}
@@ -551,13 +554,12 @@ export default function SetupAccountPage() {
                                 <PasswordMatchNote password={form.password} confirm={form.password_confirmation} />
                             </LedgerRow>
 
-                            <RequirementChecklist password={form.password} />
                         </>
                     )}
                 </div>
 
                 {/* ===== Step navigation ===== */}
-                <div className="lg-actions-row" style={{ marginTop: 18 }}>
+                <div className="lg-actions-row" style={{ marginTop: 10 }}>
                     {step > 1 && (
                         <LedgerGhostButton onClick={goBack}>Back</LedgerGhostButton>
                     )}

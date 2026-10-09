@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { rememberLogin } from '../../utils/welcome';
 import Tooltip from '../../Components/shared/Tooltip';
 import {
     filterNameInput,
@@ -312,6 +313,8 @@ export default function RegisterPage() {
             if (profileFile) data.append('profile_picture', profileFile);
 
             await register(data);
+            // A brand-new account is by definition on its first session.
+            rememberLogin(true);
 
             // Same trick LoginPage uses: don't toast here — there's still
             // the branded MainPage loading screen ahead before they land

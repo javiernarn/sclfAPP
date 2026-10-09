@@ -702,6 +702,22 @@ body { overflow: hidden; }
     border: 1.5px solid #323b4a;
     box-shadow: 0 16px 40px rgba(0,0,0,0.35);
 }
+/* Card header row: title on the left, action (Edit, Refresh…) on the right,
+   with breathing room before whatever the card shows below it. */
+.ds-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.ds-card-head > h3, .ds-card-head > .ds-card-title { margin: 0; }
+/* Tailwind's reset zeroes heading margins, so a bare <h3> at the top of a
+   card sat flush against the content below it (Details, Completion, Manage
+   This …). Give card headings consistent space; pages that need something
+   different still win via inline style. */
+.ds-card > h3 { margin: 0 0 14px; font-size: 16px; font-weight: 800; }
 .ds-card-title { font-size: 15.5px; font-weight: 800; margin: 0 0 4px; }
 .ds-card-title-icon { display: inline-flex; align-items: center; gap: 9px; }
 .ds-card-title-icon svg { flex-shrink: 0; opacity: 0.85; }
@@ -1437,3 +1453,18 @@ body { overflow: hidden; }
 .ds-shell.light .ds-divider { border-color: #c3ccdb; }
 .ds-shell.dark .ds-divider { border-color: #323b4a; }
 .ds-section-label { font-size: 13px; font-weight: 800; margin: 0 0 12px; }
+/* Filter card above a list (Status / Severity / Category selects). Fields
+   sit side by side on tablet+desktop and stack on phones. The fields' own
+   16px bottom margin is zeroed here and replaced by a real grid gap, so
+   the card's top and bottom padding match instead of the bottom looking
+   taller than the top. */
+.ds-filter-card {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px 16px;
+}
+.ds-filter-card .ds-field { margin-bottom: 0; min-width: 0; }
+@media (min-width: 960px) {
+    /* Don't stretch two short selects across a 1400px-wide card. */
+    .ds-filter-card { grid-template-columns: repeat(auto-fit, minmax(200px, 260px)); }
+}

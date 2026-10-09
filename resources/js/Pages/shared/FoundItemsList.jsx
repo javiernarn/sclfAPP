@@ -92,7 +92,7 @@ export default function FoundItemsList() {
             {/* "Report Found Item" already lives in the sidebar — no need to
                 repeat it up here too. */}
             <div className="ds-card">
-                <div className="ds-list-head-row" style={{ marginBottom: 0 }}>
+                <div className="ds-list-head-row">
                     <form
                         onSubmit={(e) => { e.preventDefault(); clearTimeout(searchTimer.current); load(q); }}
                         className="ds-field"

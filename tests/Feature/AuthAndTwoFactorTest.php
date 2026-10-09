@@ -59,6 +59,25 @@ class AuthAndTwoFactorTest extends TestCase
             ->assertJsonStructure(['user', 'roles', 'access_token', 'refresh_token', 'expires_in']);
     }
 
+    public function test_first_login_is_flagged_and_later_logins_are_not(): void
+    {
+        $user = $this->makeUser('student', ['email' => 'jane@example.com', 'password' => bcrypt('secret123')]);
+        $this->assertNull($user->last_login_at);
+
+        $creds = ['email' => 'jane@example.com', 'password' => 'secret123'];
+
+        $this->postJson('/api/login', $creds)
+            ->assertStatus(200)
+            ->assertJsonPath('first_login', true);
+
+        $this->assertNotNull($user->fresh()->last_login_at);
+
+        // Second sign-in on the same account is a "Welcome back".
+        $this->postJson('/api/login', $creds)
+            ->assertStatus(200)
+            ->assertJsonPath('first_login', false);
+    }
+
     public function test_login_with_wrong_password_is_rejected_and_reports_remaining_attempts(): void
     {
         $this->makeUser('student', ['email' => 'jane@example.com', 'password' => bcrypt('secret123')]);

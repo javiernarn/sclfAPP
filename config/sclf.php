@@ -19,6 +19,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Single-device login
+    |--------------------------------------------------------------------------
+    |
+    | When true, signing in on a new device ends every other active session
+    | for that account (the older device gets an alert and is logged out).
+    | Protects people who forgot to sign out on a friend's/shared device.
+    |
+    */
+    'single_device_login' => env('SCLF_SINGLE_DEVICE_LOGIN', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | User activity tracking (device / IP / spam monitoring)
     |--------------------------------------------------------------------------
     |

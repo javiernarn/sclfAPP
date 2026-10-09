@@ -5,6 +5,7 @@ import { Boxes, Tag, Plus, ChevronRight } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { roleAndName } from '../../utils/roleLabel';
 
 const STATUS_OPTIONS = [
     { value: '', label: 'All statuses' },
@@ -68,7 +69,7 @@ export default function AssetsList() {
             )}
         >
             {isStaff && (
-                <div className="ds-card" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <div className="ds-card ds-filter-card">
                     <div className="ds-field" style={{ minWidth: 180 }}>
                         <label>Status</label>
                         <select value={status} onChange={(e) => setStatus(e.target.value)}>
@@ -107,7 +108,7 @@ export default function AssetsList() {
                                             {a.building?.name ? ` · ${a.building.name}` : ''}
                                         </p>
                                         {isStaff && a.assignee?.name && (
-                                            <p className="ds-list-item-meta">Checked out to {a.assignee.name}</p>
+                                            <p className="ds-list-item-meta">Checked out to {roleAndName(a.assignee)}</p>
                                         )}
                                     </div>
                                 </Link>

@@ -1,0 +1,139 @@
+/*
+ * iOS system-alert look: 270px frosted card, 14px radius, centered text,
+ * a single full-width bold blue action under a hairline divider, soft
+ * dimmed backdrop and the familiar "pop" scale-in.
+ */
+.ios-alert-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.4);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    animation: ios-alert-fade 0.2s ease-out both;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', system-ui, sans-serif;
+    --ios-bg: rgba(242, 242, 247, 0.86);
+    --ios-text: #000;
+    --ios-secondary: rgba(60, 60, 67, 0.6);
+    --ios-divider: rgba(60, 60, 67, 0.29);
+    --ios-blue: #007aff;
+    --ios-track: rgba(60, 60, 67, 0.14);
+}
+
+.ios-alert-backdrop.ios-dark {
+    --ios-bg: rgba(44, 44, 46, 0.86);
+    --ios-text: #fff;
+    --ios-secondary: rgba(235, 235, 245, 0.6);
+    --ios-divider: rgba(84, 84, 88, 0.65);
+    --ios-blue: #0a84ff;
+    --ios-track: rgba(235, 235, 245, 0.16);
+}
+
+.ios-alert {
+    width: 100%;
+    max-width: 280px;
+    overflow: hidden;
+    border-radius: 14px;
+    background: var(--ios-bg);
+    -webkit-backdrop-filter: saturate(180%) blur(30px);
+    backdrop-filter: saturate(180%) blur(30px);
+    color: var(--ios-text);
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    animation: ios-alert-pop 0.3s cubic-bezier(0.2, 1.1, 0.3, 1) both;
+}
+
+.ios-alert-body {
+    padding: 20px 16px 16px;
+}
+
+.ios-alert-title {
+    margin: 0 0 4px;
+    font-size: 17px;
+    line-height: 22px;
+    font-weight: 600;
+    letter-spacing: -0.41px;
+}
+
+.ios-alert-message {
+    margin: 0;
+    font-size: 13px;
+    line-height: 18px;
+    letter-spacing: -0.08px;
+}
+
+.ios-alert-hint {
+    margin: 8px 0 0;
+    font-size: 12px;
+    line-height: 16px;
+    color: var(--ios-secondary);
+}
+
+/* Thin progress bar that drains over the 7 seconds. */
+.ios-alert-timer {
+    height: 2px;
+    background: var(--ios-track);
+}
+
+.ios-alert-timer-fill {
+    height: 100%;
+    background: var(--ios-blue);
+    transform-origin: left center;
+    transition: transform 0.1s linear;
+}
+
+.ios-alert-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 44px;
+    padding: 0 16px;
+    border: 0;
+    border-top: 0.5px solid var(--ios-divider);
+    background: transparent;
+    color: var(--ios-blue);
+    font: inherit;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.41px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.ios-alert-button:active {
+    background: var(--ios-divider);
+}
+
+.ios-alert-button:focus-visible {
+    outline: 2px solid var(--ios-blue);
+    outline-offset: -2px;
+}
+
+.ios-alert-count {
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--ios-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+@keyframes ios-alert-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes ios-alert-pop {
+    from { opacity: 0; transform: scale(1.12); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ios-alert,
+    .ios-alert-backdrop { animation: none; }
+    .ios-alert-timer-fill { transition: none; }
+}

@@ -28,6 +28,9 @@ class RefreshTokenService
      */
     public function issue(User $user, ?Request $request = null, array $abilities = ['*']): array
     {
+        // Single-device login: a fresh login ends every other session.
+        $this->displaceOtherSessions($user, $request);
+
         return $this->issueForFamily($user, (string) Str::uuid(), $request, $abilities);
     }
 
@@ -44,6 +47,14 @@ class RefreshTokenService
 
         if (!$stored) {
             throw new \RuntimeException('Invalid refresh token.');
+        }
+
+        if ($stored->revoked_reason === 'displaced') {
+            // Not a stolen-token signal: this device was simply signed out
+            // because the account logged in somewhere else. Tell the client
+            // exactly that so it can show the "signed in on another device"
+            // alert rather than a generic expiry message.
+            throw new SessionDisplacedException($stored->displaced_by);
         }
 
         if ($stored->revoked_at !== null || $stored->rotated_at !== null) {
@@ -69,6 +80,58 @@ class RefreshTokenService
         }
 
         return $this->issueForFamily($stored->user, $stored->family_id, $request, ['*']);
+    }
+
+    /**
+     * Single-device login: end every other live session for this user.
+     * Their access tokens are deleted (next API call 401s) and their
+     * refresh tokens are marked 'displaced' so the old device can be told
+     * *why* it was signed out, and which device took over.
+     */
+    public function displaceOtherSessions(User $user, ?Request $request = null): void
+    {
+        if (!config('sclf.single_device_login', true)) {
+            return;
+        }
+
+        RefreshToken::where('user_id', $user->id)
+            ->whereNull('revoked_at')
+            ->update([
+                'revoked_at' => now(),
+                'revoked_reason' => 'displaced',
+                'displaced_by' => $this->deviceLabel($request?->userAgent()),
+            ]);
+
+        $user->tokens()->delete();
+    }
+
+    /**
+     * Short, human label for a User-Agent, e.g. "iPhone · Safari".
+     */
+    public function deviceLabel(?string $ua): string
+    {
+        $ua = (string) $ua;
+
+        $device = match (true) {
+            (bool) preg_match('/iPhone/i', $ua) => 'iPhone',
+            (bool) preg_match('/iPad/i', $ua) => 'iPad',
+            (bool) preg_match('/Android/i', $ua) => 'Android phone',
+            (bool) preg_match('/Windows/i', $ua) => 'Windows PC',
+            (bool) preg_match('/Macintosh|Mac OS X/i', $ua) => 'Mac',
+            (bool) preg_match('/Linux|CrOS/i', $ua) => 'Linux device',
+            default => 'another device',
+        };
+
+        $browser = match (true) {
+            (bool) preg_match('/Edg\//i', $ua) => 'Edge',
+            (bool) preg_match('/OPR\/|Opera/i', $ua) => 'Opera',
+            (bool) preg_match('/CriOS|Chrome\//i', $ua) => 'Chrome',
+            (bool) preg_match('/FxiOS|Firefox\//i', $ua) => 'Firefox',
+            (bool) preg_match('/Safari\//i', $ua) => 'Safari',
+            default => null,
+        };
+
+        return $browser ? "{$device} · {$browser}" : $device;
     }
 
     /**

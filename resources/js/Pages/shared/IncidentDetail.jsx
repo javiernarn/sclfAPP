@@ -11,6 +11,7 @@ import AttachmentGallery from '../../Components/shared/AttachmentGallery';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm, useDiscardConfirm } from '../../context/ConfirmContext';
+import { roleNameAndId } from '../../utils/roleLabel';
 
 const CATEGORY_OPTIONS = ['theft', 'vandalism', 'trespassing', 'altercation', 'suspicious_activity', 'safety_hazard', 'lost_item_dispute', 'other'];
 const SEVERITY_OPTIONS = ['low', 'medium', 'high', 'critical'];
@@ -223,6 +224,10 @@ export default function IncidentDetail() {
         );
     }
 
+    // One clear owner so Security, Staff and Admin don't have to guess who is
+    // handling this: whoever resolved it, otherwise whoever it's assigned to.
+    const manager = incident.resolver || incident.assignee;
+
     const canEdit = isStaff
         ? incident.status !== 'closed'
         : (incident.reporter?.id === user?.id && incident.status === 'reported');
@@ -239,7 +244,7 @@ export default function IncidentDetail() {
             </Link>
 
             <div className="ds-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                <div className="ds-card-head">
                     <h3 style={{ margin: 0 }}>Details</h3>
                     {canEdit && !editing && (
                         <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={startEditing}>
@@ -255,7 +260,7 @@ export default function IncidentDetail() {
                             <InfoItem icon={AlertTriangle} label="Severity" value={incident.severity} />
                             <InfoItem icon={MapPin} label="Location" value={incident.location_text} />
                             <InfoItem icon={Calendar} label="Occurred" value={new Date(incident.occurred_at).toLocaleString()} />
-                            <InfoItem icon={UserCircle} label="Assigned to" value={incident.assignee?.name} />
+                            <InfoItem icon={UserCircle} label="Managed by" value={manager ? roleNameAndId(manager) : 'Not yet taken by anyone'} />
                             {incident.campus?.name && <InfoItem icon={ShieldAlert} label="Campus" value={incident.campus.name} />}
                         </div>
                         <div className="ds-field" style={{ marginTop: 12 }}>
@@ -332,7 +337,7 @@ export default function IncidentDetail() {
                 <div className="ds-card">
                     <h3>Resolution</h3>
                     <div className="ds-info-grid">
-                        <InfoItem icon={UserCircle} label="Resolved by" value={incident.resolver?.name} />
+                        <InfoItem icon={UserCircle} label="Resolved by" value={incident.resolver ? roleNameAndId(incident.resolver) : null} />
                         <InfoItem icon={Calendar} label="Resolved at" value={incident.resolved_at ? new Date(incident.resolved_at).toLocaleString() : null} />
                         {incident.closed_at && <InfoItem icon={CheckCircle2} label="Closed at" value={new Date(incident.closed_at).toLocaleString()} />}
                     </div>

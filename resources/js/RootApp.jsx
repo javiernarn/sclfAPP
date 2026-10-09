@@ -5,6 +5,7 @@ import { publicRoutes, adminRoutes, securityRoutes, studentRoutes } from './rout
 import MainPage from './Pages/Main/MainPage';
 import SetupAccountPage from './Pages/Profile/SetupAccountPage';
 import ApprovalRequestModal from './Components/shared/ApprovalRequestModal';
+import DeviceSignedOutModal from './Components/shared/DeviceSignedOutModal';
 import useServiceWorkerNavigation from './hooks/useServiceWorkerNavigation';
 
 const SETUP_PATH = '/app/setup-account';
@@ -13,7 +14,7 @@ function ProtectedRoute({ children, requiredRoles }) {
     const { user, roles, loading } = useAuth();
     const location = useLocation();
 
-    if (loading) return <MainPage />;
+    if (loading) return <MainPage routing={false} />;
     if (!user) {
         // Keep where they were headed (e.g. a tapped push notification) so
         // login can send them straight back there.
@@ -55,7 +56,7 @@ function ProtectedRoute({ children, requiredRoles }) {
 function SetupRoute({ children }) {
     const { user, loading } = useAuth();
 
-    if (loading) return <MainPage />;
+    if (loading) return <MainPage routing={false} />;
     if (!user) return <Navigate to="/login" replace />;
     if (!user.must_setup_profile) return <Navigate to="/app/dashboard" replace />;
 
@@ -71,8 +72,9 @@ export default function RootApp() {
         // Suspense fallback covers the lazy-loaded SecurityQrScanner chunk
         // (see routes/index.js) — MainPage doubles as the loading screen
         // elsewhere in the app, so reuse it here for a consistent feel.
-        <Suspense fallback={<MainPage />}>
+        <Suspense fallback={<MainPage routing={false} />}>
             <ApprovalRequestModal />
+            <DeviceSignedOutModal />
             <Routes>
                 {/* "/" always shows the loading screen first, which then decides
                     whether to send the visitor to /login or to their dashboard. */}

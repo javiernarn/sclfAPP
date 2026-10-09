@@ -27,7 +27,7 @@ class AssetController extends Controller
         $isStaff = $viewer->hasAnyRole(['security_officer', 'admin', 'staff']);
 
         $query = Asset::query()
-            ->with(['assignee:id,name', 'building:id,name', 'campus:id,name,code'])
+            ->with(['assignee:id,name', 'assignee.roles:id,name', 'building:id,name', 'campus:id,name,code'])
             ->when(!$isStaff, fn ($q) => $q->where('assigned_to', $viewer->id))
             ->when(
                 $isStaff && $viewer->campus_id && !$viewer->hasAdminAccess(),
@@ -81,6 +81,7 @@ class AssetController extends Controller
 
         $asset->load([
             'assignee:id,name,email',
+            'assignee.roles:id,name',
             'building:id,name',
             'campus:id,name,code',
             'creator:id,name',

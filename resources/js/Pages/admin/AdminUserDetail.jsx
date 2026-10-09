@@ -327,7 +327,7 @@ export default function AdminUserDetail() {
             </div>
 
             <div className="ds-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                <div className="ds-card-head">
                     <div className="ds-card-title-icon" style={{ fontSize: 15.5, fontWeight: 800 }}>
                         <History size={17} /> Login / Logout History
                     </div>

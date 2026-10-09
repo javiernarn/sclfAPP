@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios, { storeTokenPair, getStoredToken, clearStoredToken } from '../config/axiosConfig';
+import { clearLoginMemory } from '../utils/welcome';
 import { getCurrentSubscription, disablePush } from '../utils/push';
 
 const AuthContext = createContext(null);
@@ -152,6 +153,7 @@ export function AuthProvider({ children }) {
 
         await axios.post('/logout');
         clearStoredToken();
+        clearLoginMemory();
         setUser(null);
         setRoles([]);
     };

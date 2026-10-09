@@ -30,7 +30,7 @@ class SecurityIncidentController extends Controller
         $isStaff = $viewer->hasAnyRole(['security_officer', 'admin', 'staff']);
 
         $query = SecurityIncident::query()
-            ->with(['reporter:id,name', 'assignee:id,name', 'campus:id,name,code'])
+            ->with(['reporter:id,name', 'assignee:id,name', 'assignee.roles:id,name', 'campus:id,name,code'])
             ->when(!$isStaff, fn ($q) => $q->where('reported_by', $viewer->id))
             ->when(
                 $isStaff && $viewer->campus_id && !$viewer->hasAdminAccess(),
@@ -85,16 +85,30 @@ class SecurityIncidentController extends Controller
     {
         $this->authorize('view', $securityIncident);
 
-        $securityIncident->load([
+        return response()->json(['data' => $this->withDetails($securityIncident)]);
+    }
+
+    /**
+     * Everything the detail page needs to show WHO is involved. The people
+     * come with their roles and their ID (student_id / staff_id feed the
+     * `display_id` accessor, so they must be selected) — otherwise the page
+     * could only print a bare name and viewers couldn't tell an admin from a
+     * guard. Also used for the lifecycle endpoints below: ->fresh() drops
+     * every relation, which used to leave "Resolved by" blank right after
+     * pressing Mark Resolved until the page was reloaded.
+     */
+    protected function withDetails(SecurityIncident $incident): SecurityIncident
+    {
+        return $incident->load([
             'reporter:id,name,email',
-            'assignee:id,name',
-            'resolver:id,name',
+            'assignee:id,name,student_id,staff_id',
+            'assignee.roles:id,name',
+            'resolver:id,name,student_id,staff_id',
+            'resolver.roles:id,name',
             'campus:id,name,code',
             'relatedFoundItem:id,item_name,status',
             'attachments',
         ]);
-
-        return response()->json(['data' => $securityIncident]);
     }
 
     /**
@@ -123,7 +137,7 @@ class SecurityIncidentController extends Controller
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         }
 
-        return response()->json(['success' => true, 'message' => 'Report updated.', 'data' => $incident]);
+        return response()->json(['success' => true, 'message' => 'Report updated.', 'data' => $this->withDetails($incident)]);
     }
 
     /**
@@ -156,7 +170,7 @@ class SecurityIncidentController extends Controller
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         }
 
-        return response()->json(['success' => true, 'message' => "Assigned to {$officer->name}.", 'data' => $incident]);
+        return response()->json(['success' => true, 'message' => "Assigned to {$officer->name}.", 'data' => $this->withDetails($incident)]);
     }
 
     public function resolve(Request $request, SecurityIncident $securityIncident)
@@ -173,7 +187,7 @@ class SecurityIncidentController extends Controller
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         }
 
-        return response()->json(['success' => true, 'message' => 'Incident resolved.', 'data' => $incident]);
+        return response()->json(['success' => true, 'message' => 'Incident resolved.', 'data' => $this->withDetails($incident)]);
     }
 
     public function close(Request $request, SecurityIncident $securityIncident)
@@ -186,7 +200,7 @@ class SecurityIncidentController extends Controller
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         }
 
-        return response()->json(['success' => true, 'message' => 'Incident closed.', 'data' => $incident]);
+        return response()->json(['success' => true, 'message' => 'Incident closed.', 'data' => $this->withDetails($incident)]);
     }
 
     public function reopen(Request $request, SecurityIncident $securityIncident)
@@ -203,6 +217,6 @@ class SecurityIncidentController extends Controller
             return response()->json(['success' => false, 'errors' => $e->errors()], 422);
         }
 
-        return response()->json(['success' => true, 'message' => 'Incident reopened.', 'data' => $incident]);
+        return response()->json(['success' => true, 'message' => 'Incident reopened.', 'data' => $this->withDetails($incident)]);
     }
 }

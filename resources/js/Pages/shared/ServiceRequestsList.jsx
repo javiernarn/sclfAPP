@@ -7,6 +7,7 @@ import ViewToggle from '../../Components/shared/ViewToggle';
 import useViewMode from '../../hooks/useViewMode';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { roleAndName } from '../../utils/roleLabel';
 
 const STATUS_OPTIONS = [
     { value: '', label: 'All statuses' },
@@ -91,7 +92,7 @@ export default function ServiceRequestsList() {
             }
         >
             {isStaff && (
-                <div className="ds-card" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <div className="ds-card ds-filter-card">
                     <div className="ds-field" style={{ minWidth: 180 }}>
                         <label>Status</label>
                         <select value={status} onChange={(e) => setStatus(e.target.value)}>
@@ -108,7 +109,7 @@ export default function ServiceRequestsList() {
             )}
 
             <div className="ds-card">
-                <div className="ds-list-head-row" style={{ marginBottom: 0 }}>
+                <div className="ds-list-head-row">
                     <h3 style={{ fontSize: 13, fontWeight: 800, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '.02em' }}>
                         {requests.length} {requests.length === 1 ? 'request' : 'requests'}
                     </h3>
@@ -155,7 +156,7 @@ export default function ServiceRequestsList() {
                                             </div>
                                         </td>
                                         <td className="ds-table-nowrap">
-                                            {isStaff ? (r.requester?.name || '—') : (r.assignee?.name || 'Unassigned')}
+                                            {isStaff ? (r.requester?.name || '—') : roleAndName(r.assignee, 'Unassigned')}
                                         </td>
                                         <td><span className={priorityBadgeClass(r.priority)}>{r.priority}</span></td>
                                         <td><span className={statusBadgeClass(r.status)}>{statusLabel(r.status)}</span></td>
@@ -190,7 +191,7 @@ export default function ServiceRequestsList() {
                                                 {r.department?.name ? ` · ${r.department.name}` : ''}
                                                 {r.campus?.code ? ` · ${r.campus.code}` : ''}
                                                 {isStaff && r.requester?.name ? ` · Filed by ${r.requester.name}` : ''}
-                                                {r.assignee?.name ? ` · Assigned to ${r.assignee.name}` : ''}
+                                                {r.assignee?.name ? ` · Assigned to ${roleAndName(r.assignee)}` : ''}
                                             </p>
                                             <p className="ds-list-item-meta">
                                                 <Wrench size={12} style={{ verticalAlign: -2, marginRight: 4 }} />

@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import { useToast } from "../../context/ToastContext";
+import { loginToast } from "../../utils/welcome";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
 import logo from "../../assets/images/site-logo.png";
 import AccountMenu from "./AccountMenu";
@@ -303,7 +304,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
         };
     }, [location.pathname]);
 
-    // Fires the "Welcome back" toast once the person has actually landed
+    // Fires the "Welcome" / "Welcome back" toast once the person has actually landed
     // on a real dashboard-shell page — not at the moment they submitted
     // the login form. LoginPage sets this sessionStorage flag right
     // before routing through the MainPage loading screen; this is the
@@ -315,7 +316,10 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
         try {
             if (window.sessionStorage.getItem('sclf-login-toast') === '1') {
                 window.sessionStorage.removeItem('sclf-login-toast');
-                toast.success('You have successfully logged in.', { title: 'Welcome back' });
+                // "Welcome" on the account's first ever sign-in, "Welcome back"
+                // after that (see utils/welcome.js).
+                const { title, message } = loginToast();
+                toast.success(message, { title });
             }
             // Same handoff, but for a brand-new account — RegisterPage sets
             // this flag right before routing through the MainPage loading

@@ -9,6 +9,7 @@ import DashboardShell from '../../Components/shared/DashboardShell';
 import AttachmentGallery from '../../Components/shared/AttachmentGallery';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { roleAndName } from '../../utils/roleLabel';
 
 const InfoItem = ({ icon: Icon, label, value }) => (
     <div className="ds-info-item">
@@ -184,7 +185,7 @@ export default function ServiceRequestDetail() {
                     <InfoItem icon={AlertTriangle} label="Priority" value={request.priority} />
                     <InfoItem icon={MapPin} label="Location" value={request.location_text} />
                     <InfoItem icon={Building2} label="Department" value={request.department?.name} />
-                    <InfoItem icon={UserCircle} label="Assigned to" value={request.assignee?.name} />
+                    <InfoItem icon={UserCircle} label="Assigned to" value={request.assignee ? roleAndName(request.assignee) : null} />
                     {request.campus?.name && <InfoItem icon={Wrench} label="Campus" value={request.campus.name} />}
                 </div>
                 <div className="ds-field" style={{ marginTop: 12 }}>

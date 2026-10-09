@@ -197,14 +197,14 @@ class AssetService
             $this->audit->log(
                 'asset.assigned',
                 $asset,
-                "Asset {$asset->asset_tag} assigned to {$custodian->name} by {$officer->name}.",
+                "Asset {$asset->asset_tag} assigned to {$custodian->roleAndName()} by {$officer->roleAndName()}.",
                 actor: $officer,
             );
 
             $custodian->notify(new SclfNotification(
                 type: SclfNotification::TYPE_ASSET_ASSIGNED,
                 title: 'Asset Assigned To You',
-                message: "{$asset->name} ({$asset->asset_tag}) was assigned to you by {$officer->name}.",
+                message: "{$asset->name} ({$asset->asset_tag}) was assigned to you by {$officer->roleAndName()}.",
                 relatedType: Asset::class,
                 relatedId: $asset->id,
             ));

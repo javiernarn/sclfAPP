@@ -1,9 +1,10 @@
 import axios from 'axios';
 import secureLocalStorage from 'react-secure-storage';
 import { BASE_URL } from './constant';
-import { showToast, requestApproval } from '../utils/eventBus';
+import { showToast, requestApproval, notifySessionDisplaced } from '../utils/eventBus';
 import { humanizeValidationErrors } from '../utils/validators';
 import { disablePush } from '../utils/push';
+import { clearRememberedCredentials } from '../hooks/useRememberedCredentials';
 
 const SESSION_KEY = 'sclf_token_pair';
 const LOCAL_KEY = 'token_pair';
@@ -37,6 +38,7 @@ export const clearStoredToken = () => {
 
 // pair: { access_token, refresh_token, expires_in }
 export const storeTokenPair = (pair, remember = true) => {
+    sessionDisplaced = false;
     clearStoredToken();
     if (remember) {
         secureLocalStorage.setItem(LOCAL_KEY, pair);
@@ -65,7 +67,28 @@ instance.interceptors.request.use((config) => {
     return config;
 });
 
+// Set once the server tells us this account signed in on another device.
+// From then on every straggling request (polls, retries) is rejected
+// quietly instead of each one triggering its own redirect/toast while the
+// alert is on screen.
+let sessionDisplaced = false;
+
+const handleDisplaced = (device) => {
+    if (sessionDisplaced) return;
+    sessionDisplaced = true;
+    // This device lost the account to a newer login: drop the saved
+    // session AND the remembered email/password ("Keep this session open")
+    // so nobody can get back in from here with one tap. Only this browser's
+    // storage is touched — the device that just signed in is unaffected.
+    clearStoredToken();
+    try { clearRememberedCredentials(); } catch { /* storage unavailable */ }
+    disablePush().catch(() => {});
+    notifySessionDisplaced({ device: device || null });
+};
+
+// A brand-new login in this tab re-arms the check (see storeTokenPair).
 const hardLogout = () => {
+    if (sessionDisplaced) return;
     clearStoredToken();
     disablePush().catch(() => {});
     showToast({ type: 'warning', title: 'Session expired', message: 'Please sign in again to continue.' });
@@ -93,6 +116,18 @@ instance.interceptors.response.use(
     async (error) => {
         const statusCode = error.response?.status || null;
         const originalRequest = error.config;
+
+        // Already signed out because of a login elsewhere — don't spam
+        // toasts or redirects for requests still in flight.
+        if (sessionDisplaced && statusCode === 401) {
+            return Promise.reject(error);
+        }
+
+        // Explicit "displaced" answer on any endpoint.
+        if (statusCode === 401 && error.response?.data?.code === 'session_displaced') {
+            handleDisplaced(error.response.data.device);
+            return Promise.reject(error);
+        }
 
         // Silent refresh path — never on 403 (that's a real permissions
         // problem, not an expired token) and never for a request that's
@@ -143,7 +178,11 @@ instance.interceptors.response.use(
                 return instance(originalRequest);
             } catch (refreshError) {
                 processQueue(refreshError);
-                hardLogout();
+                if (refreshError.response?.data?.code === 'session_displaced') {
+                    handleDisplaced(refreshError.response.data.device);
+                } else {
+                    hardLogout();
+                }
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;

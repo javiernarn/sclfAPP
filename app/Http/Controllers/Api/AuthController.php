@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\Audit\AuditLogService;
 use App\Services\Auth\RefreshTokenReuseException;
 use App\Services\Auth\RefreshTokenService;
+use App\Services\Auth\SessionDisplacedException;
 use App\Services\Auth\TwoFactorAuthService;
 use Illuminate\Http\Request;
 // use Illuminate\Support\Facades\Auth;
@@ -142,9 +143,14 @@ class AuthController extends Controller
 
         $pair = $this->tokens->issue($user, $request);
 
+        // Registering signs them straight in, so this counts as their
+        // first session — their next login is a "Welcome back".
+        $user->recordLogin();
+
         return response()->json(array_merge(
             $this->userPayload($user),
             [
+                'first_login' => true,
                 'access_token' => $pair['access_token'],
                 'refresh_token' => $pair['refresh_token'],
                 'expires_in' => $pair['expires_in'],
@@ -214,9 +220,12 @@ class AuthController extends Controller
 
         $pair = $this->tokens->issue($user, $request);
 
+        $firstLogin = $user->recordLogin();
+
         return response()->json(array_merge(
             $this->userPayload($user),
             [
+                'first_login' => $firstLogin,
                 'access_token' => $pair['access_token'],
                 'refresh_token' => $pair['refresh_token'],
                 'expires_in' => $pair['expires_in'],
@@ -239,6 +248,15 @@ class AuthController extends Controller
 
         try {
             $pair = $this->tokens->rotate($validated['refresh_token'], $request);
+        } catch (SessionDisplacedException $e) {
+            // 401 + machine-readable code: the frontend shows the
+            // "signed in on another device" alert instead of a generic
+            // session-expired toast.
+            return response()->json([
+                'message' => $e->getMessage(),
+                'code' => 'session_displaced',
+                'device' => $e->device,
+            ], 401);
         } catch (RefreshTokenReuseException $e) {
             throw ValidationException::withMessages([
                 'refresh_token' => [$e->getMessage()],

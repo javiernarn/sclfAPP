@@ -10,6 +10,7 @@ import DashboardShell from '../../Components/shared/DashboardShell';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm, useDiscardConfirm } from '../../context/ConfirmContext';
+import { roleAndName } from '../../utils/roleLabel';
 
 const InfoItem = ({ icon: Icon, label, value }) => (
     <div className="ds-info-item">
@@ -123,7 +124,7 @@ export default function AssetDetail() {
             const lookup = await axios.get('/users/lookup', { params: { email: assignEmail.trim() }, silent: true });
             const custodian = lookup.data.data;
             const res = await axios.post(`/assets/${id}/assign`, { user_id: custodian.id, notes: actionNotes || undefined });
-            toast.success(`Checked out to ${custodian.name}.`, { title: 'Assigned' });
+            toast.success(`Checked out to ${roleAndName(custodian)}.`, { title: 'Assigned' });
             setAsset(res.data.data);
             setAssignEmail('');
             setActionNotes('');
@@ -227,7 +228,7 @@ export default function AssetDetail() {
             </Link>
 
             <div className="ds-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
+                <div className="ds-card-head">
                     <h3 style={{ margin: 0 }}>Details</h3>
                     {isStaff && !editing && (
                         <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={startEditing}>
@@ -242,7 +243,7 @@ export default function AssetDetail() {
                             <InfoItem icon={Tag} label="Category" value={asset.category?.replace(/_/g, ' ')} />
                             <InfoItem icon={Building2} label="Building" value={asset.building?.name} />
                             <InfoItem icon={MapPin} label="Location" value={asset.location_text} />
-                            <InfoItem icon={UserCircle} label="Checked out to" value={asset.assignee?.name} />
+                            <InfoItem icon={UserCircle} label="Checked out to" value={asset.assignee ? roleAndName(asset.assignee) : null} />
                             <InfoItem icon={Calendar} label="Acquired" value={asset.acquired_at ? new Date(asset.acquired_at).toLocaleDateString() : null} />
                             <InfoItem icon={DollarSign} label="Value" value={asset.value ? `₱${Number(asset.value).toLocaleString()}` : null} />
                         </div>

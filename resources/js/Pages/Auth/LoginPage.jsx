@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -17,6 +17,7 @@ import AuthShell, {
     LedgerButton,
 } from '../../Components/shared/AuthShell';
 import { Mail, Lock } from '../../Components/icons';
+import { rememberLogin } from '../../utils/welcome';
 import occBg from '../../assets/images/occ.webp';
 
 export default function LoginPage() {
@@ -37,6 +38,7 @@ export default function LoginPage() {
     const toast = useToast();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const sessionDisplaced = searchParams.get('type') === 'session-displaced';
     const sessionExpired = searchParams.get('type') === 'session-expired';
     // Set when this login page was opened from a notification email's
     // "Login to View" button (?redirect=/claims/5, etc.) — stashed for
@@ -52,7 +54,15 @@ export default function LoginPage() {
 
     // Already signed in and opened an emailed link: go straight to the page,
     // but only if the link was meant for this account.
+    //
+    // `signingIn` guards against a fresh login on this very page: login()
+    // sets the user BEFORE finishLogin() runs, so without this guard the
+    // effect below would jump straight to the redirect target (the
+    // dashboard flashes) and only then does finishLogin() send them to the
+    // MainPage loader — or skip the loader entirely when navigation races.
+    const signingIn = useRef(false);
     useEffect(() => {
+        if (signingIn.current) return;
         if (authLoading || !currentUser || !redirectParam || !/^\/(?!\/)/.test(redirectParam)) return;
         if (uidParam && String(currentUser.id) !== String(uidParam)) return; // someone else's link: show login
         navigate(redirectParam, { replace: true });
@@ -65,15 +75,25 @@ export default function LoginPage() {
     // Prefill from anything previously remembered — only ever written when
     // the person checked "Keep this session open" on a prior visit.
     useEffect(() => {
+        // Arrived here because another device took over the account:
+        // never prefill, and wipe anything still remembered on this device.
+        if (sessionDisplaced) {
+            clearRememberedCredentials();
+            setEmail('');
+            setPassword('');
+            setRemember(false);
+            return;
+        }
         const remembered = loadRememberedCredentials();
         if (remembered) {
             setEmail(remembered.email || '');
             setPassword(remembered.password || '');
             setRemember(true);
         }
-    }, []);
+    }, [sessionDisplaced]);
 
-    const finishLogin = () => {
+    const finishLogin = (firstLogin = false) => {
+        rememberLogin(firstLogin);
         // "Keep this session open" checked → store email + password so
         // this form is prefilled next visit. Unchecked → make sure
         // nothing lingers from an earlier login.
@@ -86,8 +106,9 @@ export default function LoginPage() {
         // Don't toast here — the person still has the ~7s MainPage
         // loading screen ahead of them before they actually land on
         // their dashboard. Flag it instead; DashboardShell fires the
-        // "Welcome back" toast itself once they're really there (see
-        // the sessionStorage check in DashboardShell.jsx).
+        // "Welcome" (first ever sign-in) or "Welcome back" toast itself
+        // once they're really there (see DashboardShell.jsx and
+        // utils/welcome.js — the server's first_login flag decides).
         try {
             window.sessionStorage.setItem('sclf-login-toast', '1');
             // Relative path only ("/claims/5", "/notifications", …) —
@@ -114,17 +135,20 @@ export default function LoginPage() {
         e.preventDefault();
         setError('');
         setLoading(true);
+        signingIn.current = true;
 
         try {
             const result = await login(email, password, remember);
 
             if (result.two_factor_required) {
+                signingIn.current = false;
                 setTwoFactorChallenge({ tempToken: result.temp_token });
                 return;
             }
 
-            finishLogin();
+            finishLogin(!!result.first_login);
         } catch (err) {
+            signingIn.current = false;
             // Validation errors (bad credentials, lockout) carry the real,
             // specific message under errors.email — the top-level
             // `message` is just Laravel's generic "The given data was
@@ -143,11 +167,13 @@ export default function LoginPage() {
         e.preventDefault();
         setError('');
         setLoading(true);
+        signingIn.current = true;
 
         try {
-            await verifyTwoFactor(twoFactorChallenge.tempToken, code, remember);
-            finishLogin();
+            const result = await verifyTwoFactor(twoFactorChallenge.tempToken, code, remember);
+            finishLogin(!!result.first_login);
         } catch (err) {
+            signingIn.current = false;
             const message = err.response?.data?.errors?.code?.[0]
                 || err.response?.data?.message
                 || 'That code is invalid or has expired.';
@@ -170,9 +196,12 @@ export default function LoginPage() {
             gate
             gateName="Opol Community College"
             gateLabel="Login"
-            gateDefaultOpen={sessionExpired || !!redirectParam}
+            gateDefaultOpen={sessionExpired || sessionDisplaced || !!redirectParam}
             footer={<>No record on file? <Link to="/register">Open a new case file</Link></>}
         >
+            {sessionDisplaced && (
+                <LedgerBanner tone="notice">You were signed out because your account was signed in on another device.</LedgerBanner>
+            )}
             {sessionExpired && (
                 <LedgerBanner tone="error">Your session expired. Please sign in again.</LedgerBanner>
             )}
@@ -219,7 +248,7 @@ export default function LoginPage() {
                         type="email"
                         value={email}
                         onChange={(e) => { setEmail(normalizeEmailInput(e.target.value)); setError(''); }}
-                        autoComplete="email"
+                        autoComplete={sessionDisplaced ? 'off' : 'email'}
                         placeholder="occ.lastname.firstname@gmail.com"
                         aria-invalid={!!error}
                         required
@@ -232,7 +261,7 @@ export default function LoginPage() {
                         id="password"
                         value={password}
                         onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                        autoComplete="current-password"
+                        autoComplete={sessionDisplaced ? 'new-password' : 'current-password'}
                         show={showPassword}
                         onToggle={() => setShowPassword((v) => !v)}
                         aria-invalid={!!error}

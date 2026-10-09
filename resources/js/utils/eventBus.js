@@ -32,3 +32,11 @@ export const showToast = (toast) => toastBus.emit(toast);
 // ApprovalRequestModal listens and offers to send the admin a request.
 export const approvalBus = createBus();
 export const requestApproval = (info) => approvalBus.emit(info);
+
+
+// Fired by axiosConfig.js when the server says this session was ended
+// because the same account signed in on another device (single-device
+// login). DeviceSignedOutModal listens and shows the iOS-style alert,
+// then sends the person back to the login screen.
+export const sessionBus = createBus();
+export const notifySessionDisplaced = (info) => sessionBus.emit(info);

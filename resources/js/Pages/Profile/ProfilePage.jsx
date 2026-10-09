@@ -152,7 +152,7 @@ export default function ProfilePage() {
                     <InfoItem icon={VenetianMask} label="Gender" value={genderLabel} />
                     <InfoItem icon={IdCard} label={idLabel} value={idValue} />
                     {isStudent && <InfoItem icon={GraduationCap} label="Course" value={user?.course} />}
-                    {isStudent && <InfoItem icon={MapPin} label="Address" value={user?.address} />}
+                    <InfoItem icon={MapPin} label="Address" value={user?.address} />
                     <InfoItem icon={ShieldCheck} label="Role" value={roleLabel} />
                 </div>
             </div>

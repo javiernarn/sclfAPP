@@ -89,6 +89,20 @@ class User extends Authenticatable
     ];
 
     /**
+     * Stamp a completed sign-in. Returns true when this was the account's
+     * very first one (so the client can greet "Welcome" rather than
+     * "Welcome back"). Uses forceFill so last_login_at stays out of
+     * mass assignment, and saveQuietly so it doesn't touch anything else.
+     */
+    public function recordLogin(): bool
+    {
+        $isFirst = $this->last_login_at === null;
+        $this->forceFill(['last_login_at' => now()])->saveQuietly();
+
+        return $isFirst;
+    }
+
+    /**
      * Full public URL for the stored profile picture, or null.
      */
     public function getProfilePictureUrlAttribute(): ?string
@@ -122,6 +136,9 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            // NULL until the account's first completed sign-in — see
+            // recordLogin() and the "Welcome" vs "Welcome back" toast.
+            'last_login_at' => 'datetime',
             // True only for an admin-created staff account (instructor /
             // security_officer / admin) that hasn't yet been through
             // SetupAccountPage. Never true for a student, who self-
@@ -135,6 +152,35 @@ class User extends Authenticatable
             'two_factor_recovery_codes' => 'encrypted',
             'two_factor_confirmed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Human-readable role used wherever a person is named in text that
+     * other people read (assignment audit entries, notifications), so a bare
+     * name never leaves readers guessing who they are.
+     */
+    public function getRoleLabelAttribute(): string
+    {
+        $labels = [
+            'admin' => 'Admin',
+            'staff' => 'Staff',
+            'security_officer' => 'Security Officer',
+            'instructor' => 'Instructor',
+            'student' => 'Student',
+        ];
+        $names = $this->roles->pluck('name')->all();
+        foreach ($labels as $role => $label) {
+            if (in_array($role, $names, true)) {
+                return $label;
+            }
+        }
+        return '';
+    }
+
+    /** "Security Officer Jonee John" (or just the name when no role). */
+    public function roleAndName(): string
+    {
+        return trim($this->role_label . ' ' . $this->name);
     }
 
     /**

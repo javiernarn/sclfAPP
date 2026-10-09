@@ -77,7 +77,14 @@ class IncidentService
      */
     protected function notifyOnReport(SecurityIncident $incident, User $reporter): void
     {
-        $recipients = User::role(['admin', 'security_officer'])->get();
+        // 'staff' accounts are part of the Staff/Admin oversight group too
+        // (see User::hasAdminAccess()) — leaving them out meant they never
+        // got the bell or push alert for an incident a student/instructor
+        // reported. The reporter is skipped so nobody is pinged about their
+        // own report.
+        $recipients = User::role(['admin', 'staff', 'security_officer'])
+            ->where('id', '!=', $reporter->id)
+            ->get();
 
         foreach ($recipients as $recipient) {
             $recipient->notify(new SclfNotification(
@@ -177,14 +184,14 @@ class IncidentService
             $this->audit->log(
                 'incident.assigned',
                 $incident,
-                "Security incident #{$incident->id} assigned to {$officer->name} by {$actor->name}.",
+                "Security incident #{$incident->id} assigned to {$officer->roleAndName()} by {$actor->roleAndName()}.",
                 actor: $actor,
             );
 
             $officer->notify(new SclfNotification(
                 type: SclfNotification::TYPE_INCIDENT_ASSIGNED,
                 title: 'Incident Assigned To You',
-                message: "\"{$incident->title}\" was assigned to you by {$actor->name}.",
+                message: "\"{$incident->title}\" was assigned to you by {$actor->roleAndName()}.",
                 relatedType: SecurityIncident::class,
                 relatedId: $incident->id,
             ));

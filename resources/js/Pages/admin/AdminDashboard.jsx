@@ -1,3 +1,4 @@
+import { welcomeHeading } from '../../utils/welcome';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import useRoleLabel from '../../hooks/useRoleLabel';
@@ -31,7 +32,7 @@ export default function AdminDashboard() {
 
     if (loading && !data) {
         return (
-            <DashboardShell eyebrow={`${roleLabel || 'Admin'} Portal`} title={`Welcome, ${user?.name?.split(' ')[0] || roleLabel || 'Admin'} 👋`} subtitle="Oversee lost & found reports across Opol Community College.">
+            <DashboardShell eyebrow={`${roleLabel || 'Admin'} Portal`} title={`${welcomeHeading(user?.name?.split(' ')[0] || roleLabel || 'Admin')} 👋`} subtitle="Oversee lost & found reports across Opol Community College.">
                 <DashboardSkeleton statCount={4} cardCount={2} />
             </DashboardShell>
         );
@@ -45,7 +46,7 @@ export default function AdminDashboard() {
     return (
         <DashboardShell onRefresh={refresh}
             eyebrow={`${roleLabel || 'Admin'} Portal`}
-            title={`Welcome, ${user?.name?.split(' ')[0] || roleLabel || 'Admin'} 👋`}
+            title={`${welcomeHeading(user?.name?.split(' ')[0] || roleLabel || 'Admin')} 👋`}
             subtitle="Oversee lost & found reports across Opol Community College."
         >
             <div className="ch-toolbar">

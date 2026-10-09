@@ -75,6 +75,7 @@ export default function AuthShell({
     footer,
     wide = false,
     tabs, // optional folder-tab step index for the register wizard
+    compact = false, // trimmed layout: no helper text, no legal line, tighter rows (setup page)
     centerHead = false, // center the title/subtitle — used by success/confirmation states
     // --- Optional "gate" mode (used by Login only) -----------------------
     // bgImage: photo painted behind the RIGHT side only (rail untouched).
@@ -109,7 +110,7 @@ export default function AuthShell({
         <>
             <style>{LEDGER_CSS}</style>
 
-            <div className={`lg-wrap ${isDark ? "dark" : "light"}`}>
+            <div className={`lg-wrap ${isDark ? "dark" : "light"}${compact ? " is-compact" : ""}`}>
                 {/* ============ LEFT: LEDGER RAIL ============ */}
                 <aside className="lg-rail">
                     <div className="lg-rail-ruled" aria-hidden="true" />
@@ -814,6 +815,18 @@ const LEDGER_CSS = `
         .lg-subtitle { display: none; }
     }
     @media (prefers-reduced-motion: reduce) { .lg-card, .lg-rail-blob { animation: none !important; } }
+
+    /* ============ Compact mode (account setup): fits one screen, no scrolling ============ */
+    .lg-wrap.is-compact .lg-stage-legal,
+    .lg-wrap.is-compact .lg-subtitle,
+    .lg-wrap.is-compact .lg-checklist,
+    .lg-wrap.is-compact .lg-row-hint:not(.lg-row-error-text) { display: none; }
+    .lg-wrap.is-compact .lg-card-head { padding: 14px 24px 0; }
+    .lg-wrap.is-compact .lg-card-body { padding: 6px 24px 14px; }
+    .lg-wrap.is-compact .lg-row { padding: 8px 0; }
+    .lg-wrap.is-compact .lg-card-foot { padding: 10px 24px; }
+    .lg-wrap.is-compact .lg-stage { overflow-y: hidden; padding-top: 12px; padding-bottom: 12px; }
+    .lg-wrap.is-compact .lg-strength { margin-top: 4px; }
 
     /* =====================================================================
        MOBILE APP UI  (phones, portrait only — desktop/landscape untouched)

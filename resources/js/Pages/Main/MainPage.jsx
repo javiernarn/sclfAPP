@@ -10,7 +10,11 @@ import logo from "../../assets/images/site-logo.png";
 // "figuring out where you go" job either time (mirrors alumniAPP's
 // MainPage.js, adapted to sclfAPP's AuthContext instead of a raw
 // userRole flag in storage).
-const MainPage = () => {
+// `routing={false}` renders only the loading screen with no redirect logic.
+// Used where MainPage is just a fallback (auth check in progress, lazy chunk
+// loading) — otherwise a slow chunk could trigger the 7s redirect and yank
+// the person away from the page they were opening.
+const MainPage = ({ routing = true }) => {
     const navigate = useNavigate();
     const { user, roles, loading } = useAuth();
     const { theme } = useAppTheme();
@@ -24,6 +28,7 @@ const MainPage = () => {
     }, []);
 
     useEffect(() => {
+        if (!routing) return; // fallback-only usage: never redirect
         if (loading) return; // wait for the /me check to resolve first
 
         const t = setTimeout(() => {
@@ -78,7 +83,7 @@ const MainPage = () => {
         }, 7000);
 
         return () => clearTimeout(t);
-    }, [loading, user, roles, navigate]);
+    }, [routing, loading, user, roles, navigate]);
 
     return (
         <>

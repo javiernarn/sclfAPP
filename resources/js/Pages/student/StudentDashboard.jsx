@@ -1,3 +1,4 @@
+import { welcomeHeading } from '../../utils/welcome';
 import React, { useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link } from 'react-router-dom';
@@ -24,7 +25,7 @@ export default function StudentDashboard() {
         return (
             <DashboardShell
                 eyebrow={isInstructor ? 'Instructor Portal' : 'Student Portal'}
-                title={`Welcome back, ${user?.name?.split(' ')[0] || 'there'} 👋`}
+                title={`${welcomeHeading(user?.name?.split(' ')[0] || 'there')} 👋`}
                 subtitle="Report items you've lost, or check what's been found around campus."
             >
                 <DashboardSkeleton statCount={3} cardCount={2} />
@@ -40,7 +41,7 @@ export default function StudentDashboard() {
     return (
         <DashboardShell onRefresh={refresh}
             eyebrow={isInstructor ? 'Instructor Portal' : 'Student Portal'}
-            title={`Welcome back, ${user?.name?.split(' ')[0] || 'there'} 👋`}
+            title={`${welcomeHeading(user?.name?.split(' ')[0] || 'there')} 👋`}
             subtitle="Report items you've lost, or check what's been found around campus."
         >
             <div className="ch-toolbar">

@@ -87,10 +87,17 @@ class ServiceRequestService
      */
     protected function notifyOnSubmit(ServiceRequest $request, User $requester): void
     {
-        $recipients = User::role('admin')->get();
+        // Staff accounts ('staff' role) work the facilities queue alongside
+        // the admin, so they're paged too — previously only 'admin' was, so
+        // staff never saw a new request arrive. The requester is skipped.
+        $recipients = User::role(['admin', 'staff'])
+            ->where('id', '!=', $requester->id)
+            ->get();
 
         if ($recipients->isEmpty()) {
-            $recipients = User::role('security_officer')->get();
+            $recipients = User::role('security_officer')
+                ->where('id', '!=', $requester->id)
+                ->get();
         }
 
         foreach ($recipients as $recipient) {
@@ -130,14 +137,14 @@ class ServiceRequestService
             $this->audit->log(
                 'service_request.assigned',
                 $request,
-                "Service request #{$request->id} assigned to {$staff->name} by {$actor->name}.",
+                "Service request #{$request->id} assigned to {$staff->roleAndName()} by {$actor->roleAndName()}.",
                 actor: $actor,
             );
 
             $staff->notify(new SclfNotification(
                 type: SclfNotification::TYPE_SERVICE_REQUEST_ASSIGNED,
                 title: 'Service Request Assigned To You',
-                message: "\"{$request->title}\" was assigned to you by {$actor->name}.",
+                message: "\"{$request->title}\" was assigned to you by {$actor->roleAndName()}.",
                 relatedType: ServiceRequest::class,
                 relatedId: $request->id,
             ));

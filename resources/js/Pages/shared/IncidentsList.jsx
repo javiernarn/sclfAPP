@@ -7,6 +7,7 @@ import ViewToggle from '../../Components/shared/ViewToggle';
 import useViewMode from '../../hooks/useViewMode';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { roleAndName } from '../../utils/roleLabel';
 
 const STATUS_OPTIONS = [
     { value: '', label: 'All statuses' },
@@ -87,7 +88,7 @@ export default function IncidentsList() {
             }
         >
             {isStaff && (
-                <div className="ds-card" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <div className="ds-card ds-filter-card">
                     <div className="ds-field" style={{ minWidth: 180 }}>
                         <label>Status</label>
                         <select value={status} onChange={(e) => setStatus(e.target.value)}>
@@ -104,7 +105,7 @@ export default function IncidentsList() {
             )}
 
             <div className="ds-card">
-                <div className="ds-list-head-row" style={{ marginBottom: 0 }}>
+                <div className="ds-list-head-row">
                     <h3 style={{ fontSize: 13, fontWeight: 800, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '.02em' }}>
                         {incidents.length} {incidents.length === 1 ? 'incident' : 'incidents'}
                     </h3>
@@ -150,7 +151,7 @@ export default function IncidentsList() {
                                             </div>
                                         </td>
                                         <td className="ds-table-nowrap">
-                                            {isStaff ? (incident.reporter?.name || '—') : (incident.assignee?.name || 'Unassigned')}
+                                            {isStaff ? (incident.reporter?.name || '—') : roleAndName(incident.assignee, 'Unassigned')}
                                         </td>
                                         <td><span className={severityBadgeClass(incident.severity)}>{incident.severity}</span></td>
                                         <td><span className={statusBadgeClass(incident.status)}>{statusLabel(incident.status)}</span></td>
@@ -184,7 +185,7 @@ export default function IncidentsList() {
                                                 {incident.category?.replace(/_/g, ' ')}
                                                 {incident.campus?.code ? ` · ${incident.campus.code}` : ''}
                                                 {isStaff && incident.reporter?.name ? ` · Reported by ${incident.reporter.name}` : ''}
-                                                {incident.assignee?.name ? ` · Assigned to ${incident.assignee.name}` : ''}
+                                                {incident.assignee?.name ? ` · Assigned to ${roleAndName(incident.assignee)}` : ''}
                                             </p>
                                             <p className="ds-list-item-meta">
                                                 <AlertTriangle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />

@@ -8,7 +8,8 @@ class RefreshToken extends Model
 {
     protected $fillable = [
         'user_id', 'token_hash', 'family_id', 'access_token_id',
-        'expires_at', 'rotated_at', 'revoked_at', 'user_agent', 'ip_address',
+        'expires_at', 'rotated_at', 'revoked_at', 'revoked_reason', 'displaced_by',
+        'user_agent', 'ip_address',
     ];
 
     protected function casts(): array
