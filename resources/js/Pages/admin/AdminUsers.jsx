@@ -384,7 +384,7 @@ export default function AdminUsers() {
             subtitle="Public registration only ever creates Students. Instructor, Security Officer and Staff accounts are created here — there is only one Admin."
         >
             <div className="ds-card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                     <h3 style={{ margin: 0 }}>Create Account</h3>
                     <Tooltip label="Staff/admin emails and phone numbers must be unique across the whole system — if one is already registered, you'll be told which field collided.">
                         <span tabIndex={0} style={{ display: 'inline-flex', opacity: 0.55, cursor: 'help' }} aria-label="Help: account uniqueness">

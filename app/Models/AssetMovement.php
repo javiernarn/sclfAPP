@@ -17,7 +17,7 @@ class AssetMovement extends Model
     public const ACTION_DELETED = 'deleted';
 
     protected $fillable = [
-        'asset_id', 'from_user_id', 'to_user_id', 'moved_by', 'action', 'notes',
+        'asset_id', 'from_user_id', 'to_user_id', 'moved_by', 'action', 'from_status', 'to_status', 'notes',
     ];
 
     public function asset()

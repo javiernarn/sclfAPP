@@ -101,4 +101,32 @@ return [
         ],
     ],
 
+
+    /*
+    |--------------------------------------------------------------------------
+    | Visitor badge pool
+    |--------------------------------------------------------------------------
+    |
+    | Physical visitor badges are numbered 1..size and the letter changes with
+    | the day of the week (Monday = M-01..M-200, Tuesday = T-01..T-200, ...). Within
+    | a day, a badge that was issued and returned is NOT handed out again
+    | until every badge in the pool has been issued once (the "round" ends),
+    | then numbering starts again from the lowest free badge.
+    |
+    | Keys of `prefixes` are Carbon dayOfWeek values (0 = Sunday ... 6 = Saturday).
+    |
+    */
+    'visitor_badges' => [
+        'size' => env('SCLF_VISITOR_BADGE_SIZE', 200),
+        'prefixes' => [
+            1 => 'M', // Monday
+            2 => 'T', // Tuesday
+            3 => 'W', // Wednesday
+            4 => 'H', // Thursday
+            5 => 'F', // Friday
+            6 => 'S', // Saturday
+            0 => 'U', // Sunday
+        ],
+    ],
+
 ];

@@ -124,6 +124,7 @@ import {
     PackageX as PackageXGlyph,
     Palette as PaletteGlyph,
     Pencil as PencilGlyph,
+    PhilippinePeso as PhilippinePesoGlyph,
     PlayCircle as PlayCircleGlyph,
     QrCode as QrCodeGlyph,
     ScrollText as ScrollTextGlyph,
@@ -303,6 +304,7 @@ export const PackageSearch = animatedStatic(PackageSearchGlyph, 'PackageSearch')
 export const PackageX = animatedStatic(PackageXGlyph, 'PackageX');
 export const Palette = animatedStatic(PaletteGlyph, 'Palette');
 export const Pencil = animatedStatic(PencilGlyph, 'Pencil');
+export const PhilippinePeso = animatedStatic(PhilippinePesoGlyph, 'PhilippinePeso');
 export const PlayCircle = animatedStatic(PlayCircleGlyph, 'PlayCircle');
 export const QrCode = animatedStatic(QrCodeGlyph, 'QrCode');
 export const ScrollText = animatedStatic(ScrollTextGlyph, 'ScrollText');

@@ -1,0 +1,9 @@
+.ds-shell .vdm-card { max-width: 860px; }
+.vdm-body { display: flex; gap: 22px; align-items: flex-start; }
+.vdm-main { flex: 1 1 auto; min-width: 0; }
+.vdm-badge { flex: 0 0 auto; padding: 12px 0; text-align: center; }
+.ds-shell .vdm-badge h4 { margin: 0 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+@media (max-width: 720px) {
+    .vdm-body { flex-direction: column-reverse; align-items: stretch; }
+    .vdm-badge { align-self: center; }
+}

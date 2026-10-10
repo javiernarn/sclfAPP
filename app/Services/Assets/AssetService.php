@@ -67,6 +67,7 @@ class AssetService
             $asset = Asset::create([
                 'campus_id' => $data['campus_id'] ?? $officer->campus_id,
                 'building_id' => $data['building_id'] ?? null,
+                'building_name' => isset($data['building_name']) && trim($data['building_name']) !== '' ? trim($data['building_name']) : null,
                 'asset_tag' => $this->generateAssetTag(),
                 'category' => $data['category'],
                 'name' => $data['name'],
@@ -86,7 +87,9 @@ class AssetService
                 'asset_id' => $asset->id,
                 'moved_by' => $officer->id,
                 'action' => AssetMovement::ACTION_REGISTERED,
-                'notes' => "Registered by {$officer->name}.",
+                'from_status' => null,
+                'to_status' => Asset::STATUS_IN_STORAGE,
+                'notes' => null, // "who" and "when" are their own columns in the history
             ]);
 
             $this->audit->log(
@@ -110,28 +113,94 @@ class AssetService
     public function update(Asset $asset, User $officer, array $data): Asset
     {
         return DB::transaction(function () use ($asset, $officer, $data) {
-            $before = $asset->only(array_keys($data));
+            $fromStatus = $asset->status;
+            $keys = array_keys($data);
+            $before = $asset->only($keys);
 
             $asset->update($data);
 
-            AssetMovement::create([
-                'asset_id' => $asset->id,
-                'moved_by' => $officer->id,
-                'action' => AssetMovement::ACTION_DETAILS_UPDATED,
-                'notes' => 'Details edited by ' . $officer->name . '.',
-            ]);
+            $after = $asset->only($keys);
+            $changes = $this->describeChanges($before, $after);
+
+            // A save that changed nothing isn't worth a history row.
+            if ($changes !== '') {
+                AssetMovement::create([
+                    'asset_id' => $asset->id,
+                    'moved_by' => $officer->id,
+                    'action' => AssetMovement::ACTION_DETAILS_UPDATED,
+                    'from_status' => $fromStatus,
+                    'to_status' => $fromStatus,
+                    'notes' => $changes,
+                ]);
+            }
 
             $this->audit->log(
                 'asset.updated',
                 $asset,
                 "Asset {$asset->asset_tag} details edited by {$officer->name}.",
                 before: $before,
-                after: $asset->only(array_keys($data)),
+                after: $after,
                 actor: $officer,
             );
 
             return $asset->fresh();
         });
+    }
+
+    private const FIELD_LABELS = [
+        'name' => 'Name',
+        'description' => 'Description',
+        'brand' => 'Brand',
+        'model' => 'Model',
+        'serial_number' => 'Serial number',
+        'building_name' => 'Building',
+        'location_text' => 'Location',
+        'acquired_at' => 'Date acquired',
+        'value' => 'Value',
+        'condition_notes' => 'Condition notes',
+        'notes' => 'Notes',
+    ];
+
+    /**
+     * "Location: Room 1 -> Room 2; Value: PHP 1,000.00 -> PHP 2,000.00" —
+     * what an edit actually changed, so the history row can say so instead
+     * of just "Details edited".
+     */
+    private function describeChanges(array $before, array $after): string
+    {
+        $parts = [];
+
+        foreach (self::FIELD_LABELS as $field => $label) {
+            if (!array_key_exists($field, $after)) {
+                continue;
+            }
+
+            $old = $this->displayValue($field, $before[$field] ?? null);
+            $new = $this->displayValue($field, $after[$field] ?? null);
+
+            if ($old !== $new) {
+                $parts[] = "{$label}: {$old} → {$new}";
+            }
+        }
+
+        return implode('; ', $parts);
+    }
+
+    private function displayValue(string $field, mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return '(empty)';
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d');
+        }
+
+        if ($field === 'value') {
+            return '₱' . number_format((float) $value, 2);
+        }
+
+        return \Illuminate\Support\Str::limit((string) $value, 60);
     }
 
     /**
@@ -146,11 +215,14 @@ class AssetService
         }
 
         DB::transaction(function () use ($asset, $officer) {
+            $fromStatus = $asset->status;
             AssetMovement::create([
                 'asset_id' => $asset->id,
                 'moved_by' => $officer->id,
                 'action' => AssetMovement::ACTION_DELETED,
-                'notes' => "Deleted from registry by {$officer->name}.",
+                'from_status' => $fromStatus,
+                'to_status' => $fromStatus,
+                'notes' => null,
             ]);
 
             $this->audit->log(
@@ -177,6 +249,7 @@ class AssetService
         }
 
         return DB::transaction(function () use ($asset, $custodian, $officer, $notes) {
+            $fromStatus = $asset->status;
             $previousCustodianId = $asset->assigned_to;
 
             $asset->update([
@@ -191,6 +264,8 @@ class AssetService
                 'to_user_id' => $custodian->id,
                 'moved_by' => $officer->id,
                 'action' => AssetMovement::ACTION_ASSIGNED,
+                'from_status' => $fromStatus,
+                'to_status' => Asset::STATUS_ASSIGNED,
                 'notes' => $notes,
             ]);
 
@@ -225,6 +300,7 @@ class AssetService
         }
 
         return DB::transaction(function () use ($asset, $officer, $notes) {
+            $fromStatus = $asset->status;
             $previousCustodianId = $asset->assigned_to;
 
             $asset->update([
@@ -238,6 +314,8 @@ class AssetService
                 'from_user_id' => $previousCustodianId,
                 'moved_by' => $officer->id,
                 'action' => AssetMovement::ACTION_UNASSIGNED,
+                'from_status' => $fromStatus,
+                'to_status' => Asset::STATUS_IN_STORAGE,
                 'notes' => $notes,
             ]);
 
@@ -265,6 +343,7 @@ class AssetService
         }
 
         return DB::transaction(function () use ($asset, $officer, $notes) {
+            $fromStatus = $asset->status;
             $previousCustodianId = $asset->assigned_to;
 
             $asset->update([
@@ -279,6 +358,8 @@ class AssetService
                 'from_user_id' => $previousCustodianId,
                 'moved_by' => $officer->id,
                 'action' => AssetMovement::ACTION_SENT_FOR_REPAIR,
+                'from_status' => $fromStatus,
+                'to_status' => Asset::STATUS_IN_REPAIR,
                 'notes' => $notes,
             ]);
 
@@ -303,6 +384,7 @@ class AssetService
         }
 
         return DB::transaction(function () use ($asset, $officer, $notes) {
+            $fromStatus = $asset->status;
             $asset->update([
                 'status' => Asset::STATUS_IN_STORAGE,
                 'condition_notes' => $notes ?? $asset->condition_notes,
@@ -312,6 +394,8 @@ class AssetService
                 'asset_id' => $asset->id,
                 'moved_by' => $officer->id,
                 'action' => AssetMovement::ACTION_RETURNED_FROM_REPAIR,
+                'from_status' => $fromStatus,
+                'to_status' => Asset::STATUS_IN_STORAGE,
                 'notes' => $notes,
             ]);
 
@@ -339,6 +423,7 @@ class AssetService
         }
 
         return DB::transaction(function () use ($asset, $officer, $notes) {
+            $fromStatus = $asset->status;
             $previousCustodianId = $asset->assigned_to;
 
             $asset->update([
@@ -352,6 +437,8 @@ class AssetService
                 'from_user_id' => $previousCustodianId,
                 'moved_by' => $officer->id,
                 'action' => AssetMovement::ACTION_RETIRED,
+                'from_status' => $fromStatus,
+                'to_status' => Asset::STATUS_RETIRED,
                 'notes' => $notes,
             ]);
 
@@ -380,6 +467,7 @@ class AssetService
         }
 
         return DB::transaction(function () use ($asset, $officer, $notes) {
+            $fromStatus = $asset->status;
             $previousCustodianId = $asset->assigned_to;
 
             $asset->update([
@@ -393,6 +481,8 @@ class AssetService
                 'from_user_id' => $previousCustodianId,
                 'moved_by' => $officer->id,
                 'action' => AssetMovement::ACTION_REPORTED_LOST,
+                'from_status' => $fromStatus,
+                'to_status' => Asset::STATUS_LOST,
                 'notes' => $notes,
             ]);
 

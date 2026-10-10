@@ -105,7 +105,8 @@ export default function AssetsList() {
                                         <p className="ds-list-item-meta">
                                             <Tag size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
                                             {a.asset_tag} · {a.category?.replace(/_/g, ' ')}
-                                            {a.building?.name ? ` · ${a.building.name}` : ''}
+                                            {(a.building_name || a.building?.name) ? ` · ${a.building_name || a.building.name}` : ''}
+                                            {a.location_text ? ` · ${a.location_text}` : ''}
                                         </p>
                                         {isStaff && a.assignee?.name && (
                                             <p className="ds-list-item-meta">Checked out to {roleAndName(a.assignee)}</p>

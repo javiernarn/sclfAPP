@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
-import FormSkeleton from '../../Components/shared/FormSkeleton';
 import { useToast } from '../../context/ToastContext';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 
@@ -15,7 +14,7 @@ const CATEGORY_OPTIONS = [
 ];
 
 const EMPTY_FORM = {
-    building_id: '',
+    building_name: '',
     category: '',
     name: '',
     description: '',
@@ -30,11 +29,9 @@ const EMPTY_FORM = {
 
 export default function SecurityAssetCreate() {
     const [form, setForm] = useState(EMPTY_FORM);
-    const [buildings, setBuildings] = useState([]);
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState({});
     const [loading, setLoading] = useState(false);
-    const [pageLoading, setPageLoading] = useState(true);
     const navigate = useNavigate();
     const toast = useToast();
 
@@ -45,13 +42,6 @@ export default function SecurityAssetCreate() {
 
     useEffect(() => {
         document.title = "Register an Asset | SCLF - Opol Community College";
-    }, []);
-
-    useEffect(() => {
-        axios.get('/buildings')
-            .then((res) => setBuildings(res.data || []))
-            .catch(() => setBuildings([]))
-            .finally(() => setPageLoading(false));
     }, []);
 
     const handleChange = (e) => {
@@ -71,7 +61,7 @@ export default function SecurityAssetCreate() {
         try {
             const payload = {
                 ...form,
-                building_id: form.building_id || null,
+                building_name: form.building_name.trim() || null,
                 acquired_at: form.acquired_at || null,
                 value: form.value || null,
             };
@@ -98,10 +88,7 @@ export default function SecurityAssetCreate() {
             title="Register an Asset"
             subtitle="Add a laptop, projector, or other campus asset to the registry. It gets an asset tag automatically."
         >
-            {pageLoading ? (
-                <FormSkeleton />
-            ) : (
-                <form className="ds-card" onSubmit={handleSubmit}>
+            <form className="ds-card" onSubmit={handleSubmit}>
                     {error && <div className="ds-error">{error}</div>}
 
                     <div className="ds-form-row ds-form-row-2">
@@ -144,11 +131,10 @@ export default function SecurityAssetCreate() {
                             <input name="serial_number" value={form.serial_number} onChange={handleChange} maxLength={100} />
                         </div>
                         <div className="ds-field">
-                            <label>Building</label>
-                            <select name="building_id" value={form.building_id} onChange={handleChange}>
-                                <option value="">Unspecified</option>
-                                {buildings.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-                            </select>
+                            <label>Building (optional)</label>
+                            <input name="building_name" value={form.building_name} onChange={handleChange} maxLength={150}
+                                placeholder="e.g. Main Building" aria-invalid={!!fieldErrors.building_name} />
+                            {fieldErrors.building_name && <p className="ds-field-error">{fieldErrors.building_name}</p>}
                         </div>
                     </div>
 
@@ -168,9 +154,12 @@ export default function SecurityAssetCreate() {
 
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
-                            <label>Value (optional)</label>
-                            <input type="number" step="0.01" min="0" name="value" value={form.value} onChange={handleChange}
-                                placeholder="0.00" aria-invalid={!!fieldErrors.value} />
+                            <label>Value in pesos (optional)</label>
+                            <div className="ds-peso-input">
+                                <span aria-hidden="true">₱</span>
+                                <input type="number" step="0.01" min="0" name="value" value={form.value} onChange={handleChange}
+                                    placeholder="0.00" aria-invalid={!!fieldErrors.value} />
+                            </div>
                             {fieldErrors.value && <p className="ds-field-error">{fieldErrors.value}</p>}
                         </div>
                         <div className="ds-field">
@@ -187,8 +176,7 @@ export default function SecurityAssetCreate() {
                             {loading ? 'Registering…' : 'Register Asset'}
                         </button>
                     </div>
-                </form>
-            )}
+            </form>
         </DashboardShell>
     );
 }

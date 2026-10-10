@@ -283,6 +283,8 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         // Visitor Management — front-desk check-in/out log, fully
         // officer/admin-only (no student-facing side to this one).
         Route::get('/visitors', [VisitorController::class, 'index']);
+        Route::get('/visitors/badges', [VisitorController::class, 'badges']);
+        Route::get('/visitors/student-search', [VisitorController::class, 'searchStudents']);
         Route::post('/visitors', [VisitorController::class, 'store']);
         Route::post('/visitors/{visitor}/check-out', [VisitorController::class, 'checkOut']);
         Route::patch('/visitors/{visitor}', [VisitorController::class, 'update']);

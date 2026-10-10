@@ -13,6 +13,7 @@ class VisitorService
 {
     public function __construct(
         protected AuditLogService $audit,
+        protected BadgePoolService $badges,
     ) {
     }
 
@@ -28,20 +29,28 @@ class VisitorService
         }
 
         return DB::transaction(function () use ($officer, $data) {
+            $campusId = $data['campus_id'] ?? $officer->campus_id;
+            $badgeFields = $this->badges->claim($data['badge_number'] ?? null, $campusId);
+            $studentFields = $this->resolveStudent($data);
+
             $visitor = Visitor::create([
-                'campus_id' => $data['campus_id'] ?? $officer->campus_id,
+                'campus_id' => $campusId,
                 'full_name' => $data['full_name'],
                 'id_presented' => $data['id_presented'] ?? null,
                 'id_number' => $data['id_number'] ?? null,
+                'contact_number' => $data['contact_number'] ?? null,
                 'purpose' => $data['purpose'],
                 'host_name' => $data['host_name'] ?? null,
                 'host_department' => $data['host_department'] ?? null,
-                'badge_number' => $data['badge_number'] ?? null,
+                ...$badgeFields,
+                ...$studentFields,
                 'checked_in_by' => $officer->id,
                 'checked_in_at' => now(),
                 'status' => Visitor::STATUS_CHECKED_IN,
                 'notes' => $data['notes'] ?? null,
             ]);
+
+            $this->badges->afterIssue($campusId, $badgeFields['badge_prefix']);
 
             $this->audit->log(
                 'visitor.checked_in',
@@ -98,6 +107,24 @@ class VisitorService
         }
 
         return DB::transaction(function () use ($visitor, $officer, $data) {
+            if ($visitor->status !== Visitor::STATUS_CHECKED_IN) {
+                // The badge is already handed back — it can't be re-assigned.
+                unset($data['badge_number']);
+            } elseif (array_key_exists('badge_number', $data)) {
+                $incoming = strtoupper(preg_replace('/[\s\-]+/', '', (string) $data['badge_number']));
+                $current = strtoupper(preg_replace('/[\s\-]+/', '', (string) $visitor->badge_number));
+
+                if ($incoming === $current) {
+                    unset($data['badge_number']); // unchanged (also keeps legacy free-text badges valid)
+                } else {
+                    $data = array_merge($data, $this->badges->claim($data['badge_number'], $visitor->campus_id, $visitor->id));
+                }
+            }
+
+            if (array_key_exists('student_user_id', $data) || array_key_exists('student_name', $data)) {
+                $data = array_merge($data, $this->resolveStudent($data));
+            }
+
             $before = $visitor->only(array_keys($data));
 
             $visitor->update($data);
@@ -139,5 +166,47 @@ class VisitorService
     public function currentlyOnCampusQuery(): Builder
     {
         return Visitor::query()->where('status', Visitor::STATUS_CHECKED_IN);
+    }
+
+    /**
+     * Link a parent/guardian visit to the student being visited and
+     * snapshot the name + student ID.
+     */
+    protected function resolveStudent(array $data): array
+    {
+        $studentId = $data['student_user_id'] ?? null;
+
+        if (!$studentId) {
+            return [
+                'student_user_id' => null,
+                'student_name' => $data['student_name'] ?? null,
+                'student_number' => $data['student_number'] ?? null,
+                'relationship' => $data['relationship'] ?? null,
+            ];
+        }
+
+        $student = User::query()->role('student')->find($studentId);
+
+        if (!$student) {
+            throw ValidationException::withMessages(['student_user_id' => 'That student could not be found.']);
+        }
+
+        return [
+            'student_user_id' => $student->id,
+            'student_name' => $student->name,
+            'student_number' => $student->student_id,
+            'relationship' => $data['relationship'] ?? null,
+        ];
+    }
+
+    /**
+     * Badges currently handed out and not returned, oldest first, so
+     * security can see exactly which physical badges are still outside.
+     */
+    public function outstandingBadgesQuery(): Builder
+    {
+        return $this->currentlyOnCampusQuery()
+            ->whereNotNull('badge_number')
+            ->orderBy('checked_in_at');
     }
 }

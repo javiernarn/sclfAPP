@@ -51,6 +51,7 @@ class Asset extends Model
     protected $fillable = [
         'campus_id',
         'building_id',
+        'building_name',
         'asset_tag',
         'category',
         'name',

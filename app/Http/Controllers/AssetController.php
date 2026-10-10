@@ -54,6 +54,7 @@ class AssetController extends Controller
 
         $validated = $request->validate([
             'building_id' => 'nullable|exists:buildings,id',
+            'building_name' => 'nullable|string|max:150',
             'category' => 'required|string|in:' . implode(',', Asset::CATEGORIES),
             'name' => 'required|string|max:150',
             'description' => 'nullable|string|max:2000',
@@ -85,7 +86,11 @@ class AssetController extends Controller
             'building:id,name',
             'campus:id,name,code',
             'creator:id,name',
-            'movements' => fn ($q) => $q->with(['fromUser:id,name', 'toUser:id,name', 'mover:id,name'])->latest(),
+            'movements' => fn ($q) => $q->with([
+                'fromUser:id,name', 'fromUser.roles:id,name',
+                'toUser:id,name', 'toUser.roles:id,name',
+                'mover:id,name', 'mover.roles:id,name',
+            ])->latest('id'),
         ]);
 
         return response()->json(['data' => $asset]);
@@ -105,6 +110,7 @@ class AssetController extends Controller
 
         $validated = $request->validate([
             'building_id' => 'nullable|exists:buildings,id',
+            'building_name' => 'nullable|string|max:150',
             'name' => 'required|string|max:150',
             'description' => 'nullable|string|max:2000',
             'brand' => 'nullable|string|max:100',

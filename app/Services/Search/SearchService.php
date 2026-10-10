@@ -211,14 +211,19 @@ class SearchService
                 $viewer->campus_id && !$isAdmin,
                 fn ($query) => $query->where('campus_id', $viewer->campus_id)
             )
-            ->where('full_name', 'like', "%{$q}%")
+            ->where(function ($w) use ($q) {
+                $w->where('full_name', 'like', "%{$q}%")
+                    ->orWhere('badge_number', 'like', "%{$q}%")
+                    ->orWhere('student_name', 'like', "%{$q}%")
+                    ->orWhere('student_number', 'like', "%{$q}%");
+            })
             ->latest('checked_in_at')
             ->limit($limit)
             ->get()
             ->map(fn ($visitor) => [
                 'id' => $visitor->id,
                 'title' => $visitor->full_name,
-                'subtitle' => trim(str_replace('_', ' ', $visitor->purpose) . ' · ' . str_replace('_', ' ', $visitor->status)),
+                'subtitle' => trim(str_replace('_', ' ', $visitor->purpose) . ' · ' . str_replace('_', ' ', $visitor->status) . ($visitor->badge_number ? " · Badge {$visitor->badge_number}" : '')),
                 'url' => '/app/security/visitors',
             ])
             ->all();

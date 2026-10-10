@@ -279,4 +279,102 @@ class AssetManagementTest extends TestCase
             ->assertStatus(200)
             ->assertJsonPath('data.status', Asset::STATUS_ASSIGNED);
     }
+
+    // --- Typed building, status trail, specific edit history -----------------
+
+    public function test_register_saves_a_typed_building_name(): void
+    {
+        $officer = $this->user('security_officer');
+
+        $asset = app(AssetService::class)->register($officer, $this->baseAssetData([
+            'building_name' => '  Main Building ',
+            'location_text' => 'Room 204',
+        ]));
+
+        $this->assertSame('Main Building', $asset->building_name);
+        $this->assertSame('Room 204', $asset->location_text);
+    }
+
+    public function test_each_movement_records_the_status_it_moved_from_and_to(): void
+    {
+        $officer = $this->user('security_officer');
+        $custodian = $this->user('student');
+        $service = app(AssetService::class);
+
+        $asset = $service->register($officer, $this->baseAssetData());
+        $service->assign($asset, $custodian, $officer);
+        $service->sendForRepair($asset->fresh(), $officer, 'Cracked screen');
+
+        $this->assertDatabaseHas('asset_movements', [
+            'asset_id' => $asset->id,
+            'action' => AssetMovement::ACTION_REGISTERED,
+            'from_status' => null,
+            'to_status' => Asset::STATUS_IN_STORAGE,
+        ]);
+        $this->assertDatabaseHas('asset_movements', [
+            'asset_id' => $asset->id,
+            'action' => AssetMovement::ACTION_ASSIGNED,
+            'from_status' => Asset::STATUS_IN_STORAGE,
+            'to_status' => Asset::STATUS_ASSIGNED,
+        ]);
+        $this->assertDatabaseHas('asset_movements', [
+            'asset_id' => $asset->id,
+            'action' => AssetMovement::ACTION_SENT_FOR_REPAIR,
+            'from_status' => Asset::STATUS_ASSIGNED,
+            'to_status' => Asset::STATUS_IN_REPAIR,
+            'notes' => 'Cracked screen',
+        ]);
+    }
+
+    public function test_editing_details_logs_exactly_which_fields_changed(): void
+    {
+        $officer = $this->user('security_officer');
+        $service = app(AssetService::class);
+
+        $asset = $service->register($officer, $this->baseAssetData(['location_text' => 'Room 1', 'value' => 1000]));
+        $service->update($asset, $officer, ['name' => $asset->name, 'location_text' => 'Room 2', 'value' => 2500]);
+
+        $movement = AssetMovement::where('asset_id', $asset->id)
+            ->where('action', AssetMovement::ACTION_DETAILS_UPDATED)
+            ->firstOrFail();
+
+        $this->assertStringContainsString('Location: Room 1 → Room 2', $movement->notes);
+        $this->assertStringContainsString('Value: ₱1,000.00 → ₱2,500.00', $movement->notes);
+        $this->assertStringNotContainsString('Name:', $movement->notes);
+    }
+
+    public function test_saving_without_changes_does_not_add_a_history_row(): void
+    {
+        $officer = $this->user('security_officer');
+        $service = app(AssetService::class);
+
+        $asset = $service->register($officer, $this->baseAssetData());
+        $service->update($asset, $officer, ['name' => $asset->name]);
+
+        $this->assertDatabaseMissing('asset_movements', [
+            'asset_id' => $asset->id,
+            'action' => AssetMovement::ACTION_DETAILS_UPDATED,
+        ]);
+    }
+
+    public function test_show_returns_history_newest_first_with_roles_for_everyone_named(): void
+    {
+        $officer = $this->user('security_officer');
+        $custodian = $this->user('student');
+        $service = app(AssetService::class);
+
+        $asset = $service->register($officer, $this->baseAssetData(['building_name' => 'Main Building']));
+        $service->assign($asset, $custodian, $officer);
+
+        $response = $this->withHeaders($this->authHeaders($officer))
+            ->getJson("/api/assets/{$asset->id}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.building_name', 'Main Building')
+            ->assertJsonPath('data.movements.0.action', AssetMovement::ACTION_ASSIGNED)
+            ->assertJsonPath('data.movements.0.from_status', Asset::STATUS_IN_STORAGE)
+            ->assertJsonPath('data.movements.0.to_status', Asset::STATUS_ASSIGNED)
+            ->assertJsonPath('data.movements.0.mover.roles.0.name', 'security_officer')
+            ->assertJsonPath('data.movements.0.to_user.roles.0.name', 'student')
+            ->assertJsonPath('data.movements.1.action', AssetMovement::ACTION_REGISTERED);
+    }
 }
