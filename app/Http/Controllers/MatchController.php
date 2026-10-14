@@ -7,13 +7,21 @@ use App\Models\ItemMatch;
 use App\Models\LostItem;
 use App\Notifications\SclfNotification;
 use App\Services\Audit\AuditLogService;
+use App\Services\Matching\ItemMatchingService;
 use Illuminate\Http\Request;
 
 class MatchController extends Controller
 {
-    public function __construct(protected AuditLogService $audit)
-    {
+    public function __construct(
+        protected AuditLogService $audit,
+        protected ItemMatchingService $matcher,
+    ) {
     }
+
+    /** Fields a person may type into a report that the live preview understands. */
+    private const DRAFT_FIELDS = [
+        'item_name', 'description', 'category', 'brand', 'color', 'model', 'unique_characteristics', 'details',
+    ];
 
     /**
      * The handlers' match queue (Security Officer, Admin, Staff — see
@@ -30,12 +38,15 @@ class MatchController extends Controller
     public function index(Request $request)
     {
         $status = $request->query('status', 'open');
+        $level = $request->query('level');
+        $minScore = $request->query('min_score');
 
         $matches = ItemMatch::query()
             ->with([
-                'lostItem:id,user_id,item_name,category,color,brand,location_lost,date_lost,status,image_path',
+                'lostItem:id,user_id,item_name,category,color,brand,model,description,unique_characteristics,details,location_lost,date_lost,time_lost,contact_info,status,image_path,updated_at',
                 'lostItem.user:id,name',
-                'foundItem:id,item_name,category,color,brand,location_found,date_found,status,image_path,intake_channel',
+                'foundItem:id,item_name,category,color,brand,model,description,unique_characteristics,details,location_found,date_found,time_found,status,image_path,intake_channel,storage_location_id,updated_at',
+                'foundItem.storageLocation:id,code,label,room,cabinet,shelf,box',
             ])
             ->whereHas('lostItem')
             ->whereHas('foundItem', fn ($q) => $q->where(function ($w) {
@@ -46,17 +57,117 @@ class MatchController extends Controller
                 fn ($q) => $q->whereIn('status', [ItemMatch::STATUS_PENDING, ItemMatch::STATUS_NOTIFIED]),
                 fn ($q) => $status === 'all' ? $q : $q->where('status', $status)
             )
+            ->when(in_array($level, ['very_high', 'high', 'possible', 'low'], true), fn ($q) => $q->where('match_level', $level))
+            ->when(is_numeric($minScore), fn ($q) => $q->where('score', '>=', (int) $minScore))
             ->when($request->query('q'), function ($q, $term) {
                 $q->where(function ($w) use ($term) {
-                    $w->whereHas('lostItem', fn ($l) => $l->where('item_name', 'like', "%{$term}%"))
-                        ->orWhereHas('foundItem', fn ($f) => $f->where('item_name', 'like', "%{$term}%"));
+                    $w->whereHas('lostItem', fn ($l) => $l->where('item_name', 'like', "%{$term}%")->orWhere('brand', 'like', "%{$term}%")->orWhere('model', 'like', "%{$term}%"))
+                        ->orWhereHas('foundItem', fn ($f) => $f->where('item_name', 'like', "%{$term}%")->orWhere('brand', 'like', "%{$term}%")->orWhere('model', 'like', "%{$term}%"));
                 });
             })
             ->orderByDesc('score')
             ->orderByDesc('id')
             ->paginate(12);
 
+        // Live scoring: if either report was edited since this match was scored,
+        // re-score it now so the queue never shows stale numbers.
+        $matches->getCollection()->each(function (ItemMatch $m) {
+            $this->matcher->refreshIfStale($m);
+            $m->lostItem?->append('image_url');
+        });
+
         return response()->json($matches);
+    }
+
+    /**
+     * A tiny "has anything changed?" stamp for the Matches page to poll.
+     *
+     * Three aggregate queries, no rows, no scoring — cheap enough to hit every few
+     * seconds from every open page, even on shared hosting. The stamp moves when a
+     * match is created / re-scored / actioned OR when either report is edited, which
+     * is exactly when the list (and its live re-score) is worth re-fetching.
+     */
+    public function pulse()
+    {
+        $m = ItemMatch::query()->selectRaw('count(*) as c, max(id) as i, max(updated_at) as u')->first();
+        $l = LostItem::withTrashed()->selectRaw('count(*) as c, max(updated_at) as u')->first();
+        $f = FoundItem::withTrashed()->selectRaw('count(*) as c, max(updated_at) as u')->first();
+
+        return response()->json([
+            'v' => md5(implode('|', [$m->c, $m->i, $m->u, $l->c, $l->u, $f->c, $f->u])),
+        ])->header('Cache-Control', 'no-store');
+    }
+
+    /**
+     * One match, scored LIVE against the current state of both reports, with the
+     * full side-by-side comparison. This is what Security / Admin / Staff open to
+     * decide whether the two reports are really the same item.
+     */
+    public function show(ItemMatch $match)
+    {
+        $match->load([
+            'lostItem.user:id,name',
+            'foundItem.storageLocation:id,code,label,room,cabinet,shelf,box',
+            'foundItem.finder:id,name',
+        ]);
+        abort_unless($match->lostItem && $match->foundItem, 404, 'One of the reports in this match no longer exists.');
+
+        $previous = $match->score;
+        $analysis = $this->matcher->refresh($match);
+        $match->lostItem->append('image_url');
+
+        return response()->json([
+            'match' => $match,
+            'analysis' => $analysis,
+            'rescored' => $previous !== $match->score,
+            'previous_score' => $previous,
+            'scored_at' => $match->scored_at,
+        ]);
+    }
+
+    /**
+     * Real-time score for a report that has NOT been submitted yet. The report
+     * forms call this (debounced) as the person types, so they see which stored
+     * reports their description would match — and how strongly — before filing.
+     */
+    public function preview(Request $request)
+    {
+        $data = $request->validate([
+            'kind' => 'required|in:lost,found',
+            'item_name' => 'nullable|string|max:255',
+            'description' => 'nullable|string|max:5000',
+            'category' => 'nullable|string|max:100',
+            'brand' => 'nullable|string|max:100',
+            'color' => 'nullable|string|max:100',
+            'model' => 'nullable|string|max:100',
+            'unique_characteristics' => 'nullable|string|max:500',
+            'location_lost' => 'nullable|string|max:255',
+            'location_found' => 'nullable|string|max:255',
+            'date_lost' => 'nullable|date',
+            'date_found' => 'nullable|date',
+            'details' => 'nullable|array|max:12',
+            'details.*' => 'nullable|string|max:80',
+        ]);
+
+        $kind = $data['kind'];
+        $user = $request->user();
+        abort_unless(
+            $user->can('create', $kind === 'lost' ? LostItem::class : FoundItem::class),
+            403,
+            'You cannot file this kind of report.'
+        );
+
+        $attrs = array_filter(
+            collect($data)->except('kind')->all(),
+            fn ($v) => is_array($v) ? $v !== [] : ($v !== null && trim((string) $v) !== '')
+        );
+
+        // Nothing meaningful typed yet — don't scan the whole table for a blank draft.
+        if (empty($attrs['item_name']) && empty($attrs['category'])) {
+            return response()->json(['best' => 0, 'level' => 'low', 'count' => 0, 'candidates' => [], 'ready' => false]);
+        }
+
+        return response()->json($this->matcher->previewForDraft($kind, $attrs) + ['ready' => true]);
     }
 
     /**
@@ -119,11 +230,11 @@ class MatchController extends Controller
         $this->authorizeMatchAccess($lostItem->user_id);
 
         $matches = $lostItem->matches()
-            ->with('foundItem:id,item_name,category,image_path,status,location_found,date_found')
+            ->with('foundItem:id,item_name,category,image_path,status,location_found,date_found,updated_at')
             ->orderByDesc('score')
             ->get();
 
-        return response()->json($matches);
+        return response()->json($this->presentForViewer($matches));
     }
 
     /**
@@ -137,11 +248,44 @@ class MatchController extends Controller
         $this->authorizeMatchAccess($foundItem->user_id);
 
         $matches = $foundItem->matches()
-            ->with('lostItem:id,item_name,category,image_path,status,location_lost,date_lost,user_id')
+            ->with('lostItem:id,item_name,category,image_path,status,location_lost,date_lost,user_id,updated_at')
             ->orderByDesc('score')
             ->get();
 
-        return response()->json($matches);
+        return response()->json($this->presentForViewer($matches));
+    }
+
+    /**
+     * Re-score anything stale, then shape the explanation for whoever is asking.
+     *
+     * Handlers (security / admin / staff) get the full comparison. The person who
+     * filed one side of the match only gets WHICH fields lined up and how many
+     * points each earned — never the other report's actual values or notes, since
+     * a found item's unique marks are exactly what a fake claimant would want to
+     * read off the screen.
+     */
+    private function presentForViewer($matches)
+    {
+        $isHandler = auth()->user()->hasAnyRole(\App\Models\User::LOST_FOUND_HANDLER_ROLES);
+
+        return $matches->map(function (ItemMatch $m) use ($isHandler) {
+            $this->matcher->refreshIfStale($m);
+
+            if (!$isHandler) {
+                $details = $m->score_details ?? [];
+                $m->makeHidden(['score_details', 'score_breakdown']);
+                $m->setAttribute('public_details', [
+                    'confidence' => $details['confidence'] ?? null,
+                    'summary' => $details['summary'] ?? null,
+                    'fields' => collect($details['fields'] ?? [])->map(fn ($f) => [
+                        'key' => $f['key'], 'label' => $f['label'], 'status' => $f['status'],
+                        'points' => $f['points'], 'weight' => $f['weight'],
+                    ])->values(),
+                ]);
+            }
+
+            return $m;
+        })->values();
     }
 
     private function authorizeMatchAccess(?int $reportOwnerId): void

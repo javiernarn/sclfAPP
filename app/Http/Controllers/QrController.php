@@ -146,7 +146,15 @@ class QrController extends Controller
                 // student_id, so selecting student_id alone left the ID
                 // blank whenever the claim wasn't a student's).
                 'claim.claimant:id,name,student_id,staff_id,profile_picture',
-                'foundItem:id,item_name,category,image_path,storage_location_id',
+                // Item details + where it is physically stored, so the
+                // officer scanning the pass knows exactly where to fetch it.
+                'foundItem:id,item_name,category,image_path,storage_location_id,security_officer_id,description,brand,color,model,unique_characteristics,location_found,date_found,created_at',
+                'foundItem.securityOfficer:id,name',
+                'foundItem.storageLocation:id,campus_id,building_id,type,status,label,room,cabinet,shelf,box,code',
+                'foundItem.storageLocation.campus:id,name',
+                'foundItem.storageLocation.building:id,name,code',
+                // Who is staffing that counter/storage right now = who to ask.
+                'foundItem.storageLocation.currentOfficers' => fn ($q) => $q->select('users.id', 'users.name'),
             ]),
         ]);
     }

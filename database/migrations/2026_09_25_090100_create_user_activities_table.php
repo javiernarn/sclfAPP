@@ -10,7 +10,7 @@ return new class extends Migration
      * One row per authenticated request (see App\Http\Middleware\TrackUserActivity).
      * This is deliberately a *separate* table from audit_logs: audit_logs is a
      * curated, human-readable trail of meaningful actions ("claim approved",
-     * "asset retired", ...), written explicitly by services. This table is the
+     * "incident resolved", ...), written explicitly by services. This table is the
      * raw click-stream — every route hit, from every device — used purely for
      * the admin-facing "who's using the system, from where, and is any of it
      * spammy" view. Keeping them apart means turning this on/off or pruning it

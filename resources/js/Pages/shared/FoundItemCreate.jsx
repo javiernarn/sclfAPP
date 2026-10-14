@@ -7,10 +7,11 @@ import FormSkeleton from '../../Components/shared/FormSkeleton';
 import { useToast } from '../../context/ToastContext';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { useConfirm } from '../../context/ConfirmContext';
+import ItemReportFields from '../../Components/shared/ItemReportFields';
 
 const EMPTY_FORM = {
     item_name: '', description: '', category: '', brand: '', color: '', model: '',
-    unique_characteristics: '', location_found: '', date_found: '',
+    unique_characteristics: '', location_found: '', date_found: '', details: {},
 };
 
 const LEGITIMACY_NOTICE =
@@ -32,7 +33,7 @@ export default function FoundItemCreate() {
     const toast = useToast();
     const confirm = useConfirm();
 
-    const isDirty = Object.entries(form).some(([key, value]) => value !== EMPTY_FORM[key]) || !!image;
+    const isDirty = Object.entries(form).some(([key, value]) => (key === 'details' ? Object.values(value || {}).some(Boolean) : value !== EMPTY_FORM[key])) || !!image;
     const { guardedAction } = useUnsavedChangesGuard(isDirty, {
         message: "You've started reporting this found item. If you leave now, what you've entered will be discarded.",
     });
@@ -46,11 +47,11 @@ export default function FoundItemCreate() {
         return () => clearTimeout(t);
     }, []);
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
-        if (fieldErrors[e.target.name]) {
-            setFieldErrors((prev) => { const next = { ...prev }; delete next[e.target.name]; return next; });
-        }
+    const clearFieldError = (name) => {
+        setFieldErrors((prev) => {
+            if (!prev[name]) return prev;
+            const next = { ...prev }; delete next[name]; return next;
+        });
     };
 
     const handleCancel = () => guardedAction(() => navigate('/app/found-items'));
@@ -73,7 +74,13 @@ export default function FoundItemCreate() {
         setLoading(true);
         try {
             const data = new FormData();
-            Object.entries(form).forEach(([k, v]) => data.append(k, v ?? ''));
+            Object.entries(form).forEach(([k, v]) => {
+                if (k === 'details') {
+                    Object.entries(v || {}).filter(([, dv]) => dv).forEach(([dk, dv]) => data.append(`details[${dk}]`, dv));
+                } else {
+                    data.append(k, v ?? '');
+                }
+            });
             if (image) data.append('image', image);
 
             await axios.post('/found-items', data, { headers: { 'Content-Type': 'multipart/form-data' }, silent: true });
@@ -120,72 +127,8 @@ export default function FoundItemCreate() {
 
                 <form onSubmit={handleSubmit} autoComplete="off">
                     <fieldset disabled={!unlocked} className="ds-fieldset">
-                    <div className="ds-field">
-                        <label htmlFor="item_name">Item Name <span className="ds-required">*</span></label>
-                        <input id="item_name" name="item_name" value={form.item_name} onChange={handleChange}
-                            placeholder="e.g. Black umbrella" aria-invalid={!!fieldErrors.item_name} autoComplete="off" required />
-                        <p className="ds-field-hint">A short, specific name for what you found — this is what owners will see when searching.</p>
-                        {fieldErrors.item_name && <div className="ds-field-error">{fieldErrors.item_name}</div>}
-                    </div>
-
-                    <div className="ds-field">
-                        <label htmlFor="description">Description <span className="ds-required">*</span></label>
-                        <textarea id="description" name="description" rows={4} value={form.description}
-                            onChange={handleChange} placeholder="Color, brand, distinguishing marks, contents…" aria-invalid={!!fieldErrors.description} autoComplete="off" required />
-                        <p className="ds-field-hint">Describe only what's visible from the outside — Security will ask claimants to name details you leave out, which is how they verify the real owner.</p>
-                        {fieldErrors.description && <div className="ds-field-error">{fieldErrors.description}</div>}
-                    </div>
-
-                    <div className="ds-form-row ds-form-row-2">
-                        <div className="ds-field">
-                            <label htmlFor="category">Category</label>
-                            <input id="category" name="category" value={form.category} onChange={handleChange}
-                                placeholder="e.g. Electronics" autoComplete="off" />
-                            <p className="ds-field-hint">General type — e.g. Electronics, Bag, ID/Documents, Clothing, Accessories.</p>
-                        </div>
-                        <div className="ds-field">
-                            <label htmlFor="brand">Brand</label>
-                            <input id="brand" name="brand" value={form.brand} onChange={handleChange}
-                                placeholder="e.g. Samsung" autoComplete="off" />
-                            <p className="ds-field-hint">Leave blank if unbranded or you're not sure.</p>
-                        </div>
-                    </div>
-
-                    <div className="ds-form-row ds-form-row-2">
-                        <div className="ds-field">
-                            <label htmlFor="color">Color</label>
-                            <input id="color" name="color" value={form.color} onChange={handleChange} placeholder="e.g. Navy blue" autoComplete="off" />
-                            <p className="ds-field-hint">Main color — the single biggest clue for matching.</p>
-                        </div>
-                        <div className="ds-field">
-                            <label htmlFor="model">Model</label>
-                            <input id="model" name="model" value={form.model} onChange={handleChange} placeholder="e.g. iPhone 13, Model XR-200" autoComplete="off" />
-                            <p className="ds-field-hint">Only if it's printed on the item or its packaging — optional.</p>
-                        </div>
-                    </div>
-
-                    <div className="ds-field">
-                        <label htmlFor="unique_characteristics">Unique Characteristics</label>
-                        <input id="unique_characteristics" name="unique_characteristics"
-                            value={form.unique_characteristics} onChange={handleChange}
-                            placeholder="Scratches, stickers, engravings…" autoComplete="off" />
-                        <p className="ds-field-hint">Anything that would only be obvious to the real owner — this is your best fraud check.</p>
-                    </div>
-
-                    <div className="ds-form-row ds-form-row-2">
-                        <div className="ds-field">
-                            <label htmlFor="location_found">Location Found</label>
-                            <input id="location_found" name="location_found" value={form.location_found}
-                                onChange={handleChange} placeholder="e.g. Library, 2nd floor" autoComplete="off" />
-                            <p className="ds-field-hint">Where you actually picked it up — building, room, or a nearby landmark.</p>
-                        </div>
-                        <div className="ds-field">
-                            <label htmlFor="date_found">Date Found</label>
-                            <input id="date_found" type="date" name="date_found" value={form.date_found}
-                                onChange={handleChange} />
-                            <p className="ds-field-hint">Today's date, or when you actually found it if that was earlier.</p>
-                        </div>
-                    </div>
+                    <ItemReportFields kind="found" form={form} setForm={setForm}
+                        fieldErrors={fieldErrors} clearError={clearFieldError} />
 
                     <div className="ds-field">
                         <label htmlFor="image">Photo (optional)</label>

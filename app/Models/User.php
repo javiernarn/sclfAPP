@@ -79,6 +79,19 @@ class User extends Authenticatable
     ];
 
     /**
+     * Every new account gets its own unguessable "user token" (32 hex chars),
+     * used in dashboard/print links. See the add_public_token migration.
+     */
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if (empty($user->public_token)) {
+                $user->public_token = bin2hex(random_bytes(16));
+            }
+        });
+    }
+
+    /**
      * The accessors to append to the model's array/JSON form.
      *
      * @var list<string>

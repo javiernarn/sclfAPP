@@ -34,6 +34,11 @@ const getStoredRefreshToken = () => getStoredPair()?.refresh_token || null;
 export const clearStoredToken = () => {
     window.sessionStorage.removeItem(SESSION_KEY);
     secureLocalStorage.removeItem(LOCAL_KEY);
+    // A saved deep link (?redirect=) was meant for the account that just ended.
+    try {
+        window.sessionStorage.removeItem('sclf-post-login-redirect');
+        window.sessionStorage.removeItem('sclf-post-login-uid');
+    } catch { /* storage unavailable */ }
 };
 
 // pair: { access_token, refresh_token, expires_in }

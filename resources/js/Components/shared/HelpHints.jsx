@@ -34,12 +34,12 @@ const HINTS_BY_ROLE = {
         intro: "You're signed in as Security. Your job is verifying items and matching claims:",
         items: [
             { icon: LayoutDashboard, label: 'Dashboard', text: 'Overview of items awaiting verification and claims awaiting your review.' },
-            { icon: PackageCheck, label: 'Counter', text: 'For items handed to you in person by their own owner — like a bag-check desk. Look the person up by school ID, log the item, and a pickup pass is issued to them immediately. Use this instead of Inventory whenever you already know exactly whose item it is.' },
+            { icon: PackageCheck, label: 'Counter', text: 'For items handed to you in person by their own owner — like a bag-check desk. Look the person up by school ID, confirm which of their lost reports it is (if any), and log the item. Their claim is approved right away; you generate the release code later, when they come back to collect it. Use this instead of Inventory whenever you already know exactly whose item it is.' },
             { icon: Boxes, label: 'Inventory', text: 'The physical log of everything currently held at the desk — what it is, where it\'s stored, and its verification status. Use this for items a stranger found and turned in, where the owner isn\'t known yet.' },
             { icon: QrCode, label: 'QR Scan / Verify', text: 'Scan an item\'s tag to pull up its record instantly instead of searching by hand.' },
             { icon: ClipboardCheck, label: 'Claims', text: 'Review a claimant\'s proof against the item on file, then approve or deny the release.' },
         ],
-        tip: 'Tip: at the Counter, always confirm the person\'s face matches their photo on file before logging an item to their account.',
+        tip: 'Tip: at the Counter, always confirm the person\'s face matches their photo on file before logging an item to their account. Open "Step-by-step guide" on the Dashboard or Counter page for the full process.',
     },
     admin: {
         title: 'How SCLF works for you',

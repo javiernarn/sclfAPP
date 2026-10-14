@@ -71,6 +71,7 @@ class FoundItemController extends Controller
             'color' => $validated['color'] ?? null,
             'model' => $validated['model'] ?? null,
             'unique_characteristics' => $validated['unique_characteristics'] ?? null,
+            'details' => array_filter($validated['details'] ?? [], fn ($v) => is_string($v) && trim($v) !== '') ?: null,
             'location_found' => $validated['location_found'] ?? null,
             'date_found' => $validated['date_found'] ?? null,
             'time_found' => $validated['time_found'] ?? null,

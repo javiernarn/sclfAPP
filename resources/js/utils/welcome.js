@@ -25,6 +25,11 @@ export function clearLoginMemory() {
     safe(() => {
         window.sessionStorage.removeItem(FIRST_LOGIN_KEY);
         window.sessionStorage.removeItem(LOGIN_TOAST_KEY);
+        // Deep-link leftovers (?redirect= / uid) belong to whoever was signed in
+        // — they must never carry over to the next account on this browser.
+        window.sessionStorage.removeItem('sclf-post-login-redirect');
+        window.sessionStorage.removeItem('sclf-post-login-uid');
+        window.sessionStorage.removeItem('sclf-register-toast');
     });
 }
 

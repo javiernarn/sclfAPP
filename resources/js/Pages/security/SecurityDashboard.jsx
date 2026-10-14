@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import WorkflowGuide from '../../Components/shared/WorkflowGuide';
 import {
     PackageSearch, PackageCheck, Hourglass, ShieldAlert, Boxes, ListOrdered,
     Activity, Users,
@@ -66,6 +67,42 @@ function StatSection({ icon: SectionIcon, iconClass, title, desc, stats, values,
     );
 }
 
+// "What needs you now" — turns the numbers already on this dashboard into an
+// ordered to-do list, most urgent first, so a new officer always knows which
+// step of the process to do next. Uses only values the dashboard already loads.
+function NextActions({ data, loading }) {
+    if (loading || !data) return null;
+    const sum = data.summary || {};
+    const items = [
+        { n: data.queue?.waiting ?? 0, label: 'people waiting at the counter', to: '/app/security/counter-dashboard', cta: 'Open Counter Dashboard' },
+        { n: sum.found_reports?.pending_verification ?? 0, label: 'found reports to verify', to: '/app/security/found-items', cta: 'Review Found Items' },
+        { n: sum.claims_waiting ?? 0, label: 'claims waiting for your review', to: '/app/security/claims', cta: 'Review Claims' },
+        { n: sum.counter?.awaiting_release ?? 0, label: 'counter items waiting to be released', to: '/app/security/claims', cta: 'Open Claims' },
+    ].filter((i) => i.n > 0);
+
+    return (
+        <div className="ds-card">
+            <h3 style={{ marginTop: 0 }}>What needs you now</h3>
+            {items.length === 0 ? (
+                <p className="ds-card-desc" style={{ marginBottom: 0 }}>Nothing is waiting. New work will appear here automatically.</p>
+            ) : (
+                <ul className="ds-list">
+                    {items.map((i) => (
+                        <li key={i.label} className="ds-list-item">
+                            <div className="ds-list-item-main">
+                                <div>
+                                    <p className="ds-list-item-title"><strong>{i.n}</strong> {i.label}</p>
+                                </div>
+                            </div>
+                            <Link to={i.to} className="ds-btn ds-btn-primary">{i.cta}</Link>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </div>
+    );
+}
+
 export default function SecurityDashboard() {
     const [days, setDays] = useState(14);
     const { data, loading, error, updatedAt, refresh } = usePolling('/analytics/dashboard', { interval: 12000, params: { days } });
@@ -89,6 +126,10 @@ export default function SecurityDashboard() {
                 <LiveBadge updatedAt={updatedAt} error={error} />
                 <Segmented value={days} options={RANGE_OPTIONS} onChange={setDays} label="Date range" />
             </div>
+
+            <NextActions data={data} loading={loading} />
+
+            <WorkflowGuide lane="counter" defaultOpen={false} />
 
             {/* ---- Live counter queue — the thing an officer checks first ---- */}
             <ChartCard title="Counter Queue — Live" subtitle="Refreshes automatically every few seconds." icon={ListOrdered}>

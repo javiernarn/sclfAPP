@@ -122,6 +122,7 @@ import {
     PackageOpen as PackageOpenGlyph,
     PackageSearch as PackageSearchGlyph,
     PackageX as PackageXGlyph,
+    Printer as PrinterGlyph,
     Palette as PaletteGlyph,
     Pencil as PencilGlyph,
     PhilippinePeso as PhilippinePesoGlyph,
@@ -298,6 +299,7 @@ export const Mail = animatedStatic(MailGlyph, 'Mail');
 export const Megaphone = animatedStatic(MegaphoneGlyph, 'Megaphone');
 export const Menu = animatedStatic(MenuGlyph, 'Menu');
 export const Package = animatedStatic(PackageGlyph, 'Package');
+export const Printer = animatedStatic(PrinterGlyph, 'Printer');
 export const PackageCheck = animatedStatic(PackageCheckGlyph, 'PackageCheck');
 export const PackageOpen = animatedStatic(PackageOpenGlyph, 'PackageOpen');
 export const PackageSearch = animatedStatic(PackageSearchGlyph, 'PackageSearch');

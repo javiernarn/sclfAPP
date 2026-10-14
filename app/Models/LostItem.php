@@ -32,6 +32,7 @@ class LostItem extends Model
         'color',
         'model',
         'unique_characteristics',
+        'details',
         'location_lost',
         'date_lost',
         'time_lost',
@@ -42,6 +43,7 @@ class LostItem extends Model
 
     protected $casts = [
         'date_lost' => 'date',
+        'details' => 'array',
     ];
 
     public function user()

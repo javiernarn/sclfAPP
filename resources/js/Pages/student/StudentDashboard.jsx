@@ -1,10 +1,10 @@
 import { welcomeHeading } from '../../utils/welcome';
 import React, { useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import {
     ClipboardList, Hourglass, CircleCheck, PackageSearch, Megaphone, Handshake,
-    Wrench, ShieldAlert, Activity,
+    Wrench, ShieldAlert, Activity, Printer,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import DashboardSkeleton from '../../Components/shared/DashboardSkeleton';
@@ -14,12 +14,24 @@ import {
 
 export default function StudentDashboard() {
     const { user, roles } = useAuth();
+    const { token } = useParams();
     const isInstructor = Array.isArray(roles) && roles.includes('instructor');
     const { data, loading, error, updatedAt, refresh } = usePolling('/analytics/me', { interval: 20000 });
+    // The account's own user token — the dashboard address and the printed
+    // copy's QR code are built from it (/app/dashboard/{token}, /app/print/{token}).
+    const ownToken = user?.public_token;
 
     useEffect(() => {
         document.title = "Dashboard | SCLF - Opol Community College";
     }, []);
+
+    // /app/dashboard (or someone else's token) -> your own tokened address.
+    // This page only ever shows the signed-in person's own numbers; an
+    // admin/security account opens a student's dashboard from the QR on
+    // their printed copy instead (/app/print/{token}).
+    if (ownToken && token !== ownToken) {
+        return <Navigate to={`/app/dashboard/${ownToken}`} replace />;
+    }
 
     if (loading && !data) {
         return (
@@ -46,6 +58,11 @@ export default function StudentDashboard() {
         >
             <div className="ch-toolbar">
                 <LiveBadge updatedAt={updatedAt} error={error} />
+                {ownToken && (
+                    <Link to={`/app/print/${ownToken}`} className="ds-btn ds-btn-secondary">
+                        <Printer size={16} /> Print my dashboard
+                    </Link>
+                )}
             </div>
 
             {/* ---- Personal KPIs ---- */}

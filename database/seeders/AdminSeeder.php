@@ -5,10 +5,31 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 
 class AdminSeeder extends Seeder
 {
+    /**
+     * Default avatar, without extension. Put the file in
+     * storage/app/public/profile-pictures/ as avatar-admin.jpeg, .jpg or .png.
+     */
+    private const AVATAR_BASENAME = 'profile-pictures/avatar-admin';
+
+    /** Returns the first default avatar that actually exists on the public disk. */
+    private function resolveAvatar(): ?string
+    {
+        foreach (['jpeg', 'jpg', 'png'] as $ext) {
+            $path = self::AVATAR_BASENAME . '.' . $ext;
+
+            if (Storage::disk('public')->exists($path)) {
+                return $path;
+            }
+        }
+
+        return null;
+    }
+
     public function run(): void
     {
         $email = env('INITIAL_ADMIN_EMAIL');
@@ -24,6 +45,15 @@ class AdminSeeder extends Seeder
             );
 
             return;
+        }
+
+        $avatar = $this->resolveAvatar();
+
+        if (!$avatar) {
+            $this->command?->warn(
+                'No default avatar found in storage/app/public/profile-pictures/ '
+                . '(expected avatar-admin.jpeg, .jpg or .png). Admin will have no profile picture.'
+            );
         }
 
         // There is only ever one Admin. Once the real administrator has
@@ -49,7 +79,7 @@ class AdminSeeder extends Seeder
                 'password' => Hash::make($password),
                 'is_active' => true,
                 'email_verified_at' => now(),
-                'profile_picture' => 'profile-pictures/admin-avatar.jpeg',
+                'profile_picture' => $avatar,
                 // The seeded account carries the installer's placeholder
                 // details. The school's real administrator completes
                 // SetupAccountPage on first login — Admin ID, name, email,
@@ -72,8 +102,8 @@ class AdminSeeder extends Seeder
         }
 
         // Keep the avatar in sync while setup is still pending.
-        if ($admin->profile_picture !== 'profile-pictures/admin-avatar.jpeg') {
-            $admin->update(['profile_picture' => 'profile-pictures/admin-avatar.jpeg']);
+        if ($avatar && $admin->profile_picture !== $avatar) {
+            $admin->update(['profile_picture' => $avatar]);
         }
 
         // Phone, admin ID and gender come from .env. They are kept in sync on

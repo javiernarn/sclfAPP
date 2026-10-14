@@ -221,7 +221,16 @@ class AnalyticsController extends Controller
      */
     public function me(Request $request)
     {
-        $user = $request->user();
+        return response()->json($this->personalPayload($request->user()));
+    }
+
+    /**
+     * The personal (student/instructor) dashboard numbers for ONE account.
+     * Shared by /analytics/me (the caller's own) and the print report (which
+     * an admin/staff/security account can open for a student via QR).
+     */
+    public function personalPayload(User $user): array
+    {
         $uid = $user->id;
         $from = now()->subDays(29)->startOfDay();
 
@@ -284,7 +293,7 @@ class AnalyticsController extends Controller
                 ->select('status', DB::raw('count(*) as c'))->groupBy('status')->pluck('c', 'status');
         }
 
-        return response()->json($payload);
+        return $payload;
     }
 
     protected function buildDashboard(int $days, bool $isAdmin): array

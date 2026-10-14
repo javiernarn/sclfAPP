@@ -250,9 +250,7 @@ class ItemReleaseService
 
             $this->claims->transition($claim, Claim::STATUS_RELEASED, $officer, 'Item physically released to claimant.');
 
-            if ($claim->lostItem) {
-                $claim->lostItem->update(['status' => \App\Models\LostItem::STATUS_CLOSED]);
-            }
+            // The lost report is closed by ClaimService::transition() -> LostItemSyncService.
 
             $this->audit->log('qr.scanned', $qr, "Release QR {$qr->public_code} scanned and item released by officer #{$officer->id}.");
             $this->audit->log('item.released', $claim->foundItem, "Found item #{$claim->found_item_id} released. Case closed.");
@@ -293,9 +291,7 @@ class ItemReleaseService
 
             $this->claims->transition($claim, Claim::STATUS_RELEASED, $officer, "Manually released without QR. Reason: {$reason}");
 
-            if ($claim->lostItem) {
-                $claim->lostItem->update(['status' => \App\Models\LostItem::STATUS_CLOSED]);
-            }
+            // The lost report is closed by ClaimService::transition() -> LostItemSyncService.
 
             $this->audit->log('claim.manual_release', $claim, "Claim #{$claim->id} manually released by officer #{$officer->id} without a QR scan. Reason: {$reason}");
 

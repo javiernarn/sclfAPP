@@ -19,11 +19,15 @@ class ItemMatch extends Model
         'score',
         'match_level',
         'score_breakdown',
+        'score_details',
+        'scored_at',
         'status',
     ];
 
     protected $casts = [
         'score_breakdown' => 'array',
+        'score_details' => 'array',
+        'scored_at' => 'datetime',
     ];
 
     public function lostItem()

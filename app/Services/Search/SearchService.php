@@ -2,7 +2,6 @@
 
 namespace App\Services\Search;
 
-use App\Models\Asset;
 use App\Models\Claim;
 use App\Models\FoundItem;
 use App\Models\LostItem;
@@ -53,8 +52,8 @@ class SearchService
             'service_requests' => $this->searchServiceRequests($viewer, $q, $isStaff, $isAdmin, $limit),
         ];
 
-        // Assets, the visitor log, and the people directory are staff-only
-        // surfaces (see AssetController/VisitorController, and below) — a
+        // The visitor log and the people directory are staff-only
+        // surfaces (see VisitorController, and below) — a
         // student searching shouldn't even see these categories appear,
         // empty or not, the way an empty-but-present section would hint
         // at a page they can't actually open. People search in particular
@@ -63,7 +62,6 @@ class SearchService
         // prefix they typed), and a non-staff account has no legitimate
         // reason to look up another person's record that way.
         if ($isStaff) {
-            $results['assets'] = $this->searchAssets($viewer, $q, $isAdmin, $limit);
             $results['visitors'] = $this->searchVisitors($viewer, $q, $isAdmin, $limit);
             $results['users'] = $this->searchUsers($viewer, $q, $isAdmin, $limit);
         }
@@ -180,30 +178,6 @@ class SearchService
             ->all();
     }
 
-    private function searchAssets(User $viewer, string $q, bool $isAdmin, int $limit): array
-    {
-        return Asset::query()
-            ->when(
-                $viewer->campus_id && !$isAdmin,
-                fn ($query) => $query->where('campus_id', $viewer->campus_id)
-            )
-            ->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', "%{$q}%")
-                    ->orWhere('asset_tag', 'like', "%{$q}%")
-                    ->orWhere('serial_number', 'like', "%{$q}%");
-            })
-            ->latest()
-            ->limit($limit)
-            ->get()
-            ->map(fn ($asset) => [
-                'id' => $asset->id,
-                'title' => "{$asset->name} ({$asset->asset_tag})",
-                'subtitle' => trim(ucfirst($asset->category) . ' · ' . str_replace('_', ' ', $asset->status)),
-                'url' => "/app/security/assets/{$asset->id}",
-            ])
-            ->all();
-    }
-
     private function searchVisitors(User $viewer, string $q, bool $isAdmin, int $limit): array
     {
         return Visitor::query()
@@ -232,7 +206,7 @@ class SearchService
     /**
      * People directory — the ID-based lookup (student ID, instructor/
      * security/admin staff ID, or name). Staff-only (see the guard in
-     * search() above), and further scoped the same way Assets/Visitors
+     * search() above), and further scoped the same way Visitors
      * already are: a security officer only finds people on their own
      * campus, an admin finds anyone anywhere. This is deliberately the
      * one category that can name-match *and* ID-match in the same query

@@ -387,6 +387,7 @@ export default function RegisterPage() {
     return (
         <AuthShell
             wide
+            fit
             docType="NEW CASE FILE"
             caseSeed="REG"
             tabs={tabs}

@@ -1,0 +1,221 @@
+/*
+ * PrintReport — the printable Admin / Security dashboard report.
+ * Colours are pinned to a LIGHT palette here (the chart components read
+ * --ch-* variables that are normally scoped to .ds-shell), so a report
+ * printed from a dark dashboard theme still comes out dark-on-white.
+ */
+.pr-root {
+    --ch-1: #4f46e5; --ch-2: #0ea5e9; --ch-3: #14b8a6; --ch-4: #f59e0b; --ch-5: #ec4899; --ch-6: #8b5cf6;
+    --ch-grid: rgba(100,116,139,0.28); --ch-muted: #475569; --ch-track: rgba(100,116,139,0.18);
+    --ch-tip-bg: #0f172a; --ch-tip-fg: #f1f5f9;
+    --ch-good: #15803d; --ch-bad: #b91c1c;
+    color-scheme: light;
+    /* The app shell sets `body { overflow: hidden; height: 100% }` (it scrolls
+       inside its own panel), so the page itself can't scroll. This report
+       therefore scrolls inside its own full-screen box. */
+    position: fixed; inset: 0;
+    overflow-x: hidden; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    background: #e5e7eb;
+    color: #111827;
+    font-size: 12.5px;
+    line-height: 1.45;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+}
+.pr-root *, .pr-root *::before, .pr-root *::after { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+/* ---------- toolbar (screen only) ---------- */
+.pr-toolbar {
+    position: sticky; top: 0; z-index: 20;
+    background: #fff; border-bottom: 1px solid #d1d5db;
+    padding: 10px 16px; display: flex; flex-direction: column; gap: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+}
+.pr-toolbar-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.pr-toolbar-title { font-size: 14px; flex: 1 1 auto; }
+.pr-back { display: inline-flex; align-items: center; gap: 6px; color: #374151; text-decoration: none; font-weight: 600; font-size: 13px; padding: 6px 10px; border-radius: 9px; border: 1px solid #d1d5db; }
+.pr-back:hover { background: #f3f4f6; }
+.pr-print-btn {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    background: #7f1d2e; color: #fff; border: 0; border-radius: 10px;
+    padding: 9px 16px; font-weight: 700; font-size: 13.5px; font-family: inherit;
+}
+.pr-print-btn:hover:not(:disabled) { background: #6a1626; }
+.pr-print-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pr-scan-btn {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+    background: #fff; color: #111827; border: 1px solid #9ca3af; border-radius: 10px;
+    padding: 8px 14px; font-weight: 700; font-size: 13.5px; font-family: inherit;
+}
+.pr-scan-btn:hover { background: #f3f4f6; }
+.pr-field { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; color: #374151; }
+.pr-seg { display: inline-flex; border: 1px solid #d1d5db; border-radius: 9px; overflow: hidden; }
+.pr-seg button { border: 0; background: #fff; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 12.5px; font-weight: 600; color: #374151; }
+.pr-seg button + button { border-left: 1px solid #d1d5db; }
+.pr-seg button.is-active { background: #111827; color: #fff; }
+.pr-check { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: #374151; cursor: pointer; }
+.pr-remarks { display: flex; flex-direction: column; gap: 4px; flex: 1 1 360px; font-size: 12px; font-weight: 600; color: #374151; }
+.pr-remarks textarea { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 9px; resize: vertical; color: #111827; background: #fff; }
+.pr-tip { margin: 0; font-size: 12px; color: #6b7280; flex: 1 1 260px; }
+
+/* ---------- sheet ---------- */
+.pr-stage { padding: 20px 16px 48px; overflow-x: auto; }
+.pr-paper {
+    background: #fff; color: #111827; margin: 0 auto;
+    padding: 10mm; box-sizing: content-box;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+}
+/* Content width = page width minus the 10mm @page margins, so what you see
+   on screen is the width the printer lays out at. */
+.pr-landscape { width: 277mm; }
+.pr-portrait { width: 190mm; }
+
+.pr-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding-bottom: 12px; border-bottom: 2px solid #111827; margin-bottom: 14px; }
+.pr-head-brand { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.pr-logo { width: 72px; height: 72px; object-fit: contain; flex-shrink: 0; }
+.pr-college { font-size: 19px; font-weight: 800; line-height: 1.15; }
+.pr-sys { font-size: 12px; color: #4b5563; }
+.pr-title { margin: 4px 0 0; font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+.pr-meta { margin: 0; font-size: 12px; text-align: right; }
+.pr-meta > div { display: flex; justify-content: flex-end; gap: 8px; }
+.pr-meta dt { color: #6b7280; }
+.pr-meta dd { margin: 0; font-weight: 600; }
+
+.pr-state { padding: 30px 0; text-align: center; color: #4b5563; }
+.pr-link { background: none; border: 0; color: #1d4ed8; text-decoration: underline; cursor: pointer; font: inherit; }
+.pr-empty { color: #6b7280; margin: 6px 0 0; }
+
+.pr-section { margin-bottom: 14px; }
+.pr-h2 { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #374151; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid #d1d5db; }
+.pr-highlights { margin: 0; padding-left: 18px; }
+.pr-highlights li { margin-bottom: 3px; }
+
+.pr-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.pr-landscape .pr-tiles { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.pr-tile { border: 1px solid #cbd5e1; border-radius: 8px; padding: 8px 10px; break-inside: avoid; }
+.pr-tile-label { font-size: 11px; color: #4b5563; font-weight: 600; }
+.pr-tile-value { font-size: 24px; font-weight: 800; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.pr-tile-note { font-size: 10.5px; color: #4b5563; margin-top: 2px; }
+
+.pr-row { display: grid; gap: 10px; margin-bottom: 12px; }
+.pr-landscape .pr-row-2-1 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.pr-landscape .pr-row-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pr-landscape .pr-row-tables { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.pr-portrait .pr-row-2-1 { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+.pr-portrait .pr-row-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.pr-portrait .pr-row-3 > :nth-child(3) { grid-column: 1 / -1; }
+.pr-portrait .pr-row-tables { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+.pr-card { border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; break-inside: avoid; min-width: 0; }
+.pr-card-title { font-size: 13px; font-weight: 800; }
+.pr-card-sub { font-size: 11px; color: #4b5563; margin-bottom: 6px; }
+.pr-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11px; color: #374151; margin-bottom: 2px; }
+.pr-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; }
+
+.pr-meters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+.pr-meters b { display: block; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.pr-meters span { font-size: 11px; color: #4b5563; }
+
+.pr-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pr-table th, .pr-table td { border-bottom: 1px solid #e5e7eb; padding: 4px 6px; text-align: left; }
+.pr-table th { font-size: 11px; color: #374151; background: #f3f4f6; border-bottom: 1px solid #cbd5e1; }
+.pr-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.pr-table thead { display: table-header-group; }
+.pr-table tr { break-inside: avoid; }
+.pr-total td { font-weight: 800; border-top: 1.5px solid #111827; background: #f9fafb; }
+.pr-table-compact { max-width: 420px; }
+
+.pr-remarks-print { margin: 0; white-space: pre-wrap; }
+
+.pr-sign { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 24px 48px; margin-top: 26px; break-inside: avoid; }
+.pr-sign-box { width: 260px; }
+.pr-sign-label { font-size: 11px; color: #4b5563; margin-bottom: 38px; }
+.pr-sign-line { border-top: 1.5px solid #111827; }
+.pr-sign-name { font-size: 13.5px; font-weight: 800; margin-top: 4px; }
+.pr-sign-role { font-size: 11px; color: #4b5563; }
+.pr-sign-note { font-size: 10.5px; color: #6b7280; }
+.pr-sign-date { margin-left: auto; font-size: 12px; color: #374151; }
+
+.pr-foot { display: flex; justify-content: space-between; gap: 12px; margin-top: 22px; padding-top: 6px; border-top: 1px solid #d1d5db; font-size: 10.5px; color: #6b7280; }
+
+/* ---------- print ---------- */
+@media print {
+    /* Printing must flow across pages: undo the fixed scroll box and the
+       shell's body lock, or only the first page would come out. */
+    html, body, #app { height: auto !important; overflow: visible !important; }
+    .pr-root { position: static !important; overflow: visible !important; inset: auto !important; }
+    html, body, .pr-root { background: #fff !important; }
+    .pr-toolbar, .pr-modal-backdrop { display: none !important; }
+    .pr-stage { padding: 0 !important; overflow: visible !important; }
+    .pr-paper { box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: auto !important; }
+    .pr-section, .pr-sign { break-inside: avoid; }
+    .pr-h2 { break-after: avoid; }
+}
+@media (prefers-reduced-motion: no-preference) {
+    .pr-print-btn { transition: background 0.15s ease; }
+}
+
+/* ---------- scan modal (screen only) ---------- */
+.pr-modal-backdrop { position: fixed; inset: 0; z-index: 60; background: rgba(15,23,42,0.55); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.pr-modal { width: min(460px, 100%); max-height: 100%; overflow-y: auto; background: #fff; color: #111827; border-radius: 14px; padding: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.35); }
+.pr-modal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.pr-modal-head strong { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; }
+.pr-modal-x { background: none; border: 0; cursor: pointer; color: #374151; padding: 4px; border-radius: 8px; line-height: 0; }
+.pr-modal-x:hover { background: #f3f4f6; }
+.pr-modal-hint { margin: 0 0 10px; font-size: 12.5px; color: #4b5563; }
+.pr-modal-video { position: relative; background: #0b1220; border-radius: 12px; overflow: hidden; aspect-ratio: 4 / 3; }
+.pr-modal-video video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pr-modal-cam-err { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 18px; color: #e5e7eb; font-size: 13px; }
+.pr-modal-error { margin: 10px 0 0; padding: 8px 10px; border-radius: 9px; background: #fef2f2; color: #991b1b; font-size: 12.5px; }
+.pr-modal-actions { margin-top: 10px; }
+.pr-modal-btn { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; background: #fff; color: #111827; border: 1px solid #9ca3af; border-radius: 9px; padding: 8px 12px; font: inherit; font-size: 13px; font-weight: 700; }
+.pr-modal-btn:hover:not(:disabled) { background: #f3f4f6; }
+.pr-modal-btn.primary { background: #7f1d2e; border-color: #7f1d2e; color: #fff; }
+.pr-modal-btn.primary:hover:not(:disabled) { background: #6a1626; }
+.pr-modal-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.pr-modal-manual { display: flex; align-items: flex-end; gap: 8px; margin-top: 12px; }
+.pr-modal-manual label { flex: 1; display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: #374151; }
+.pr-modal-manual input { font: inherit; font-size: 13px; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 9px; color: #111827; background: #fff; }
+
+/* ---------- student report: QR block ---------- */
+.pr-campus-line { margin: 4px 0 12px; font-size: 12px; color: #374151; }
+.pr-qr-block { display: flex; align-items: center; gap: 22px; margin-top: 14px; padding-top: 12px; border-top: 1.5px solid #111827; break-inside: avoid; }
+.pr-qr-code { flex-shrink: 0; }
+.pr-qr-code .sclf-qr-wrap { padding: 0; gap: 0; }
+.pr-qr-code .sclf-qr-canvas-frame { width: 62mm; }
+.pr-qr-code .sclf-qr-canvas { box-shadow: none; border: 1px solid #cbd5e1; border-radius: 10px; }
+.pr-qr-text { min-width: 0; font-size: 12px; color: #374151; }
+.pr-qr-title { font-size: 15px; font-weight: 800; color: #111827; margin-bottom: 4px; }
+.pr-qr-text p { margin: 0 0 6px; }
+.pr-qr-url { font-size: 10.5px; color: #6b7280; word-break: break-all; }
+
+/* ---------- student / instructor report: compact, one-page layout ---------- */
+.pr-student .pr-head { padding-bottom: 8px; margin-bottom: 10px; }
+.pr-student .pr-logo { width: 56px; height: 56px; }
+.pr-student .pr-section { margin-bottom: 14px; }
+.pr-student .pr-h2 { margin-bottom: 6px; }
+.pr-student .pr-tile { padding: 8px 10px; }
+.pr-student .pr-tile-value { font-size: 23px; }
+.pr-student .pr-row { margin-bottom: 12px; }
+.pr-student .pr-card { padding: 10px 12px; }
+.pr-student .pr-campus-line { margin: 2px 0 10px; }
+.pr-student .pr-qr-block { align-items: stretch; gap: 18px; margin-top: 10px; padding-top: 14px; }
+.pr-student .pr-qr-code .sclf-qr-canvas-frame { width: 54mm; }
+.pr-student .pr-qr-side { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
+.pr-student .pr-qr-text p { margin: 0 0 4px; }
+.pr-student .pr-qr-sign { margin-top: auto; }
+.pr-student .pr-qr-sign .pr-sign-label { margin-bottom: 40px; }
+.pr-student .pr-qr-sign-row { display: flex; justify-content: space-between; gap: 12px; margin-top: 3px; font-size: 10.5px; color: #4b5563; }
+.pr-student .pr-foot { margin-top: auto; }
+@media print {
+    /* Fill the A4 sheet (297mm - 10mm top - 14mm bottom margin) and pin the
+       footer to its bottom edge, so there is no empty band under the content. */
+    .pr-student { display: flex; flex-direction: column; min-height: 266mm; }
+    .pr-student .pr-foot { padding-top: 8px; }
+    .pr-student { break-inside: avoid; }
+    .pr-student .pr-qr-block { break-inside: avoid; }
+}
+.pr-student .pr-table { font-size: 11.5px; }
+.pr-student .pr-table th, .pr-student .pr-table td { padding: 5px 6px; }
+.pr-student .pr-card-sub { margin-bottom: 4px; }

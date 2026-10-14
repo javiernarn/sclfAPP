@@ -18,6 +18,7 @@ import AuthShell, {
 } from '../../Components/shared/AuthShell';
 import { Mail, Lock } from '../../Components/icons';
 import { rememberLogin } from '../../utils/welcome';
+import { canOpenPath } from '../../utils/redirectGuard';
 import occBg from '../../assets/images/occ.webp';
 
 export default function LoginPage() {
@@ -34,7 +35,7 @@ export default function LoginPage() {
     // it's scoped to server-side (see RequireFullAccess middleware).
     const [twoFactorChallenge, setTwoFactorChallenge] = useState(null); // { tempToken } | null
     const [code, setCode] = useState('');
-    const { login, verifyTwoFactor, user: currentUser, loading: authLoading } = useAuth();
+    const { login, verifyTwoFactor, user: currentUser, roles, loading: authLoading } = useAuth();
     const toast = useToast();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -65,8 +66,9 @@ export default function LoginPage() {
         if (signingIn.current) return;
         if (authLoading || !currentUser || !redirectParam || !/^\/(?!\/)/.test(redirectParam)) return;
         if (uidParam && String(currentUser.id) !== String(uidParam)) return; // someone else's link: show login
+        if (!canOpenPath(redirectParam, roles)) return; // another role's page: stay on login
         navigate(redirectParam, { replace: true });
-    }, [authLoading, currentUser, redirectParam, uidParam, navigate]);
+    }, [authLoading, currentUser, roles, redirectParam, uidParam, navigate]);
 
     useEffect(() => {
         document.title = 'Login | SCLF - Opol Community College';
@@ -119,6 +121,10 @@ export default function LoginPage() {
                 window.sessionStorage.setItem('sclf-post-login-redirect', redirectParam);
                 if (uidParam) window.sessionStorage.setItem('sclf-post-login-uid', uidParam);
                 else window.sessionStorage.removeItem('sclf-post-login-uid');
+            } else {
+                // This sign-in has no deep link: drop any older one so it can't fire for this account.
+                window.sessionStorage.removeItem('sclf-post-login-redirect');
+                window.sessionStorage.removeItem('sclf-post-login-uid');
             }
         } catch (e) {
             // ignore storage errors (private mode etc.) — worst case

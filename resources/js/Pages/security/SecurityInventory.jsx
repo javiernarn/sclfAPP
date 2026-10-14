@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { useToast } from '../../context/ToastContext';
@@ -472,18 +473,18 @@ export default function SecurityInventory() {
             </div>
 
             <div className="ds-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-                    <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, rowGap: 14, flexWrap: 'wrap', marginBottom: 20 }}>
+                    <div style={{ flex: '1 1 420px', minWidth: 0 }}>
                         <h3 style={{ marginBottom: 4 }}>Lost &amp; Found Storage</h3>
-                        <p className="ds-card-desc">
+                        <p className="ds-card-desc" style={{ marginBottom: 0 }}>
                             Room / cabinet / shelf / box shelving for unmatched found items going through the normal
                             report → verify → match → claim flow. Each spot shows what's actually still there right now,
                             not just how many items were ever shelved here.
                         </p>
                     </div>
-                    <a href="/app/security/unclaimed-items" className="ds-btn ds-btn-secondary" style={{ whiteSpace: 'nowrap' }}>
+                    <Link to="/app/security/unclaimed-items" className="ds-btn ds-btn-secondary" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
                         Unclaimed Items
-                    </a>
+                    </Link>
                 </div>
                 {!loading && storageLocations.length === 0 && (
                     <div className="ds-empty">No lost &amp; found storage locations yet — add one below.</div>
@@ -503,7 +504,7 @@ export default function SecurityInventory() {
                                 <CapacityBadge location={l} />
                             </div>
                             <LocationStatusChips location={l} />
-                            <CapacityEditor location={l} onSaved={load} />
+                            <div style={{ marginTop: 6 }}><CapacityEditor location={l} onSaved={load} /></div>
                             <LocationEditor location={l} type="storage" onSaved={load} onDeleted={load} />
                         </div>
                     ))}

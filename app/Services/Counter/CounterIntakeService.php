@@ -8,6 +8,7 @@ use App\Models\InventoryMovement;
 use App\Models\StorageLocation;
 use App\Models\User;
 use App\Services\Audit\AuditLogService;
+use App\Services\Claims\LostItemSyncService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -108,7 +109,21 @@ class CounterIntakeService
             ]);
         }
 
-        return DB::transaction(function () use ($officer, $owner, $counter, $data) {
+        // Optional: the officer explicitly confirmed which of the owner's
+        // lost reports this hand-over belongs to. Only accept a report that
+        // is the owner's own, still open, and not already spoken for —
+        // otherwise fall back to the automatic best-match link.
+        $lostItemId = $data['lost_item_id'] ?? null;
+        if ($lostItemId) {
+            $allowed = app(LostItemSyncService::class)->openReportsFor($owner->id)->pluck('id');
+            if (!$allowed->contains((int) $lostItemId)) {
+                throw ValidationException::withMessages([
+                    'lost_item_id' => ["That lost report is not an open report belonging to {$owner->name}."],
+                ]);
+            }
+        }
+
+        return DB::transaction(function () use ($officer, $owner, $counter, $data, $lostItemId) {
             $item = FoundItem::create([
                 // No independent "finder" here — the officer is the one
                 // logging the record, mirroring how security-verified
@@ -144,11 +159,15 @@ class CounterIntakeService
             $claim = Claim::create([
                 'found_item_id' => $item->id,
                 'claimant_id' => $owner->id,
+                'lost_item_id' => $lostItemId ?: null,
                 'status' => Claim::STATUS_APPROVED,
                 'reviewed_by' => $officer->id,
                 'review_notes' => 'Owner identified in person at counter check-in; no separate review needed.',
                 'reviewed_at' => now(),
             ]);
+
+            // If the owner had reported this item lost, that report now has an approved claim.
+            app(LostItemSyncService::class)->syncForClaim($claim->fresh());
 
             $this->audit->log(
                 'counter.checked_in',

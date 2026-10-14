@@ -19,3 +19,7 @@ Schedule::command('disposition:sweep')->dailyAt('02:00');
 // cadence — this table gets one row per request, so unlike most nightly
 // jobs here it's actually sized to matter if it's skipped for a while.
 Schedule::command('activity:prune')->dailyAt('02:30');
+
+// Matching v2: keep open matches in step with edited reports even if nobody
+// opens the Matches page. (The page also re-scores stale rows on load.)
+Schedule::command('matches:rescore')->hourly();

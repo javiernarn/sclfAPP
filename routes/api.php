@@ -7,9 +7,9 @@ use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\TwoFactorController;
 use App\Http\Controllers\ActionRequestController;
-use App\Http\Controllers\AssetController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\PrintReportController;
 use App\Http\Controllers\ClaimController;
 use App\Http\Controllers\CounterController;
 use App\Http\Controllers\DispositionController;
@@ -105,6 +105,8 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     Route::get('/found-items/{foundItem}/movements', [StorageLocationController::class, 'history']);
 
     // Matches
+    // Live score for a report that has not been filed yet (the report forms call this as you type).
+    Route::post('/matches/preview', [MatchController::class, 'preview'])->middleware('throttle:90,1');
     Route::post('/matches/{match}/dismiss', [MatchController::class, 'dismiss']);
 
     // Claims
@@ -121,6 +123,10 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
 
     // Personal dashboard analytics (student/instructor) — only the caller's own records.
     Route::get('/analytics/me', [AnalyticsController::class, 'me']);
+
+    // Printed dashboard (the QR on the paper opens /app/print/{token}). Open to the
+    // account's owner, and to admin/staff/security — enforced in the controller.
+    Route::get('/print-report/{token}', [PrintReportController::class, 'show'])->where('token', '[A-Za-z0-9_-]{16,64}');
 
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index']);
@@ -141,7 +147,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     Route::get('/departments', [\App\Http\Controllers\ReferenceDataController::class, 'departments']);
 
     // Global Search — one box across found/lost items, claims, incidents,
-    // service requests, and (staff-only) assets/visitors. Each category
+    // service requests, and (staff-only) visitors. Each category
     // re-applies its own controller's visibility rule inside SearchService,
     // so this endpoint can't surface anything the person couldn't already
     // reach through that section's own list page.
@@ -175,13 +181,6 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     Route::get('/service-requests/{serviceRequest}', [ServiceRequestController::class, 'show']);
     Route::post('/service-requests/{serviceRequest}/cancel', [ServiceRequestController::class, 'cancel']);
 
-    // Assets — viewing your own assigned asset(s) ("My Assets") is open
-    // to any authenticated user, same custodian-can-always-see-it rule
-    // as AssetPolicy::view(). Registering/managing the registry itself
-    // is officer/admin-only, see the role-restricted group below.
-    Route::get('/assets', [AssetController::class, 'index']);
-    Route::get('/assets/{asset}', [AssetController::class, 'show']);
-
     // Counter queue — joining/viewing/cancelling your own ticket is open
     // to any authenticated user (student/instructor waiting in line);
     // running the queue (call/serve/complete/no-show/dashboard) is
@@ -197,6 +196,8 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         // Lost & found match queue — the handlers' (security / admin / staff)
         // view of every pairing the matching engine recorded.
         Route::get('/matches', [MatchController::class, 'index']);
+        Route::get('/matches/pulse', [MatchController::class, 'pulse']);
+        Route::get('/matches/{match}', [MatchController::class, 'show'])->whereNumber('match');
         Route::post('/matches/{match}/notify-owner', [MatchController::class, 'notifyOwner']);
 
         Route::get('/storage-locations', [StorageLocationController::class, 'index']);
@@ -229,6 +230,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         // student-directory lookup, not tied to a specific record.
         Route::middleware('throttle:60,1')->get('/counter/owners', [CounterController::class, 'searchOwners']);
         Route::post('/counter/check-in', [CounterController::class, 'checkIn']);
+        Route::get('/counter/owners/{owner}/lost-reports', [CounterController::class, 'ownerLostReports'])->whereNumber('owner');
 
         // Counter staff assignment — read is available to any security
         // officer/admin (so whoever's on shift can see who's assigned
@@ -299,21 +301,6 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         Route::post('/service-requests/{serviceRequest}/complete', [ServiceRequestController::class, 'complete']);
         Route::post('/service-requests/{serviceRequest}/close', [ServiceRequestController::class, 'close']);
         Route::post('/service-requests/{serviceRequest}/reopen', [ServiceRequestController::class, 'reopen']);
-
-        // Asset registry — register/assign/unassign/repair cycle/retire/
-        // lost. Viewing (including a custodian's own "My Assets") lives
-        // in the any-authenticated-user group above.
-        Route::post('/assets', [AssetController::class, 'store']);
-        Route::patch('/assets/{asset}', [AssetController::class, 'update']);
-        Route::delete('/assets/{asset}', [AssetController::class, 'destroy']);
-        Route::post('/assets/{asset}/assign', [AssetController::class, 'assign']);
-        Route::post('/assets/{asset}/unassign', [AssetController::class, 'unassign']);
-        Route::post('/assets/{asset}/send-for-repair', [AssetController::class, 'sendForRepair']);
-        Route::post('/assets/{asset}/return-from-repair', [AssetController::class, 'returnFromRepair']);
-        Route::post('/assets/{asset}/retire', [AssetController::class, 'retire']);
-        Route::post('/assets/{asset}/report-lost', [AssetController::class, 'reportLost']);
-        // Custodian lookup for the Asset assign form — see ReferenceDataController::lookupUser().
-        Route::middleware('throttle:30,1')->get('/users/lookup', [\App\Http\Controllers\ReferenceDataController::class, 'lookupUser']);
 
         Route::get('/analytics/dashboard', [AnalyticsController::class, 'dashboard']);
         Route::get('/analytics/overview', [AnalyticsController::class, 'overview']);

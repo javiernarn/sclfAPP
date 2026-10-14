@@ -42,11 +42,17 @@ class AuthController extends Controller
      */
     private function userPayload(User $user): array
     {
+        // Accounts inserted without going through Eloquent (old seeds/imports)
+        // get their dashboard token the first time they load their profile.
+        if (empty($user->public_token)) {
+            $user->forceFill(['public_token' => bin2hex(random_bytes(16))])->saveQuietly();
+        }
+
         return [
             'user' => $user->only(
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
                 'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course',
-                'profile_picture_url', 'two_factor_enabled', 'must_setup_profile'
+                'profile_picture_url', 'two_factor_enabled', 'must_setup_profile', 'public_token'
             ),
             'roles' => $user->getRoleNames(),
         ];

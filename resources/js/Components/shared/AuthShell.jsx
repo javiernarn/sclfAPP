@@ -75,6 +75,7 @@ export default function AuthShell({
     footer,
     wide = false,
     tabs, // optional folder-tab step index for the register wizard
+    fit = false, // register wizard: no legal line under the card, tighter spacing, no scrollbar
     compact = false, // trimmed layout: no helper text, no legal line, tighter rows (setup page)
     centerHead = false, // center the title/subtitle — used by success/confirmation states
     // --- Optional "gate" mode (used by Login only) -----------------------
@@ -110,7 +111,7 @@ export default function AuthShell({
         <>
             <style>{LEDGER_CSS}</style>
 
-            <div className={`lg-wrap ${isDark ? "dark" : "light"}${compact ? " is-compact" : ""}`}>
+            <div className={`lg-wrap ${isDark ? "dark" : "light"}${compact ? " is-compact" : ""}${fit ? " is-fit" : ""}`}>
                 {/* ============ LEFT: LEDGER RAIL ============ */}
                 <aside className="lg-rail">
                     <div className="lg-rail-ruled" aria-hidden="true" />
@@ -815,6 +816,23 @@ const LEDGER_CSS = `
         .lg-subtitle { display: none; }
     }
     @media (prefers-reduced-motion: reduce) { .lg-card, .lg-rail-blob { animation: none !important; } }
+
+    /* ============ Fit mode (register wizard) — desktop & laptop only ============
+       No legal text under the card, tighter spacing, scrollbar hidden.
+       Phones/tablets in portrait keep the normal mobile layout. */
+    @media (min-width: 768px) and (orientation: landscape) {
+        .lg-wrap.is-fit .lg-stage-legal { display: none !important; }
+        .lg-wrap.is-fit .lg-stage { scrollbar-width: none; -ms-overflow-style: none; padding-top: 12px; padding-bottom: 12px; }
+        .lg-wrap.is-fit .lg-stage::-webkit-scrollbar { display: none; width: 0; height: 0; }
+        .lg-wrap.is-fit .lg-card-head { padding: 14px 24px 0; }
+        .lg-wrap.is-fit .lg-card-body { padding: 6px 24px 14px; }
+        .lg-wrap.is-fit .lg-row { padding: 9px 0; }
+        .lg-wrap.is-fit .lg-card-foot { padding: 10px 24px; }
+        .lg-wrap.is-fit .lg-checklist { margin: 8px 0 0; padding: 8px 12px; }
+    }
+    @media (min-width: 768px) and (orientation: landscape) and (max-height: 800px) {
+        .lg-wrap.is-fit .lg-subtitle { display: none; }
+    }
 
     /* ============ Compact mode (account setup): fits one screen, no scrolling ============ */
     .lg-wrap.is-compact .lg-stage-legal,

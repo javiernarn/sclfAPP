@@ -4,6 +4,10 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { useAuth } from '../../context/AuthContext';
 
+const MARK = { match: '✓', similar: '≈', different: '✕' };
+const CHIP = { match: 'ds-badge ds-badge-found', similar: 'ds-badge ds-badge-pending', different: 'ds-badge ds-badge-default' };
+const POLL_MS = 20000; // small list for one report — a plain re-fetch is cheap
+
 const levelBadge = (level) => {
     const map = {
         very_high: 'ds-badge ds-badge-found',
@@ -31,15 +35,23 @@ export default function LostItemMatches() {
         document.title = "Potential Matches | SCLF - Opol Community College";
     }, []);
 
-    const load = () => {
-        setLoading(true);
-        axios.get(`/lost-items/${id}/matches`)
+    const load = (background = false) => {
+        if (!background) setLoading(true);
+        axios.get(`/lost-items/${id}/matches`, { silent: background })
             .then(res => setMatches(res.data.filter(m => m.status !== 'dismissed')))
-            .catch(() => setError('Could not load matches.'))
-            .finally(() => setLoading(false));
+            .catch(() => { if (!background) setError('Could not load matches.'); })
+            .finally(() => { if (!background) setLoading(false); });
     };
 
-    useEffect(load, [id]);
+    useEffect(() => { load(); }, [id]);
+
+    // Re-check while the tab is open and visible (scores are re-computed server-side when a report changes).
+    useEffect(() => {
+        const t = setInterval(() => { if (!document.hidden) load(true); }, POLL_MS);
+        const onVisible = () => { if (!document.hidden) load(true); };
+        document.addEventListener('visibilitychange', onVisible);
+        return () => { clearInterval(t); document.removeEventListener('visibilitychange', onVisible); };
+    }, [id]);
 
     const dismiss = async (matchId) => {
         setDismissingId(matchId);
@@ -62,7 +74,7 @@ export default function LostItemMatches() {
             title="Potential Matches"
             subtitle={isHandler
                 ? 'Candidates the matching engine flagged for this lost report. Act on them from the Matches queue.'
-                : 'Our matching engine flags candidates by rule-based scoring. Security still verifies ownership before anything is released.'}
+                : 'Our matching engine scores candidates live, field by field. Security still verifies ownership before anything is released.'}
         >
             <div className="ds-card">
                 {error && <div className="ds-error">{error}</div>}
@@ -86,6 +98,18 @@ export default function LostItemMatches() {
                                         {m.found_item?.category || 'Uncategorized'} · Found near {m.found_item?.location_found || 'campus'}
                                         {' · '}Score {m.score}/100
                                     </p>
+                                    {m.public_details?.fields?.some(f => f.status !== 'unknown') && (
+                                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                                            {m.public_details.fields.filter(f => f.status !== 'unknown').map(f => (
+                                                <span key={f.key} className={CHIP[f.status]} title={`${f.points}/${f.weight} points`}>{MARK[f.status]} {f.label}</span>
+                                            ))}
+                                        </div>
+                                    )}
+                                    {m.public_details?.fields?.some(f => f.status === 'different') && (
+                                        <p className="ds-list-item-meta" style={{ marginTop: 6 }}>
+                                            Some details don't line up — Security will check them with you before anything is released.
+                                        </p>
+                                    )}
                                     <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                                         {isHandler ? (
                                             <>

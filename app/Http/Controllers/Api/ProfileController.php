@@ -158,7 +158,7 @@ class ProfileController extends Controller
             'user' => $user->fresh()->only(
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
                 'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course',
-                'profile_picture_url', 'two_factor_enabled', 'must_setup_profile'
+                'profile_picture_url', 'two_factor_enabled', 'must_setup_profile', 'public_token'
             ),
         ]);
     }

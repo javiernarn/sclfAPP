@@ -118,7 +118,7 @@ const ThemePicker = ({ open, onToggle, current, onPick, side = "right", align = 
 // instead of an emoji, so the sidebar reads as a real product UI.
 const NAV_BY_ROLE = {
     student: [
-        { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+        { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
         { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
         { to: "/app/lost-items/create", label: "Report Lost Item", icon: Megaphone },
         { to: "/app/found-items", label: "Found Items", icon: PackageSearch },
@@ -142,7 +142,6 @@ const NAV_BY_ROLE = {
         { to: "/app/security/unclaimed-items", label: "Unclaimed Items", icon: AlertTriangle },
         { to: "/app/incidents", label: "Incidents", icon: ShieldCheck },
         { to: "/app/service-requests", label: "Service Requests", icon: Wrench },
-        { to: "/app/security/assets", label: "Assets", icon: Boxes },
         { to: "/app/security/visitors", label: "Visitors", icon: UserCheck },
         { to: "/app/security/qr-scanner", label: "QR Release Scanner", icon: QrCode },
         { to: "/app/security/history", label: "History", icon: History },
@@ -177,7 +176,6 @@ const NAV_BY_ROLE = {
         // controller — no separate /app/admin/incidents route needed.
         { to: "/app/incidents", label: "Incidents", icon: ShieldCheck },
         { to: "/app/service-requests", label: "Service Requests", icon: Wrench },
-        { to: "/app/security/assets", label: "Assets", icon: Boxes },
         { to: "/app/security/visitors", label: "Visitors", icon: UserCheck },
         // Same Counter/Lost & Found release history Security sees at
         // /app/security/history — admins get their own nav entry into it too,
@@ -199,7 +197,7 @@ const NAV_BY_ROLE = {
 // To change what a role gets, just edit its four entries here.
 const MOBILE_TABS_BY_ROLE = {
     student: [
-        { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+        { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
         { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
         { to: "/app/found-items", label: "Found Items", icon: PackageCheck },
         { to: "/app/claims", label: "My Claims", icon: ClipboardCheck },
@@ -361,6 +359,9 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
         [navRole, isStaffOnly]
     );
     const homePath = isAdmin ? "/app/admin/dashboard" : isSecurity ? "/app/security/dashboard" : "/app/dashboard";
+    // Admin/Staff and Security get a print report behind the logo; students keep a plain link.
+    const canPrint = isAdmin || isSecurity;
+    const printPath = isAdmin ? "/app/admin/print-report" : "/app/security/print-report";
     const navLabel = isAdmin ? (roles.includes("admin") ? "Admin" : "Staff") : isSecurity ? "Security Officer" : roles.includes("instructor") ? "Instructor" : "Student";
     const mobileTabs = MOBILE_TABS_BY_ROLE[navRole];
 
@@ -554,9 +555,13 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                     >
                         <X size={18} />
                     </button>
+                    {/* Admin/Staff/Security: the logo opens the printable report
+                        directly. Students/instructors keep a plain home link. */}
                     <Link
-                        to={homePath}
+                        to={canPrint ? printPath : homePath}
                         className="ds-brand"
+                        title={canPrint ? "Print report" : undefined}
+                        aria-label={canPrint ? "SCLF Opol Community College — print report" : undefined}
                         onClick={() => setSidebarOpen(false)}
                     >
                         <img src={logo} alt="SCLF Logo" {...guardImageEvents} />
@@ -734,7 +739,11 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     )}
                                 </button>
                             </Tooltip>
-                            <Link to={homePath} className="ds-topbar-brand">
+                            <Link
+                                to={canPrint ? printPath : homePath}
+                                className="ds-topbar-brand"
+                                title={canPrint ? "Print report" : undefined}
+                            >
                                 <img src={logo} alt="SCLF Logo" {...guardImageEvents} />
                                 <span>SCLF</span>
                             </Link>

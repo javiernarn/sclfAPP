@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import WorkflowGuide from '../../Components/shared/WorkflowGuide';
 import { useToast } from '../../context/ToastContext';
 
 export default function SecurityFoundItemsReview() {
@@ -44,6 +45,8 @@ export default function SecurityFoundItemsReview() {
             title="Found Item Reviews"
             subtitle="Verify incoming found-item reports before they're stored and matched."
         >
+            <WorkflowGuide lane="online" defaultOpen={false} />
+
             <div className="ds-card">
                 {loading && (<><div className="ds-skeleton" /><div className="ds-skeleton" /></>)}
                 {!loading && items.length === 0 && <div className="ds-empty">Nothing waiting for review.</div>}

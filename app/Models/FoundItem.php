@@ -81,6 +81,7 @@ class FoundItem extends Model
         'color',
         'model',
         'unique_characteristics',
+        'details',
         'location_found',
         'date_found',
         'time_found',
@@ -103,6 +104,7 @@ class FoundItem extends Model
 
     protected $casts = [
         'date_found' => 'date',
+        'details' => 'array',
         'verified_at' => 'datetime',
         'retention_expires_at' => 'date',
         'unclaimed_at' => 'datetime',

@@ -179,8 +179,7 @@ class StorageLocationController extends Controller
      * Retire a storage location entirely. Blocked while anything is still
      * physically sitting there or actively queued at it, so deleting one
      * can never orphan an item's shelf reference or strand someone in
-     * line — move the items / clear the queue first, mirroring how
-     * AssetController::destroy() blocks on 'assigned'.
+     * line — move the items / clear the queue first.
      */
     public function destroy(Request $request, StorageLocation $storageLocation)
     {

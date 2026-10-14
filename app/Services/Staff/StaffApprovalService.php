@@ -422,7 +422,7 @@ class StaffApprovalService
             'POST api/storage-locations/{storageLocation}/officers' => "Assign an officer to counter{$target}",
             'DELETE api/storage-locations/{storageLocation}/officers/{user}' => "Remove an officer from counter{$target}",
             'POST api/storage-locations/{storageLocation}/queue/call-next' => "Call the next person at counter{$target}",
-            // Incidents, service requests, visitors, assets
+            // Incidents, service requests, visitors
             'POST api/security-incidents' => 'Report an incident',
             'PATCH api/security-incidents/{securityIncident}' => "Edit incident{$target}",
             'DELETE api/security-incidents/{securityIncident}' => "Delete incident{$target}",
@@ -440,15 +440,6 @@ class StaffApprovalService
             'POST api/visitors/{visitor}/check-out' => "Check out visitor{$target}",
             'PATCH api/visitors/{visitor}' => "Edit visitor record{$target}",
             'DELETE api/visitors/{visitor}' => "Delete visitor record{$target}",
-            'POST api/assets' => 'Register an asset',
-            'PATCH api/assets/{asset}' => "Edit asset{$target}",
-            'DELETE api/assets/{asset}' => "Delete asset{$target}",
-            'POST api/assets/{asset}/assign' => "Assign asset{$target}",
-            'POST api/assets/{asset}/unassign' => "Unassign asset{$target}",
-            'POST api/assets/{asset}/send-for-repair' => "Send asset{$target} for repair",
-            'POST api/assets/{asset}/return-from-repair' => "Return asset{$target} from repair",
-            'POST api/assets/{asset}/retire' => "Retire asset{$target}",
-            'POST api/assets/{asset}/report-lost' => "Report asset{$target} lost",
         ];
 
         $role = isset($payload['role']) ? ucwords(str_replace('_', ' ', (string) $payload['role'])) : null;

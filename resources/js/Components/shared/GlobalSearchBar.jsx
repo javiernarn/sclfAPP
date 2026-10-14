@@ -10,7 +10,6 @@ const CATEGORY_LABELS = {
     claims: 'Claims',
     security_incidents: 'Incidents',
     service_requests: 'Service Requests',
-    assets: 'Assets',
     visitors: 'Visitors',
     users: 'People',
 };
@@ -21,7 +20,7 @@ const CATEGORY_LABELS = {
 // search everything their own account can already reach — their claims,
 // their reports, items, etc. — but never the "People" category: looking
 // someone else up by student/staff ID is a staff-only action, gated the
-// same way Assets/Visitors already are. Security officers and admins can
+// same way Visitors already is. Security officers and admins can
 // search People too (by name or by ID — student, instructor, security,
 // or admin prefix, whichever was typed), scoped to their own campus
 // unless they're an admin. This is a "jump to the thing I'm thinking of"

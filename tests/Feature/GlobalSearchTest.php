@@ -2,11 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\Asset;
 use App\Models\Campus;
 use App\Models\FoundItem;
 use App\Models\User;
-use App\Services\Assets\AssetService;
 use App\Services\Incidents\IncidentService;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -99,7 +97,7 @@ class GlobalSearchTest extends TestCase
         $this->assertFalse($titles->contains('Stolen skateboard near cafeteria'));
     }
 
-    public function test_assets_and_visitors_categories_are_absent_for_non_staff(): void
+    public function test_visitors_category_is_absent_for_non_staff(): void
     {
         $student = $this->user('student');
 
@@ -107,44 +105,6 @@ class GlobalSearchTest extends TestCase
 
         $response->assertStatus(200);
         $data = $response->json('data');
-        $this->assertArrayNotHasKey('assets', $data);
         $this->assertArrayNotHasKey('visitors', $data);
-    }
-
-    public function test_staff_can_search_assets_by_asset_tag(): void
-    {
-        $officer = $this->user('security_officer');
-
-        $asset = app(AssetService::class)->register($officer, [
-            'category' => Asset::CATEGORY_ELECTRONICS,
-            'name' => 'HP ProBook 450',
-        ]);
-
-        $response = $this->withHeaders($this->authHeaders($officer))->getJson("/api/search?q={$asset->asset_tag}");
-
-        $response->assertStatus(200);
-        $titles = collect($response->json('data.assets'))->pluck('title');
-        $this->assertTrue($titles->contains(fn ($t) => str_contains($t, $asset->asset_tag)));
-    }
-
-    public function test_a_students_own_assigned_asset_does_not_appear_in_search_since_assets_is_staff_only(): void
-    {
-        // Deliberate: AssetPolicy lets a custodian view their own asset
-        // directly, but the search box's "assets" category is still a
-        // staff-only surface (see SearchService's comment) — a student
-        // searching should reach their asset via "My Assets", not here.
-        $officer = $this->user('security_officer');
-        $custodian = $this->user('student');
-
-        $asset = app(AssetService::class)->register($officer, [
-            'category' => Asset::CATEGORY_ELECTRONICS,
-            'name' => 'Lenovo ThinkPad E14',
-        ]);
-        app(AssetService::class)->assign($asset, $custodian, $officer);
-
-        $response = $this->withHeaders($this->authHeaders($custodian))->getJson('/api/search?q=thinkpad');
-
-        $response->assertStatus(200);
-        $this->assertArrayNotHasKey('assets', $response->json('data'));
     }
 }

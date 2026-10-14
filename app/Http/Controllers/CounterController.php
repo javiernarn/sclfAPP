@@ -69,6 +69,7 @@ class CounterController extends Controller
             'item_name' => 'required|string|max:150',
             'description' => 'nullable|string|max:1000',
             'category' => 'nullable|string|max:100',
+            'lost_item_id' => 'nullable|integer|exists:lost_items,id',
         ]);
 
         $owner = User::findOrFail($validated['owner_id']);
@@ -76,14 +77,46 @@ class CounterController extends Controller
 
         $result = $this->intake->checkIn($request->user(), $owner, $counter, $validated);
 
+        // Tell the officer plainly whether this hand-over was tied to one of
+        // the owner's lost reports, so a missed link is visible right away.
+        $linked = $result['claim']->lost_item_id
+            ? \App\Models\LostItem::select('id', 'item_name', 'status')->find($result['claim']->lost_item_id)
+            : null;
+
         return response()->json([
             'success' => true,
             'message' => "Item checked in for {$owner->name}. They've been notified.",
             'data' => [
                 'found_item' => $result['found_item'],
                 'claim' => $result['claim'],
+                'linked_lost_item' => $linked,
             ],
         ], 201);
+    }
+
+    /**
+     * The owner's open lost reports, so the officer can confirm which one a
+     * hand-over belongs to before checking in. Same narrow-fields rule as
+     * searchOwners(): only what's needed to compare the item in hand.
+     */
+    public function ownerLostReports(Request $request, User $owner)
+    {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
+            abort(403);
+        }
+
+        $reports = app(\App\Services\Claims\LostItemSyncService::class)
+            ->openReportsFor($owner->id)
+            ->map(fn ($l) => [
+                'id' => $l->id,
+                'item_name' => $l->item_name,
+                'category' => $l->category,
+                'location_lost' => $l->location_lost,
+                'date_lost' => optional($l->date_lost)->toDateString(),
+                'status' => $l->status,
+            ])->values();
+
+        return response()->json(['data' => $reports]);
     }
 
     /**

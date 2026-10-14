@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
+import ComboBox from '../../Components/shared/ComboBox';
+import { CATEGORY_NAMES } from '../../config/lostFoundCatalog';
 import axios from '../../config/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import WorkflowGuide, { StepTracker } from '../../Components/shared/WorkflowGuide';
 import { useToast } from '../../context/ToastContext';
 import { Search, UserCircle, PackageCheck, Info, RotateCcw, ArrowRight } from '../../Components/icons';
 
@@ -41,6 +44,11 @@ export default function SecurityCounter() {
     const [results, setResults] = useState([]);
     const [searching, setSearching] = useState(false);
     const [owner, setOwner] = useState(null);
+    // The owner's open lost reports, so the officer confirms which one this item is.
+    // lostChoice: '' = not decided yet, 'none' = deliberately no report, or a report id.
+    const [ownerReports, setOwnerReports] = useState([]);
+    const [loadingReports, setLoadingReports] = useState(false);
+    const [lostChoice, setLostChoice] = useState('');
     const searchTimer = useRef(null);
 
     // --- Step 2: counters list + "add a counter" mini-form -----------
@@ -93,6 +101,24 @@ export default function SecurityCounter() {
         setOwner(u);
         setResults([]);
         setQuery('');
+        setLostChoice('');
+        setOwnerReports([]);
+        setLoadingReports(true);
+        axios.get(`/counter/owners/${u.id}/lost-reports`)
+            .then((res) => {
+                const reports = res.data.data || [];
+                setOwnerReports(reports);
+                // Nothing to choose from -> no decision needed.
+                if (reports.length === 0) setLostChoice('none');
+            })
+            .catch(() => { setOwnerReports([]); setLostChoice('none'); })
+            .finally(() => setLoadingReports(false));
+    };
+
+    const clearOwner = () => {
+        setOwner(null);
+        setOwnerReports([]);
+        setLostChoice('');
     };
 
     const addCounter = async (e) => {
@@ -111,10 +137,13 @@ export default function SecurityCounter() {
     const submit = async (e) => {
         e.preventDefault();
         if (!owner) { toast.error('Search for and select the owner first.', { title: 'No owner selected' }); return; }
+        if (lostChoice === '') { toast.error('Pick the owner\'s lost report for this item, or choose "No lost report".', { title: 'Lost report not confirmed' }); return; }
         setSubmitting(true);
         setFieldErrors({});
         try {
-            const res = await axios.post('/counter/check-in', { ...form, owner_id: owner.id });
+            const payload = { ...form, owner_id: owner.id };
+            if (lostChoice && lostChoice !== 'none') payload.lost_item_id = Number(lostChoice);
+            const res = await axios.post('/counter/check-in', payload);
             setResult(res.data.data);
             toast.success(res.data.message, { title: 'Item checked in' });
         } catch (err) {
@@ -128,7 +157,7 @@ export default function SecurityCounter() {
     };
 
     const resetForCounterNext = () => {
-        setOwner(null);
+        clearOwner();
         setForm({ item_name: '', description: '', category: '', storage_location_id: form.storage_location_id });
         setResult(null);
     };
@@ -139,6 +168,13 @@ export default function SecurityCounter() {
             title="Counter"
             subtitle="Log an item handed to you directly by its owner. Their claim is auto-approved; the release pass is generated later, when they come to pick it up."
         >
+            <StepTracker
+                steps={['Find the owner', 'Confirm lost report', 'Item details & check in', 'Release later']}
+                current={result ? 4 : (!owner ? 1 : (lostChoice === '' ? 2 : 3))}
+            />
+
+            <WorkflowGuide lane="counter" defaultOpen={false} />
+
             <div className="ds-card" style={{ borderLeft: '3px solid var(--accent, #1B1F3B)' }}>
                 <div className="ds-card-title">
                     <span className="ds-card-title-icon"><Info size={17} /> What this is for</span>
@@ -163,6 +199,11 @@ export default function SecurityCounter() {
                         {form.item_name} is logged for {owner?.name}. They've already been notified — no pass
                         has been generated yet. When they come back to pick it up, open their claim and
                         generate the release code from there.
+                    </p>
+                    <p className="ds-card-desc">
+                        {result.linked_lost_item
+                            ? <>Linked to lost report <strong>#{result.linked_lost_item.id} — {result.linked_lost_item.item_name}</strong>. That report now shows as claimed.</>
+                            : <>No lost report was linked. If the owner does have a report for this item, open the claim and check it before release.</>}
                     </p>
                     <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                         <button className="ds-btn ds-btn-primary" onClick={() => navigate(`/app/claims/${result.claim.id}`)}>
@@ -221,14 +262,47 @@ export default function SecurityCounter() {
                                         <p className="ds-list-item-meta">{owner.display_id || 'No ID on file'}{owner.course ? ` · ${owner.course}` : ''}</p>
                                     </div>
                                 </div>
-                                <button type="button" className="ds-btn ds-btn-secondary" onClick={() => setOwner(null)}>Change</button>
+                                <button type="button" className="ds-btn ds-btn-secondary" onClick={clearOwner}>Change</button>
                             </div>
                         )}
                     </div>
 
                     <div className="ds-card">
+                        <h3>2. Does this match one of their lost reports?</h3>
+                        <p className="ds-card-desc">Matching the hand-over to the owner's own report keeps the lost report and the claim in sync. Compare what is in your hand with each report.</p>
+                        {!owner && <p className="ds-field-hint">Select an owner above first.</p>}
+                        {owner && loadingReports && <div className="ds-skeleton" />}
+                        {owner && !loadingReports && ownerReports.length === 0 && (
+                            <div className="ds-empty">{owner.name} has no open lost reports. You can continue to step 3.</div>
+                        )}
+                        {owner && !loadingReports && ownerReports.length > 0 && (
+                            <ul className="ds-list">
+                                {ownerReports.map((r) => (
+                                    <li key={r.id} className="ds-list-item" style={{ cursor: 'pointer' }} onClick={() => setLostChoice(String(r.id))}>
+                                        <label className="ds-list-item-main" style={{ cursor: 'pointer', gap: 10 }}>
+                                            <input type="radio" name="lost-choice" checked={lostChoice === String(r.id)} onChange={() => setLostChoice(String(r.id))} />
+                                            <div>
+                                                <p className="ds-list-item-title">{r.item_name}</p>
+                                                <p className="ds-list-item-meta">
+                                                    {[r.category, r.location_lost && `lost at ${r.location_lost}`, r.date_lost].filter(Boolean).join(' · ')}
+                                                </p>
+                                            </div>
+                                        </label>
+                                    </li>
+                                ))}
+                                <li className="ds-list-item" style={{ cursor: 'pointer' }} onClick={() => setLostChoice('none')}>
+                                    <label className="ds-list-item-main" style={{ cursor: 'pointer', gap: 10 }}>
+                                        <input type="radio" name="lost-choice" checked={lostChoice === 'none'} onChange={() => setLostChoice('none')} />
+                                        <div><p className="ds-list-item-title">No lost report — this is a different item</p></div>
+                                    </label>
+                                </li>
+                            </ul>
+                        )}
+                    </div>
+
+                    <div className="ds-card">
                         <form onSubmit={submit}>
-                            <h3>2. Item details</h3>
+                            <h3>3. Item details</h3>
                             <div className="ds-field">
                                 <label>Item name <span className="ds-required">*</span></label>
                                 <input value={form.item_name} onChange={(e) => setForm({ ...form, item_name: e.target.value })}
@@ -239,7 +313,7 @@ export default function SecurityCounter() {
                             <div className="ds-form-row ds-form-row-2">
                                 <div className="ds-field">
                                     <label>Category</label>
-                                    <input value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} placeholder="e.g. Helmet, Bag, Gadget" />
+                                    <ComboBox value={form.category} onChange={(v) => setForm((f) => ({ ...f, category: v }))} options={CATEGORY_NAMES} placeholder="Pick one or type your own" />
                                     <p className="ds-field-hint">Optional — helps with search later.</p>
                                 </div>
                                 <div className="ds-field">
@@ -258,10 +332,11 @@ export default function SecurityCounter() {
                                 <textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
                                     placeholder="Optional — condition, distinguishing details, anything worth noting." />
                             </div>
-                            <button className="ds-btn ds-btn-primary" disabled={submitting || !owner}>
+                            <button className="ds-btn ds-btn-primary" disabled={submitting || !owner || lostChoice === ''}>
                                 {submitting ? 'Checking in…' : 'Check In'}
                             </button>
                             {!owner && <p className="ds-field-hint" style={{ marginTop: 8 }}>Select an owner above first.</p>}
+                            {owner && lostChoice === '' && <p className="ds-field-hint" style={{ marginTop: 8 }}>Confirm the lost report in step 2 first.</p>}
                         </form>
                     </div>
                 </>

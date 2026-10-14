@@ -11,11 +11,14 @@ import useServiceWorkerNavigation from './hooks/useServiceWorkerNavigation';
 const SETUP_PATH = '/app/setup-account';
 
 function ProtectedRoute({ children, requiredRoles }) {
-    const { user, roles, loading } = useAuth();
+    const { user, roles, loading, signedOut } = useAuth();
     const location = useLocation();
 
     if (loading) return <MainPage routing={false} />;
     if (!user) {
+        // Signed out on purpose: go to a clean login. Carrying the page they were
+        // on (?redirect=/app/admin/...) would hand it to whoever signs in next.
+        if (signedOut) return <Navigate to="/login" replace />;
         // Keep where they were headed (e.g. a tapped push notification) so
         // login can send them straight back there.
         const dest = location.pathname + location.search;
@@ -90,7 +93,7 @@ export default function RootApp() {
                     <Route key={path} path={path} element={
                         // The personal dashboard is the Student/Instructor home only;
                         // admin, staff and security each have their own.
-                        <ProtectedRoute requiredRoles={path === '/app/dashboard' ? ['student', 'instructor'] : undefined}><Component /></ProtectedRoute>
+                        <ProtectedRoute requiredRoles={path === '/app/dashboard' || path === '/app/dashboard/:token' ? ['student', 'instructor'] : undefined}><Component /></ProtectedRoute>
                     } />
                 ))}
 

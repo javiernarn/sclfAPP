@@ -22,7 +22,6 @@ const RECORD_LINKS = [
     ['api/service-requests/', (id) => `/app/service-requests/${id}`, 'service request'],
     ['api/claims/', (id) => `/app/claims/${id}`, 'claim'],
     ['api/found-items/', (id) => `/app/found-items/${id}`, 'found item'],
-    ['api/assets/', (id) => `/app/assets/${id}`, 'asset'],
 ];
 
 const humanize = (key) => String(key).replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());

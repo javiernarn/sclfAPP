@@ -19,6 +19,7 @@ class ClaimService
     public function __construct(
         protected AuditLogService $audit,
         protected FraudDetectionService $fraud,
+        protected LostItemSyncService $lostSync,
     ) {
     }
 
@@ -96,6 +97,10 @@ class ClaimService
                 $itemMatch->update(['status' => ItemMatch::STATUS_CLAIMED]);
             }
 
+            // Filed without picking a lost report? Attach the claimant's own best
+            // match, and mark that report as having a claim in progress.
+            $this->lostSync->syncForClaim($claim->fresh());
+
             $this->audit->log('claim.submitted', $claim, "Claim #{$claim->id} submitted for found item #{$foundItem->id}.");
 
             $this->notifySecurityOfficers($claim);
@@ -155,6 +160,8 @@ class ClaimService
             $this->audit->log('claim.status_changed', $claim, "Claim #{$claim->id} moved to '{$to}'.", $before, ['status' => $to]);
 
             $this->syncFoundItemStatus($claim, $to);
+            // Lost side follows the same transition (claimed on approval, closed on release, …).
+            $this->lostSync->syncForClaim($claim->fresh());
             $this->notifyClaimant($claim, $to, $notes);
 
             return $claim->fresh();
@@ -189,9 +196,12 @@ class ClaimService
      */
     public function delete(Claim $claim): void
     {
-        DB::transaction(function () use ($claim) {
+        $lostItemId = $claim->lost_item_id;
+
+        DB::transaction(function () use ($claim, $lostItemId) {
             $this->purgeNotifications($claim);
             $claim->delete();
+            $this->lostSync->afterClaimRemoved($lostItemId);
         });
     }
 
@@ -208,8 +218,10 @@ class ClaimService
                 ->get();
 
             foreach ($claims as $claim) {
+                $lostItemId = $claim->lost_item_id;
                 $this->purgeNotifications($claim);
                 $claim->delete();
+                $this->lostSync->afterClaimRemoved($lostItemId);
             }
 
             return $claims->count();

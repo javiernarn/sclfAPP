@@ -9,6 +9,9 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [roles, setRoles] = useState([]);
     const [loading, setLoading] = useState(true);
+    // True after an explicit logout until the next login. ProtectedRoute uses it to
+    // send the person to a CLEAN /login (no ?redirect= of the page they just left).
+    const [signedOut, setSignedOut] = useState(false);
 
     useEffect(() => {
         const token = getStoredToken();
@@ -61,6 +64,7 @@ export function AuthProvider({ children }) {
             { access_token: data.access_token, refresh_token: data.refresh_token, expires_in: data.expires_in },
             remember
         );
+        setSignedOut(false);
         setUser(data.user);
         setRoles(data.roles);
         await reconcilePushSubscription();
@@ -151,15 +155,21 @@ export function AuthProvider({ children }) {
             // Best-effort — same self-healing fallback as elsewhere.
         }
 
-        await axios.post('/logout');
-        clearStoredToken();
-        clearLoginMemory();
-        setUser(null);
-        setRoles([]);
+        try {
+            await axios.post('/logout');
+        } finally {
+            // Even if the server call fails (offline, expired token), this browser
+            // must stop acting as that person: wipe the session + every leftover.
+            setSignedOut(true);
+            clearStoredToken();
+            clearLoginMemory();
+            setUser(null);
+            setRoles([]);
+        }
     };
 
     return (
-        <AuthContext.Provider value={{ user, roles, loading, login, verifyTwoFactor, register, logout, updateUser, completeSetup }}>
+        <AuthContext.Provider value={{ user, roles, loading, signedOut, login, verifyTwoFactor, register, logout, updateUser, completeSetup }}>
             {children}
         </AuthContext.Provider>
     );

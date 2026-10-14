@@ -5,7 +5,7 @@ import DashboardShell from '../../Components/shared/DashboardShell';
 import { useToast } from '../../context/ToastContext';
 import {
     Camera, Keyboard, Upload, CheckCircle2, XCircle, PackageCheck, User, IdCard,
-    Tag, Hash, RotateCcw, Loader2,
+    Tag, Hash, RotateCcw, Loader2, MapPin, Package, Building2, Copy, AlertTriangle, Check,
 } from '../../Components/icons';
 import './SecurityQrScanner.css';
 
@@ -417,6 +417,9 @@ export default function SecurityQrScanner() {
                             <ResultRow icon={PackageCheck} label="Scanned at" value={result.scanned_at ? new Date(result.scanned_at).toLocaleString() : null} />
                         </div>
 
+
+                        <StoredItemCard item={result.found_item} />
+
                         <button className="ds-btn ds-btn-primary ds-btn-block" onClick={scanNext} style={{ marginTop: 16 }}>
                             <RotateCcw size={16} /> Scan Next
                         </button>
@@ -424,6 +427,149 @@ export default function SecurityQrScanner() {
                 )}
             </div>
         </DashboardShell>
+    );
+}
+
+// Shown right after a successful scan: exactly where the item physically
+// is (campus > building > room > cabinet > shelf > box), who is on duty
+// there, who stored it and when, what it looks like, and a short hand-over
+// checklist, so the officer can walk straight to it.
+function daysAgo(dateStr) {
+    if (!dateStr) return null;
+    const d = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+    if (d <= 0) return 'today';
+    return d === 1 ? '1 day ago' : `${d} days ago`;
+}
+
+function StoredItemCard({ item }) {
+    const [copied, setCopied] = useState(false);
+    if (!item) return null;
+
+    const loc = item.storage_location;
+    const isCounter = loc?.type === 'counter';
+    const open = !loc?.status || loc.status === 'open';
+
+    // Every step of the path is shown, even when empty, so the officer can
+    // tell "not recorded" apart from "forgot to look".
+    const path = loc ? [
+        { label: 'Campus', value: loc.campus?.name },
+        { label: 'Building', value: loc.building?.name },
+        { label: 'Room', value: loc.room },
+        { label: 'Cabinet', value: loc.cabinet },
+        { label: 'Shelf', value: loc.shelf },
+        { label: 'Box', value: loc.box },
+    ] : [];
+
+    const where = loc
+        ? [loc.label, ...path.map((p) => p.value)].filter(Boolean).join(' › ')
+        : '';
+
+    const copy = async () => {
+        try {
+            await navigator.clipboard.writeText(where);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1800);
+        } catch (e) { /* clipboard can be blocked; the text is still on screen */ }
+    };
+
+    const details = [
+        { label: 'Description', value: item.description },
+        { label: 'Color', value: item.color },
+        { label: 'Brand', value: item.brand },
+        { label: 'Model', value: item.model },
+        { label: 'Unique marks', value: item.unique_characteristics },
+        { label: 'Found at', value: item.location_found },
+    ].filter((d) => d.value);
+
+    const officers = loc?.current_officers || [];
+    const storedBy = item.security_officer?.name;
+    const storedAt = item.created_at ? new Date(item.created_at).toLocaleString() : null;
+    const showCategory = item.category && item.category.toLowerCase() !== (item.item_name || '').toLowerCase();
+
+    return (
+        <div className="sclf-stored">
+            <div className="sclf-stored-title"><MapPin size={17} /> Where to find this item</div>
+
+            {loc ? (
+                <div className="sclf-stored-where">
+                    <div className="sclf-stored-where-main">
+                        <span className={`sclf-stored-type ${isCounter ? 'is-counter' : ''}`}>{isCounter ? 'Counter' : 'Storage'}</span>
+                        <p className="sclf-stored-where-label">{loc.label || 'Storage location'}</p>
+                        {loc.code && <span className="sclf-stored-code">{loc.code}</span>}
+                    </div>
+
+                    {!open && (
+                        <div className="sclf-stored-warn">
+                            <AlertTriangle size={16} />
+                            <div><strong>This location is currently {loc.status}.</strong> Check with the Security office before going there.</div>
+                        </div>
+                    )}
+
+                    <div className="sclf-stored-path">
+                        {path.map((p) => (
+                            <div key={p.label} className={`sclf-stored-chip ${p.value ? '' : 'is-empty'}`}>
+                                <span>{p.label}</span>
+                                <strong>{p.value || 'Not specified'}</strong>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="sclf-stored-meta">
+                        <div>
+                            <span>On duty here</span>
+                            <strong>{officers.length ? officers.map((o) => o.name).join(', ') : 'No officer assigned — ask the Security office'}</strong>
+                        </div>
+                        {(storedBy || storedAt) && (
+                            <div>
+                                <span>Stored</span>
+                                <strong>
+                                    {storedBy ? `by ${storedBy}` : ''}{storedBy && storedAt ? ' · ' : ''}{storedAt}
+                                    {daysAgo(item.created_at) ? ` (${daysAgo(item.created_at)})` : ''}
+                                </strong>
+                            </div>
+                        )}
+                    </div>
+
+                    <button type="button" className="ds-btn ds-btn-secondary" onClick={copy}>
+                        {copied ? <><Check size={14} /> Copied</> : <><Copy size={14} /> Copy location</>}
+                    </button>
+                </div>
+            ) : (
+                <div className="sclf-stored-warn">
+                    <AlertTriangle size={18} />
+                    <div>
+                        <strong>No storage location is recorded for this item.</strong>
+                        <p>Ask the officer who checked it in, or look it up in Inventory by name before handing over.</p>
+                    </div>
+                </div>
+            )}
+
+            <div className="sclf-stored-item">
+                {item.image_url
+                    ? <img src={item.image_url} alt={item.item_name} className="sclf-stored-photo" />
+                    : <div className="sclf-stored-photo sclf-stored-photo-empty"><Package size={26} /><span>No photo on file</span></div>}
+                <div className="sclf-stored-item-body">
+                    <p className="sclf-stored-item-name">{item.item_name}</p>
+                    {showCategory && <p className="sclf-stored-item-cat">{item.category}</p>}
+                    {details.length > 0 ? (
+                        <dl className="sclf-stored-details">
+                            {details.map((d) => (
+                                <div key={d.label}><dt>{d.label}</dt><dd>{d.value}</dd></div>
+                            ))}
+                        </dl>
+                    ) : (
+                        <p className="sclf-stored-item-cat">No extra details were recorded. Confirm with the person receiving it.</p>
+                    )}
+                </div>
+            </div>
+
+            <ol className="sclf-stored-steps">
+                <li>Go to <strong>{loc ? (loc.label || 'the location above') : 'the storage location'}</strong>{loc?.building?.name ? <> in <strong>{loc.building.name}</strong></> : null} and take out the item.</li>
+                <li>Check it matches the photo and details shown here.</li>
+                <li>Confirm the ID of the person receiving it.</li>
+                <li>Hand it over, then press <strong>Scan Next</strong>.</li>
+            </ol>
+        </div>
     );
 }
 

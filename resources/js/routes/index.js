@@ -21,6 +21,8 @@ import MyClaimsList from '../Pages/shared/MyClaimsList';
 import NotificationsPage from '../Pages/shared/NotificationsPage';
 import ProfilePage from '../Pages/Profile/ProfilePage';
 import SecurityDashboard from '../Pages/security/SecurityDashboard';
+import PrintReport from '../Pages/shared/PrintReport';
+import StudentPrintReport from '../Pages/shared/StudentPrintReport';
 import SecurityFoundItemsReview from '../Pages/security/SecurityFoundItemsReview';
 import SecurityMatches from '../Pages/security/SecurityMatches';
 import SecurityInventory from '../Pages/security/SecurityInventory';
@@ -29,15 +31,12 @@ import SecurityCounterDashboard from '../Pages/security/SecurityCounterDashboard
 import SecurityUnclaimedItems from '../Pages/security/SecurityUnclaimedItems';
 import SecurityVisitors from '../Pages/security/SecurityVisitors';
 import SecurityHistory from '../Pages/security/SecurityHistory';
-import SecurityAssetCreate from '../Pages/security/SecurityAssetCreate';
 import IncidentsList from '../Pages/shared/IncidentsList';
 import IncidentCreate from '../Pages/shared/IncidentCreate';
 import IncidentDetail from '../Pages/shared/IncidentDetail';
 import ServiceRequestsList from '../Pages/shared/ServiceRequestsList';
 import ServiceRequestCreate from '../Pages/shared/ServiceRequestCreate';
 import ServiceRequestDetail from '../Pages/shared/ServiceRequestDetail';
-import AssetsList from '../Pages/shared/AssetsList';
-import AssetDetail from '../Pages/shared/AssetDetail';
 
 // Lazy-loaded: pulls in the qr-scanner camera/worker bundle only when a
 // security officer actually opens this page, instead of shipping it in
@@ -57,6 +56,8 @@ const publicRoutes = [
 // stay reachable as plain browser pages (see PwaManifestController).
 const adminRoutes = [
     { path: '/app/admin/dashboard', component: AdminDashboard },
+    // Printable dashboard report — opened from the SCLF logo menu.
+    { path: '/app/admin/print-report', component: PrintReport },
     { path: '/app/admin/users', component: AdminUsers },
     { path: '/app/admin/users/:id', component: AdminUserDetail },
     { path: '/app/admin/requests', component: AdminActionRequests },
@@ -71,6 +72,7 @@ const adminRoutes = [
 
 const securityRoutes = [
     { path: '/app/security/dashboard', component: SecurityDashboard },
+    { path: '/app/security/print-report', component: PrintReport },
     { path: '/app/security/found-items', component: SecurityFoundItemsReview },
     // Match queue for whoever handles lost & found (security / admin / staff).
     { path: '/app/security/matches', component: SecurityMatches },
@@ -82,13 +84,6 @@ const securityRoutes = [
     { path: '/app/security/unclaimed-items', component: SecurityUnclaimedItems },
     { path: '/app/security/visitors', component: SecurityVisitors },
     { path: '/app/security/history', component: SecurityHistory },
-    // Registering/managing the asset registry is officer/admin-only;
-    // viewing (including a custodian's own "My Assets") is in
-    // studentRoutes below via the same shared AssetsList/AssetDetail
-    // components — see AssetPolicy for why viewing splits that way.
-    { path: '/app/security/assets/new', component: SecurityAssetCreate },
-    { path: '/app/security/assets/:id', component: AssetDetail },
-    { path: '/app/security/assets', component: AssetsList },
 ];
 
 // Routes reachable by any authenticated users such as (student, instructor, security
@@ -96,6 +91,12 @@ const securityRoutes = [
 // these pages are still enforced by the backend ,live server-side .
 const studentRoutes = [
     { path: '/app/dashboard', component: StudentDashboard },
+    // The dashboard URL carries the account's own user token. /app/dashboard
+    // (no token) redirects to it — see StudentDashboard.
+    { path: '/app/dashboard/:token', component: StudentDashboard },
+    // Printed copy of a student's / instructor's dashboard; its QR code opens this
+    // page for admin / staff / security. Access is decided by the server.
+    { path: '/app/print/:token', component: StudentPrintReport },
     { path: '/app/lost-items', component: LostItemsList },
     { path: '/app/lost-items/create', component: LostItemCreate },
     { path: '/app/lost-items/:id/matches', component: LostItemMatches },
@@ -112,11 +113,6 @@ const studentRoutes = [
     { path: '/app/service-requests', component: ServiceRequestsList },
     { path: '/app/service-requests/new', component: ServiceRequestCreate },
     { path: '/app/service-requests/:id', component: ServiceRequestDetail },
-    // "My Assets" — any authenticated user can view assets currently
-    // assigned to them (AssetPolicy::view()); registering/managing the
-    // registry itself is officer/admin-only, see securityRoutes above.
-    { path: '/app/assets', component: AssetsList },
-    { path: '/app/assets/:id', component: AssetDetail },
 ];
 
 export { publicRoutes, adminRoutes, securityRoutes, studentRoutes };

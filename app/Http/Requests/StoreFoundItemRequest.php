@@ -25,6 +25,8 @@ class StoreFoundItemRequest extends FormRequest
             'color' => 'nullable|string|max:100',
             'model' => 'nullable|string|max:100',
             'unique_characteristics' => 'nullable|string|max:500',
+            'details' => 'nullable|array|max:12',
+            'details.*' => 'nullable|string|max:80',
             'location_found' => 'nullable|string|max:255',
             'date_found' => 'nullable|date',
             'time_found' => 'nullable',

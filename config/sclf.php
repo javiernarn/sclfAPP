@@ -98,6 +98,8 @@ return [
             // confirm a match (notify the owner) or reject it (dismiss).
             'api/matches/*/notify-owner',
             'api/matches/*/dismiss',
+            // Read-only: scores an unsaved draft report, stores nothing.
+            'api/matches/preview',
         ],
     ],
 

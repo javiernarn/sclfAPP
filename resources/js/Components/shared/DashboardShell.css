@@ -967,9 +967,12 @@ body { overflow: hidden; }
     .ds-list-item { flex-direction: column; align-items: stretch; }
     .ds-list-item-link { flex-direction: column; align-items: stretch; gap: 12px; }
     .ds-list-item-main { width: 100%; }
-    .ds-list-item-side { width: 100%; justify-content: space-between; }
+    .ds-list-item, .ds-list-item-link { min-width: 0; max-width: 100%; }
+    .ds-list-item-side { width: 100%; justify-content: flex-start; flex-wrap: wrap; min-width: 0; }
     .ds-list-item-side .ds-btn,
-    .ds-list-item-side .ds-btn-sm { flex: 1; justify-content: center; }
+    .ds-list-item-side .ds-btn-sm { flex: 1 1 auto; justify-content: center; min-width: 0; }
+    /* "View Details" gets its own full-width line under the status badges so it never runs past the card edge. */
+    .ds-list-item-side .ds-btn-view { flex: 1 1 100%; white-space: nowrap; }
     .ds-list-item-actions { width: 100%; }
     .ds-list-item-actions .ds-btn,
     .ds-list-item-actions span.ds-badge {
@@ -1503,70 +1506,3 @@ body { overflow: hidden; }
     .ds-visitor-head-controls > .ds-view-toggle { width: 100%; }
     .ds-visitor-head-controls .ds-view-toggle-btn { flex: 1; justify-content: center; }
 }
-
-/* ==========================================================================
- * Assets — detail page (history, manage panel, peso input)
- * ========================================================================== */
-/* The shared .ds-table-title/.ds-table-sub truncate to one line; history text
-   is a sentence and must wrap to be readable. */
-.ds-wrap { white-space: normal !important; max-width: none !important; overflow: visible !important; text-overflow: clip !important; }
-
-/* "₱" prefix on money inputs. */
-.ds-peso-input { display: flex; align-items: stretch; }
-.ds-peso-input > span {
-    display: inline-flex; align-items: center; padding: 0 14px; font-weight: 800; font-size: 15px;
-    border-radius: 12px 0 0 12px; flex-shrink: 0;
-}
-.ds-shell.light .ds-peso-input > span { background: #eef2f8; border: 1.5px solid #b9c4d6; border-right: none; color: #334155; }
-.ds-shell.dark .ds-peso-input > span { background: #171c26; border: 1.5px solid #3a4457; border-right: none; color: #cbd5e1; }
-.ds-field .ds-peso-input input { border-radius: 0 12px 12px 0; min-width: 0; flex: 1; }
-
-/* History */
-.ds-asset-history-cards { display: flex; flex-direction: column; gap: 10px; }
-.ds-asset-history-table td { vertical-align: top; }
-.ds-asset-when { white-space: nowrap; text-align: right; flex-shrink: 0; }
-.ds-asset-status-change { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.ds-asset-person { font-size: 13px; padding: 1px 0; }
-.ds-asset-person > span { font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; opacity: 0.55; margin-right: 4px; }
-.ds-asset-note-list { margin: 0; padding-left: 16px; font-size: 13px; }
-.ds-asset-note-list li { margin: 1px 0; }
-.ds-history-card-value .ds-asset-note-list { text-align: left; }
-@media (max-width: 560px) {
-    .ds-asset-history-cards .ds-history-card-head { flex-direction: column; gap: 4px; }
-    .ds-asset-when { text-align: left; }
-}
-
-/* Manage This Asset */
-.ds-asset-state {
-    display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;
-    padding: 12px 14px; border-radius: 12px; margin-bottom: 18px;
-}
-.ds-asset-state > p { margin: 0; flex: 1 1 260px; font-size: 13.5px; line-height: 1.45; }
-.ds-shell.light .ds-asset-state { background: #f4f7fb; border: 1.5px solid #c9d1de; }
-.ds-shell.dark .ds-asset-state { background: #171c26; border: 1.5px solid #3a4457; }
-.ds-asset-section { margin-bottom: 18px; }
-.ds-asset-section > h4 { margin: 0 0 4px; font-size: 14.5px; font-weight: 800; }
-.ds-asset-section > .ds-card-desc { margin-bottom: 10px; }
-.ds-asset-inline { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
-.ds-asset-inline .ds-field { flex: 1 1 260px; margin-bottom: 0; }
-.ds-asset-inline .ds-btn { flex-shrink: 0; }
-.ds-asset-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-.ds-asset-section-final {
-    padding: 12px 14px; border-radius: 12px; margin-bottom: 0;
-    border: 1.5px dashed rgba(220,38,38,0.4);
-}
-@media (max-width: 560px) {
-    .ds-asset-inline .ds-btn, .ds-asset-actions .ds-btn { flex: 1 1 100%; justify-content: center; }
-}
-
-/* "How asset handling works" */
-.ds-asset-guide > summary {
-    cursor: pointer; font-weight: 800; font-size: 14.5px; list-style: none;
-    display: flex; align-items: center; gap: 8px;
-}
-.ds-asset-guide > summary::-webkit-details-marker { display: none; }
-.ds-asset-guide > summary::after { content: '▾'; margin-left: auto; opacity: 0.6; transition: transform 0.15s ease; }
-.ds-asset-guide[open] > summary::after { transform: rotate(180deg); }
-.ds-asset-guide > ol { margin: 14px 0 0; padding-left: 20px; font-size: 13.5px; line-height: 1.55; display: flex; flex-direction: column; gap: 8px; }
-.ds-asset-history-table .ds-asset-status-change { flex-wrap: nowrap; }
-.ds-asset-history-table { min-width: 860px; }

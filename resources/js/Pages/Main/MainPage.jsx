@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useAppTheme } from "../../hooks/useAppTheme";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
 import logo from "../../assets/images/site-logo.png";
+import { canOpenPath } from "../../utils/redirectGuard";
 
 // Shown at "/" before we know where the visitor belongs, and again right
 // after a successful login/register — same screen, same delay, same
@@ -62,7 +63,7 @@ const MainPage = ({ routing = true }) => {
                 window.sessionStorage.removeItem("sclf-post-login-uid");
                 // A link addressed to a different account (uid mismatch) is
                 // dropped: this person lands on their own dashboard instead.
-                if (redirect && (!forUid || String(user.id) === String(forUid))) {
+                if (redirect && canOpenPath(redirect, roles || []) && (!forUid || String(user.id) === String(forUid))) {
                     navigate(redirect, { replace: true });
                     return;
                 }
