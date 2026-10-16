@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { sessionBus } from '../../utils/eventBus';
-import { useAppTheme } from '../../hooks/useAppTheme';
+import { useAppTheme, isDarkTheme } from '../../hooks/useAppTheme';
 import './DeviceSignedOutModal.css';
 
 // How long the alert stays up so the person can actually read it.
@@ -55,7 +55,7 @@ export default function DeviceSignedOutModal() {
 
     const secondsLeft = Math.max(0, Math.ceil((SECONDS * 1000 - elapsed) / 1000));
     const progress = Math.min(1, elapsed / (SECONDS * 1000));
-    const dark = theme === 'black';
+    const dark = isDarkTheme(theme);
 
     return (
         <div className={`ios-alert-backdrop${dark ? ' ios-dark' : ''}`} role="presentation">

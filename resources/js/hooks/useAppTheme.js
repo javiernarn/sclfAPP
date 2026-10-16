@@ -12,7 +12,12 @@ import { useEffect, useState, useCallback } from 'react';
 // so the choice persists and stays in sync across tabs either way.
 const COOKIE_NAME = 'sclf-theme';
 const CHANNEL_NAME = 'sclf-theme-channel';
-export const THEMES = ['white', 'black', 'maroon', 'blue', 'yellow'];
+// 'dark-blue' / 'dark-yellow' / 'dark-maroon' are the "Custom" (black + accent)
+// themes: a dark shell tinted with the accent color. They behave as dark
+// everywhere (isDarkTheme) and only differ in accent color.
+export const THEMES = ['white', 'black', 'maroon', 'blue', 'yellow', 'dark-white', 'dark-blue', 'dark-yellow', 'dark-maroon'];
+
+export const isDarkTheme = (theme) => theme === 'black' || (typeof theme === 'string' && theme.startsWith('dark-'));
 
 const readCookie = () => {
     const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]*)`));
@@ -62,7 +67,7 @@ export function useAppTheme() {
         setTheme(theme === 'white' ? 'black' : 'white');
     }, [theme, setTheme]);
 
-    return { theme, setTheme, toggleTheme };
+    return { theme, setTheme, toggleTheme, isDark: isDarkTheme(theme) };
 }
 
 export default useAppTheme;

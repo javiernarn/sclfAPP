@@ -81,3 +81,10 @@
 .att-play svg { color: #fff; }
 .att-play:hover:not(:disabled) { background: linear-gradient(135deg, #334155, #1e293b); }
 .att-play:disabled { cursor: progress; opacity: .85; }
+
+/* Custom (black + accent) themes */
+.ds-shell.dk-blue { --att-accent: #2563eb; --att-border: #2c4a73; }
+.ds-shell.dk-yellow { --att-accent: #d97706; --att-border: #6b5420; }
+.ds-shell.dk-maroon { --att-accent: #dc2626; --att-border: #6e2a36; }
+.ds-shell.dk-yellow .att-badge { color: #1c1408; }
+.ds-shell.dk-white { --att-accent: #d4d4d4; --att-border: #2a2a2a; }

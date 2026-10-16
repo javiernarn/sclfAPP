@@ -1,6 +1,7 @@
 @php
     $sclfTheme = request()->cookie('sclf-theme', 'white');
-    $sclfTheme = in_array($sclfTheme, ['black', 'white']) ? $sclfTheme : 'white';
+    // 'dark-blue' / 'dark-yellow' / 'dark-maroon' (Custom themes) are dark shells.
+    $sclfTheme = in_array($sclfTheme, ['black', 'dark-white', 'dark-blue', 'dark-yellow', 'dark-maroon']) ? 'black' : 'white';
     $sclfThemeColor = $sclfTheme === 'black' ? '#0a0c12' : '#ffffff';
     $sclfStatusBarStyle = $sclfTheme === 'black' ? 'black' : 'default';
 @endphp

@@ -7,13 +7,16 @@ use App\Models\ItemMatch;
 use App\Models\LostItem;
 
 /**
- * Deterministic, rule-based matching engine (v2).
+ * Matching engine (v2 rules + a machine-learning layer).
  *
- * This is NOT machine learning. Every point can be traced to a field and a
- * rule below, and `analyze()` returns that trace so a Security Officer / Admin /
+ * The rules are deterministic: every point can be traced to a field and a rule
+ * below, and `analyze()` returns that trace so a Security Officer / Admin /
  * Staff member can see exactly why two reports were paired — and what
- * disagrees. It only ever surfaces "potential matches"; a person always makes
- * the final call through the claim / verification workflow.
+ * disagrees. On top of that, an optional trained model (MatchLearner — logistic
+ * regression + TF-IDF text similarity, learned from claim outcomes and "Not a
+ * match" decisions) is blended into the score. With no model file, or ML switched
+ * off, the score is exactly the rule score. It only ever surfaces "potential
+ * matches"; a person always makes the final call through the claim workflow.
  *
  * How the score is built
  * ----------------------
@@ -108,6 +111,8 @@ class ItemMatchingService
     /**
      * Full, explainable comparison of one lost report against one found report.
      *
+     * @param  bool  $useModel  false = rules only (the trainer must not learn from the model's own output)
+     *
      * @return array{
      *   score:int, level:string, raw:float, confidence:float, cap:?int, cap_reason:?string,
      *   breakdown:array<string,int>, fields:array<string,array>, flags:array<int,array>,
@@ -115,7 +120,7 @@ class ItemMatchingService
      *   summary:string, recommendation:string
      * }
      */
-    public function analyze($lost, $found): array
+    public function analyze($lost, $found, bool $useModel = true): array
     {
         $fields = [];
         $flags = [];
@@ -173,6 +178,27 @@ class ItemMatchingService
         if ($cap !== null && $score > $cap) {
             $score = $cap;
         }
+        $ruleScore = (int) max(0, min(100, round($score)));
+
+        // -- machine-learning layer ---------------------------------------
+        // Blend the rule score with the trained model's probability, then apply the ceiling
+        // again: the model can sharpen a score or pull it down, but it can never lift a pair
+        // past a hard conflict (different brand, iOS vs Android, different kind of item…).
+        $ml = null;
+        if ($useModel && MatchLearner::enabled()) {
+            $learner = new MatchLearner();
+            $model = MatchLearner::model();
+            if ($model !== null) {
+                $blend = $learner->blend($score, $learner->features($fields, $lost, $found, $model));
+                if ($blend !== null) {
+                    $score = $blend['score'];
+                    $ml = $blend['ml'];
+                    if ($cap !== null && $score > $cap) {
+                        $score = $cap;
+                    }
+                }
+            }
+        }
 
         $score = (int) max(0, min(100, round($score)));
         $level = $this->matchLevel($score);
@@ -195,6 +221,8 @@ class ItemMatchingService
             'cap' => $cap,
             'cap_reason' => $capReason,
             'breakdown' => $breakdown,
+            'rule_score' => $ruleScore,
+            'ml' => $ml,
             'fields' => $fields,
             'flags' => $flags,
             'matched' => $matched,
@@ -217,13 +245,13 @@ class ItemMatchingService
         if ($kind === 'lost') {
             $draft = new LostItem($attrs);
             $pool = FoundItem::query()
-                ->whereIn('status', [FoundItem::STATUS_STORED, FoundItem::STATUS_ACCEPTED, FoundItem::STATUS_MATCHED])
+                ->whereIn('status', FoundItem::MATCHABLE_STATUSES)
                 ->where(fn ($q) => $q->whereNull('intake_channel')->orWhere('intake_channel', '!=', FoundItem::CHANNEL_COUNTER_INTAKE))
                 ->latest('id')->limit(300)->get();
         } else {
             $draft = new FoundItem($attrs);
             $pool = LostItem::query()
-                ->whereIn('status', [LostItem::STATUS_PENDING, LostItem::STATUS_MATCHED])
+                ->whereIn('status', LostItem::MATCHABLE_STATUSES)
                 ->latest('id')->limit(300)->get();
         }
 
@@ -273,7 +301,7 @@ class ItemMatchingService
     public function runForLostItem(LostItem $lost): array
     {
         $candidates = FoundItem::query()
-            ->whereIn('status', [FoundItem::STATUS_STORED, FoundItem::STATUS_ACCEPTED, FoundItem::STATUS_MATCHED])
+            ->whereIn('status', FoundItem::MATCHABLE_STATUSES)
             ->get();
 
         return $this->persistMatches($lost, $candidates);
@@ -282,7 +310,7 @@ class ItemMatchingService
     public function runForFoundItem(FoundItem $found): array
     {
         $candidates = LostItem::query()
-            ->whereIn('status', [LostItem::STATUS_PENDING, LostItem::STATUS_MATCHED])
+            ->whereIn('status', LostItem::MATCHABLE_STATUSES)
             ->get();
 
         $results = [];
@@ -297,13 +325,32 @@ class ItemMatchingService
      * Re-score one stored match against the CURRENT state of both reports and
      * save the new numbers. Never touches the match's status (a human may have
      * already notified / claimed / dismissed it).
+     *
+     * ALWAYS scores the complete reports, fetched fresh here. Several screens load a
+     * match with only a handful of columns per report (to avoid leaking a found item's
+     * private marks to the person who lost it); re-scoring those half-loaded copies used
+     * to overwrite a correct 100 with a much lower number the next time that screen
+     * opened — the "score blinks 100 then jumps back" bug.
+     *
+     * If nothing about the result changed, only `scored_at` is touched (without bumping
+     * `updated_at`), so opening a comparison does not look like a change to the live
+     * "pulse" every other open page is watching.
      */
     public function refresh(ItemMatch $match): array
     {
-        $match->loadMissing('lostItem', 'foundItem');
-        $analysis = $this->analyze($match->lostItem, $match->foundItem);
+        $lost = LostItem::withTrashed()->findOrFail($match->lost_item_id);
+        $found = FoundItem::withTrashed()->findOrFail($match->found_item_id);
+
+        $analysis = $this->analyze($lost, $found);
         $this->store($match, $analysis);
-        $match->save();
+
+        if ($match->isDirty(['score', 'match_level', 'score_breakdown', 'score_details'])) {
+            $match->save();
+        } else {
+            $match->timestamps = false;
+            $match->save();
+            $match->timestamps = true;
+        }
 
         return $analysis;
     }
@@ -319,9 +366,12 @@ class ItemMatchingService
             return false;
         }
         $match->loadMissing('lostItem', 'foundItem');
+        if (!$match->lostItem || !$match->foundItem) {
+            return false;
+        }
         $latest = max(
-            $match->lostItem?->updated_at?->getTimestamp() ?? 0,
-            $match->foundItem?->updated_at?->getTimestamp() ?? 0,
+            $match->lostItem->updated_at?->getTimestamp() ?? 0,
+            $match->foundItem->updated_at?->getTimestamp() ?? 0,
         );
         if ($latest <= $match->scored_at->getTimestamp()) {
             return false;
@@ -365,6 +415,14 @@ class ItemMatchingService
         return $created;
     }
 
+    /** Keep markers other code left in score_details (e.g. `retired`) when a match is re-scored. */
+    protected function carriedDetails(ItemMatch $match): array
+    {
+        $old = $match->score_details;
+
+        return is_array($old) ? array_intersect_key($old, array_flip(['retired', 'retired_at'])) : [];
+    }
+
     protected function store(ItemMatch $match, array $analysis): void
     {
         $match->fill([
@@ -381,7 +439,9 @@ class ItemMatchingService
                 'flags' => $analysis['flags'],
                 'summary' => $analysis['summary'],
                 'recommendation' => $analysis['recommendation'],
-            ],
+                'rule_score' => $analysis['rule_score'],
+                'ml' => $analysis['ml'],
+            ] + $this->carriedDetails($match),
             'scored_at' => now(),
         ]);
     }

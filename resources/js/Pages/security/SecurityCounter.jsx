@@ -175,7 +175,7 @@ export default function SecurityCounter() {
 
             <WorkflowGuide lane="counter" defaultOpen={false} />
 
-            <div className="ds-card" style={{ borderLeft: '3px solid var(--accent, #1B1F3B)' }}>
+            <div className="ds-card" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent, #1B1F3B) 9%, transparent), transparent 55%)' }}>
                 <div className="ds-card-title">
                     <span className="ds-card-title-icon"><Info size={17} /> What this is for</span>
                 </div>

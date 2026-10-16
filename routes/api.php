@@ -197,6 +197,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         // view of every pairing the matching engine recorded.
         Route::get('/matches', [MatchController::class, 'index']);
         Route::get('/matches/pulse', [MatchController::class, 'pulse']);
+        Route::get('/matches/model', [MatchController::class, 'model']);
         Route::get('/matches/{match}', [MatchController::class, 'show'])->whereNumber('match');
         Route::post('/matches/{match}/notify-owner', [MatchController::class, 'notifyOwner']);
 

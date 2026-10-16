@@ -11,17 +11,21 @@ const EDGE_PADDING = 8;
 // the matching theme name down as a modifier class. On pages without a shell
 // (login/register) we fall back to the plain white/black theme cookie.
 const COLOR_THEMES = ['maroon', 'blue', 'yellow'];
+const DARK_COLOR_THEMES = ['white', 'maroon', 'blue', 'yellow'].map((t) => `dk-${t}`);
 const detectTheme = (el) => {
     const shell = el?.closest?.('.ds-shell');
     if (shell) {
         const hit = COLOR_THEMES.find((t) => shell.classList.contains(t));
         if (hit) return hit;
+        const darkHit = DARK_COLOR_THEMES.find((t) => shell.classList.contains(t));
+        if (darkHit) return darkHit; // e.g. "dk-blue" -> .sclf-tooltip--dk-blue
         return shell.classList.contains('dark') ? 'dark' : 'light';
     }
     if (typeof document !== 'undefined') {
         const m = document.cookie.match(/(?:^|; )sclf-theme=([^;]*)/);
         const v = m ? decodeURIComponent(m[1]) : 'white';
         if (COLOR_THEMES.includes(v)) return v;
+        if (v.startsWith('dark-')) return `dk-${v.slice(5)}`;
         return v === 'black' ? 'dark' : 'light';
     }
     return 'light';

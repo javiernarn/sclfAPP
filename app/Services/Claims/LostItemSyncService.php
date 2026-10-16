@@ -8,6 +8,7 @@ use App\Models\ItemMatch;
 use App\Models\LostItem;
 use App\Services\Audit\AuditLogService;
 use App\Services\Matching\ItemMatchingService;
+use App\Services\Matching\MatchReconciler;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -301,23 +302,21 @@ class LostItemSyncService
     {
         $this->setStatus($lost, LostItem::STATUS_CLOSED, $claim);
 
-        // The winning match is "claimed"; every other lead for this item is
-        // moot now that it has left the building.
+        // The winning pairing is "claimed" — whether or not the claim carried its match id.
+        ItemMatch::where('lost_item_id', $lost->id)
+            ->where('found_item_id', $claim->found_item_id)
+            ->update(['status' => ItemMatch::STATUS_CLAIMED]);
         if ($claim->item_match_id) {
             ItemMatch::where('id', $claim->item_match_id)->update(['status' => ItemMatch::STATUS_CLAIMED]);
         }
 
-        $otherMatches = ItemMatch::where('found_item_id', $claim->found_item_id)
-            ->where('lost_item_id', '!=', $lost->id)
-            ->whereIn('status', [ItemMatch::STATUS_PENDING, ItemMatch::STATUS_NOTIFIED])
-            ->get();
-
-        foreach ($otherMatches as $match) {
-            $match->update(['status' => ItemMatch::STATUS_DISMISSED]);
-            if ($other = LostItem::find($match->lost_item_id)) {
-                $this->recompute($other);
-            }
+        // Everything else that pointed at this item, or at this closed report, is moot now:
+        // retire it (marked as system-retired, so it is not mistaken for a person's "not a match").
+        $reconciler = app(MatchReconciler::class);
+        if ($found = FoundItem::withTrashed()->find($claim->found_item_id)) {
+            $reconciler->retireForFoundItem($found);
         }
+        $reconciler->retireForLostItem($lost->fresh());
     }
 
     /** Does this lost report still have a possible match to a found item that is still on hand? */

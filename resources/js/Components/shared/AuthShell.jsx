@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Sun, Moon, ShieldCheck, Eye, EyeOff, CheckCircle2, XCircle } from "../icons";
-import { useAppTheme } from "../../hooks/useAppTheme";
+import { useAppTheme, isDarkTheme } from "../../hooks/useAppTheme";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
 import logo from "../../assets/images/site-logo.png";
 import occBg from "../../assets/images/occ.webp";
@@ -90,7 +90,7 @@ export default function AuthShell({
 }) {
     const [gateOpen, setGateOpen] = useState(gateDefaultOpen || gateOpenMemory);
     const { theme, toggleTheme } = useAppTheme();
-    const isDark = theme === "black";
+    const isDark = isDarkTheme(theme);
     const [caseNumber] = useState(() => buildCaseNumber(caseSeed));
     const [now, setNow] = useState(() => new Date());
     // Shared right-click / DevTools / browser-zoom guard — covers every

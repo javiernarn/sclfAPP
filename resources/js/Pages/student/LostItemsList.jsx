@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { Link, useNavigate } from 'react-router-dom';
-import { Search, ChevronRight, Eye, Lock } from '../../Components/icons';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Search, ChevronRight, Eye, Lock, Plus } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ViewToggle from '../../Components/shared/ViewToggle';
 import useViewMode from '../../hooks/useViewMode';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import LostItemForm from './LostItemForm';
 
 const badgeClass = (status) => {
     const key = (status || '').toLowerCase();
@@ -29,10 +31,23 @@ export default function LostItemsList() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [view, setView] = useViewMode('lost-items');
+    const { roles } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Admin / staff / security only review reports; students and
+    // instructors are the ones who file them.
+    const canCreate = !(Array.isArray(roles) && (roles.includes('admin') || roles.includes('staff') || roles.includes('security_officer')));
+    // "Create" swaps this page's list for the report form (kept in the URL
+    // as ?new=1 so the browser Back button and old links behave).
+    const creating = canCreate && searchParams.get('new') === '1';
+    const openCreate = () => setSearchParams({ new: '1' });
+    const closeCreate = () => setSearchParams({}, { replace: true });
 
     useEffect(() => {
-        document.title = "Lost Items | SCLF - Opol Community College";
-    }, []);
+        document.title = creating
+            ? "Report a Lost Item | SCLF - Opol Community College"
+            : "Lost Items | SCLF - Opol Community College";
+    }, [creating]);
 
     const load = () => {
         setLoading(true);
@@ -46,16 +61,29 @@ export default function LostItemsList() {
     useEffect(load, []);
 
     return (
-        <DashboardShell onRefresh={() => load()} refreshing={loading}
+        <DashboardShell onRefresh={creating ? undefined : () => load()} refreshing={loading}
             eyebrow="Lost & Found"
-            title="Lost Items"
-            subtitle="Everything the community has reported lost around campus."
+            title={creating ? "Report a Lost Item" : "Lost Items"}
+            subtitle={creating
+                ? "Give as much detail as you can — it helps the community find a match faster."
+                : "Everything the community has reported lost around campus."}
         >
-            {/* "Report Lost Item" already lives in the sidebar — no need to
-                repeat it up here too. */}
+            {creating ? (
+                <LostItemForm
+                    onCancel={closeCreate}
+                    onCreated={() => { closeCreate(); load(); }}
+                />
+            ) : (
             <div className="ds-card">
                 <div className="ds-list-head-row" style={{ justifyContent: 'flex-end' }}>
-                    <ViewToggle mode={view} onChange={setView} />
+                    <div className="ds-head-actions">
+                        <ViewToggle mode={view} onChange={setView} />
+                        {canCreate && (
+                            <button type="button" className="ds-btn ds-btn-primary" onClick={openCreate}>
+                                <Plus size={15} /> Create
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {error && <div className="ds-error">{error}</div>}
@@ -195,6 +223,7 @@ export default function LostItemsList() {
                     </ul>
                 )}
             </div>
+            )}
         </DashboardShell>
     );
 }

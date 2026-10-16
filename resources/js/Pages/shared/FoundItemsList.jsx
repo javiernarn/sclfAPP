@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { Link, useNavigate } from 'react-router-dom';
-import { Package, ChevronRight, Eye, Lock } from '../../Components/icons';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Package, ChevronRight, Eye, Lock, Plus } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ViewToggle from '../../Components/shared/ViewToggle';
 import useViewMode from '../../hooks/useViewMode';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../context/AuthContext';
+import FoundItemForm from './FoundItemForm';
 import { itemChannelLabel, itemChannelBadgeClass, itemChannelIcon } from '../../utils/itemChannel';
 
 const badgeClass = (status) => {
@@ -38,9 +40,23 @@ export default function FoundItemsList() {
     const requestId = useRef(0);
     const didMount = useRef(false);
 
+    const { roles } = useAuth();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Admin / staff / security review found reports (Security has its own
+    // review queue); students and instructors are the ones who file them.
+    const canCreate = !(Array.isArray(roles) && (roles.includes('admin') || roles.includes('staff') || roles.includes('security_officer')));
+    // "Create" swaps this page's list for the report form (kept in the URL
+    // as ?new=1 so the browser Back button and old links behave).
+    const creating = canCreate && searchParams.get('new') === '1';
+    const openCreate = () => setSearchParams({ new: '1' });
+    const closeCreate = () => setSearchParams({}, { replace: true });
+
     useEffect(() => {
-        document.title = "Found Items | SCLF - Opol Community College";
-    }, []);
+        document.title = creating
+            ? "Report a Found Item | SCLF - Opol Community College"
+            : "Found Items | SCLF - Opol Community College";
+    }, [creating]);
 
     // `initial` drives the big skeleton (first load only). Every search
     // after that uses the smaller `searching` indicator instead, so the
@@ -84,19 +100,25 @@ export default function FoundItemsList() {
     }, [q]);
 
     return (
-        <DashboardShell onRefresh={() => load(q, { initial: true })} refreshing={loading || searching}
+        <DashboardShell onRefresh={creating ? undefined : () => load(q, { initial: true })} refreshing={loading || searching}
             eyebrow="Lost & Found"
-            title="Found Items"
-            subtitle="Verified items currently being held by Security, ready to be matched with an owner."
+            title={creating ? "Report a Found Item" : "Found Items"}
+            subtitle={creating
+                ? "Thank you for turning this in — Security will verify your report before it's stored."
+                : "Verified items currently being held by Security, ready to be matched with an owner."}
         >
-            {/* "Report Found Item" already lives in the sidebar — no need to
-                repeat it up here too. */}
+            {creating ? (
+                <FoundItemForm
+                    onCancel={closeCreate}
+                    onCreated={() => { closeCreate(); load(q, { initial: true }); }}
+                />
+            ) : (
             <div className="ds-card">
                 <div className="ds-list-head-row">
                     <form
                         onSubmit={(e) => { e.preventDefault(); clearTimeout(searchTimer.current); load(q); }}
                         className="ds-field"
-                        style={{ marginBottom: 16, flex: '1 1 260px', position: 'relative' }}
+                        style={{ flex: '1 1 260px', position: 'relative' }}
                     >
                         <input
                             value={q}
@@ -112,7 +134,14 @@ export default function FoundItemsList() {
                             />
                         )}
                     </form>
-                    <ViewToggle mode={view} onChange={setView} className="mb-16" />
+                    <div className="ds-head-actions">
+                        <ViewToggle mode={view} onChange={setView} />
+                        {canCreate && (
+                            <button type="button" className="ds-btn ds-btn-primary" onClick={openCreate}>
+                                <Plus size={15} /> Create
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {error && <div className="ds-error">{error}</div>}
@@ -265,6 +294,7 @@ export default function FoundItemsList() {
                     </ul>
                 )}
             </div>
+            )}
         </DashboardShell>
     );
 }

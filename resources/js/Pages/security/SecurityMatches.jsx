@@ -65,14 +65,30 @@ function Detail({ detail, loading, error }) {
     if (error) return <div className="mc-detail"><div className="ds-error">{error}</div></div>;
     if (!detail) return null;
 
-    const { match, analysis } = detail;
+    const { match, analysis, unavailable } = detail;
+    const ml = analysis.ml;
     const lost = match.lost_item || {};
     const found = match.found_item || {};
     const storage = storageText(found.storage_location);
 
     return (
         <div className="mc-detail">
+            {unavailable && <div className="mc-flag conflict">⚠ {unavailable} This lead is no longer actionable.</div>}
             <div className="mc-reco"><b>{LEVEL_LABEL[analysis.level]} · {analysis.score}/100.</b> {analysis.recommendation}</div>
+
+            {ml && (
+                <div className="mc-ml">
+                    <b>AI check:</b> the trained model rates this pair {Math.round(ml.probability * 100)}% likely to be the same item
+                    {' '}(rules said {ml.rule_score}, AI said {ml.score}; the AI has a {Math.round(ml.weight * 100)}% say in the final score).
+                    {ml.top_factors?.length > 0 && (
+                        <span className="mc-ml-factors">
+                            {ml.top_factors.map((f) => (
+                                <span key={f.key} className={`mc-chip ${f.effect >= 0 ? 'match' : 'different'}`}>{f.effect >= 0 ? '▲' : '▼'} {f.label} {f.effect > 0 ? '+' : ''}{f.effect}</span>
+                            ))}
+                        </span>
+                    )}
+                </div>
+            )}
 
             {analysis.flags?.length > 0 && (
                 <div className="mc-flags">
@@ -108,6 +124,7 @@ function Detail({ detail, loading, error }) {
             <p className="mc-math">
                 How this was scored: {analysis.raw}% agreement on the fields both reports filled in × {Math.round(analysis.confidence * 100)}% confidence
                 (more shared fields = more confidence){analysis.cap ? `, capped at ${analysis.cap} because ${analysis.cap_reason.charAt(0).toLowerCase()}${analysis.cap_reason.slice(1)}` : ''}.
+                {ml ? ` Then blended with the AI model's estimate (${Math.round(ml.weight * 100)}% AI / ${100 - Math.round(ml.weight * 100)}% rules).` : ''}
                 {' '}Scored just now{detail.rescored ? ` — it was ${detail.previous_score} before this check.` : '.'}
             </p>
 
@@ -145,27 +162,45 @@ export default function SecurityMatches() {
     const [openId, setOpenId] = useState(null);
     const [detail, setDetail] = useState({ id: null, data: null, loading: false, error: '' });
     const [flash, setFlash] = useState({});
+    const [model, setModel] = useState(null);
     const prevScores = useRef({});
+    // Only the newest list request may update the screen — a slow, older response (from before a
+    // tab / filter change, or before a score was re-saved) must never overwrite newer numbers.
+    const listSeq = useRef(0);
+    const flashTimer = useRef(null);
 
     useEffect(() => { document.title = 'Matches | SCLF - Opol Community College'; }, []);
 
     const load = useCallback((background = false) => {
+        const seq = ++listSeq.current;
         if (!background) { setLoading(true); setError(''); }
         return axios.get('/matches', { params: { status: tab, q: query || undefined, level: level || undefined, min_score: minScore || undefined, page }, silent: background })
             .then((res) => {
+                if (seq !== listSeq.current) return; // superseded by a newer request
                 const data = res.data.data || [];
                 // Highlight rows whose score moved since the last poll.
                 const changed = {};
                 data.forEach((m) => { const p = prevScores.current[m.id]; if (p !== undefined && p !== m.score) changed[m.id] = m.score - p; prevScores.current[m.id] = m.score; });
-                if (Object.keys(changed).length) { setFlash(changed); setTimeout(() => setFlash({}), 4000); }
+                if (Object.keys(changed).length) {
+                    setFlash(changed);
+                    clearTimeout(flashTimer.current);
+                    flashTimer.current = setTimeout(() => setFlash({}), 4000);
+                }
                 setRows(data);
                 setMeta({ current_page: res.data.current_page, last_page: res.data.last_page, total: res.data.total });
                 setLive({ ok: true, at: new Date() });
                 setError('');
             })
-            .catch(() => { if (background) setLive((l) => ({ ...l, ok: false })); else setError('Could not load matches right now.'); })
-            .finally(() => { if (!background) setLoading(false); });
+            .catch(() => { if (seq !== listSeq.current) return; if (background) setLive((l) => ({ ...l, ok: false })); else setError('Could not load matches right now.'); })
+            .finally(() => { if (!background && seq === listSeq.current) setLoading(false); });
     }, [tab, query, level, minScore, page]);
+
+    useEffect(() => () => clearTimeout(flashTimer.current), []);
+
+    // The AI model's status (trained? how accurate?) — fetched once, it only changes when `matches:train` runs.
+    useEffect(() => {
+        axios.get('/matches/model', { silent: true }).then((res) => setModel(res.data)).catch(() => setModel(null));
+    }, []);
 
     useEffect(() => {
         const t = setTimeout(() => load(false), query ? 300 : 0);
@@ -208,7 +243,18 @@ export default function SecurityMatches() {
     const loadDetail = (id, background = false) => {
         if (!background) setDetail({ id, data: null, loading: true, error: '' });
         return axios.get(`/matches/${id}`, { silent: background })
-            .then((res) => { setDetail({ id, data: res.data, loading: false, error: '' }); })
+            .then((res) => {
+                setDetail({ id, data: res.data, loading: false, error: '' });
+                // The comparison has just re-scored (and saved) this match: make the card show that same
+                // number now, instead of the older one it was loaded with, so it can't "blink 100 then revert".
+                const fresh = res.data.match;
+                if (fresh) {
+                    prevScores.current[id] = fresh.score;
+                    setRows((rs) => rs.map((r) => (r.id === id
+                        ? { ...r, score: fresh.score, match_level: fresh.match_level, score_details: fresh.score_details, score_breakdown: fresh.score_breakdown }
+                        : r)));
+                }
+            })
             .catch(() => { if (!background) setDetail({ id, data: null, loading: false, error: 'Could not load the comparison.' }); });
     };
 
@@ -257,6 +303,14 @@ export default function SecurityMatches() {
                             {t.label}
                         </button>
                     ))}
+                    {model?.enabled && (
+                        <span className={`mc-ai${model.trained ? '' : ' is-off'}`}
+                            title={model.trained
+                                ? `Trained ${model.trained_at ? new Date(model.trained_at).toLocaleDateString() : ''} on ${model.samples?.total ?? '?'} pairs (${model.samples?.real ?? 0} real outcomes). Held-out accuracy ${Math.round((model.metrics?.accuracy || 0) * 100)}%. Run “php artisan matches:train” to refresh it.`
+                                : 'No AI model yet — scores come from the rules only. Run “php artisan matches:train”.'}>
+                            {model.trained ? `AI on · ${Math.round((model.metrics?.accuracy || 0) * 100)}% accurate` : 'AI not trained'}
+                        </span>
+                    )}
                     <span style={{ marginLeft: 'auto' }} className={`mc-live${live.ok ? '' : ' is-err'}`} title="Checks for changes every few seconds and updates the list when something moves">
                         {live.ok ? `Live${live.at ? ` · checked ${clock(live.at)}` : ''}` : 'Reconnecting…'}
                     </span>
@@ -329,7 +383,7 @@ export default function SecurityMatches() {
                                             {isOpen ? 'Hide details' : 'Compare details'}
                                         </button>
                                         <Link to={`/app/found-items/${m.found_item_id}`} className="ds-btn ds-btn-secondary">View found item</Link>
-                                        {actionable && (
+                                        {actionable && !(detail.id === m.id && detail.data?.unavailable) && (
                                             <>
                                                 <button type="button" className="ds-btn ds-btn-primary" disabled={busyId === m.id} onClick={() => act(m, 'notify')}>
                                                     {m.status === 'notified' ? 'Remind owner' : 'Notify owner'}

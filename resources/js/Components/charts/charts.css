@@ -30,6 +30,7 @@
 @media (max-width: 1100px) { .ch-row.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 860px) { .ch-row.cols-2-1, .ch-row.cols-1-1, .ch-row.cols-3 { grid-template-columns: minmax(0, 1fr); } }
 .ch-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 0 0 12px; }
+.ch-toolbar-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
 .ch-toolbar h2 { font-size: 15px; font-weight: 800; margin: 0; }
 
 /* ---- card chrome ---- */
@@ -166,3 +167,9 @@
     .ch-card, .ch-kpi, .ch-feed-item { animation: none; }
     .ch-pulse, .ch-live-dot::after, .ch-skel { animation: none; }
 }
+
+/* Custom (black + accent) themes */
+.ds-shell.dk-blue { --ch-1: #38bdf8; --ch-2: #60a5fa; --ch-3: #2dd4bf; --ch-4: #fbbf24; --ch-5: #a78bfa; --ch-6: #818cf8; --ch-tip-bg: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); --ch-tip-fg: #fff; }
+.ds-shell.dk-yellow { --ch-1: #fbbf24; --ch-2: #f59e0b; --ch-3: #fb923c; --ch-4: #a3e635; --ch-5: #f472b6; --ch-6: #fcd34d; --ch-tip-bg: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); --ch-tip-fg: #1c1408; }
+.ds-shell.dk-maroon { --ch-1: #f87171; --ch-2: #fb923c; --ch-3: #f472b6; --ch-4: #fbbf24; --ch-5: #e11d48; --ch-6: #fca5a5; --ch-tip-bg: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); --ch-tip-fg: #fff; }
+.ds-shell.dk-white { --ch-1: #e5e5e5; --ch-2: #a3a3a3; --ch-3: #737373; --ch-4: #d4d4d4; --ch-5: #525252; --ch-6: #f5f5f5; --ch-tip-bg: #f2f2f2; --ch-tip-fg: #000; }

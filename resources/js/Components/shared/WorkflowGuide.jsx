@@ -132,7 +132,7 @@ export default function WorkflowGuide({ lane = 'counter', defaultOpen = true, co
     };
 
     return (
-        <div className="ds-card sclf-wf" style={{ borderLeft: '3px solid var(--accent, #1B1F3B)' }}>
+        <div className="ds-card sclf-wf" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent, #1B1F3B) 9%, transparent), transparent 55%)' }}>
             <div className="sclf-wf-head">
                 <div className="ds-card-title" style={{ margin: 0 }}>
                     <span className="ds-card-title-icon"><Info size={17} /> Step-by-step guide</span>

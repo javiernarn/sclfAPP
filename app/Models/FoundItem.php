@@ -59,6 +59,21 @@ class FoundItem extends Model
         self::DISPOSITION_TRANSFERRED,
     ];
 
+    // Found items a lost report can still be matched to / claimed against.
+    public const MATCHABLE_STATUSES = [
+        self::STATUS_ACCEPTED,
+        self::STATUS_STORED,
+        self::STATUS_MATCHED,
+        self::STATUS_UNCLAIMED,
+    ];
+
+    // Gone for good: nothing can be matched to or claimed from these any more.
+    public const TERMINAL_STATUSES = [
+        self::STATUS_REJECTED,
+        self::STATUS_RELEASED,
+        self::STATUS_DISPOSED,
+    ];
+
     // Items still physically occupying a shelf slot — used for capacity
     // counts and for the retention sweep's eligibility query. Excludes
     // RELEASED/DISPOSED (gone) and the pre-storage statuses (never had a

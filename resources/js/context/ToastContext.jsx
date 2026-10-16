@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, AlertTriangle, XCircle, Info, X } from '../Components/icons';
 import { toastBus, approvalBus } from '../utils/eventBus';
-import { useAppTheme } from '../hooks/useAppTheme';
+import { useAppTheme, isDarkTheme } from '../hooks/useAppTheme';
 import '../Components/shared/Toast.css';
 
 const ToastContext = createContext(null);
@@ -35,7 +35,7 @@ export function ToastProvider({ children }) {
     // pages) — plus a per-type outline color (see Toast.css), so an
     // error toast and a success toast are otherwise styled identically.
     const { theme } = useAppTheme();
-    const isDark = theme === 'black';
+    const isDark = isDarkTheme(theme);
 
     const dismiss = useCallback((id) => {
         setToasts((prev) => prev.filter((t) => t.id !== id));

@@ -23,3 +23,8 @@ Schedule::command('activity:prune')->dailyAt('02:30');
 // Matching v2: keep open matches in step with edited reports even if nobody
 // opens the Matches page. (The page also re-scores stale rows on load.)
 Schedule::command('matches:rescore')->hourly();
+
+// Machine learning: refit the match model from what people actually decided
+// (approved / released claims, "Not a match" dismissals) and re-score open leads
+// with it. Does nothing — and keeps the rules in charge — when there isn't enough data.
+Schedule::command('matches:train --rescore')->weeklyOn(1, '03:00');

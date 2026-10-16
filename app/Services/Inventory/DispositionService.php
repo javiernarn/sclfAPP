@@ -118,6 +118,9 @@ class DispositionService
                 "Found item #{$item->id} disposed of ({$method}) by {$officer->name}.",
             );
 
+            // It has left the building: no lead should keep pointing at it.
+            app(\App\Services\Matching\MatchReconciler::class)->retireForFoundItem($item->fresh());
+
             return $item->fresh();
         });
     }

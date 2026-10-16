@@ -141,7 +141,7 @@ body { overflow: hidden; }
 /* margin-top pulls the logo up so its own center lines up with the
    header burger button's center (both sit 30px from the very top of
    the screen) instead of sitting ~7px lower than it. */
-.ds-brand { display: flex; align-items: center; gap: 8px; min-width: 0; text-decoration: none; color: inherit; padding: 2px 8px 16px; margin-top: -3px; flex-shrink: 0; border-radius: 11px; transition: background 0.15s ease, gap 0.32s cubic-bezier(0.4,0,0.2,1), padding-left 0.32s cubic-bezier(0.4,0,0.2,1), padding-right 0.32s cubic-bezier(0.4,0,0.2,1), justify-content 0.32s ease; }
+.ds-brand { display: flex; align-items: center; gap: 8px; min-width: 0; text-decoration: none; color: inherit; padding: 2px 8px 10px; margin-top: -3px; flex-shrink: 0; border-radius: 11px; transition: background 0.15s ease, gap 0.32s cubic-bezier(0.4,0,0.2,1), padding-left 0.32s cubic-bezier(0.4,0,0.2,1), padding-right 0.32s cubic-bezier(0.4,0,0.2,1), justify-content 0.32s ease; }
 /* Collapsed: drop the row's own left/right padding and gap and center its
    content instead, so the logo sits in the middle of the 68px rail —
    matching the header burger button above it — instead of pinned to the
@@ -247,6 +247,11 @@ body { overflow: hidden; }
 .ds-shell.blue .ds-nav-link.active { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); box-shadow: 0 8px 18px rgba(37,99,235,0.35); }
 .ds-shell.yellow .ds-nav-link.active { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); box-shadow: 0 8px 18px rgba(217,119,6,0.35); color: #1c1408; }
 .ds-sidebar-spacer { flex: 1; min-height: 8px; }
+/* Line under the logo row — same 1px line as .ds-sidebar-footer's top border
+   (colour comes from --ds-edge below), so the sidebar is framed top and bottom.
+   The brand row's own bottom padding gives the gap above it. */
+.ds-sidebar-divider { flex-shrink: 0; height: 0; border-top: 1px solid #c9d1de; margin: 0 0 6px; }
+.ds-shell.dark .ds-sidebar-divider { border-color: #323b4a; }
 /* Bottom-left "account bar" strip. min-height + flex centering matches
    .ds-footer's own box below (same --sclf-bottombar-h var), and both
    sit flush against their column's bottom edge — since .ds-sidebar no
@@ -293,7 +298,7 @@ body { overflow: hidden; }
     opacity: 0.55; flex-shrink: 0; max-width: 15px;
     transition: transform 0.15s ease, opacity 0.3s ease, max-width 0.32s cubic-bezier(0.4,0,0.2,1);
 }
-.ds-sidebar.collapsed .ds-user-row-chevron { opacity: 0; max-width: 0; }
+.ds-sidebar.collapsed .ds-user-row-chevron { display: none; }
 .ds-user-row-btn[aria-expanded="true"] .ds-user-row-chevron { transform: rotate(180deg); }
 /* Flyout variant of .ds-menu: opens upward and is pinned to the
    sidebar's own right edge (not the trigger button's position),
@@ -1259,7 +1264,8 @@ body { overflow: hidden; }
 .ds-shell.dark .ds-table tbody tr.is-clickable:hover { background: rgba(129,140,248,0.06); }
 .ds-table tbody tr.is-clickable { cursor: pointer; }
 .ds-table tbody tr.is-closed { opacity: 0.55; }
-.ds-table tbody tr.is-unread td:first-child { box-shadow: inset 3px 0 0 #4f46e5; }
+.ds-table tbody tr.is-unread td { background: rgba(79,70,229,.06); font-weight: 600; }
+.ds-table tbody tr.is-unread td:first-child::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #4f46e5; margin-right: 8px; vertical-align: middle; }
 .ds-table-cell-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .ds-table-title { font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
 .ds-table-sub { font-size: 12px; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px; }
@@ -1506,3 +1512,313 @@ body { overflow: hidden; }
     .ds-visitor-head-controls > .ds-view-toggle { width: 100%; }
     .ds-visitor-head-controls .ds-view-toggle-btn { flex: 1; justify-content: center; }
 }
+
+/* =====================================================================
+   CUSTOM (black + accent) THEMES — "Black / Blue", "Black / Yellow",
+   "Black / Maroon". The shell carries .dark (so every dark rule above
+   applies) plus .dk-blue | .dk-yellow | .dk-maroon, which only re-tint the
+   accent elements. Plain "Black / White" is the normal .dark theme.
+   ===================================================================== */
+
+/* ---- Black / Blue ---- */
+.ds-shell.dk-blue { background: radial-gradient(900px 500px at 100% -10%, rgba(56,189,248,0.14), transparent 60%), radial-gradient(900px 500px at -10% 110%, rgba(30,64,175,0.18), transparent 60%), #000000; }
+.ds-shell.dk-blue .ds-sidebar { background: #050505; border-right-color: #2c4a73; }
+.ds-shell.dk-blue .ds-topbar, .ds-shell.dk-blue .ds-footer { border-color: #2c4a73; }
+.ds-shell.dk-blue .ds-sidebar-footer { border-color: #2c4a73; }
+.ds-shell.dk-blue .ds-nav-link.active { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); box-shadow: 0 8px 18px rgba(37,99,235,0.40); color: #fff; }
+.ds-shell.dk-blue .ds-avatar { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); color: #fff; }
+.ds-shell.dk-blue .ds-btn-primary { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); box-shadow: 0 10px 24px rgba(37,99,235,0.40); color: #fff; }
+.ds-shell.dk-blue .ds-view-toggle-btn.is-active { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); box-shadow: 0 6px 16px rgba(37,99,235,0.40); color: #fff; }
+.ds-shell.dk-blue .ds-eyebrow, .ds-shell.dk-blue .ds-chip.ds-chip-accent, .ds-shell.dk-blue .ds-filter-chip.is-active { background: rgba(56,189,248,0.14); border-color: rgba(56,189,248,0.32); color: #7dd3fc; }
+.ds-shell.dk-blue .ds-stat-icon, .ds-shell.dk-blue .ds-info-icon, .ds-shell.dk-blue .ds-thumb, .ds-shell.dk-blue .ds-security-icon, .ds-shell.dk-blue .ds-evidence-icon, .ds-shell.dk-blue .ds-evidence-file, .ds-shell.dk-blue .ds-code-copy { background: rgba(56,189,248,0.14); color: #7dd3fc; }
+
+/* ---- Black / Yellow ---- */
+.ds-shell.dk-yellow { background: radial-gradient(900px 500px at 100% -10%, rgba(245,158,11,0.14), transparent 60%), radial-gradient(900px 500px at -10% 110%, rgba(180,83,9,0.18), transparent 60%), #000000; }
+.ds-shell.dk-yellow .ds-sidebar { background: #050505; border-right-color: #6b5420; }
+.ds-shell.dk-yellow .ds-topbar, .ds-shell.dk-yellow .ds-footer { border-color: #6b5420; }
+.ds-shell.dk-yellow .ds-sidebar-footer { border-color: #6b5420; }
+.ds-shell.dk-yellow .ds-nav-link.active { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); box-shadow: 0 8px 18px rgba(217,119,6,0.40); color: #1c1408; }
+.ds-shell.dk-yellow .ds-avatar { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); color: #1c1408; }
+.ds-shell.dk-yellow .ds-btn-primary { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); box-shadow: 0 10px 24px rgba(217,119,6,0.40); color: #1c1408; }
+.ds-shell.dk-yellow .ds-view-toggle-btn.is-active { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); box-shadow: 0 6px 16px rgba(217,119,6,0.40); color: #1c1408; }
+.ds-shell.dk-yellow .ds-eyebrow, .ds-shell.dk-yellow .ds-chip.ds-chip-accent, .ds-shell.dk-yellow .ds-filter-chip.is-active { background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.34); color: #fbbf24; }
+.ds-shell.dk-yellow .ds-stat-icon, .ds-shell.dk-yellow .ds-info-icon, .ds-shell.dk-yellow .ds-thumb, .ds-shell.dk-yellow .ds-security-icon, .ds-shell.dk-yellow .ds-evidence-icon, .ds-shell.dk-yellow .ds-evidence-file, .ds-shell.dk-yellow .ds-code-copy { background: rgba(245,158,11,0.15); color: #fbbf24; }
+
+/* ---- Black / Maroon ---- */
+.ds-shell.dk-maroon { background: radial-gradient(900px 500px at 100% -10%, rgba(220,38,38,0.14), transparent 60%), radial-gradient(900px 500px at -10% 110%, rgba(127,29,46,0.22), transparent 60%), #000000; }
+.ds-shell.dk-maroon .ds-sidebar { background: #050505; border-right-color: #6e2a36; }
+.ds-shell.dk-maroon .ds-topbar, .ds-shell.dk-maroon .ds-footer { border-color: #6e2a36; }
+.ds-shell.dk-maroon .ds-sidebar-footer { border-color: #6e2a36; }
+.ds-shell.dk-maroon .ds-nav-link.active { background: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); box-shadow: 0 8px 18px rgba(159,18,57,0.45); color: #fff; }
+.ds-shell.dk-maroon .ds-avatar { background: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); color: #fff; }
+.ds-shell.dk-maroon .ds-btn-primary { background: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); box-shadow: 0 10px 24px rgba(159,18,57,0.45); color: #fff; }
+.ds-shell.dk-maroon .ds-view-toggle-btn.is-active { background: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); box-shadow: 0 6px 16px rgba(159,18,57,0.45); color: #fff; }
+.ds-shell.dk-maroon .ds-eyebrow, .ds-shell.dk-maroon .ds-chip.ds-chip-accent, .ds-shell.dk-maroon .ds-filter-chip.is-active { background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.34); color: #fca5a5; }
+.ds-shell.dk-maroon .ds-stat-icon, .ds-shell.dk-maroon .ds-info-icon, .ds-shell.dk-maroon .ds-thumb, .ds-shell.dk-maroon .ds-security-icon, .ds-shell.dk-maroon .ds-evidence-icon, .ds-shell.dk-maroon .ds-evidence-file, .ds-shell.dk-maroon .ds-code-copy { background: rgba(248,113,113,0.15); color: #fca5a5; }
+
+/* ---- "Choose Theme" head row + Custom button ---- */
+.ds-theme-popover { width: 218px; }
+.ds-theme-popover-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 4px 0 0; margin-bottom: 4px; border-bottom: 1px solid; }
+.ds-menu.light .ds-theme-popover-head { border-color: #c9d1de; }
+.ds-menu.dark .ds-theme-popover-head { border-color: #323b4a; }
+.ds-theme-popover-head .ds-theme-popover-title { border-bottom: none; margin-bottom: 0; padding-right: 0; white-space: nowrap; }
+.ds-theme-custom-btn {
+    flex-shrink: 0; cursor: pointer; font-family: inherit;
+    font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+    background: transparent; color: inherit; border: 1.5px solid; opacity: 0.85;
+    transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+.ds-menu.light .ds-theme-custom-btn { border-color: #c3ccdb; }
+.ds-menu.dark .ds-theme-custom-btn { border-color: #3a4457; }
+.ds-theme-custom-btn:hover { opacity: 1; }
+.ds-menu.light .ds-theme-custom-btn.is-on { background: #0a0c12; color: #fff; border-color: #0a0c12; opacity: 1; }
+.ds-menu.dark .ds-theme-custom-btn.is-on { background: #e7ecf3; color: #0b1220; border-color: #e7ecf3; opacity: 1; }
+
+/* ---- Half / half badges (diagonal split, like comix.to) ---- */
+.ds-theme-swatch { width: 18px; height: 18px; }
+.ds-theme-swatch-blue { background: linear-gradient(135deg, #ffffff 50%, #2563eb 50%); }
+.ds-theme-swatch-yellow { background: linear-gradient(135deg, #ffffff 50%, #f59e0b 50%); }
+.ds-theme-swatch-maroon { background: linear-gradient(135deg, #ffffff 50%, #9f1239 50%); }
+.ds-theme-swatch-black-white { background: linear-gradient(135deg, #000000 50%, #ffffff 50%); }
+.ds-theme-swatch-black-blue { background: linear-gradient(135deg, #000000 50%, #3b82f6 50%); }
+.ds-theme-swatch-black-yellow { background: linear-gradient(135deg, #000000 50%, #f59e0b 50%); }
+.ds-theme-swatch-black-maroon { background: linear-gradient(135deg, #000000 50%, #dc2626 50%); }
+
+/* Sidebar logo is wrapped in <Tooltip> (print report): keep it full width. */
+.ds-sidebar > .sclf-tooltip-wrap { display: flex; flex-shrink: 0; }
+.ds-sidebar > .sclf-tooltip-wrap > .ds-brand { flex: 1 1 auto; }
+
+/* ---- Black / White + true-black surfaces for every Custom theme ---- */
+.ds-shell.dk-white { background: #000000; }
+.ds-shell.dk-white .ds-sidebar { background: #050505; border-right-color: #2a2a2a; }
+.ds-shell.dk-white .ds-topbar, .ds-shell.dk-white .ds-footer, .ds-shell.dk-white .ds-sidebar-footer { border-color: #2a2a2a; }
+.ds-shell.dk-white .ds-nav-link.active { background: #f2f2f2; color: #000; box-shadow: 0 8px 18px rgba(255,255,255,0.12); }
+.ds-shell.dk-white .ds-avatar { background: #f2f2f2; color: #000; }
+.ds-shell.dk-white .ds-btn-primary, .ds-shell.dk-white .ds-view-toggle-btn.is-active { background: #f2f2f2; color: #000; box-shadow: 0 8px 18px rgba(255,255,255,0.10); }
+.ds-shell.dk-white .ds-eyebrow, .ds-shell.dk-white .ds-chip.ds-chip-accent, .ds-shell.dk-white .ds-filter-chip.is-active { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.28); color: #f2f2f2; }
+.ds-shell.dk-white .ds-stat-icon, .ds-shell.dk-white .ds-info-icon, .ds-shell.dk-white .ds-thumb, .ds-shell.dk-white .ds-security-icon, .ds-shell.dk-white .ds-evidence-icon, .ds-shell.dk-white .ds-evidence-file, .ds-shell.dk-white .ds-code-copy { background: rgba(255,255,255,0.10); color: #e5e5e5; }
+
+.ds-shell.dk-white .ds-topbar, .ds-shell.dk-blue .ds-topbar, .ds-shell.dk-yellow .ds-topbar, .ds-shell.dk-maroon .ds-topbar { background: rgba(0,0,0,0.8); }
+.ds-shell.dk-white .ds-footer, .ds-shell.dk-blue .ds-footer, .ds-shell.dk-yellow .ds-footer, .ds-shell.dk-maroon .ds-footer { background: rgba(0,0,0,0.8); }
+.ds-shell.dk-white .ds-card, .ds-shell.dk-blue .ds-card, .ds-shell.dk-yellow .ds-card, .ds-shell.dk-maroon .ds-card,
+.ds-shell.dk-white .ds-stat-card, .ds-shell.dk-blue .ds-stat-card, .ds-shell.dk-yellow .ds-stat-card, .ds-shell.dk-maroon .ds-stat-card { background: rgba(10,10,10,0.9); box-shadow: 0 16px 40px rgba(0,0,0,0.6); }
+.ds-shell.dk-white .ds-card, .ds-shell.dk-white .ds-stat-card { border-color: #2a2a2a; }
+.ds-shell.dk-white .ds-field input, .ds-shell.dk-white .ds-field select, .ds-shell.dk-white .ds-field textarea,
+.ds-shell.dk-blue .ds-field input, .ds-shell.dk-blue .ds-field select, .ds-shell.dk-blue .ds-field textarea,
+.ds-shell.dk-yellow .ds-field input, .ds-shell.dk-yellow .ds-field select, .ds-shell.dk-yellow .ds-field textarea,
+.ds-shell.dk-maroon .ds-field input, .ds-shell.dk-maroon .ds-field select, .ds-shell.dk-maroon .ds-field textarea { background: #000; }
+.ds-shell.dk-white .ds-table th, .ds-shell.dk-blue .ds-table th, .ds-shell.dk-yellow .ds-table th, .ds-shell.dk-maroon .ds-table th { background: #0d0d0d; }
+.ds-shell.dk-white .ds-nav-link:hover:not(.active), .ds-shell.dk-blue .ds-nav-link:hover:not(.active), .ds-shell.dk-yellow .ds-nav-link:hover:not(.active), .ds-shell.dk-maroon .ds-nav-link:hover:not(.active) { background: #141414; }
+
+/* ---- Colored sidebar for Black / Blue | Yellow | Maroon ---- */
+.ds-shell.dk-blue .ds-sidebar { background: linear-gradient(180deg, #0f3a7d 0%, #0a2457 55%, #061633 100%); border-right-color: #2f5fae; }
+.ds-shell.dk-blue .ds-sidebar-footer { border-color: #2f5fae; }
+.ds-shell.dk-blue .ds-nav-link:hover:not(.active), .ds-shell.dk-blue .ds-user-row-btn:hover, .ds-shell.dk-blue .ds-sidebar.collapsed .ds-brand:hover { background: rgba(255,255,255,0.10); }
+.ds-shell.dk-blue .ds-nav-link.active { background: rgba(255,255,255,0.20); color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.28), 0 8px 18px rgba(0,0,0,0.35); }
+.ds-shell.dk-yellow .ds-sidebar { background: linear-gradient(180deg, #7a4a07 0%, #553304 55%, #2e1b02 100%); border-right-color: #a8761c; }
+.ds-shell.dk-yellow .ds-sidebar-footer { border-color: #a8761c; }
+.ds-shell.dk-yellow .ds-nav-link:hover:not(.active), .ds-shell.dk-yellow .ds-user-row-btn:hover, .ds-shell.dk-yellow .ds-sidebar.collapsed .ds-brand:hover { background: rgba(255,255,255,0.10); }
+.ds-shell.dk-yellow .ds-nav-link.active { background: rgba(255,255,255,0.20); color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.28), 0 8px 18px rgba(0,0,0,0.35); }
+.ds-shell.dk-maroon .ds-sidebar { background: linear-gradient(180deg, #7a1a2d 0%, #561220 55%, #2e0a12 100%); border-right-color: #b5485c; }
+.ds-shell.dk-maroon .ds-sidebar-footer { border-color: #b5485c; }
+.ds-shell.dk-maroon .ds-nav-link:hover:not(.active), .ds-shell.dk-maroon .ds-user-row-btn:hover, .ds-shell.dk-maroon .ds-sidebar.collapsed .ds-brand:hover { background: rgba(255,255,255,0.10); }
+.ds-shell.dk-maroon .ds-nav-link.active { background: rgba(255,255,255,0.20); color: #fff; box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.28), 0 8px 18px rgba(0,0,0,0.35); }
+.ds-shell.dk-yellow .ds-nav-link.active { color: #fff; }
+
+/* ==========================================================================
+ * THEME-COLORED OUTLINES
+ * Every card / list row / table / input outline inside the dashboard takes
+ * the same edge color as the sidebar for the selected theme. Only the
+ * outline changes — fills stay as they were. Login / Register / Reset
+ * Password use AuthShell (not .ds-shell), so they are untouched.
+ *   --ds-edge       main outline (matches the sidebar border)
+ *   --ds-edge-input slightly deeper tone so form fields stay easy to see
+ *   --ds-edge-row   faint separator between table rows
+ *   --ds-focus      focus ring color for fields
+ * ========================================================================== */
+.ds-shell.light { --ds-edge: #c3ccdb; --ds-edge-input: #b9c4d6; --ds-edge-row: #e2e7f0; --ds-focus: #6366f1; }
+.ds-shell.dark  { --ds-edge: #323b4a; --ds-edge-input: #3a4457; --ds-edge-row: #262c39; --ds-focus: #6366f1; }
+.ds-shell.maroon { --ds-edge: #e8b3bc; --ds-edge-input: #d98f9c; --ds-edge-row: #f4dde1; --ds-focus: #9f1239; }
+.ds-shell.blue   { --ds-edge: #a9cdf5; --ds-edge-input: #7fb3ea; --ds-edge-row: #d6e7fa; --ds-focus: #2563eb; }
+.ds-shell.yellow { --ds-edge: #e6c477; --ds-edge-input: #d6aa4f; --ds-edge-row: #f3e5bd; --ds-focus: #d97706; }
+.ds-shell.dk-white  { --ds-edge: #2a2a2a; --ds-edge-input: #3a3a3a; --ds-edge-row: #1a1a1a; --ds-focus: #e5e5e5; }
+.ds-shell.dk-blue   { --ds-edge: #2f5fae; --ds-edge-input: #3b6fc4; --ds-edge-row: #17305a; --ds-focus: #38bdf8; }
+.ds-shell.dk-yellow { --ds-edge: #a8761c; --ds-edge-input: #bd8a2c; --ds-edge-row: #4a3410; --ds-focus: #f59e0b; }
+.ds-shell.dk-maroon { --ds-edge: #b5485c; --ds-edge-input: #c95d72; --ds-edge-row: #5a2430; --ds-focus: #f87171; }
+
+.ds-shell.ds-layout .ds-card,
+.ds-shell.ds-layout .ds-stat-card,
+.ds-shell.ds-layout .ds-list-item,
+.ds-shell.ds-layout .ds-location-card,
+.ds-shell.ds-layout .ds-info-item,
+.ds-shell.ds-layout .ds-history-card,
+.ds-shell.ds-layout .ds-evidence-row,
+.ds-shell.ds-layout .ds-detail-photo-wrap,
+.ds-shell.ds-layout .ds-seg,
+.ds-shell.ds-layout .ds-chip,
+.ds-shell.ds-layout .ds-filter-chip,
+.ds-shell.ds-layout .ds-code-box,
+.ds-shell.ds-layout .ds-view-toggle,
+.ds-shell.ds-layout .ds-table-wrap,
+.ds-shell.ds-layout .ds-icon-btn,
+.ds-shell.ds-layout .ds-profile-btn { border-color: var(--ds-edge); }
+
+.ds-shell.ds-layout .ds-topbar { border-bottom-color: var(--ds-edge); }
+.ds-shell.ds-layout .ds-footer { border-top-color: var(--ds-edge); }
+.ds-shell.ds-layout .ds-divider,
+.ds-shell.ds-layout .ds-sidebar-footer { border-color: var(--ds-edge); }
+.ds-shell.ds-layout .ds-sidebar-divider { border-color: var(--ds-edge); }
+.ds-shell.ds-layout .ds-table th { border-bottom-color: var(--ds-edge); }
+.ds-shell.ds-layout .ds-table tbody tr { border-color: var(--ds-edge-row); }
+
+.ds-shell.ds-layout .ds-field input,
+.ds-shell.ds-layout .ds-field select,
+.ds-shell.ds-layout .ds-field textarea,
+.ds-shell.ds-layout .ds-btn-secondary { border-color: var(--ds-edge-input); }
+.ds-shell.ds-layout .ds-field input:focus,
+.ds-shell.ds-layout .ds-field select:focus,
+.ds-shell.ds-layout .ds-field textarea:focus { border-color: var(--ds-focus); }
+
+/* ==========================================================================
+ * Search field + Cards/Table toggle alignment
+ * The search <form class="ds-field"> carried its own 16px bottom margin
+ * (plus the row's margin), which pushed the input above the toggle. Inside
+ * a head row the field has no margin, and the toggle stretches to the same
+ * height as the input so both share one baseline.
+ * ========================================================================== */
+.ds-list-head-row { align-items: stretch; }
+.ds-list-head-row > .ds-field { margin-bottom: 0; }
+.ds-list-head-row > .ds-view-toggle { align-self: stretch; align-items: stretch; }
+.ds-list-head-row > .ds-view-toggle .ds-view-toggle-btn { align-items: center; }
+.ds-list-head-row > .ds-btn { align-self: stretch; }
+.ds-head-actions { display: flex; align-items: stretch; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+@media (max-width: 720px) {
+    .ds-head-actions { width: 100%; margin-left: 0; }
+    .ds-head-actions > * { flex: 1 1 auto; justify-content: center; }
+}
+
+/* ---------- Header / sidebar line alignment (desktop) ----------
+   The header's bottom border and the sidebar's line under the logo used to
+   sit at different heights, because the header's height came from its
+   content while the sidebar's came from its own padding. Both now share
+   one fixed height (--ds-topbar-h), so the sidebar line lands exactly on
+   the header line, as one continuous level. Both lines are the same
+   1.5px solid --ds-edge line as the header border and the footer lines. */
+@media (min-width: 960px) {
+    .ds-shell { --ds-topbar-h: 73px; }
+    .ds-topbar { height: var(--ds-topbar-h); min-height: var(--ds-topbar-h); }
+    .ds-sidebar { padding-top: 0; }
+    .ds-brand {
+        margin-top: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        height: calc(var(--ds-topbar-h) - 1.5px);
+    }
+    .ds-sidebar-divider {
+        border-top-width: 1.5px;
+        border-top-style: solid;
+        border-top-color: var(--ds-edge, #c3ccdb);
+        margin: 0 0 8px;
+    }
+    .ds-sidebar-footer { border-top-width: 1.5px; }
+}
+
+/* ==========================================================================
+ * THEME-SYNCED DROPDOWNS (every <select> + the "pick or type" lists)
+ * One look everywhere: the dropdown panel uses the selected theme's surface,
+ * edge and accent instead of the browser's black/blue native popup.
+ *   --ds-pop-bg / --ds-pop-fg   panel surface + text
+ *   --ds-focus / --ds-edge-input (already defined per theme above) drive the
+ *   border, hover and selected-row colors.
+ * ========================================================================== */
+.ds-shell.light     { --ds-pop-bg: #ffffff; --ds-pop-fg: #0b1220; }
+.ds-shell.maroon    { --ds-pop-bg: #fffafb; --ds-pop-fg: #0b1220; }
+.ds-shell.blue      { --ds-pop-bg: #f8fbff; --ds-pop-fg: #0b1220; }
+.ds-shell.yellow    { --ds-pop-bg: #fffcf5; --ds-pop-fg: #1c1408; }
+.ds-shell.dark      { --ds-pop-bg: #10131b; --ds-pop-fg: #e7ecf3; }
+.ds-shell.dk-white,
+.ds-shell.dk-blue,
+.ds-shell.dk-yellow,
+.ds-shell.dk-maroon { --ds-pop-bg: #0b0b0b; --ds-pop-fg: #e7ecf3; }
+.ds-shell {
+    --ds-pop-hover: color-mix(in srgb, var(--ds-focus, #6366f1) 14%, var(--ds-pop-bg));
+    --ds-pop-selected: color-mix(in srgb, var(--ds-focus, #6366f1) 24%, var(--ds-pop-bg));
+}
+.ds-shell.light select, .ds-shell.maroon select, .ds-shell.blue select, .ds-shell.yellow select { color-scheme: light; }
+.ds-shell.dark select { color-scheme: dark; }
+
+/* Fallback for browsers that can't restyle the native popup: at least the
+   rows follow the theme (surface + text) and the field gets a chevron. */
+.ds-shell select option { background-color: var(--ds-pop-bg); color: var(--ds-pop-fg); }
+@supports not (appearance: base-select) {
+    .ds-shell select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+        background-repeat: no-repeat !important;
+        background-position: right 14px center !important;
+        background-size: 16px !important;
+        padding-right: 40px !important;
+    }
+}
+
+/* Modern browsers (Chrome / Edge): fully styled, theme-colored popup. */
+@supports (appearance: base-select) {
+    .ds-shell select,
+    .ds-shell select::picker(select) { appearance: base-select; }
+    .ds-shell select {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        cursor: pointer;
+    }
+    .ds-shell select::picker-icon {
+        color: currentColor; opacity: 0.6;
+        transition: rotate 0.18s ease, opacity 0.18s ease;
+    }
+    .ds-shell select:hover::picker-icon { opacity: 0.9; }
+    .ds-shell select:open::picker-icon { rotate: 180deg; }
+    .ds-shell select::picker(select) {
+        background: var(--ds-pop-bg);
+        color: var(--ds-pop-fg);
+        border: 1.5px solid var(--ds-edge-input, var(--ds-edge));
+        border-radius: 12px;
+        padding: 6px;
+        margin: 6px 0 0;
+        min-width: anchor-size(width);
+        max-height: min(320px, 50vh);
+        box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+        scrollbar-width: thin;
+        scrollbar-color: var(--ds-edge-input, var(--ds-edge)) transparent;
+    }
+    .ds-shell select option {
+        display: flex; align-items: center; gap: 8px;
+        padding: 10px 12px; border-radius: 8px;
+        font-size: 14.5px; font-weight: 600;
+        background: transparent; color: inherit;
+        cursor: pointer;
+    }
+    .ds-shell select option:hover,
+    .ds-shell select option:focus-visible { background: var(--ds-pop-hover); }
+    .ds-shell select option:checked { background: var(--ds-pop-selected); font-weight: 800; }
+    .ds-shell select option::checkmark { color: var(--ds-focus, #6366f1); }
+    .ds-shell select option:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+/* "Pick one or type your own" lists and any other custom dropdown that uses
+   the standard listbox/option roles — same panel, same hover/selected rows. */
+.ds-shell [role="listbox"],
+.ds-shell datalist {
+    background: var(--ds-pop-bg) !important;
+    color: var(--ds-pop-fg) !important;
+    border: 1.5px solid var(--ds-edge-input, var(--ds-edge)) !important;
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+    scrollbar-width: thin;
+    scrollbar-color: var(--ds-edge-input, var(--ds-edge)) transparent;
+}
+.ds-shell [role="listbox"]::-webkit-scrollbar { width: 8px; }
+.ds-shell [role="listbox"]::-webkit-scrollbar-track { background: transparent; }
+.ds-shell [role="listbox"]::-webkit-scrollbar-thumb { background: var(--ds-edge-input, var(--ds-edge)); border-radius: 8px; }
+.ds-shell [role="listbox"] [role="option"] { color: var(--ds-pop-fg) !important; background: transparent !important; border-radius: 8px; cursor: pointer; }
+.ds-shell [role="listbox"] [role="option"]:hover,
+.ds-shell [role="listbox"] [role="option"][data-highlighted],
+.ds-shell [role="listbox"] [role="option"].is-active,
+.ds-shell [role="listbox"] [role="option"].active { background: var(--ds-pop-hover) !important; }
+.ds-shell [role="listbox"] [role="option"][aria-selected="true"] { background: var(--ds-pop-selected) !important; font-weight: 800; }

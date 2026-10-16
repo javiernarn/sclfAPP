@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import RefreshButton from '../../Components/shared/RefreshButton';
 import WorkflowGuide from '../../Components/shared/WorkflowGuide';
 import {
     PackageSearch, PackageCheck, Hourglass, ShieldAlert, Boxes, ListOrdered,
@@ -104,6 +106,7 @@ function NextActions({ data, loading }) {
 }
 
 export default function SecurityDashboard() {
+    const { user } = useAuth();
     const [days, setDays] = useState(14);
     const { data, loading, error, updatedAt, refresh } = usePolling('/analytics/dashboard', { interval: 12000, params: { days } });
 
@@ -117,14 +120,17 @@ export default function SecurityDashboard() {
     const incidentsBySeverity = data?.incidents_by_severity || {};
 
     return (
-        <DashboardShell onRefresh={refresh}
+        <DashboardShell
             eyebrow="Security"
-            title="Security Officer Dashboard"
+            greeting={{ name: user?.name }}
             subtitle="Found item reports and counter activity, kept separate so it's clear which is which."
         >
             <div className="ch-toolbar">
                 <LiveBadge updatedAt={updatedAt} error={error} />
-                <Segmented value={days} options={RANGE_OPTIONS} onChange={setDays} label="Date range" />
+                <div className="ch-toolbar-actions">
+                    <RefreshButton onRefresh={refresh} loading={loading} />
+                    <Segmented value={days} options={RANGE_OPTIONS} onChange={setDays} label="Date range" />
+                </div>
             </div>
 
             <NextActions data={data} loading={loading} />

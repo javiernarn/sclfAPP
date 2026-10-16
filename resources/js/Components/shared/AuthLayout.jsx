@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Search, Megaphone, Handshake, Sun, Moon } from "../icons";
-import { useAppTheme } from "../../hooks/useAppTheme";
+import { useAppTheme, isDarkTheme } from "../../hooks/useAppTheme";
 import logo from "../../assets/images/site-logo.png";
 
 const FEATURES = [
@@ -24,7 +24,7 @@ const FEATURES = [
 // widening past tablet size) reveals both panels side by side.
 const AuthLayout = ({ eyebrow = "Secure Session", title, subtitle, children, footer, panelTitle, panelSubtitle, wide = false }) => {
     const { theme, toggleTheme } = useAppTheme();
-    const isDark = theme === "black";
+    const isDark = isDarkTheme(theme);
 
     return (
         <>

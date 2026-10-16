@@ -1,4 +1,3 @@
-import { welcomeHeading } from '../../utils/welcome';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import useRoleLabel from '../../hooks/useRoleLabel';
@@ -8,6 +7,7 @@ import {
     PackageSearch, CircleCheck, ShieldAlert, ListOrdered, Activity, Clock,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import RefreshButton from '../../Components/shared/RefreshButton';
 import DashboardSkeleton from '../../Components/shared/DashboardSkeleton';
 import {
     KpiCard, ChartCard, AreaChart, DonutChart, BarChart, RankedBars, ActivityFeed,
@@ -32,7 +32,7 @@ export default function AdminDashboard() {
 
     if (loading && !data) {
         return (
-            <DashboardShell eyebrow={`${roleLabel || 'Admin'} Portal`} title={`${welcomeHeading(user?.name?.split(' ')[0] || roleLabel || 'Admin')} 👋`} subtitle="Oversee lost & found reports across Opol Community College.">
+            <DashboardShell eyebrow={`${roleLabel || 'Admin'} Portal`} greeting={{ name: user?.name || roleLabel }} subtitle="Oversee lost & found reports across Opol Community College.">
                 <DashboardSkeleton statCount={4} cardCount={2} />
             </DashboardShell>
         );
@@ -44,14 +44,17 @@ export default function AdminDashboard() {
     const q = data?.queue || {};
 
     return (
-        <DashboardShell onRefresh={refresh}
+        <DashboardShell
             eyebrow={`${roleLabel || 'Admin'} Portal`}
-            title={`${welcomeHeading(user?.name?.split(' ')[0] || roleLabel || 'Admin')} 👋`}
+            greeting={{ name: user?.name || roleLabel }}
             subtitle="Oversee lost & found reports across Opol Community College."
         >
             <div className="ch-toolbar">
                 <LiveBadge updatedAt={updatedAt} error={error} />
-                <Segmented value={days} options={RANGE_OPTIONS} onChange={setDays} label="Date range" />
+                <div className="ch-toolbar-actions">
+                    <RefreshButton onRefresh={refresh} loading={loading} />
+                    <Segmented value={days} options={RANGE_OPTIONS} onChange={setDays} label="Date range" />
+                </div>
             </div>
 
             {/* ---- Headline KPIs ---- */}

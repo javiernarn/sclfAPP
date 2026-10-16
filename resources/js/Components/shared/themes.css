@@ -1,0 +1,213 @@
+/*
+ * themes.css — per-theme TOKEN layer for <DashboardShell>
+ * --------------------------------------------------------
+ * Loaded AFTER DashboardShell.css. DashboardShell.css only knows "light" and
+ * "dark" for most surfaces, so fills such as the header search box, the
+ * profile pill, the dropdown menus, the Theme flyout and the Cards/Table
+ * toggle stayed bluish-grey no matter which colour theme was picked.
+ *
+ * Every theme below sets the same tokens, on BOTH the shell and the portaled
+ * menus (.ds-menu is rendered into <body>, so it carries the theme class
+ * itself — see AccountMenu `theme` prop):
+ *
+ *   --tk-edge         outline colour
+ *   --tk-surface      menus / popovers / search results panel
+ *   --tk-field        pills, search box, icon buttons, toggle track, table head
+ *   --tk-hover        hover fill for rows / items
+ *   --tk-accent       accent gradient (active toggle, avatar, "Custom" on)
+ *   --tk-accent-on    text colour on top of the accent
+ *   --tk-accent-text  accent used as a text / icon colour
+ *   --tk-accent-rgb   for rgba() tints
+ *
+ * Theme class names (from DashboardShell.jsx):
+ *   white  black  maroon  blue  yellow  dk-white  dk-blue  dk-yellow  dk-maroon
+ */
+
+/* ============ 1. tokens ============ */
+.ds-shell.light, .ds-menu.light {
+    --tk-edge: #c3ccdb; --tk-surface: #ffffff; --tk-field: #f4f7fb; --tk-hover: #f4f7fb;
+    --tk-accent: linear-gradient(135deg, #4338ca, #4f46e5 50%, #6366f1); --tk-accent-on: #fff;
+    --tk-accent-text: #4f46e5; --tk-accent-rgb: 79, 70, 229; --tk-shadow: rgba(2, 6, 23, 0.16);
+}
+.ds-shell.dark, .ds-menu.dark {
+    --tk-edge: #323b4a; --tk-surface: #12161f; --tk-field: #1a2029; --tk-hover: #1a2029;
+    --tk-accent: linear-gradient(135deg, #4338ca, #4f46e5 50%, #6366f1); --tk-accent-on: #fff;
+    --tk-accent-text: #a5b4fc; --tk-accent-rgb: 129, 140, 248; --tk-shadow: rgba(0, 0, 0, 0.5);
+}
+.ds-shell.maroon, .ds-menu.maroon {
+    --tk-edge: #e8b3bc; --tk-surface: #fffafb; --tk-field: #fdeef0; --tk-hover: #fbe4e8;
+    --tk-accent: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); --tk-accent-on: #fff;
+    --tk-accent-text: #9f1239; --tk-accent-rgb: 159, 18, 57; --tk-shadow: rgba(127, 29, 46, 0.20);
+}
+.ds-shell.blue, .ds-menu.blue {
+    --tk-edge: #a9cdf5; --tk-surface: #f9fbff; --tk-field: #eaf2fd; --tk-hover: #dfeafb;
+    --tk-accent: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); --tk-accent-on: #fff;
+    --tk-accent-text: #1d4ed8; --tk-accent-rgb: 37, 99, 235; --tk-shadow: rgba(30, 64, 175, 0.18);
+}
+.ds-shell.yellow, .ds-menu.yellow {
+    --tk-edge: #e6c477; --tk-surface: #fffcf4; --tk-field: #fbf3dc; --tk-hover: #f7ebc8;
+    --tk-accent: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); --tk-accent-on: #1c1408;
+    --tk-accent-text: #b45309; --tk-accent-rgb: 217, 119, 6; --tk-shadow: rgba(180, 83, 9, 0.18);
+}
+.ds-shell.dk-white, .ds-menu.dk-white {
+    --tk-edge: #2a2a2a; --tk-surface: #0a0a0a; --tk-field: #141414; --tk-hover: #1a1a1a;
+    --tk-accent: linear-gradient(135deg, #ffffff, #e6e6e6 50%, #bdbdbd); --tk-accent-on: #000;
+    --tk-accent-text: #f2f2f2; --tk-accent-rgb: 255, 255, 255; --tk-shadow: rgba(0, 0, 0, 0.7);
+}
+.ds-shell.dk-blue, .ds-menu.dk-blue {
+    --tk-edge: #2f5fae; --tk-surface: #060d1f; --tk-field: #0b1a3a; --tk-hover: rgba(56, 189, 248, 0.13);
+    --tk-accent: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); --tk-accent-on: #fff;
+    --tk-accent-text: #7dd3fc; --tk-accent-rgb: 56, 189, 248; --tk-shadow: rgba(0, 0, 0, 0.7);
+}
+.ds-shell.dk-yellow, .ds-menu.dk-yellow {
+    --tk-edge: #a8761c; --tk-surface: #120b02; --tk-field: #24170a; --tk-hover: rgba(245, 158, 11, 0.15);
+    --tk-accent: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); --tk-accent-on: #1c1408;
+    --tk-accent-text: #fbbf24; --tk-accent-rgb: 245, 158, 11; --tk-shadow: rgba(0, 0, 0, 0.7);
+}
+.ds-shell.dk-maroon, .ds-menu.dk-maroon {
+    --tk-edge: #b5485c; --tk-surface: #14060a; --tk-field: #2a0f17; --tk-hover: rgba(248, 113, 113, 0.14);
+    --tk-accent: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); --tk-accent-on: #fff;
+    --tk-accent-text: #fca5a5; --tk-accent-rgb: 248, 113, 113; --tk-shadow: rgba(0, 0, 0, 0.7);
+}
+
+/* ============ 2. header: search, bell, help, profile pill ============ */
+.ds-shell.ds-layout .ds-topbar .ds-icon-btn,
+.ds-shell.ds-layout .ds-topbar .ds-profile-btn,
+.ds-shell.ds-layout .ds-global-search-input-wrap {
+    background: var(--tk-field);
+    border: 1.5px solid var(--tk-edge);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.ds-shell.ds-layout .ds-topbar .ds-icon-btn:hover,
+.ds-shell.ds-layout .ds-topbar .ds-profile-btn:hover,
+.ds-shell.ds-layout .ds-topbar .ds-profile-btn[aria-expanded="true"],
+.ds-shell.ds-layout .ds-global-search-input-wrap:focus-within {
+    border-color: var(--tk-accent-text);
+}
+.ds-shell.ds-layout .ds-global-search-input-wrap:focus-within {
+    box-shadow: 0 0 0 3px rgba(var(--tk-accent-rgb), 0.18);
+}
+.ds-shell.ds-layout .ds-global-search-icon,
+.ds-shell.ds-layout .ds-profile-chevron { color: var(--tk-accent-text); }
+.ds-shell.ds-layout .ds-global-search-panel {
+    background: var(--tk-surface);
+    border: 1.5px solid var(--tk-edge);
+    box-shadow: 0 16px 40px var(--tk-shadow);
+}
+.ds-shell.ds-layout .ds-global-search-result:hover:not(:disabled) { background: var(--tk-hover); }
+.ds-shell.ds-layout .ds-global-search-group + .ds-global-search-group { border-top-color: var(--tk-edge); }
+.ds-shell.ds-layout .ds-bell-badge { box-shadow: 0 0 0 2px var(--tk-surface); }
+
+/* ============ 3. avatars (header pill + sidebar row) ============ */
+.ds-shell.ds-layout .ds-avatar {
+    background-color: var(--tk-edge);
+    background-image: var(--tk-accent);
+    color: var(--tk-accent-on);
+    box-shadow: 0 0 0 1.5px var(--tk-edge);
+}
+/* an uploaded photo is set inline as background-image and still wins */
+
+/* ============ 4. sidebar account row ============ */
+.ds-shell.ds-layout .ds-user-row-btn { border: 1.5px solid transparent; }
+.ds-shell.ds-layout .ds-user-row-btn:hover { background: var(--tk-hover); }
+.ds-shell.ds-layout .ds-user-row-btn[aria-expanded="true"] {
+    background: var(--tk-field);
+    border-color: var(--tk-edge);
+}
+.ds-shell.ds-layout .ds-user-row-chevron { color: var(--tk-accent-text); opacity: 0.8; }
+/* the Custom (dk-*) sidebars have a coloured gradient, keep the row legible there */
+.ds-shell.dk-blue .ds-user-row-btn:hover, .ds-shell.dk-yellow .ds-user-row-btn:hover, .ds-shell.dk-maroon .ds-user-row-btn:hover,
+.ds-shell.dk-blue .ds-user-row-btn[aria-expanded="true"], .ds-shell.dk-yellow .ds-user-row-btn[aria-expanded="true"], .ds-shell.dk-maroon .ds-user-row-btn[aria-expanded="true"] {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+.ds-shell.dk-blue .ds-user-row-chevron, .ds-shell.dk-yellow .ds-user-row-chevron, .ds-shell.dk-maroon .ds-user-row-chevron { color: #fff; }
+
+/* ============ 5. portaled menus: account, sidebar account, notifications ============ */
+html .ds-menu.ds-menu {
+    background: var(--tk-surface);
+    border: 1.5px solid var(--tk-edge);
+    box-shadow: 0 20px 40px var(--tk-shadow);
+}
+html .ds-menu.ds-menu .ds-menu-divider { background: var(--tk-edge); }
+html .ds-menu.ds-menu .ds-menu-item:hover,
+html .ds-menu.ds-menu .ds-notif-item:hover,
+html .ds-menu.ds-menu .ds-theme-option:hover { background: var(--tk-hover); }
+html .ds-menu.ds-menu .ds-menu-item.danger:hover { background: rgba(239, 68, 68, 0.12); }
+html .ds-menu.ds-menu .ds-theme-pill {
+    background: var(--tk-field);
+    border: 1.5px solid var(--tk-edge);
+    color: var(--tk-accent-text);
+}
+html .ds-menu.ds-menu .ds-notif-mark-all { color: var(--tk-accent-text); }
+html .ds-menu.ds-menu .ds-notif-mark-all:hover { background: rgba(var(--tk-accent-rgb), 0.12); }
+html .ds-menu.ds-menu .ds-notif-unread-mark { background: var(--tk-accent-text); }
+html .ds-menu.ds-menu .ds-notif-item.is-unread { background: rgba(var(--tk-accent-rgb), 0.07); }
+
+/* ============ 6. Theme flyout ("Choose Theme") ============ */
+html .ds-menu.ds-menu .ds-theme-popover {
+    background: var(--tk-surface);
+    border: 1.5px solid var(--tk-edge);
+    box-shadow: 0 20px 40px var(--tk-shadow);
+}
+html .ds-menu.ds-menu .ds-theme-popover-head,
+html .ds-menu.ds-menu .ds-theme-popover-title { border-color: var(--tk-edge); }
+html .ds-menu.ds-menu .ds-theme-popover-title { color: var(--tk-accent-text); opacity: 0.85; }
+html .ds-menu.ds-menu .ds-theme-custom-btn { border-color: var(--tk-edge); color: var(--tk-accent-text); }
+html .ds-menu.ds-menu .ds-theme-custom-btn:hover { background: var(--tk-hover); }
+html .ds-menu.ds-menu .ds-theme-custom-btn.is-on {
+    background: var(--tk-accent);
+    color: var(--tk-accent-on);
+    border-color: transparent;
+}
+html .ds-menu.ds-menu .ds-theme-option[aria-checked="true"] { background: rgba(var(--tk-accent-rgb), 0.10); }
+html .ds-menu.ds-menu .ds-theme-check { color: var(--tk-accent-text); opacity: 1; }
+html .ds-menu.ds-menu .ds-theme-swatch { border-color: var(--tk-edge); }
+
+/* ============ 7. cards: fills, Cards/Table toggle, tables ============ */
+.ds-shell.ds-layout .ds-view-toggle { background: var(--tk-field); border-color: var(--tk-edge); }
+.ds-shell.ds-layout .ds-view-toggle-btn { color: inherit; }
+.ds-shell.ds-layout .ds-view-toggle-btn:hover:not(.is-active) { background: var(--tk-hover); }
+/* the active pill's text used to lose to ".ds-shell.light .ds-view-toggle-btn"
+   (specificity) and rendered dark-on-maroon; force the accent pair here. */
+.ds-shell.ds-layout .ds-view-toggle-btn.is-active {
+    background: var(--tk-accent);
+    color: var(--tk-accent-on);
+    box-shadow: 0 6px 16px rgba(var(--tk-accent-rgb), 0.32);
+}
+.ds-shell.ds-layout .ds-view-toggle-btn.is-active svg { color: var(--tk-accent-on); opacity: 1; }
+
+.ds-shell.ds-layout .ds-table th { background: var(--tk-field); }
+.ds-shell.ds-layout .ds-table tbody tr.is-clickable:hover { background: var(--tk-hover); }
+.ds-shell.ds-layout .ds-table tbody tr.is-unread td { background: rgba(var(--tk-accent-rgb), 0.07); }
+.ds-shell.ds-layout .ds-chip,
+.ds-shell.ds-layout .ds-filter-chip,
+.ds-shell.ds-layout .ds-seg { background: var(--tk-field); }
+.ds-shell.ds-layout .ds-filter-chip.is-active,
+.ds-shell.ds-layout .ds-chip.ds-chip-accent {
+    background: rgba(var(--tk-accent-rgb), 0.12);
+    border-color: rgba(var(--tk-accent-rgb), 0.38);
+    color: var(--tk-accent-text);
+}
+.ds-shell.ds-layout .ds-list-item,
+.ds-shell.ds-layout .ds-location-card,
+.ds-shell.ds-layout .ds-info-item,
+.ds-shell.ds-layout .ds-history-card,
+.ds-shell.ds-layout .ds-evidence-row { background: var(--tk-surface); }
+.ds-shell.ds-layout .ds-info-icon,
+.ds-shell.ds-layout .ds-stat-icon,
+.ds-shell.ds-layout .ds-thumb { background: rgba(var(--tk-accent-rgb), 0.12); color: var(--tk-accent-text); }
+.ds-shell.ds-layout .ds-eyebrow {
+    background: rgba(var(--tk-accent-rgb), 0.10);
+    border-color: rgba(var(--tk-accent-rgb), 0.30);
+    color: var(--tk-accent-text);
+}
+
+/* ============ 8. notifications: hide scrollbars (still scrollable) ============ */
+.ds-notif-menu,
+.ds-notif-list {
+    scrollbar-width: none;          /* Firefox */
+    -ms-overflow-style: none;       /* legacy Edge / IE */
+}
+.ds-notif-menu::-webkit-scrollbar,
+.ds-notif-list::-webkit-scrollbar { display: none; width: 0; height: 0; }

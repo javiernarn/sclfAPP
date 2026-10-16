@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "re
 import RefreshButton from "./RefreshButton";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { useAppTheme } from "../../hooks/useAppTheme";
+import { useAppTheme, isDarkTheme } from "../../hooks/useAppTheme";
 import { useToast } from "../../context/ToastContext";
 import { loginToast } from "../../utils/welcome";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
@@ -11,9 +11,13 @@ import AccountMenu from "./AccountMenu";
 import GlobalSearchBar from "./GlobalSearchBar";
 import Tooltip from "./Tooltip";
 import HelpHints from "./HelpHints";
+import DashboardGreeting from "./DashboardGreeting";
 import NotificationBell from "./NotificationBell";
 import useIsPhone from "../../hooks/useIsPhone";
 import "./DashboardShell.css";
+// Per-theme tokens (search box, menus, theme flyout, Cards/Table toggle...).
+// Must come right after DashboardShell.css so it wins the cascade.
+import "./themes.css";
 // Imported AFTER DashboardShell.css on purpose: its phone-only overrides
 // rely on coming later in the cascade.
 import MobileBottomNav from "./MobileBottomNav";
@@ -59,7 +63,19 @@ const THEME_OPTIONS = [
     { key: "yellow", label: "Yellow" },
     { key: "maroon", label: "Maroon" },
 ];
-const themeLabel = (key) => THEME_OPTIONS.find((t) => t.key === key)?.label || "Default";
+// "Custom" list — shown when the Custom button beside "Choose Theme" is on.
+// Every entry is a black (dark) shell; the second half of the badge is the
+// accent color. Pure black (#000) base, unlike the slate-toned Dark theme.
+const CUSTOM_THEME_OPTIONS = [
+    { key: "dark-white", label: "Black / White", swatch: "black-white" },
+    { key: "dark-blue", label: "Black / Blue", swatch: "black-blue" },
+    { key: "dark-yellow", label: "Black / Yellow", swatch: "black-yellow" },
+    { key: "dark-maroon", label: "Black / Maroon", swatch: "black-maroon" },
+];
+const themeLabel = (key) =>
+    THEME_OPTIONS.find((t) => t.key === key)?.label
+        || CUSTOM_THEME_OPTIONS.find((t) => t.key === key)?.label
+        || "Default";
 
 // Shared "Theme" row + its "Choose Theme" flyout, used inside both the
 // header and sidebar account menus. Picking an option no longer closes
@@ -75,44 +91,62 @@ const themeLabel = (key) => THEME_OPTIONS.find((t) => t.key === key)?.label || "
 //     way that particular account menu itself grows (sidebar menu grows
 //     upward off the trigger, so its flyout is bottom-aligned; header
 //     menu drops down, so its flyout is top-aligned).
-const ThemePicker = ({ open, onToggle, current, onPick, side = "right", align = "top" }) => (
-    <div className="ds-theme-row-wrap">
-        <button
-            type="button"
-            className="ds-menu-item"
-            onClick={onToggle}
-            role="menuitem"
-            aria-haspopup="true"
-            aria-expanded={open}
-        >
-            <Palette size={16} />
-            Theme
-            <span className="ds-theme-pill">{themeLabel(current)}</span>
-        </button>
-        {open && (
-            <div
-                className={`ds-theme-popover ds-theme-popover-side-${side} ds-theme-popover-align-${align}`}
-                role="menu"
+const ThemePicker = ({ open, onToggle, current, onPick, side = "right", align = "top" }) => {
+    // Custom list (black + accent badges) vs. the regular list. Starts on
+    // Custom when the active theme is one of the dark-* accent themes so the
+    // checkmark is visible right away.
+    const [custom, setCustom] = useState(() => String(current).startsWith("dark-"));
+    const options = custom ? CUSTOM_THEME_OPTIONS : THEME_OPTIONS;
+    return (
+        <div className="ds-theme-row-wrap">
+            <button
+                type="button"
+                className="ds-menu-item"
+                onClick={onToggle}
+                role="menuitem"
+                aria-haspopup="true"
+                aria-expanded={open}
             >
-                <div className="ds-theme-popover-title">Choose Theme</div>
-                {THEME_OPTIONS.map((t) => (
-                    <button
-                        key={t.key}
-                        type="button"
-                        className="ds-theme-option"
-                        onClick={() => onPick(t.key)}
-                        role="menuitemradio"
-                        aria-checked={current === t.key}
-                    >
-                        <span className={`ds-theme-swatch ds-theme-swatch-${t.key}`} />
-                        {t.label}
-                        {current === t.key && <Check size={15} className="ds-theme-check" />}
-                    </button>
-                ))}
-            </div>
-        )}
-    </div>
-);
+                <Palette size={16} />
+                Theme
+                <span className="ds-theme-pill">{themeLabel(current)}</span>
+            </button>
+            {open && (
+                <div
+                    className={`ds-theme-popover ds-theme-popover-side-${side} ds-theme-popover-align-${align}`}
+                    role="menu"
+                >
+                    <div className="ds-theme-popover-head">
+                        <div className="ds-theme-popover-title">Choose Theme</div>
+                        <button
+                            type="button"
+                            className={`ds-theme-custom-btn ${custom ? "is-on" : ""}`}
+                            onClick={() => setCustom((v) => !v)}
+                            aria-pressed={custom}
+                            title={custom ? "Back to the regular themes" : "Show custom (black) themes"}
+                        >
+                            Custom
+                        </button>
+                    </div>
+                    {options.map((t) => (
+                        <button
+                            key={t.key}
+                            type="button"
+                            className="ds-theme-option"
+                            onClick={() => onPick(t.key)}
+                            role="menuitemradio"
+                            aria-checked={current === t.key}
+                        >
+                            <span className={`ds-theme-swatch ds-theme-swatch-${t.swatch || t.key}`} />
+                            {t.label}
+                            {current === t.key && <Check size={15} className="ds-theme-check" />}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
 
 // Nav model per role. Each item now carries a lucide-react icon component
 // instead of an emoji, so the sidebar reads as a real product UI.
@@ -120,9 +154,7 @@ const NAV_BY_ROLE = {
     student: [
         { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
         { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
-        { to: "/app/lost-items/create", label: "Report Lost Item", icon: Megaphone },
         { to: "/app/found-items", label: "Found Items", icon: PackageSearch },
-        { to: "/app/found-items/create", label: "Report Found Item", icon: Megaphone },
         { to: "/app/claims", label: "My Claims", icon: ClipboardCheck },
         { to: "/app/incidents", label: "Security Incidents", icon: AlertTriangle },
         { to: "/app/service-requests", label: "Service Requests", icon: Wrench },
@@ -232,14 +264,21 @@ const DESKTOP_QUERY = "(min-width: 960px)";
 // the main content pane scrolls. Sidebar is fully visible on its own —
 // no internal scrollbar — and can collapse to icons-only on desktop via
 // the header burger, or slide over as an overlay on mobile.
-const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshing = false, children }) => {
+// `greeting` ({ name }) swaps the plain title for the time-of-day greeting
+// block (Good Morning / name / date, time and Opol weather) — used by the
+// dashboards.
+const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshing = false, greeting, children }) => {
     const { user, roles, logout } = useAuth();
     const { theme, setTheme } = useAppTheme();
     const toast = useToast();
     // Right-click / DevTools / browser-zoom guard — same behavior as the
     // public auth pages. See usePreventInspect.jsx to toggle site-wide.
     const { zoomModalOpen, closeZoomModal } = usePreventInspect();
-    const isDark = theme === "black";
+    const isDark = isDarkTheme(theme);
+    // Portaled menus render outside .ds-shell, so they need the FULL theme
+    // class (e.g. "maroon light" / "dark-maroon dark dk-maroon"), not just
+    // light/dark, or they can never pick up the accent colours.
+    const menuTheme = `${theme} ${isDark ? "dark" : "light"} ${theme.startsWith("dark-") ? `dk-${theme.slice(5)}` : ""}`.trim();
     const navigate = useNavigate();
     const location = useLocation();
     // True only on real phones (touch + phone-sized screen). Everything
@@ -354,16 +393,26 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     const navRole = isAdmin ? "admin" : isSecurity ? "security_officer" : "student";
     // Items flagged adminOnly (e.g. Staff Requests) are hidden from staff.
     const isStaffOnly = Array.isArray(roles) && roles.includes("staff") && !roles.includes("admin");
+    // Student/instructor dashboards live at /app/dashboard/{token}. Linking to
+    // the bare /app/dashboard made every click go through a redirect (and
+    // remount the page, so it looked like a full refresh) — so point the
+    // Dashboard links straight at the tokened address once it's known.
+    const ownToken = user?.public_token;
+    const withOwnDashboard = (items) =>
+        navRole === "student" && ownToken
+            ? items.map((item) => (item.to === "/app/dashboard" ? { ...item, to: `/app/dashboard/${ownToken}` } : item))
+            : items;
     const navItems = useMemo(
-        () => NAV_BY_ROLE[navRole].filter((item) => !(item.adminOnly && isStaffOnly)),
-        [navRole, isStaffOnly]
+        () => withOwnDashboard(NAV_BY_ROLE[navRole].filter((item) => !(item.adminOnly && isStaffOnly))),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [navRole, isStaffOnly, ownToken]
     );
     const homePath = isAdmin ? "/app/admin/dashboard" : isSecurity ? "/app/security/dashboard" : "/app/dashboard";
     // Admin/Staff and Security get a print report behind the logo; students keep a plain link.
     const canPrint = isAdmin || isSecurity;
     const printPath = isAdmin ? "/app/admin/print-report" : "/app/security/print-report";
     const navLabel = isAdmin ? (roles.includes("admin") ? "Admin" : "Staff") : isSecurity ? "Security Officer" : roles.includes("instructor") ? "Instructor" : "Student";
-    const mobileTabs = MOBILE_TABS_BY_ROLE[navRole];
+    const mobileTabs = withOwnDashboard(MOBILE_TABS_BY_ROLE[navRole]);
 
     const handleLogout = async () => {
         try {
@@ -537,7 +586,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
 
     return (
         <>
-        <div className={`ds-shell ds-layout ${theme} ${isDark ? "dark" : "light"} ${isPhone ? "ds-phone" : ""}`}>
+        <div className={`ds-shell ds-layout ${theme} ${isDark ? "dark" : "light"} ${theme.startsWith("dark-") ? `dk-${theme.slice(5)}` : ""} ${isPhone ? "ds-phone" : ""}`}>
                 <div
                     className={`ds-sidebar-backdrop ${sidebarOpen ? "open" : ""}`}
                     onClick={() => setSidebarOpen(false)}
@@ -557,19 +606,23 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                     </button>
                     {/* Admin/Staff/Security: the logo opens the printable report
                         directly. Students/instructors keep a plain home link. */}
-                    <Link
-                        to={canPrint ? printPath : homePath}
-                        className="ds-brand"
-                        title={canPrint ? "Print report" : undefined}
-                        aria-label={canPrint ? "SCLF Opol Community College — print report" : undefined}
-                        onClick={() => setSidebarOpen(false)}
-                    >
-                        <img src={logo} alt="SCLF Logo" {...guardImageEvents} />
-                        <span className="ds-brand-text">
-                            <span className="ds-brand-name">SCLF</span>
-                            <span className="ds-brand-sub">Opol Community College</span>
-                        </span>
-                    </Link>
+                    <Tooltip label={canPrint ? "Print report" : undefined} side="right">
+                        <Link
+                            to={canPrint ? printPath : homePath}
+                            className="ds-brand"
+                            aria-label={canPrint ? "SCLF Opol Community College — print report" : undefined}
+                            onClick={() => setSidebarOpen(false)}
+                        >
+                            <img src={logo} alt="SCLF Logo" {...guardImageEvents} />
+                            <span className="ds-brand-text">
+                                <span className="ds-brand-name">SCLF</span>
+                                <span className="ds-brand-sub">Opol Community College</span>
+                            </span>
+                        </Link>
+                    </Tooltip>
+
+                    {/* Line under the logo — mirrors the one above the account row. */}
+                    <div className="ds-sidebar-divider" aria-hidden="true" />
 
                     <div className="ds-nav-label">{navLabel}</div>
 
@@ -659,7 +712,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                 placement={isDesktop ? "level-after" : "level-start"}
                                 offset={12}
                                 width={260}
-                                theme={isDark ? "dark" : "light"}
+                                theme={menuTheme}
                                 flyoutOpen={sidebarThemePickerOpen}
                                 className="ds-menu ds-sidebar-menu"
                             >
@@ -708,7 +761,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     <div className="ds-user-name">{user?.name || "Account"}</div>
                                     <div className="ds-user-email">{user?.email || ""}</div>
                                 </div>
-                                <ChevronUp size={15} className="ds-user-row-chevron" />
+                                {!railCollapsed && <ChevronUp size={15} className="ds-user-row-chevron" />}
                             </button>
                         </div>
                     </div>
@@ -739,20 +792,22 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     )}
                                 </button>
                             </Tooltip>
-                            <Link
-                                to={canPrint ? printPath : homePath}
-                                className="ds-topbar-brand"
-                                title={canPrint ? "Print report" : undefined}
-                            >
-                                <img src={logo} alt="SCLF Logo" {...guardImageEvents} />
-                                <span>SCLF</span>
-                            </Link>
+                            <Tooltip label={canPrint ? "Print report" : undefined}>
+                                <Link
+                                    to={canPrint ? printPath : homePath}
+                                    className="ds-topbar-brand"
+                                    aria-label={canPrint ? "Print report" : undefined}
+                                >
+                                    <img src={logo} alt="SCLF Logo" {...guardImageEvents} />
+                                    <span>SCLF</span>
+                                </Link>
+                            </Tooltip>
                         </div>
 
                         <div className="ds-topbar-actions">
                             <GlobalSearchBar />
                             <HelpHints roles={roles} navRole={navRole} isDark={isDark} />
-                            <NotificationBell isDark={isDark} />
+                            <NotificationBell isDark={isDark} theme={menuTheme} />
                             <div className="ds-menu-wrap">
                                 <button
                                     type="button"
@@ -775,7 +830,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     menuRef={menuRef}
                                     placement="bottom-end"
                                     width={220}
-                                    theme={isDark ? "dark" : "light"}
+                                    theme={menuTheme}
                                     flyoutOpen={themePickerOpen}
                                     className="ds-menu"
                                 >
@@ -813,13 +868,17 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                     </header>
 
                     <main className="ds-main">
-                        {(title || actions || onRefresh) && (
-                            <div className="ds-header">
+                        {(title || greeting || actions || onRefresh) && (
+                            <div className={`ds-header ${greeting ? "ds-header-greeting" : ""}`}>
+                                {greeting ? (
+                                    <DashboardGreeting eyebrow={eyebrow} name={greeting.name} subtitle={subtitle} />
+                                ) : (
                                 <div className="ds-header-text">
                                     {eyebrow && <span className="ds-eyebrow">{eyebrow}</span>}
                                     {title && <h1 className="ds-title">{title}</h1>}
                                     {subtitle && <p className="ds-subtitle">{subtitle}</p>}
                                 </div>
+                                )}
                                 {(actions || onRefresh) && (
                                     <div className="ds-actions">
                                         {onRefresh && <RefreshButton onRefresh={onRefresh} loading={refreshing} />}

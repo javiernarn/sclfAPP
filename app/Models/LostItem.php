@@ -22,6 +22,9 @@ class LostItem extends Model
         self::STATUS_CLOSED,
     ];
 
+    // Lost reports still looking for their item (not already claimed / closed).
+    public const MATCHABLE_STATUSES = [self::STATUS_PENDING, self::STATUS_MATCHED];
+
     protected $fillable = [
         'user_id',
         'campus_id',

@@ -50,6 +50,10 @@ class InventoryService
                 $item->id,
             ));
 
+            if (!$approved) {
+                app(\App\Services\Matching\MatchReconciler::class)->retireForFoundItem($item->fresh());
+            }
+
             if ($approved) {
                 $matches = $this->matcher->runForFoundItem($item->fresh());
 

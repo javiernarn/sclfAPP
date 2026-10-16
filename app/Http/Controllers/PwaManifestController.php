@@ -19,7 +19,8 @@ class PwaManifestController extends Controller
     public function __invoke(Request $request): JsonResponse
     {
         $theme = $request->cookie('sclf-theme', 'white');
-        $theme = in_array($theme, ['black', 'white']) ? $theme : 'white';
+        // 'dark-*' Custom themes are dark shells too.
+        $theme = in_array($theme, ['black', 'dark-white', 'dark-blue', 'dark-yellow', 'dark-maroon']) ? 'black' : 'white';
 
         $isBlack = $theme === 'black';
 

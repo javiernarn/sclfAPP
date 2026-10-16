@@ -210,3 +210,9 @@
     .ds-bottomnav-icon,
     .ds-bottomnav-item { transition: none; }
 }
+
+/* Custom (black + accent) themes */
+.ds-shell.dk-blue .ds-bottomnav { --bn-bg: rgba(12,18,32,0.97); --bn-border: #2c4a73; --bn-accent: #7dd3fc; --bn-accent-soft: rgba(56,189,248,0.14); }
+.ds-shell.dk-yellow .ds-bottomnav { --bn-bg: rgba(21,17,10,0.97); --bn-border: #6b5420; --bn-accent: #fbbf24; --bn-accent-soft: rgba(245,158,11,0.15); }
+.ds-shell.dk-maroon .ds-bottomnav { --bn-bg: rgba(21,11,14,0.97); --bn-border: #6e2a36; --bn-accent: #fca5a5; --bn-accent-soft: rgba(248,113,113,0.15); }
+.ds-shell.dk-white .ds-bottomnav { --bn-bg: rgba(5,5,5,0.97); --bn-border: #2a2a2a; --bn-accent: #f2f2f2; --bn-accent-soft: rgba(255,255,255,0.12); }

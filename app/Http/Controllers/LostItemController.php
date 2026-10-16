@@ -145,6 +145,7 @@ class LostItemController extends Controller
         $this->authorize('delete', $lostItem);
 
         $lostItem->delete(); // soft delete
+        app(\App\Services\Matching\MatchReconciler::class)->retireForLostItem($lostItem);
 
         $this->audit->log('lost_item.archived', $lostItem, "Lost item #{$lostItem->id} archived.");
 

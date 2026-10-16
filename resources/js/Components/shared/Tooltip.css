@@ -49,3 +49,9 @@
 @media (prefers-reduced-motion: reduce) {
     .sclf-tooltip { animation: none; }
 }
+
+/* Custom (black + accent) themes */
+.sclf-tooltip--dk-blue { --tt-bg: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); --tt-fg: #fff; --tt-border: rgba(255, 255, 255, 0.18); --tt-shadow: rgba(37,99,235,0.40); }
+.sclf-tooltip--dk-yellow { --tt-bg: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); --tt-fg: #1c1408; --tt-border: rgba(255, 255, 255, 0.18); --tt-shadow: rgba(217,119,6,0.40); }
+.sclf-tooltip--dk-maroon { --tt-bg: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); --tt-fg: #fff; --tt-border: rgba(255, 255, 255, 0.18); --tt-shadow: rgba(159,18,57,0.45); }
+.sclf-tooltip--dk-white { --tt-bg: #f2f2f2; --tt-fg: #000; --tt-border: rgba(255, 255, 255, 0.35); --tt-shadow: rgba(0, 0, 0, 0.6); }

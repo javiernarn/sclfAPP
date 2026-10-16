@@ -69,7 +69,7 @@ function timeAgo(iso) {
  * is currently signed in — there's nothing role-specific in this
  * component itself.
  */
-export default function NotificationBell({ isDark }) {
+export default function NotificationBell({ isDark, theme }) {
     const [open, setOpen] = useState(false);
     const triggerRef = useRef(null);
     const menuRef = useRef(null);
@@ -136,7 +136,7 @@ export default function NotificationBell({ isDark }) {
                 menuRef={menuRef}
                 placement="bottom-end"
                 width={360}
-                theme={isDark ? 'dark' : 'light'}
+                theme={theme || (isDark ? 'dark' : 'light')}
                 className="ds-menu ds-notif-menu"
             >
                 <div className="ds-notif-head">

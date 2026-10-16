@@ -57,6 +57,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Lost & found matching — machine-learning layer
+    |--------------------------------------------------------------------------
+    |
+    | `ml_enabled` switches the trained model (App\Services\Matching\MatchLearner)
+    | on or off. With it off — or before `php artisan matches:train` has been run —
+    | scores are exactly the rule engine's. `model_path` is where the trained model
+    | (a small JSON file of weights) is stored.
+    |
+    */
+    'matching' => [
+        'ml_enabled' => env('SCLF_MATCH_ML', true),
+        'model_path' => env('SCLF_MATCH_MODEL_PATH', storage_path('app/matching/model.json')),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Staff approval workflow
     |--------------------------------------------------------------------------
     |

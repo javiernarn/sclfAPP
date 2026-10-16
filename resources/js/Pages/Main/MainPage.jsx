@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { useAppTheme } from "../../hooks/useAppTheme";
+import { useAppTheme, isDarkTheme } from "../../hooks/useAppTheme";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
 import logo from "../../assets/images/site-logo.png";
 import { canOpenPath } from "../../utils/redirectGuard";
@@ -19,7 +19,7 @@ const MainPage = ({ routing = true }) => {
     const navigate = useNavigate();
     const { user, roles, loading } = useAuth();
     const { theme } = useAppTheme();
-    const isDark = theme === "black";
+    const isDark = isDarkTheme(theme);
     // Right-click / DevTools / browser-zoom guard — same behavior as the
     // public auth pages. See usePreventInspect.jsx to toggle site-wide.
     const { zoomModalOpen, closeZoomModal } = usePreventInspect();

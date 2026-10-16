@@ -8,14 +8,12 @@
 // -----------------------------------------------------------------
 // HOW TO TURN IT OFF WHILE YOU DEBUG
 // -----------------------------------------------------------------
-// Flip the single flag below (or set the env var) instead of
-// commenting the block out in every file:
+// Set this in your .env (no code edits, nothing to comment out):
 //
-//   INSPECT_PROTECTION_ENABLED = false
+//   VITE_ENABLE_INSPECT_PROTECTION=false   # debugging: protection OFF
+//   VITE_ENABLE_INSPECT_PROTECTION=true    # production: protection ON
 //
-// or, without touching code, add to your .env:
-//
-//   VITE_ENABLE_INSPECT_PROTECTION=false
+// Then restart `npm run dev` / re-run `npm run build`.
 //
 // Every surface that imports from this file picks up the change
 // automatically — right-click, F12/DevTools shortcuts, and the
@@ -25,13 +23,13 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { AlertTriangle } from "../Components/icons";
 
-// export const INSPECT_PROTECTION_ENABLED =
-//     (typeof import.meta !== "undefined" &&
-//         import.meta.env?.VITE_ENABLE_INSPECT_PROTECTION) === "false"
-//         ? false
-//         : true;
-
-export const INSPECT_PROTECTION_ENABLED = false;
+// Controlled by VITE_ENABLE_INSPECT_PROTECTION in .env (true | false).
+// Unset or anything other than "false" => protection ON (safe default).
+// Vite inlines env at build/dev-server start, so restart `npm run dev`
+// (or re-run `npm run build`) after changing it.
+const RAW_FLAG = import.meta.env?.VITE_ENABLE_INSPECT_PROTECTION;
+export const INSPECT_PROTECTION_ENABLED =
+    String(RAW_FLAG ?? "true").trim().toLowerCase() !== "false";
 
 // Desktop-only breakpoint (window.innerWidth >= 992).
 const DESKTOP_MIN_WIDTH = 992;

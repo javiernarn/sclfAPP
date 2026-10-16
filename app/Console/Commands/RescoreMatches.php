@@ -4,10 +4,13 @@ namespace App\Console\Commands;
 
 use App\Models\ItemMatch;
 use App\Services\Matching\ItemMatchingService;
+use App\Services\Matching\MatchReconciler;
 use Illuminate\Console\Command;
 
 /**
- * Re-scores stored matches with the current matching rules.
+ * Re-scores stored matches with the current matching rules, and first retires
+ * every lead whose item has left for good (released / disposed / rejected /
+ * deleted, or a lost report that was closed) so it stops showing as a match.
  *
  * Run it once after deploying the v2 engine so older matches get their full
  * comparison, and any time the rules/vocabulary change. Matches a human has
@@ -20,8 +23,10 @@ class RescoreMatches extends Command
 
     protected $description = 'Re-score stored lost/found matches with the current matching engine';
 
-    public function handle(ItemMatchingService $matcher): int
+    public function handle(ItemMatchingService $matcher, MatchReconciler $reconciler): int
     {
+        $retired = $reconciler->sweep()['retired'];
+
         $query = ItemMatch::query()
             ->with('lostItem', 'foundItem')
             ->when(!$this->option('all'), fn ($q) => $q->whereIn('status', [ItemMatch::STATUS_PENDING, ItemMatch::STATUS_NOTIFIED]));
@@ -39,7 +44,7 @@ class RescoreMatches extends Command
             }
         });
 
-        $this->info("Re-scored {$done} match(es)" . ($skipped ? ", skipped {$skipped} whose report was removed" : '') . '.');
+        $this->info("Re-scored {$done} match(es)" . ($skipped ? ", skipped {$skipped} whose report was removed" : '') . ($retired ? ", retired {$retired} whose item is already gone" : '') . '.');
 
         return self::SUCCESS;
     }

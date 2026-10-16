@@ -1,4 +1,3 @@
-import { welcomeHeading } from '../../utils/welcome';
 import React, { useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link, Navigate, useParams } from 'react-router-dom';
@@ -7,6 +6,7 @@ import {
     Wrench, ShieldAlert, Activity, Printer,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import RefreshButton from '../../Components/shared/RefreshButton';
 import DashboardSkeleton from '../../Components/shared/DashboardSkeleton';
 import {
     KpiCard, ChartCard, AreaChart, DonutChart, LiveBadge, usePolling, humanize, PALETTE,
@@ -37,7 +37,7 @@ export default function StudentDashboard() {
         return (
             <DashboardShell
                 eyebrow={isInstructor ? 'Instructor Portal' : 'Student Portal'}
-                title={`${welcomeHeading(user?.name?.split(' ')[0] || 'there')} 👋`}
+                greeting={{ name: user?.name }}
                 subtitle="Report items you've lost, or check what's been found around campus."
             >
                 <DashboardSkeleton statCount={3} cardCount={2} />
@@ -51,18 +51,21 @@ export default function StudentDashboard() {
     const incByStatus = data?.incidents_by_status || {};
 
     return (
-        <DashboardShell onRefresh={refresh}
+        <DashboardShell
             eyebrow={isInstructor ? 'Instructor Portal' : 'Student Portal'}
-            title={`${welcomeHeading(user?.name?.split(' ')[0] || 'there')} 👋`}
+            greeting={{ name: user?.name }}
             subtitle="Report items you've lost, or check what's been found around campus."
         >
             <div className="ch-toolbar">
                 <LiveBadge updatedAt={updatedAt} error={error} />
-                {ownToken && (
-                    <Link to={`/app/print/${ownToken}`} className="ds-btn ds-btn-secondary">
-                        <Printer size={16} /> Print my dashboard
-                    </Link>
-                )}
+                <div className="ch-toolbar-actions">
+                    <RefreshButton onRefresh={refresh} loading={loading} />
+                    {ownToken && (
+                        <Link to={`/app/print/${ownToken}`} className="ds-btn ds-btn-secondary">
+                            <Printer size={16} /> Print my dashboard
+                        </Link>
+                    )}
+                </div>
             </div>
 
             {/* ---- Personal KPIs ---- */}
@@ -137,7 +140,7 @@ export default function StudentDashboard() {
                 <div className="ds-card">
                     <div className="ds-card-title ds-card-title-icon"><Megaphone size={18} strokeWidth={2} /> Report a Lost Item</div>
                     <p className="ds-card-desc">Lost something on campus? Let the community know.</p>
-                    <Link to="/app/lost-items/create" className="ds-btn ds-btn-primary ds-btn-block">
+                    <Link to="/app/lost-items?new=1" className="ds-btn ds-btn-primary ds-btn-block">
                         Report a Lost Item
                     </Link>
                 </div>

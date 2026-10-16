@@ -8,6 +8,8 @@ use App\Models\LostItem;
 use App\Notifications\SclfNotification;
 use App\Services\Audit\AuditLogService;
 use App\Services\Matching\ItemMatchingService;
+use App\Services\Matching\MatchLearner;
+use App\Services\Matching\MatchReconciler;
 use Illuminate\Http\Request;
 
 class MatchController extends Controller
@@ -15,6 +17,7 @@ class MatchController extends Controller
     public function __construct(
         protected AuditLogService $audit,
         protected ItemMatchingService $matcher,
+        protected MatchReconciler $reconciler,
     ) {
     }
 
@@ -57,6 +60,10 @@ class MatchController extends Controller
                 fn ($q) => $q->whereIn('status', [ItemMatch::STATUS_PENDING, ItemMatch::STATUS_NOTIFIED]),
                 fn ($q) => $status === 'all' ? $q : $q->where('status', $status)
             )
+            // The "needs review" / "owner notified" tabs only list leads that can still go somewhere:
+            // not when the found item was already claimed / released / disposed, or the owner's
+            // lost report already has an approved claim or was closed.
+            ->when(in_array($status, ['open', ItemMatch::STATUS_PENDING, ItemMatch::STATUS_NOTIFIED], true), fn ($q) => $q->live())
             ->when(in_array($level, ['very_high', 'high', 'possible', 'low'], true), fn ($q) => $q->where('match_level', $level))
             ->when(is_numeric($minScore), fn ($q) => $q->where('score', '>=', (int) $minScore))
             ->when($request->query('q'), function ($q, $term) {
@@ -122,7 +129,39 @@ class MatchController extends Controller
             'rescored' => $previous !== $match->score,
             'previous_score' => $previous,
             'scored_at' => $match->scored_at,
+            // Why this lead can't be acted on right now (already claimed / released / closed…), or null.
+            'unavailable' => $match->status === ItemMatch::STATUS_CLAIMED ? null : $this->reconciler->unavailableReason($match),
         ]);
+    }
+
+    /**
+     * The machine-learning model's status for the handlers' Matches page: is it on, is it
+     * trained, how many outcomes it learned from, how it did on a held-out check, and
+     * which inputs it weighs most. Read-only; training is `php artisan matches:train`.
+     */
+    public function model()
+    {
+        $enabled = MatchLearner::enabled();
+        $model = $enabled ? MatchLearner::model() : null;
+
+        if ($model === null) {
+            return response()->json(['enabled' => $enabled, 'trained' => false])->header('Cache-Control', 'no-store');
+        }
+
+        $weights = $model['weights'];
+        arsort($weights);
+
+        return response()->json([
+            'enabled' => true,
+            'trained' => true,
+            'trained_at' => $model['trained_at'] ?? null,
+            'weight' => MatchLearner::weightFor($model),
+            'samples' => $model['samples'] ?? [],
+            'metrics' => $model['metrics'] ?? [],
+            'top_inputs' => collect($weights)->take(6)->map(fn ($w, $k) => [
+                'key' => $k, 'label' => MatchLearner::FEATURE_LABELS[$k] ?? $k, 'weight' => round((float) $w, 2),
+            ])->values(),
+        ])->header('Cache-Control', 'no-store');
     }
 
     /**
@@ -187,6 +226,10 @@ class MatchController extends Controller
 
         $match->loadMissing('lostItem.user', 'foundItem');
 
+        if ($reason = $this->reconciler->unavailableReason($match)) {
+            abort(422, $reason . ' It cannot be sent to the owner.');
+        }
+
         $owner = $match->lostItem?->user;
         if (!$owner) {
             abort(422, 'The person who reported this lost item no longer has an account.');
@@ -233,6 +276,7 @@ class MatchController extends Controller
             ->with('foundItem:id,item_name,category,image_path,status,location_found,date_found,updated_at')
             ->orderByDesc('score')
             ->get();
+        $matches = $this->onlyReachable($matches);
 
         return response()->json($this->presentForViewer($matches));
     }
@@ -251,8 +295,31 @@ class MatchController extends Controller
             ->with('lostItem:id,item_name,category,image_path,status,location_lost,date_lost,user_id,updated_at')
             ->orderByDesc('score')
             ->get();
+        $matches = $this->onlyReachable($matches);
 
         return response()->json($this->presentForViewer($matches));
+    }
+
+    /**
+     * Drop leads that can no longer lead anywhere: the other report is gone, the item was
+     * released / disposed, the lead was retired by the system, or the item is tied up in
+     * another person's approved claim. A match that itself turned into a claim stays visible.
+     */
+    private function onlyReachable($matches)
+    {
+        return $matches->filter(function (ItemMatch $m) {
+            if ($m->status === ItemMatch::STATUS_CLAIMED) {
+                return true;
+            }
+            if (!empty($m->score_details['retired'])) {
+                return false;
+            }
+            if ($m->status === ItemMatch::STATUS_DISMISSED) {
+                return $this->reconciler->goneReason($m) === null;
+            }
+
+            return $this->reconciler->unavailableReason($m) === null;
+        })->values();
     }
 
     /**

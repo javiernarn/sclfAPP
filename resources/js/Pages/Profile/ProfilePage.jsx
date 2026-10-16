@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { UserCircle, Mail, ShieldCheck, Moon, Sun, Phone, MapPin, VenetianMask, IdCard, GraduationCap, Bell, BellOff } from '../../Components/icons';
 import { useAuth } from '../../context/AuthContext';
-import { useAppTheme } from '../../hooks/useAppTheme';
+import { useAppTheme, isDarkTheme } from '../../hooks/useAppTheme';
 import usePushNotifications from '../../hooks/usePushNotifications';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ProfileSkeleton from '../../Components/shared/ProfileSkeleton';
@@ -26,7 +26,7 @@ const InfoItem = ({ icon: Icon, label, value }) => (
 export default function ProfilePage() {
     const { user, roles } = useAuth();
     const { theme, toggleTheme } = useAppTheme();
-    const isDark = theme === 'black';
+    const isDark = isDarkTheme(theme);
     const [pageLoading, setPageLoading] = useState(true);
     const toast = useToast();
     const push = usePushNotifications();

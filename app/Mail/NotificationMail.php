@@ -19,10 +19,10 @@ class NotificationMail extends Mailable
 
     /** Accent color per badge tone — keys match SclfNotification::META. */
     public const TONES = [
-        'success' => ['bg' => '#eafaf0', 'border' => '#16a34a', 'text' => '#15803d'],
-        'warning' => ['bg' => '#fff8d8', 'border' => '#e0b100', 'text' => '#92720a'],
-        'danger'  => ['bg' => '#fdeeee', 'border' => '#dc2626', 'text' => '#b91c1c'],
-        'info'    => ['bg' => '#eef1fd', 'border' => '#4f46e5', 'text' => '#4338ca'],
+        'success' => ['bg' => '#eff6ff', 'border' => '#2563eb', 'text' => '#1d4ed8'],
+        'warning' => ['bg' => '#eff6ff', 'border' => '#2563eb', 'text' => '#1d4ed8'],
+        'danger'  => ['bg' => '#eff6ff', 'border' => '#2563eb', 'text' => '#1d4ed8'],
+        'info'    => ['bg' => '#eff6ff', 'border' => '#2563eb', 'text' => '#1d4ed8'],
     ];
 
     public $fullName;
