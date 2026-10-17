@@ -50,6 +50,9 @@ export default function AccountMenu({
     className = "",
     theme, // "light" | "dark" — the portal renders outside .ds-shell, so it
            // can't inherit theming from it and needs its own theme class.
+    phoneFull = false, // on a phone-width screen, span the whole screen
+    // (minus a small margin) instead of hanging off the trigger — a bell in
+    // the middle of the header otherwise leaves a narrow, off-centre panel.
     flyoutOpen = false, // true while a child popover (e.g. the Theme
     // picker) is open and needs to render *outside* this menu's own box.
     // See the overflow note below — while this is true we deliberately
@@ -156,7 +159,22 @@ export default function AccountMenu({
             // viewport-wide margin (that mismatch was the bug: a wide fixed
             // width plus a small right-offset let the left edge go negative
             // and run off the left of the screen on real phones).
-            if (hSide === "end") {
+            // Use the narrowest of the viewport measurements: with a zoomed
+            // or overflowing page the layout viewport can be wider than what
+            // is actually visible, which is what pushed the right edge off.
+            const visibleWidth = Math.min(
+                viewportWidth,
+                window.innerWidth || Infinity,
+                window.visualViewport?.width || Infinity
+            );
+            if (phoneFull && visibleWidth <= 520) {
+                const gap = 12;
+                const offsetLeft = window.visualViewport?.offsetLeft || 0;
+                menu.style.width = `${visibleWidth - gap * 2}px`;
+                menu.style.maxWidth = `${visibleWidth - gap * 2}px`;
+                menu.style.right = "";
+                menu.style.left = `${offsetLeft + gap}px`;
+            } else if (hSide === "end") {
                 const rightPx = Math.max(edgeGap, viewportWidth - hRect.right);
                 const effectiveWidth = Math.min(width, viewportWidth - rightPx - edgeGap);
                 menu.style.width = `${effectiveWidth}px`;
@@ -187,7 +205,7 @@ export default function AccountMenu({
             window.removeEventListener("scroll", position, true);
             window.visualViewport?.removeEventListener("resize", position);
         };
-    }, [open, placement, offset, width, triggerRef, alignRef, resolvedMenuRef, flyoutOpen]);
+    }, [open, placement, offset, width, triggerRef, alignRef, resolvedMenuRef, flyoutOpen, phoneFull]);
 
     if (!open) return null;
 

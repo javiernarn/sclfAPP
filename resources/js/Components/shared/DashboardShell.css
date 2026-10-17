@@ -1822,3 +1822,66 @@ body { overflow: hidden; }
 .ds-shell [role="listbox"] [role="option"].is-active,
 .ds-shell [role="listbox"] [role="option"].active { background: var(--ds-pop-hover) !important; }
 .ds-shell [role="listbox"] [role="option"][aria-selected="true"] { background: var(--ds-pop-selected) !important; font-weight: 800; }
+
+/* ---- Notifications: highlighted row (arrived from the bell) + phone sizing ---- */
+.ds-shell .ds-notif-highlight {
+    outline: 2px solid var(--tk-accent-text, #4f46e5);
+    outline-offset: -2px;
+    background: rgba(var(--tk-accent-rgb, 79, 70, 229), 0.12) !important;
+    animation: ds-notif-flash 1.2s ease 2;
+}
+@keyframes ds-notif-flash { 50% { background: rgba(var(--tk-accent-rgb, 79, 70, 229), 0.26); } }
+@media (max-width: 520px) {
+    .ds-notif-menu { max-width: none; }
+    .ds-notif-item-title { white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .ds-notif-item-message { -webkit-line-clamp: 3; }
+    .ds-notif-list { max-height: min(360px, 50dvh); }
+}
+
+/* The portaled menus live in <body>, outside `.ds-shell *`, so they were
+   content-box: the JS-computed width plus padding and border spilled past
+   the right edge of the screen. Border-box makes the width we set the
+   real outer width. */
+.ds-menu, .ds-notif-menu, .ds-sidebar-menu { box-sizing: border-box; }
+.ds-menu.ds-notif-menu { padding: 0; overflow-x: hidden; }
+.ds-menu.ds-notif-menu .ds-notif-item,
+.ds-menu.ds-notif-menu .ds-menu-item { max-width: 100%; }
+
+/* ============================================================
+ * Notifications page — table (scrolls sideways on phones) + cards
+ * Theme tokens (--tk-edge …) so outlines match the active theme.
+ * ============================================================ */
+.ds-shell .ds-notif-table-wrap {
+    border: 1.5px solid var(--tk-edge, #c3ccdb);
+    border-radius: 14px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.ds-shell .ds-notif-table { width: 100%; border-collapse: collapse; }
+.ds-shell .ds-notif-table th { border-bottom: 1.5px solid var(--tk-edge, #c3ccdb); background: var(--tk-field); }
+.ds-shell .ds-notif-table tbody tr { border-bottom: 1px solid var(--tk-edge, #c3ccdb); }
+.ds-shell .ds-notif-table tbody tr:last-child { border-bottom: 0; }
+
+.ds-shell .ds-notif-card {
+    flex-wrap: nowrap; align-items: flex-start;
+    border: 1.5px solid var(--tk-edge, #c3ccdb) !important;
+    background: var(--tk-field) !important;
+}
+.ds-shell .ds-notif-card-body { flex: 1 1 auto; min-width: 0; }
+.ds-shell .ds-notif-card-body p { margin: 0; }
+.ds-shell .ds-notif-card-body .ds-list-item-title { margin-bottom: 4px; }
+.ds-shell .ds-notif-card-msg { overflow-wrap: anywhere; line-height: 1.5; }
+.ds-shell .ds-notif-card-time { margin-top: 6px !important; font-size: 11.5px; }
+.ds-shell .ds-notif-card-side { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* Phones: no side-by-side columns, no fixed heights — everything stacks and
+   sizes to its content, so nothing is squeezed and there is no dead space. */
+@media (max-width: 640px) {
+    .ds-shell .ds-notif-card { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 14px; }
+    .ds-shell .ds-notif-card-body { flex: 0 0 auto; }
+    .ds-shell .ds-notif-card-side { justify-content: space-between; }
+
+    /* Table view stays a real table on phones, exactly like Lost / Found
+       Items: the shared .ds-table-wrap scrolls sideways, and the columns
+       keep their normal table layout. (Cards view above still stacks.) */
+}

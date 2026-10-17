@@ -30,13 +30,69 @@ class ReportAttachment extends Model
     protected $fillable = [
         'attachable_type', 'attachable_id', 'uploaded_by',
         'kind', 'original_name', 'mime_type', 'size', 'path',
+        'scan_status', 'scan_labels', 'scanned_at',
     ];
 
     // The raw storage path is an implementation detail and should never
     // reach the browser; the frontend fetches bytes by id instead.
     protected $hidden = ['path'];
 
-    protected $casts = ['size' => 'integer'];
+    protected $casts = [
+        'size' => 'integer',
+        'scan_labels' => 'array',
+        'scanned_at' => 'datetime',
+    ];
+
+    // Loaded with every attachment so the gallery knows whether to blur it.
+    protected $with = ['violation'];
+
+    // The raw relation and the scanner's labels are reviewer-only; toArray()
+    // below exposes a trimmed `moderation` block instead.
+    protected $hiddenForModeration = ['violation', 'scan_labels', 'scan_status', 'scanned_at'];
+
+    public function violation()
+    {
+        return $this->hasOne(Violation::class, 'report_attachment_id');
+    }
+
+    /**
+     * JSON for the browser. Everyone allowed to see the report learns whether
+     * a file is held back (`moderation.hidden`); only reviewer roles also get
+     * the violation id/status/reason and the scanner labels.
+     */
+    public function toArray()
+    {
+        $data = parent::toArray();
+        $violation = $this->relationLoaded('violation') ? $this->violation : null;
+        $viewer = request()->user();
+        $isReviewer = $viewer && $viewer->hasAnyRole(Violation::REVIEWER_ROLES);
+
+        foreach ($this->hiddenForModeration as $key) {
+            unset($data[$key]);
+        }
+
+        $moderation = [
+            'hidden' => (bool) ($violation && $violation->hidesFile()),
+        ];
+
+        if ($isReviewer) {
+            $moderation += [
+                'scan_status' => $this->scan_status,
+                'scan_labels' => $this->scan_labels,
+                'violation' => $violation ? [
+                    'id' => $violation->id,
+                    'status' => $violation->status,
+                    'source' => $violation->source,
+                    'reason' => $violation->reason,
+                    'reviewed_at' => optional($violation->reviewed_at)->toIso8601String(),
+                ] : null,
+            ];
+        }
+
+        $data['moderation'] = $moderation;
+
+        return $data;
+    }
 
     public function attachable()
     {

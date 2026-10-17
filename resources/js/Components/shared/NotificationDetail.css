@@ -1,0 +1,51 @@
+/* Notification detail dialog — colours come from the shell theme tokens
+   (--tk-*, --ds-pop-fg) so it matches every theme. */
+.ds-nd-backdrop {
+    position: fixed; inset: 0; z-index: 70;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    background: rgba(8, 10, 18, 0.55);
+    backdrop-filter: blur(2px);
+    animation: ds-fade-in 0.15s ease both;
+}
+.ds-nd-card {
+    width: 100%; max-width: 480px; max-height: calc(100dvh - 32px);
+    display: flex; flex-direction: column;
+    border-radius: 16px; overflow: hidden;
+    background: var(--tk-surface, #fff);
+    color: var(--ds-pop-fg, #0b1220);
+    border: 1.5px solid var(--tk-edge, #c3ccdb);
+    box-shadow: 0 24px 60px var(--tk-shadow, rgba(0, 0, 0, 0.35));
+}
+.ds-nd-head {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--tk-edge, #c3ccdb);
+}
+.ds-nd-icon {
+    flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--tk-field); color: var(--tk-accent-text);
+    border: 1px solid var(--tk-edge);
+}
+.ds-nd-head-text { min-width: 0; flex: 1; }
+.ds-nd-kind { font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; color: var(--tk-accent-text); }
+.ds-nd-title { margin: 2px 0 0; font-size: 16px; font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
+.ds-nd-close {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 9px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: 1px solid transparent; color: inherit; opacity: 0.7;
+}
+.ds-nd-close:hover { opacity: 1; background: var(--tk-hover); border-color: var(--tk-edge); }
+.ds-nd-body { padding: 14px 16px; overflow-y: auto; overscroll-behavior: contain; }
+.ds-nd-message { margin: 0 0 14px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ds-nd-meta { margin: 0; display: grid; gap: 8px; padding: 12px; border-radius: 12px; background: var(--tk-field); border: 1px solid var(--tk-edge); }
+.ds-nd-meta div { display: flex; gap: 10px; font-size: 12.5px; }
+.ds-nd-meta dt { flex: 0 0 76px; opacity: 0.6; }
+.ds-nd-meta dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.ds-nd-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; padding: 12px 16px 16px; border-top: 1px solid var(--tk-edge); }
+@media (max-width: 520px) {
+    .ds-nd-backdrop { align-items: flex-end; padding: 0; }
+    .ds-nd-card { max-width: none; border-radius: 18px 18px 0 0; max-height: 85dvh; }
+    .ds-nd-actions .ds-btn { flex: 1 1 auto; justify-content: center; }
+}

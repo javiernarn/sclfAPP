@@ -149,6 +149,9 @@ class AnalyticsController extends Controller
         return [
             'lost_today' => LostItem::whereDate('created_at', today())->count(),
             'claims_waiting' => Claim::whereIn('status', [Claim::STATUS_PENDING, Claim::STATUS_UNDER_REVIEW])->count(),
+            // Approved claims whose release QR has been generated — the officer's
+            // "hand-over" queue. Counts every channel (online claims AND counter items).
+            'release_ready' => Claim::where('status', Claim::STATUS_RELEASE_PENDING)->count(),
             'suspicious_claims' => Claim::where('risk_score', '>=', 40)->whereIn('status', [Claim::STATUS_PENDING, Claim::STATUS_UNDER_REVIEW])->count(),
             'recovery_rate' => $totalLost > 0 ? round(($recovered / $totalLost) * 100, 1) : 0,
             'average_recovery_days' => $this->averageRecoveryDays(),
@@ -380,6 +383,7 @@ class AnalyticsController extends Controller
                 'avg_wait_minutes' => $waits->isEmpty() ? null : round($waits->avg(), 1),
             ],
             'visitors_on_site' => Visitor::where('status', Visitor::STATUS_CHECKED_IN)->count(),
+            'release_queue' => $this->releaseQueue(),
             'recent_activity' => $this->recentActivity(),
         ];
 
@@ -389,6 +393,39 @@ class AnalyticsController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * Claims that already have a release QR and are waiting for hand-over,
+     * oldest claim first (first come, first served). The position is the
+     * claim's place in line so the officer always knows who to serve next.
+     */
+    protected function releaseQueue(): array
+    {
+        return Claim::query()
+            ->where('status', Claim::STATUS_RELEASE_PENDING)
+            ->with([
+                'claimant:id,name',
+                'foundItem:id,item_name,storage_location_id',
+                'foundItem.storageLocation:id,label,code,type',
+                'qrRelease:id,claim_id,public_code,expires_at,status',
+            ])
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->limit(8)
+            ->get()
+            ->values()
+            ->map(fn ($c, $i) => [
+                'id' => $c->id,
+                'position' => $i + 1,
+                'claimant' => $c->claimant?->name,
+                'item_name' => $c->foundItem?->item_name,
+                'location' => $c->foundItem?->storageLocation?->label,
+                'public_code' => $c->qrRelease?->public_code,
+                'expires_at' => $c->qrRelease?->expires_at,
+                'claimed_at' => $c->created_at,
+            ])
+            ->all();
     }
 
     /** Latest lost reports, found items and claims merged into one feed. */

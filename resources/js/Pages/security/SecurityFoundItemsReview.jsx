@@ -31,6 +31,7 @@ export default function SecurityFoundItemsReview() {
             toast.success(approved ? 'Found item report approved.' : 'Found item report rejected.', {
                 title: approved ? 'Approved' : 'Rejected',
             });
+            setNotes((n) => { const { [id]: _drop, ...rest } = n; return rest; });
             load();
         } catch (err) {
             toast.error(err?.response?.data?.message || 'Could not update this report.', { title: 'Could not update' });

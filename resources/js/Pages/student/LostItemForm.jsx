@@ -60,6 +60,14 @@ export default function LostItemForm({ onCancel, onCreated }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const understood = await confirm({
+            title: 'Submit this lost item report?',
+            message: 'Once submitted, this lost item report can no longer be edited or deleted by you. Only the Administrator can edit or remove it. Please double-check everything before you continue.',
+            confirmLabel: 'Yes, submit report',
+            cancelLabel: 'Go back',
+            tone: 'danger',
+        });
+        if (!understood) return;
         setError('');
         setFieldErrors({});
         setLoading(true);

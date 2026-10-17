@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
-    ClipboardList, Hourglass, CircleCheck, PackageSearch, Megaphone, Handshake,
+    ClipboardList, Hourglass, CircleCheck, Handshake,
     Wrench, ShieldAlert, Activity, Printer,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
@@ -126,24 +126,6 @@ export default function StudentDashboard() {
                     <strong>{data.campus?.recovery_rate ?? 0}%</strong> of lost items reported campus-wide have been recovered, with{' '}
                     <strong>{data.campus?.items_on_shelf ?? 0}</strong> unclaimed items currently on the shelf.
                 </p>
-            </div>
-
-            <div className="ds-grid">
-                <div className="ds-card">
-                    <div className="ds-card-title ds-card-title-icon"><PackageSearch size={18} strokeWidth={2} /> View Lost Items</div>
-                    <p className="ds-card-desc">Browse everything that's been reported lost so far.</p>
-                    <Link to="/app/lost-items" className="ds-btn ds-btn-secondary ds-btn-block">
-                        View Lost Items
-                    </Link>
-                </div>
-
-                <div className="ds-card">
-                    <div className="ds-card-title ds-card-title-icon"><Megaphone size={18} strokeWidth={2} /> Report a Lost Item</div>
-                    <p className="ds-card-desc">Lost something on campus? Let the community know.</p>
-                    <Link to="/app/lost-items?new=1" className="ds-btn ds-btn-primary ds-btn-block">
-                        Report a Lost Item
-                    </Link>
-                </div>
             </div>
         </DashboardShell>
     );

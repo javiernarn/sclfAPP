@@ -36,11 +36,9 @@ class SecurityIncidentPolicy
      */
     public function update(User $user, SecurityIncident $incident): bool
     {
-        if ($user->hasAnyRole(['security_officer', 'admin', 'staff'])) {
-            return !$incident->isTerminal();
-        }
-
-        return $user->id === $incident->reported_by && $incident->status === SecurityIncident::STATUS_REPORTED;
+        // A filed report is a record: the reporter is told at submit time it
+        // cannot be edited afterwards, so only the Administrator may change it.
+        return $user->isAdmin() && !$incident->isTerminal();
     }
 
     /**
@@ -50,6 +48,6 @@ class SecurityIncidentPolicy
      */
     public function delete(User $user, SecurityIncident $incident): bool
     {
-        return $user->hasAdminAccess();
+        return $user->isAdmin();
     }
 }

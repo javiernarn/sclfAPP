@@ -127,8 +127,8 @@ export default function HelpHints({ roles, navRole, isDark }) {
                     animation: sclf-help-slide 0.22s cubic-bezier(0.22,1,0.36,1) both;
                     font-family: var(--font-body, 'Inter', sans-serif);
                 }
-                .sclf-help-panel.is-light { background: #fff; color: #0b1220; }
-                .sclf-help-panel.is-dark { background: #12151f; color: #e7ecf3; }
+                .sclf-help-panel.is-light { background: #fff; color: #0b1220; border-left: 1.5px solid #c3ccdb; }
+                .sclf-help-panel.is-dark { background: #12151f; color: #e7ecf3; border-left: 1.5px solid #323b4a; }
                 .sclf-help-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
                 .sclf-help-head h2 { font-size: 17px; font-weight: 800; margin: 0; }
                 .sclf-help-close { background: none; border: none; color: inherit; opacity: 0.6; cursor: pointer; padding: 4px; border-radius: 6px; }

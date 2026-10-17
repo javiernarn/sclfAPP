@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import {
     Camera, Keyboard, Upload, CheckCircle2, XCircle, PackageCheck, User, IdCard,
     Tag, Hash, RotateCcw, Loader2, MapPin, Package, Building2, Copy, AlertTriangle, Check,
+    ShieldCheck, ClipboardList, Clock,
 } from '../../Components/icons';
 import './SecurityQrScanner.css';
 
@@ -418,7 +419,7 @@ export default function SecurityQrScanner() {
                         </div>
 
 
-                        <StoredItemCard item={result.found_item} />
+                        <StoredItemCard item={result.found_item} claim={result.claim} />
 
                         <button className="ds-btn ds-btn-primary ds-btn-block" onClick={scanNext} style={{ marginTop: 16 }}>
                             <RotateCcw size={16} /> Scan Next
@@ -441,17 +442,59 @@ function daysAgo(dateStr) {
     return d === 1 ? '1 day ago' : `${d} days ago`;
 }
 
-function StoredItemCard({ item }) {
+const label = (k) => String(k || '').replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : null);
+const fmtTime = (t) => {
+    if (!t) return null;
+    const [h, m] = String(t).split(':');
+    const d = new Date(); d.setHours(Number(h) || 0, Number(m) || 0, 0, 0);
+    return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+};
+const whenText = (date, time) => [fmtDate(date), fmtTime(time)].filter(Boolean).join(' · ') || null;
+// Extra "specs" the person filled in on the report form (details JSON), as label/value rows.
+const specRows = (details) => Object.entries(details && typeof details === 'object' ? details : {})
+    .filter(([, v]) => typeof v === 'string' && v.trim())
+    .map(([k, v]) => ({ label: label(k), value: v }));
+
+function Rows({ rows }) {
+    const shown = rows.filter((r) => r.value);
+    if (!shown.length) return null;
+    return (
+        <dl className="sclf-stored-details">
+            {shown.map((r) => <div key={r.label}><dt>{r.label}</dt><dd>{r.value}</dd></div>)}
+        </dl>
+    );
+}
+
+function Block({ icon: Icon, title, children }) {
+    return (
+        <section className="sclf-block">
+            <h4 className="sclf-block-title"><Icon size={15} /> {title}</h4>
+            {children}
+        </section>
+    );
+}
+
+// The two kinds of item are recorded by two different forms, so the scan
+// result shows what each form actually stored:
+//  * Found report (intake_channel = online_report): item description and
+//    specs, who found it, where/when, how Security verified it, and the
+//    storage path (campus > building > room > cabinet > shelf > box).
+//  * Counter check-in (counter_intake): which counter holds it, who is on
+//    duty, who checked it in and when, the item as entered at the counter,
+//    and the owner's own lost report it was tied to.
+export function StoredItemCard({ item, claim }) {
     const [copied, setCopied] = useState(false);
     if (!item) return null;
 
     const loc = item.storage_location;
+    const isCounterItem = item.intake_channel === 'counter_intake';
     const isCounter = loc?.type === 'counter';
     const open = !loc?.status || loc.status === 'open';
 
-    // Every step of the path is shown, even when empty, so the officer can
-    // tell "not recorded" apart from "forgot to look".
-    const path = loc ? [
+    // Storage shows every step (so "not recorded" is visible); a Counter has
+    // no room/cabinet/shelf/box, so only the steps it actually has are shown.
+    const fullPath = loc ? [
         { label: 'Campus', value: loc.campus?.name },
         { label: 'Building', value: loc.building?.name },
         { label: 'Room', value: loc.room },
@@ -459,11 +502,9 @@ function StoredItemCard({ item }) {
         { label: 'Shelf', value: loc.shelf },
         { label: 'Box', value: loc.box },
     ] : [];
+    const path = isCounter ? fullPath.filter((p) => p.value || p.label === 'Campus') : fullPath;
 
-    const where = loc
-        ? [loc.label, ...path.map((p) => p.value)].filter(Boolean).join(' › ')
-        : '';
-
+    const where = loc ? [loc.label, ...fullPath.map((p) => p.value)].filter(Boolean).join(' › ') : '';
     const copy = async () => {
         try {
             await navigator.clipboard.writeText(where);
@@ -472,29 +513,37 @@ function StoredItemCard({ item }) {
         } catch (e) { /* clipboard can be blocked; the text is still on screen */ }
     };
 
-    const details = [
-        { label: 'Description', value: item.description },
+    const officers = loc?.current_officers || [];
+    const officer = item.security_officer?.name;
+    const storedAt = item.created_at ? new Date(item.created_at).toLocaleString() : null;
+    const showCategory = item.category && item.category.toLowerCase() !== (item.item_name || '').toLowerCase();
+    // The Counter form fills this in automatically when the officer leaves it blank.
+    const autoNote = /^Checked in at the counter by /i.test(item.description || '');
+    const lost = claim?.lost_item;
+
+    const itemRows = [
+        { label: 'Description', value: autoNote ? null : item.description },
         { label: 'Color', value: item.color },
         { label: 'Brand', value: item.brand },
         { label: 'Model', value: item.model },
         { label: 'Unique marks', value: item.unique_characteristics },
-        { label: 'Found at', value: item.location_found },
-    ].filter((d) => d.value);
-
-    const officers = loc?.current_officers || [];
-    const storedBy = item.security_officer?.name;
-    const storedAt = item.created_at ? new Date(item.created_at).toLocaleString() : null;
-    const showCategory = item.category && item.category.toLowerCase() !== (item.item_name || '').toLowerCase();
+        ...specRows(item.details),
+    ];
 
     return (
         <div className="sclf-stored">
-            <div className="sclf-stored-title"><MapPin size={17} /> Where to find this item</div>
+            <div className="sclf-stored-title">
+                <MapPin size={17} /> Where to find this item
+                <span className={`sclf-stored-type ${isCounterItem ? 'is-counter' : ''}`} style={{ marginLeft: 'auto' }}>
+                    {isCounterItem ? 'Counter check-in' : 'Found report'}
+                </span>
+            </div>
 
             {loc ? (
                 <div className="sclf-stored-where">
                     <div className="sclf-stored-where-main">
                         <span className={`sclf-stored-type ${isCounter ? 'is-counter' : ''}`}>{isCounter ? 'Counter' : 'Storage'}</span>
-                        <p className="sclf-stored-where-label">{loc.label || 'Storage location'}</p>
+                        <p className="sclf-stored-where-label">{loc.label || (isCounter ? 'Counter' : 'Storage location')}</p>
                         {loc.code && <span className="sclf-stored-code">{loc.code}</span>}
                     </div>
 
@@ -519,15 +568,6 @@ function StoredItemCard({ item }) {
                             <span>On duty here</span>
                             <strong>{officers.length ? officers.map((o) => o.name).join(', ') : 'No officer assigned — ask the Security office'}</strong>
                         </div>
-                        {(storedBy || storedAt) && (
-                            <div>
-                                <span>Stored</span>
-                                <strong>
-                                    {storedBy ? `by ${storedBy}` : ''}{storedBy && storedAt ? ' · ' : ''}{storedAt}
-                                    {daysAgo(item.created_at) ? ` (${daysAgo(item.created_at)})` : ''}
-                                </strong>
-                            </div>
-                        )}
                     </div>
 
                     <button type="button" className="ds-btn ds-btn-secondary" onClick={copy}>
@@ -544,24 +584,72 @@ function StoredItemCard({ item }) {
                 </div>
             )}
 
-            <div className="sclf-stored-item">
-                {item.image_url
-                    ? <img src={item.image_url} alt={item.item_name} className="sclf-stored-photo" />
-                    : <div className="sclf-stored-photo sclf-stored-photo-empty"><Package size={26} /><span>No photo on file</span></div>}
-                <div className="sclf-stored-item-body">
-                    <p className="sclf-stored-item-name">{item.item_name}</p>
-                    {showCategory && <p className="sclf-stored-item-cat">{item.category}</p>}
-                    {details.length > 0 ? (
-                        <dl className="sclf-stored-details">
-                            {details.map((d) => (
-                                <div key={d.label}><dt>{d.label}</dt><dd>{d.value}</dd></div>
-                            ))}
-                        </dl>
-                    ) : (
-                        <p className="sclf-stored-item-cat">No extra details were recorded. Confirm with the person receiving it.</p>
-                    )}
+            <Block icon={Package} title="Item details">
+                <div className="sclf-stored-item">
+                    {item.image_url
+                        ? <img src={item.image_url} alt={item.item_name} className="sclf-stored-photo" />
+                        : <div className="sclf-stored-photo sclf-stored-photo-empty"><Package size={26} /><span>No photo on file</span></div>}
+                    <div className="sclf-stored-item-body">
+                        <p className="sclf-stored-item-name">{item.item_name}</p>
+                        {showCategory && <p className="sclf-stored-item-cat">{item.category}</p>}
+                        {itemRows.some((r) => r.value)
+                            ? <Rows rows={itemRows} />
+                            : <p className="sclf-stored-item-cat">No extra details were recorded. Confirm with the person receiving it.</p>}
+                    </div>
                 </div>
-            </div>
+            </Block>
+
+            {isCounterItem ? (
+                <>
+                    <Block icon={ClipboardList} title="Counter check-in">
+                        <Rows rows={[
+                            { label: 'Checked in by', value: officer },
+                            { label: 'Checked in at', value: storedAt ? `${storedAt}${daysAgo(item.created_at) ? ` (${daysAgo(item.created_at)})` : ''}` : null },
+                            { label: 'Counter', value: loc ? [loc.label, loc.code].filter(Boolean).join(' · ') : null },
+                            { label: 'Owner', value: claim?.claimant ? `${claim.claimant.name}${claim.claimant.display_id ? ` (${claim.claimant.display_id})` : ''}` : null },
+                        ]} />
+                    </Block>
+                    <Block icon={Tag} title="Owner's lost report">
+                        {lost ? (
+                            <Rows rows={[
+                                { label: 'Reported as', value: lost.item_name },
+                                { label: 'Category', value: lost.category },
+                                { label: 'Lost at', value: lost.location_lost },
+                                { label: 'Lost on', value: whenText(lost.date_lost, lost.time_lost) },
+                                { label: 'Color', value: lost.color },
+                                { label: 'Brand', value: lost.brand },
+                                { label: 'Model', value: lost.model },
+                                { label: 'Unique marks', value: lost.unique_characteristics },
+                                { label: 'Description', value: lost.description },
+                                ...specRows(lost.details),
+                            ]} />
+                        ) : (
+                            <p className="sclf-stored-item-cat">Not tied to a lost report — the owner was identified in person at the counter.</p>
+                        )}
+                    </Block>
+                </>
+            ) : (
+                <>
+                    <Block icon={Clock} title="How it was found">
+                        <Rows rows={[
+                            { label: 'Found by', value: item.finder ? `${item.finder.name}${item.finder.display_id ? ` (${item.finder.display_id})` : ''}` : null },
+                            { label: 'Found at', value: item.location_found },
+                            { label: 'Found on', value: whenText(item.date_found, item.time_found) },
+                            { label: 'Reported', value: storedAt },
+                        ]} />
+                    </Block>
+                    <Block icon={ShieldCheck} title="Verified by Security">
+                        <Rows rows={[
+                            { label: 'Officer', value: officer },
+                            { label: 'Verified on', value: item.verified_at ? new Date(item.verified_at).toLocaleString() : null },
+                            { label: 'Notes', value: item.verification_notes },
+                        ]} />
+                        {!officer && !item.verified_at && !item.verification_notes && (
+                            <p className="sclf-stored-item-cat">No verification details were recorded.</p>
+                        )}
+                    </Block>
+                </>
+            )}
 
             <ol className="sclf-stored-steps">
                 <li>Go to <strong>{loc ? (loc.label || 'the location above') : 'the storage location'}</strong>{loc?.building?.name ? <> in <strong>{loc.building.name}</strong></> : null} and take out the item.</li>

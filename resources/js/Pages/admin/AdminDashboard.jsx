@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import useRoleLabel from '../../hooks/useRoleLabel';
-import { Link } from 'react-router-dom';
 import {
-    ClipboardList, Handshake, Users, ShieldCheck, ScrollText,
+    ClipboardList, Handshake, Users,
     PackageSearch, CircleCheck, ShieldAlert, ListOrdered, Activity, Clock,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
@@ -22,7 +21,7 @@ const RANGE_OPTIONS = [
 
 export default function AdminDashboard() {
     const { user } = useAuth();
-    const { isStaff, label: roleLabel } = useRoleLabel();
+    const { label: roleLabel } = useRoleLabel();
     const [days, setDays] = useState(14);
     const { data, loading, error, updatedAt, refresh } = usePolling('/analytics/dashboard', { interval: 15000, params: { days } });
 
@@ -141,32 +140,6 @@ export default function AdminDashboard() {
                         </ChartCard>
                     )}
                 </div>
-            </div>
-
-            {/* ---- Quick actions ---- */}
-            <div className="ds-grid" style={{ marginTop: 4 }}>
-                <div className="ds-card">
-                    <div className="ds-card-title ds-card-title-icon"><Users size={18} strokeWidth={2} /> Manage Users</div>
-                    <p className="ds-card-desc">Create Instructor, Security Officer, and Staff accounts.</p>
-                    <Link to="/app/admin/users" className="ds-btn ds-btn-primary ds-btn-block">
-                        Manage Users
-                    </Link>
-                </div>
-
-                <div className="ds-card">
-                    <div className="ds-card-title ds-card-title-icon"><ScrollText size={18} strokeWidth={2} /> Audit Log</div>
-                    <p className="ds-card-desc">Review every sensitive action taken across the system.</p>
-                    <Link to="/app/admin/audit-log" className="ds-btn ds-btn-secondary ds-btn-block">
-                        View Audit Log
-                    </Link>
-                </div>
-            </div>
-
-            <div className="ds-card">
-                <div className="ds-card-title ds-card-title-icon"><ShieldCheck size={18} strokeWidth={2} /> {isStaff ? 'This page is for Admin and Staff' : 'This page is admin-only'}</div>
-                <p className="ds-card-desc" style={{ marginBottom: 0 }}>
-                    You're signed in as <strong>{user?.email}</strong> {isStaff ? 'with staff access — you can view everything, but changes need the admin\'s approval.' : 'with administrator access.'}
-                </p>
             </div>
         </DashboardShell>
     );

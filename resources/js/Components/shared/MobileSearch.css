@@ -1,0 +1,95 @@
+/*
+ * MobileSearch.css — the phone search overlay.
+ * The magnifier button only exists below 720px or on a real phone; the
+ * overlay itself only mounts after a tap. Colors follow the shell theme
+ * (the overlay is portaled into .ds-shell, so `.ds-shell.light ...` works).
+ */
+
+/* Trigger: hidden on desktop/laptop (they have the inline search box). */
+/* (.ds-topbar prefix: must out-rank `.ds-icon-btn { display: inline-flex }`
+   from DashboardShell.css, which loads later.) */
+.ds-topbar .ds-mobile-search-btn { display: none; }
+@media (max-width: 719px) { .ds-topbar .ds-mobile-search-btn { display: inline-flex; } }
+.ds-shell.ds-phone .ds-topbar .ds-mobile-search-btn { display: inline-flex; }
+
+/* Overlay sits exactly below the header (top is set inline from the
+   header's measured bottom edge), above the bottom tab bar (z 20) and
+   under the slide-over sidebar (z 39/40). */
+.ds-msearch {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    z-index: 38;
+    pointer-events: none;
+}
+.ds-msearch.is-open { pointer-events: auto; }
+
+.ds-msearch-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(15, 23, 42, 0);
+    backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px);
+    transition: background 0.22s ease, backdrop-filter 0.22s ease, -webkit-backdrop-filter 0.22s ease;
+}
+.ds-msearch.is-open .ds-msearch-backdrop {
+    background: rgba(15, 23, 42, 0.38);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.ds-shell.dark .ds-msearch.is-open .ds-msearch-backdrop { background: rgba(0, 0, 0, 0.55); }
+
+.ds-msearch-panel {
+    position: relative;
+    display: flex; flex-direction: column;
+    max-height: min(78%, 560px);
+    margin: 0;
+    padding: 10px 10px 8px;
+    border-radius: 0 0 18px 18px;
+    opacity: 0;
+    transform: translateY(-14px);
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+}
+.ds-msearch.is-open .ds-msearch-panel { opacity: 1; transform: translateY(0); }
+
+.ds-shell.light .ds-msearch-panel {
+    background: rgba(255,255,255,0.97);
+    border-bottom: 1.5px solid #c3ccdb;
+    box-shadow: 0 18px 40px rgba(2, 6, 23, 0.18);
+}
+.ds-shell.dark .ds-msearch-panel {
+    background: rgba(18, 22, 32, 0.98);
+    border-bottom: 1.5px solid #323b4a;
+    box-shadow: 0 18px 40px rgba(0,0,0,0.55);
+}
+
+.ds-msearch-input-wrap { height: 44px; flex-shrink: 0; }
+/* 16px stops iOS Safari zooming the page when the field is focused. */
+.ds-msearch .ds-global-search-input { font-size: 16px; }
+.ds-msearch .ds-global-search-input::-webkit-search-cancel-button { display: none; }
+
+.ds-msearch-cancel {
+    border: none; background: transparent; color: inherit; cursor: pointer;
+    font-size: 13px; font-weight: 700; padding: 6px 4px 6px 8px; opacity: 0.75; flex-shrink: 0;
+}
+
+.ds-msearch-scroll {
+    scrollbar-width: none; -ms-overflow-style: none;
+    margin-top: 8px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+}
+/* Bigger touch targets than the desktop dropdown. */
+.ds-msearch .ds-global-search-result { padding: 11px 8px; }
+
+/* Accent themes (maroon / blue / yellow / black+accent) — same tokens the
+   desktop dropdown gets in themes.css. */
+.ds-shell.ds-layout .ds-msearch .ds-msearch-panel {
+    background: var(--tk-surface);
+    border-bottom: 1.5px solid var(--tk-edge);
+    box-shadow: 0 18px 40px var(--tk-shadow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ds-msearch-backdrop, .ds-msearch-panel { transition: none; }
+}
+
+.ds-msearch-scroll::-webkit-scrollbar { display: none; }

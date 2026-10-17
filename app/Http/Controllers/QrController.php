@@ -148,8 +148,16 @@ class QrController extends Controller
                 'claim.claimant:id,name,student_id,staff_id,profile_picture',
                 // Item details + where it is physically stored, so the
                 // officer scanning the pass knows exactly where to fetch it.
-                'foundItem:id,item_name,category,image_path,storage_location_id,security_officer_id,description,brand,color,model,unique_characteristics,location_found,date_found,created_at',
+                // intake_channel decides which details the scan screen shows:
+                // an online "found" report (who found it, where/when, how it
+                // was verified) vs a Counter check-in (who checked it in,
+                // at which counter, and the owner's own lost report).
+                'foundItem:id,user_id,item_name,category,image_path,storage_location_id,security_officer_id,description,brand,color,model,unique_characteristics,details,location_found,date_found,time_found,intake_channel,verification_status,verification_notes,verified_at,created_at',
                 'foundItem.securityOfficer:id,name',
+                // The finder (online reports only — for Counter items user_id is the officer).
+                'foundItem.finder:id,name,student_id,staff_id,profile_picture',
+                // The owner's lost report the Counter hand-over was tied to, if any.
+                'claim.lostItem:id,item_name,category,brand,color,model,unique_characteristics,details,description,location_lost,date_lost,time_lost',
                 'foundItem.storageLocation:id,campus_id,building_id,type,status,label,room,cabinet,shelf,box,code',
                 'foundItem.storageLocation.campus:id,name',
                 'foundItem.storageLocation.building:id,name,code',

@@ -78,6 +78,7 @@ function NextActions({ data, loading }) {
     const items = [
         { n: data.queue?.waiting ?? 0, label: 'people waiting at the counter', to: '/app/security/counter-dashboard', cta: 'Open Counter Dashboard' },
         { n: sum.found_reports?.pending_verification ?? 0, label: 'found reports to verify', to: '/app/security/found-items', cta: 'Review Found Items' },
+        { n: sum.release_ready ?? 0, label: 'approved claims ready to hand over (QR generated)', to: '/app/security/claims?status=release_pending', cta: 'Open Release Queue' },
         { n: sum.claims_waiting ?? 0, label: 'claims waiting for your review', to: '/app/security/claims', cta: 'Review Claims' },
         { n: sum.counter?.awaiting_release ?? 0, label: 'counter items waiting to be released', to: '/app/security/claims', cta: 'Open Claims' },
     ].filter((i) => i.n > 0);
@@ -101,6 +102,50 @@ function NextActions({ data, loading }) {
                     ))}
                 </ul>
             )}
+        </div>
+    );
+}
+
+// Claims whose release QR is already generated, oldest claim first. This is
+// the hand-over line: the officer serves #1 first (first come, first served)
+// and presses "Open" to see the claim, or uses QR Release Scanner at the counter.
+function ReleaseQueue({ queue, loading }) {
+    if (loading) return null;
+    const list = queue || [];
+    const fmtExpiry = (d) => (d ? new Date(d).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : null);
+    return (
+        <div className="ds-card">
+            <h3 style={{ marginTop: 0 }}>Ready for release — serve in this order</h3>
+            <p className="ds-card-desc">First come, first served. The oldest claim is at the top; scan its QR to hand the item over.</p>
+            {list.length === 0 ? (
+                <p className="ds-card-desc" style={{ marginBottom: 0 }}>No claims are waiting for hand-over. Once a release QR is generated, the claim shows up here.</p>
+            ) : (
+                <ul className="ds-list">
+                    {list.map((c) => (
+                        <li key={c.id} className="ds-list-item">
+                            <div className="ds-list-item-main">
+                                <span className="ds-badge ds-badge-claimed" style={{ minWidth: 34, justifyContent: 'center' }}>#{c.position}</span>
+                                <div style={{ minWidth: 0 }}>
+                                    <p className="ds-list-item-title">
+                                        {c.item_name || 'Item'} <span className="ds-list-item-meta">for {c.claimant || 'claimant'}</span>
+                                        {c.position === 1 && <span className="ds-badge ds-badge-found" style={{ marginLeft: 8 }}>Serve first</span>}
+                                    </p>
+                                    <p className="ds-list-item-meta">
+                                        {c.public_code ? `${c.public_code}` : 'QR generated'}
+                                        {c.location ? ` · ${c.location}` : ''}
+                                        {fmtExpiry(c.expires_at) ? ` · QR valid until ${fmtExpiry(c.expires_at)}` : ''}
+                                    </p>
+                                </div>
+                            </div>
+                            <Link to={`/app/claims/${c.id}`} className="ds-btn ds-btn-primary ds-btn-sm">Open</Link>
+                        </li>
+                    ))}
+                </ul>
+            )}
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                <Link to="/app/security/qr-scanner" className="ds-btn ds-btn-secondary">QR Release Scanner</Link>
+                <Link to="/app/security/claims?status=release_pending" className="ds-btn ds-btn-secondary">See all in queue</Link>
+            </div>
         </div>
     );
 }
@@ -134,6 +179,8 @@ export default function SecurityDashboard() {
             </div>
 
             <NextActions data={data} loading={loading} />
+
+            <ReleaseQueue queue={data?.release_queue} loading={loading} />
 
             <WorkflowGuide lane="counter" defaultOpen={false} />
 
@@ -235,17 +282,6 @@ export default function SecurityDashboard() {
                     </ChartCard>
                 </>
             )}
-
-            <div className="ds-card">
-                <h3>Quick Actions</h3>
-                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginTop: 12 }}>
-                    <Link to="/app/security/found-items" className="ds-btn ds-btn-primary">Review Found Items</Link>
-                    <Link to="/app/security/counter" className="ds-btn ds-btn-secondary">Open Counter</Link>
-                    <Link to="/app/security/claims" className="ds-btn ds-btn-secondary">Review Claims</Link>
-                    <Link to="/app/security/inventory" className="ds-btn ds-btn-secondary">Manage Inventory</Link>
-                    <Link to="/app/security/qr-scanner" className="ds-btn ds-btn-secondary">Scan Release Code</Link>
-                </div>
-            </div>
         </DashboardShell>
     );
 }

@@ -12,6 +12,7 @@ import { useEffect, useState, useCallback } from 'react';
 // so the choice persists and stays in sync across tabs either way.
 const COOKIE_NAME = 'sclf-theme';
 const CHANNEL_NAME = 'sclf-theme-channel';
+const LOCAL_EVENT = 'sclf-theme-change';
 // 'dark-blue' / 'dark-yellow' / 'dark-maroon' are the "Custom" (black + accent)
 // themes: a dark shell tinted with the accent color. They behave as dark
 // everywhere (isDarkTheme) and only differ in accent color.
@@ -44,13 +45,21 @@ export function useAppTheme() {
         } catch (e) {
             // BroadcastChannel unsupported — theme just won't live-sync across tabs.
         }
-        return () => channel && channel.close();
+        // BroadcastChannel only reaches OTHER tabs, so components in this tab
+        // (confirm dialog, toasts, the shell) listen for a window event too.
+        const onLocal = (e) => { if (THEMES.includes(e.detail)) setThemeState(e.detail); };
+        window.addEventListener(LOCAL_EVENT, onLocal);
+        return () => {
+            window.removeEventListener(LOCAL_EVENT, onLocal);
+            if (channel) channel.close();
+        };
     }, []);
 
     const setTheme = useCallback((next) => {
         if (!THEMES.includes(next)) return;
         writeCookie(next);
         setThemeState(next);
+        window.dispatchEvent(new CustomEvent(LOCAL_EVENT, { detail: next }));
         try {
             new BroadcastChannel(CHANNEL_NAME).postMessage(next);
         } catch (e) {

@@ -128,6 +128,78 @@ function ReleasePassCard({ claimId, fallbackCode }) {
     );
 }
 
+// Tells the claimant, in plain words, what is happening with their claim,
+// what (if anything) they should do, and when to use "Submit Evidence".
+export function ClaimNextSteps({ claim, onGoToEvidence }) {
+    const status = claim.status;
+    const isCounter = claim.found_item?.intake_channel === 'counter_intake';
+    const days = claim.created_at ? Math.floor((Date.now() - new Date(claim.created_at).getTime()) / 86400000) : 0;
+    const waited = days <= 0 ? 'today' : days === 1 ? '1 day ago' : `${days} days ago`;
+    const slow = days >= 2;
+    // The counter check-in writes an automatic system note; it isn't a message to the claimant.
+    const note = /^Owner identified in person at counter check-in/i.test(claim.review_notes || '') ? null : claim.review_notes;
+
+    let tone = 'info';
+    let title = '';
+    let body = null;
+    let showEvidenceBtn = false;
+
+    if (status === 'more_evidence_required') {
+        tone = 'warning';
+        title = 'Security needs more proof from you';
+        body = <>Security could not finish checking your claim yet. Read their message below, then scroll to <strong>Evidence</strong>, pick the type of proof you have and press <strong>Submit Evidence</strong>. Your claim goes back to review as soon as you do.</>;
+        showEvidenceBtn = true;
+    } else if (status === 'pending') {
+        title = 'Please wait — Security will file and review your claim';
+        body = <>Your claim was sent {waited}. Security reviews claims in the order they arrive and will notify you (bell icon) when something changes — you don't need to do anything right now. {slow
+            ? <><strong>It has been a while.</strong> To speed things up, add proof of ownership under <strong>Evidence</strong> and press <strong>Submit Evidence</strong>; Security is notified right away. You can also visit the Lost &amp; Found counter with a valid ID.</>
+            : <>If it takes longer than a couple of school days, add proof under <strong>Evidence</strong> and press <strong>Submit Evidence</strong> — Security is notified right away.</>}</>;
+        showEvidenceBtn = slow;
+    } else if (status === 'under_review') {
+        title = 'Security is reviewing your claim';
+        body = <>An officer has started checking your claim. Wait for the decision — you will be notified. If you have more proof (serial number, photo, receipt, a mark only the owner would know), add it under <strong>Evidence</strong> and press <strong>Submit Evidence</strong> to help them finish sooner.</>;
+        showEvidenceBtn = slow;
+    } else if (status === 'approved') {
+        title = isCounter ? 'Checked in at the counter — waiting for Security to finish your claim' : 'Approved — waiting for your release pass';
+        body = isCounter
+            ? <>Security logged your item at the counter and your claim is already approved. Please wait while they file it and prepare your release pass; you will be notified when it is ready for pickup. If this takes long, go to the counter with a valid ID, or add proof under <strong>Evidence</strong> and press <strong>Submit Evidence</strong> so Security can confirm it is yours.</>
+            : <>Security approved your claim. Please wait while they prepare your release pass — you will be notified when it is ready. Bring a valid ID when you pick it up. If it takes long, add proof under <strong>Evidence</strong> and press <strong>Submit Evidence</strong>.</>;
+        showEvidenceBtn = slow;
+    } else if (status === 'rejected') {
+        tone = 'danger';
+        title = 'Your claim was not approved';
+        body = <>Security could not verify this claim. {note ? 'See their reason below.' : 'Visit the Lost & Found counter if you think this is a mistake.'} If you find new proof, you can file a new claim for the item.</>;
+    } else if (status === 'released') {
+        tone = 'success';
+        title = 'Item released — case closed';
+        body = <>Your item was handed over. Nothing more to do.</>;
+    } else {
+        return null;
+    }
+
+    // Plain themed card: no coloured side stripe, so it matches every other card.
+    return (
+        <div className="ds-card">
+            <div className="ds-card-title ds-card-title-icon"><ClockIcon size={17} /> {title}</div>
+            <p className="ds-card-desc" style={{ marginBottom: note ? 10 : 0 }}>{body}</p>
+            {note && ['more_evidence_required', 'rejected', 'approved', 'under_review'].includes(status) && (
+                <div className="ds-info-item">
+                    <span className="ds-info-icon"><MessageSquare size={16} /></span>
+                    <div className="ds-info-text">
+                        <div className="ds-info-label">Message from Security</div>
+                        <div className="ds-info-value" style={{ fontWeight: 500, whiteSpace: 'pre-wrap' }}>{note}</div>
+                    </div>
+                </div>
+            )}
+            {showEvidenceBtn && (
+                <button type="button" className="ds-btn ds-btn-primary" style={{ marginTop: 12 }} onClick={onGoToEvidence}>
+                    <FileText size={16} /> Go to Submit Evidence
+                </button>
+            )}
+        </div>
+    );
+}
+
 export default function ClaimDetail() {
     const { id } = useParams();
     const { roles } = useAuth();
@@ -146,6 +218,9 @@ export default function ClaimDetail() {
     const [evType, setEvType] = useState('description');
     const [evContent, setEvContent] = useState('');
     const [evFile, setEvFile] = useState(null);
+    const [evSent, setEvSent] = useState('');
+    // The evidence form is long, so it stays folded until the claimant opens it.
+    const [evOpen, setEvOpen] = useState(false);
 
     useEffect(() => {
         document.title = "Claim Details | SCLF - Opol Community College";
@@ -186,6 +261,8 @@ export default function ClaimDetail() {
             if (evFile) data.append('file', evFile);
             await axios.post(`/claims/${id}/evidence`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
             setEvContent(''); setEvFile(null);
+            setEvSent('Evidence sent. Security has been notified and will review it — you will get a notification when they respond.');
+            setEvOpen(false);
             load();
         } catch (err) {
             setError(err?.response?.data?.message || 'Could not submit evidence.');
@@ -299,6 +376,16 @@ export default function ClaimDetail() {
         >
             {error && <div className="ds-error">{error}</div>}
 
+            {!isStaff && (
+                <ClaimNextSteps
+                    claim={claim}
+                    onGoToEvidence={() => {
+                        setEvOpen(true);
+                        setTimeout(() => document.getElementById('claim-evidence')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+                    }}
+                />
+            )}
+
             {/* ---------- Item ---------- */}
             <div className="ds-card">
                 <div className="ds-card-title" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -350,11 +437,11 @@ export default function ClaimDetail() {
                     </div>
                 )}
 
-                {claim.review_notes && (
+                {claim.review_notes && (isStaff || !['more_evidence_required', 'rejected', 'approved', 'under_review'].includes(claim.status)) && (
                     <div className="ds-info-item" style={{ marginTop: 14 }}>
                         <span className="ds-info-icon"><MessageSquare size={16} /></span>
                         <div className="ds-info-text">
-                            <div className="ds-info-label">Review notes</div>
+                            <div className="ds-info-label">{isStaff ? 'Review notes' : 'Message from Security'}</div>
                             <div className="ds-info-value" style={{ fontWeight: 500 }}>{claim.review_notes}</div>
                         </div>
                     </div>
@@ -362,7 +449,7 @@ export default function ClaimDetail() {
             </div>
 
             {/* ---------- Evidence ---------- */}
-            <div className="ds-card">
+            <div className="ds-card" id="claim-evidence">
                 <div className="ds-card-title">Evidence</div>
                 <p className="ds-card-desc">
                     {claim.evidence?.length > 0
@@ -405,7 +492,28 @@ export default function ClaimDetail() {
                 {!isStaff && !['rejected', 'cancelled', 'released'].includes(claim.status) && (
                     <>
                         <hr className="ds-divider" />
-                        <p className="ds-section-label">Add evidence</p>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                            <p className="ds-section-label" style={{ margin: 0 }}>Add evidence</p>
+                            <button
+                                type="button"
+                                className={`ds-btn ${evOpen ? 'ds-btn-secondary' : 'ds-btn-primary'} ds-btn-sm`}
+                                aria-expanded={evOpen}
+                                aria-controls="claim-evidence-form"
+                                onClick={() => setEvOpen((v) => !v)}
+                            >
+                                {evOpen ? 'Close form' : 'Open form'}
+                            </button>
+                        </div>
+                        {evSent && !evOpen && <p className="ds-success" style={{ marginTop: 10 }}><CheckCircle2 size={16} /> {evSent}</p>}
+                        {evOpen && (
+                        <div id="claim-evidence-form" style={{ marginTop: 12 }}>
+                        <div className="ds-field-hint" style={{ marginBottom: 12, lineHeight: 1.55 }}>
+                            <strong>Why submit evidence?</strong> Security uses it to confirm the item is really yours.
+                            Submit it when Security asks for more proof, when your claim has been waiting a long time,
+                            or any time you have proof (a serial number, a photo, a receipt, or a mark only the owner
+                            would know). When you press <strong>Submit Evidence</strong>, Security is notified and
+                            will look at your claim again — you'll get a notification when they respond.
+                        </div>
                         <form onSubmit={submitEvidence}>
                             <div className="ds-form-row ds-form-row-2">
                                 <div className="ds-field">
@@ -443,8 +551,11 @@ export default function ClaimDetail() {
                                     </div>
                                 )}
                             </div>
-                            <button className="ds-btn ds-btn-primary" disabled={busy}>Submit Evidence</button>
+                            <button className="ds-btn ds-btn-primary" disabled={busy || (evType === 'photo' || evType === 'document' ? !evFile : !evContent.trim())}>Submit Evidence</button>
+                            {evSent && <p className="ds-success" style={{ marginTop: 10 }}><CheckCircle2 size={16} /> {evSent}</p>}
                         </form>
+                        </div>
+                        )}
                     </>
                 )}
             </div>

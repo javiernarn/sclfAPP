@@ -62,6 +62,14 @@ export default function FoundItemForm({ onCancel, onCreated }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const understood = await confirm({
+            title: 'Submit this found item report?',
+            message: 'Once submitted, this found item report can no longer be edited or deleted by you. Only the Administrator can edit or remove it. Please double-check everything before you continue.',
+            confirmLabel: 'Yes, submit report',
+            cancelLabel: 'Go back',
+            tone: 'danger',
+        });
+        if (!understood) return;
         setError('');
         setFieldErrors({});
         setLoading(true);

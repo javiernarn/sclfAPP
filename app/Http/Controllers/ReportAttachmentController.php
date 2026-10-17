@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\ReportAttachment;
+use App\Models\Violation;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
@@ -18,12 +20,22 @@ class ReportAttachmentController extends Controller
      * Served as BinaryFileResponse so HTTP Range requests (video seeking)
      * work out of the box.
      */
-    public function show(ReportAttachment $attachment): BinaryFileResponse
+    public function show(Request $request, ReportAttachment $attachment): BinaryFileResponse
     {
         $parent = $attachment->attachable;
         abort_if(!$parent, 404);
 
         $this->authorize('view', $parent);
+
+        // A file held for review (or confirmed as a violation) is shown only
+        // to the reviewer roles — not to the reporter or anyone else who can
+        // otherwise see the report.
+        if (
+            $attachment->violation?->hidesFile()
+            && ! $request->user()->hasAnyRole(Violation::REVIEWER_ROLES)
+        ) {
+            abort(403, 'This file was removed because it may break the system rules.');
+        }
 
         $disk = Storage::disk('local');
         abort_if(!$attachment->path || !$disk->exists($attachment->path), 404);

@@ -34,11 +34,11 @@ class FoundItemPolicy
 
     public function update(User $user, FoundItem $foundItem): bool
     {
-        return $user->id === $foundItem->user_id || $user->hasAnyRole(['admin', 'staff', 'security_officer']);
+        return $user->isAdmin(); // filed reports are locked — Administrator only
     }
 
     public function delete(User $user, FoundItem $foundItem): bool
     {
-        return $user->hasAdminAccess();
+        return $user->isAdmin();
     }
 }

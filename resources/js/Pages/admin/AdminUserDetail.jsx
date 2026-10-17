@@ -14,6 +14,7 @@ import DeviceIcon from '../../Components/shared/DeviceIcon';
 import { useAuth } from '../../context/AuthContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { parseUserAgent } from '../../utils/userAgent';
+import { initialsOf } from '../../utils/initials';
 
 const InfoItem = ({ icon: Icon, label, value }) => (
     <div className="ds-info-item">
@@ -86,6 +87,7 @@ export default function AdminUserDetail() {
             message: `Permanently delete ${count} cancelled claim(s) for ${user.name}? Their related notifications will be removed too. This cannot be undone.`,
             confirmLabel: 'Delete claims',
             tone: 'danger',
+            typeToConfirm: { phrase: initialsOf(user.name), label: `Type ${user.name}'s initials to confirm:` },
         });
         if (!ok) return;
 

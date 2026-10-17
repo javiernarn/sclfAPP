@@ -121,6 +121,22 @@ class ClaimService
 
         $this->audit->log('claim.evidence_uploaded', $claim, "Evidence ({$data['type']}) added to claim #{$claim->id}.");
 
+        // Tell Security there is something new to look at — before this, evidence
+        // sat on the claim until an officer happened to open it. Only when the
+        // claimant (not staff) adds it.
+        if ($submitter->id === $claim->claimant_id) {
+            $typeLabel = str_replace('_', ' ', $data['type']);
+            foreach (User::role(['security_officer', 'admin'])->get() as $officer) {
+                $officer->notify(new SclfNotification(
+                    SclfNotification::TYPE_CLAIM_SUBMITTED,
+                    'New evidence on a claim',
+                    "{$submitter->name} added evidence ({$typeLabel}) to claim #{$claim->id}. Please take a look.",
+                    Claim::class,
+                    $claim->id,
+                ));
+            }
+        }
+
         // Evidence submitted while under review re-opens it for another look
         // if it had been sent back for more evidence.
         if ($claim->status === Claim::STATUS_MORE_EVIDENCE_REQUIRED) {
@@ -261,7 +277,7 @@ class ClaimService
     protected function notifyClaimant(Claim $claim, string $status, ?string $notes): void
     {
         $map = [
-            Claim::STATUS_APPROVED => [SclfNotification::TYPE_CLAIM_APPROVED, 'Claim approved', 'Your claim has been approved. A release QR will be generated shortly.'],
+            Claim::STATUS_APPROVED => [SclfNotification::TYPE_CLAIM_APPROVED, 'Claim approved', 'Your claim has been approved. A release QR will be generated shortly.' . ($notes ? " Note from Security: {$notes}" : '')],
             Claim::STATUS_REJECTED => [SclfNotification::TYPE_CLAIM_REJECTED, 'Claim rejected', 'Your claim was rejected.' . ($notes ? " Reason: {$notes}" : '')],
             Claim::STATUS_MORE_EVIDENCE_REQUIRED => [SclfNotification::TYPE_MORE_EVIDENCE_REQUIRED, 'More evidence required', 'Please submit additional evidence for your claim.' . ($notes ? " Note: {$notes}" : '')],
             Claim::STATUS_RELEASED => [SclfNotification::TYPE_ITEM_RELEASED, 'Item released', 'Your item has been released. Case closed.'],

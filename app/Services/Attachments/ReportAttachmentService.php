@@ -3,6 +3,7 @@
 namespace App\Services\Attachments;
 
 use App\Models\ReportAttachment;
+use App\Jobs\ScanAttachmentJob;
 use App\Models\User;
 use App\Services\Audit\AuditLogService;
 use Illuminate\Database\Eloquent\Model;
@@ -62,6 +63,15 @@ class ReportAttachmentService
             Storage::disk(self::DISK)->delete($written);
             $records->each->delete();
             throw $e;
+        }
+
+        // Optional automatic scan (SCLF_MODERATION_ENABLED). Queued, so the
+        // upload itself stays fast; a hit only holds the file for review.
+        if (config('sclf.moderation.enabled')) {
+            $records->each(function (ReportAttachment $record) {
+                $record->update(['scan_status' => 'pending']);
+                ScanAttachmentJob::dispatch($record)->afterCommit();
+            });
         }
 
         $this->audit->log(

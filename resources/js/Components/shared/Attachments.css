@@ -88,3 +88,46 @@
 .ds-shell.dk-maroon { --att-accent: #dc2626; --att-border: #6e2a36; }
 .ds-shell.dk-yellow .att-badge { color: #1c1408; }
 .ds-shell.dk-white { --att-accent: #d4d4d4; --att-border: #2a2a2a; }
+
+
+/* ---------- violations / moderation ---------- */
+.att-blurred { overflow: hidden; }
+.att-blurred img { filter: blur(28px) brightness(.7); transform: scale(1.15); }
+.att-tile-video.att-blurred { background: linear-gradient(135deg, #1e293b, #0f172a); }
+.att-cover {
+    position: absolute; inset: 0; width: 100%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    border: 0; cursor: pointer; font: inherit; color: #fff; background: rgba(15, 23, 42, .35);
+}
+.att-cover span { font-size: 12px; font-weight: 800; }
+.att-cover small { font-size: 11px; opacity: .85; }
+
+.att-removed {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    text-align: center; padding: 10px; color: var(--att-muted); background: var(--att-bg);
+}
+.att-removed span { font-size: 12px; font-weight: 700; color: inherit; }
+.att-removed small { font-size: 11px; }
+
+.att-review { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.att-state { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; width: fit-content; }
+.att-state-pending_review { background: #fef3c7; color: #92400e; }
+.att-state-confirmed { background: #fee2e2; color: #991b1b; }
+.att-state-dismissed { background: #dcfce7; color: #166534; }
+.ds-shell.dark .att-state-pending_review { background: #422006; color: #fcd34d; }
+.ds-shell.dark .att-state-confirmed { background: #450a0a; color: #fca5a5; }
+.ds-shell.dark .att-state-dismissed { background: #052e16; color: #86efac; }
+
+.att-labels { display: flex; flex-wrap: wrap; gap: 4px; }
+.att-label { font-size: 10px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--att-border); color: var(--att-muted); }
+
+.att-review-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.att-btn {
+    font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+    padding: 6px 10px; border-radius: 8px; border: 1.5px solid var(--att-border);
+    background: transparent; color: inherit;
+}
+.att-btn:hover:not(:disabled) { border-color: var(--att-accent); }
+.att-btn:disabled { opacity: .55; cursor: not-allowed; }
+.att-btn-danger { background: #dc2626; border-color: #dc2626; color: #fff; }
+.att-btn-danger:hover:not(:disabled) { background: #b91c1c; border-color: #b91c1c; }

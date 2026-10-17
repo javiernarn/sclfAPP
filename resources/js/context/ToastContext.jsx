@@ -84,7 +84,7 @@ export function ToastProvider({ children }) {
     return (
         <ToastContext.Provider value={api}>
             {children}
-            <div className={`sclf-toast-viewport ${isDark ? 'dark' : 'light'}`} role="region" aria-label="Notifications">
+            <div className={`sclf-toast-viewport ${isDark ? 'dark' : 'light'}`} data-sclf-theme={theme} role="region" aria-label="Notifications">
                 {toasts.map((t) => {
                     const Icon = ICONS[t.type];
                     return (

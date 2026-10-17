@@ -77,6 +77,40 @@
 .pr-college { font-size: 19px; font-weight: 800; line-height: 1.15; }
 .pr-sys { font-size: 12px; color: #4b5563; }
 .pr-title { margin: 4px 0 0; font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+.pr-head-id { display: flex; align-items: flex-start; gap: 14px; }
+/* 2x2 inch photo — exact physical size on paper; click to flip to a blank side */
+.pr-photo-wrap { flex: 0 0 2in; width: 2in; }
+.pr-photo {
+    display: block; padding: 0; margin: 0; border: 0; background: none; cursor: pointer;
+    width: 2in; height: 2in; perspective: 800px;
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+}
+.pr-photo-inner {
+    position: relative; display: block; width: 100%; height: 100%;
+    transform-style: preserve-3d; transition: transform 0.5s ease;
+}
+.pr-photo[data-flipped="true"] .pr-photo-inner { transform: rotateY(180deg); }
+.pr-photo-face {
+    position: absolute; inset: 0; box-sizing: border-box; overflow: hidden;
+    border: 1.5px solid #111827; background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+}
+.pr-photo-back { transform: rotateY(180deg); }
+.pr-photo-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pr-photo-text { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; letter-spacing: 0.18em; color: #9ca3af; }
+.pr-photo-size { font-size: 11px; letter-spacing: 0.1em; font-weight: 600; color: #b0b6c0; }
+.pr-photo-hint { margin-top: 4px; font-size: 10px; line-height: 1.3; color: #6b7280; text-align: center; }
+.pr-photo:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { .pr-photo-inner { transition: none; } }
+@media print {
+    /* Print only the side that is showing, flat (3D transforms print unreliably). */
+    .pr-photo-hint { display: none !important; }
+    .pr-photo-inner { transform: none !important; transition: none !important; }
+    .pr-photo-face { backface-visibility: visible; transform: none !important; }
+    .pr-photo[data-flipped="false"] .pr-photo-back { display: none; }
+    .pr-photo[data-flipped="true"] .pr-photo-front { display: none; }
+}
 .pr-meta { margin: 0; font-size: 12px; text-align: right; }
 .pr-meta > div { display: flex; justify-content: flex-end; gap: 8px; }
 .pr-meta dt { color: #6b7280; }
@@ -219,3 +253,60 @@
 .pr-student .pr-table { font-size: 11.5px; }
 .pr-student .pr-table th, .pr-student .pr-table td { padding: 5px 6px; }
 .pr-student .pr-card-sub { margin-bottom: 4px; }
+
+/* Student / instructor header: details fill the space left of the 2x2 photo */
+.pr-head-student { align-items: stretch; gap: 18px; }
+.pr-head-main { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 10px; }
+.pr-idcard { border-top: 1px solid #d1d5db; padding-top: 8px; }
+.pr-idcard-name { font-size: 19px; font-weight: 800; line-height: 1.1; margin-bottom: 4px; }
+.pr-idcard-grid { margin: 0; display: grid; grid-template-columns: 1fr 1.25fr; gap: 5px 16px; font-size: 12px; }
+.pr-idcard-grid dt { color: #6b7280; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+.pr-idcard-grid dd { margin: 0; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-idcard-wide { grid-column: auto; }
+
+/* Violations section on the student print report */
+.pr-no-violations { margin: 4px 0 0; padding: 8px 10px; border: 1px solid #86efac; background: #f0fdf4; color: #166534; border-radius: 8px; font-weight: 600; }
+.pr-violation-flag { margin: 4px 0 8px; padding: 8px 10px; border: 1px solid #fca5a5; background: #fef2f2; color: #991b1b; border-radius: 8px; font-weight: 700; }
+.pr-violation-pending { margin: 6px 0 0; font-size: 11px; color: #92400e; }
+
+/* One-page student / instructor layout: compact rows */
+.pr-student .pr-row-compact { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); grid-auto-flow: column; gap: 8px; align-items: start; }
+.pr-student .ch-wrap { overflow: hidden; }
+.pr-student .ch-wrap svg { max-width: 100%; }
+.pr-student .ch-donut { flex-wrap: nowrap; gap: 10px; padding-top: 2px; }
+.pr-student .pr-card-sub { display: none; }
+.pr-student .pr-row-compact .pr-card { margin: 0; }
+.pr-student .pr-table th, .pr-student .pr-table td { padding: 2px 6px; }
+.pr-student .pr-card { padding: 7px 10px; }
+.pr-student .pr-tile { padding: 5px 9px; }
+.pr-student .pr-tile-value { font-size: 20px; }
+.pr-student .pr-table-fixed { table-layout: fixed; width: 100%; }
+.pr-student .pr-col-status { width: 22%; } .pr-student .pr-col-date { width: 26%; }
+.pr-student .pr-cell-clip { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-student .pr-section { margin-bottom: 8px; }
+.pr-student .pr-no-violations, .pr-student .pr-violation-flag { padding: 5px 10px; margin: 2px 0 6px; }
+.pr-student .pr-qr-code .sclf-qr-canvas-frame { width: 28mm; }
+.pr-student .pr-qr-sign .pr-sign-label { margin-bottom: 14px; }
+.pr-student .pr-qr-block { margin-top: 6px; padding-top: 8px; }
+.pr-student .pr-campus-line { margin: 0 0 6px; }
+@media print {
+    .pr-student { height: 274mm; min-height: 0; overflow: hidden; }
+    .pr-student > * { flex-shrink: 0; }
+}
+.pr-student .pr-row { margin-bottom: 8px; }
+.pr-student .pr-head { margin-bottom: 8px; }
+.pr-student .pr-h2 { margin: 0 0 4px; }
+.pr-student .pr-section { margin-bottom: 6px; }
+.pr-student .pr-tile-label { font-size: 10.5px; }
+@media print { html, body { margin: 0 !important; padding: 0 !important; } }
+.pr-student .pr-row-recent-claims { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); grid-auto-flow: row; }
+.pr-idcard, .pr-idcard-grid > div { min-width: 0; }
+/* fit-to-page (see StudentPrintReport): QR width and spacing are set from JS */
+.pr-student .pr-qr-code .sclf-qr-canvas-frame { width: var(--qr-w, 28mm); }
+.pr-student .pr-row { margin-bottom: calc(8px + var(--fit-gap, 0px)); }
+.pr-student .pr-section { margin-bottom: calc(6px + var(--fit-gap, 0px)); }
+.pr-student .pr-qr-block { margin-top: calc(6px + var(--fit-gap, 0px)); }
+.pr-student .pr-campus-line { margin-bottom: calc(6px + var(--fit-gap, 0px)); }
+@media print { .pr-student { box-sizing: border-box; padding: 0 2px !important; } }
+.pr-idcard-span { grid-column: 1 / -1; }
+.pr-head-student .pr-head-brand { align-items: center; }

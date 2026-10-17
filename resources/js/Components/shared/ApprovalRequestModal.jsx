@@ -3,6 +3,8 @@ import axios from '../../config/axiosConfig';
 import { approvalBus } from '../../utils/eventBus';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
+import { useAppTheme } from '../../hooks/useAppTheme';
+import './Popups.css';
 
 /**
  * Staff accounts can look at everything but need the admin's approval to
@@ -13,6 +15,7 @@ import { useAuth } from '../../context/AuthContext';
 export default function ApprovalRequestModal() {
     const { roles } = useAuth();
     const toast = useToast();
+    const { theme } = useAppTheme();
     const [pending, setPending] = useState(null); // { method, path, payload }
     const [reason, setReason] = useState('');
     const [busy, setBusy] = useState(false);
@@ -53,7 +56,7 @@ export default function ApprovalRequestModal() {
 
     return (
         <div className="sclf-confirm-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
-            <div className="sclf-confirm-card" role="dialog" aria-modal="true" aria-labelledby="approval-title" style={{ maxWidth: 440 }}>
+            <div className="sclf-confirm-card sclf-popup" data-sclf-theme={theme} role="dialog" aria-modal="true" aria-labelledby="approval-title" style={{ maxWidth: 440 }}>
                 {!sent ? (
                     <form onSubmit={send}>
                         <h3 id="approval-title" className="sclf-confirm-title">Admin approval needed</h3>

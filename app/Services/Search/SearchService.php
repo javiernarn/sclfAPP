@@ -69,6 +69,164 @@ class SearchService
         return $results;
     }
 
+    /**
+     * Suggestive search — what to offer *before* (and while) someone types.
+     *
+     * No query: a short "suggested for you" list built from what that
+     * person is most likely hunting for. A student/instructor sees their
+     * own recent lost reports and claims first (the thing they're usually
+     * here to check on), then what was recently found. Staff see recent
+     * found/lost reports and recent visitors. Every source reuses the same
+     * visibility rule as search() above, so a suggestion can never reveal a
+     * name the person couldn't already find by searching for it.
+     *
+     * With a query: type-ahead completions drawn from the same tables
+     * (item names + categories, and for staff also visitor/people names
+     * and IDs), prefix matches ranked ahead of mid-word matches.
+     *
+     * Each suggestion is {label, query, hint}: `query` is what gets typed
+     * into the box when it's picked, `hint` is the small grey caption.
+     */
+    public function suggest(User $viewer, string $q = '', int $limit = 6): array
+    {
+        $isStaff = $viewer->hasAnyRole(['security_officer', 'admin', 'staff']);
+        $isAdmin = $viewer->hasAdminAccess();
+        $q = trim($q);
+
+        $items = $q === ''
+            ? $this->defaultSuggestions($viewer, $isStaff, $isAdmin)
+            : $this->completions($viewer, $q, $isStaff, $isAdmin);
+
+        // Same label twice (e.g. a lost report and a found item both called
+        // "Black umbrella") is one suggestion, first source wins.
+        $seen = [];
+        $unique = [];
+        foreach ($items as $item) {
+            $key = mb_strtolower($item['query']);
+            if ($key === '' || isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $unique[] = $item;
+        }
+
+        return array_slice($unique, 0, $limit);
+    }
+
+    private function defaultSuggestions(User $viewer, bool $isStaff, bool $isAdmin): array
+    {
+        $out = [];
+
+        if (!$isStaff) {
+            foreach (LostItem::query()->where('user_id', $viewer->id)->latest()->limit(3)->pluck('item_name') as $name) {
+                $out[] = ['label' => $name, 'query' => $name, 'hint' => 'Your lost report'];
+            }
+
+            $claims = Claim::query()
+                ->with('foundItem:id,item_name')
+                ->where('claimant_id', $viewer->id)
+                ->latest()
+                ->limit(2)
+                ->get();
+            foreach ($claims as $claim) {
+                if ($claim->foundItem?->item_name) {
+                    $out[] = ['label' => $claim->foundItem->item_name, 'query' => $claim->foundItem->item_name, 'hint' => 'Your claim'];
+                }
+            }
+        }
+
+        foreach ($this->visibleFoundItems($isStaff)->latest()->limit(4)->pluck('item_name') as $name) {
+            $out[] = ['label' => $name, 'query' => $name, 'hint' => 'Recently found'];
+        }
+
+        if ($isStaff) {
+            foreach (LostItem::query()->latest()->limit(3)->pluck('item_name') as $name) {
+                $out[] = ['label' => $name, 'query' => $name, 'hint' => 'Recently reported lost'];
+            }
+
+            $visitors = Visitor::query()
+                ->when($viewer->campus_id && !$isAdmin, fn ($query) => $query->where('campus_id', $viewer->campus_id))
+                ->latest('checked_in_at')
+                ->limit(2)
+                ->pluck('full_name');
+            foreach ($visitors as $name) {
+                $out[] = ['label' => $name, 'query' => $name, 'hint' => 'Recent visitor'];
+            }
+        }
+
+        return $out;
+    }
+
+    private function completions(User $viewer, string $q, bool $isStaff, bool $isAdmin): array
+    {
+        $like = "%{$q}%";
+        $out = [];
+
+        foreach ($this->visibleFoundItems($isStaff)->where('item_name', 'like', $like)->latest()->limit(12)->pluck('item_name') as $name) {
+            $out[] = ['label' => $name, 'query' => $name, 'hint' => 'Found item'];
+        }
+        foreach (LostItem::query()->where('item_name', 'like', $like)->latest()->limit(12)->pluck('item_name') as $name) {
+            $out[] = ['label' => $name, 'query' => $name, 'hint' => 'Lost item'];
+        }
+
+        $categories = $this->visibleFoundItems($isStaff)->where('category', 'like', $like)->distinct()->limit(4)->pluck('category');
+        foreach ($categories as $category) {
+            if ($category) {
+                $out[] = ['label' => ucfirst($category), 'query' => $category, 'hint' => 'Category'];
+            }
+        }
+
+        if ($isStaff) {
+            $visitors = Visitor::query()
+                ->when($viewer->campus_id && !$isAdmin, fn ($query) => $query->where('campus_id', $viewer->campus_id))
+                ->where('full_name', 'like', $like)
+                ->latest('checked_in_at')
+                ->limit(6)
+                ->pluck('full_name');
+            foreach ($visitors as $name) {
+                $out[] = ['label' => $name, 'query' => $name, 'hint' => 'Visitor'];
+            }
+
+            $people = User::query()
+                ->where('is_active', true)
+                ->when($viewer->campus_id && !$isAdmin, fn ($query) => $query->where('campus_id', $viewer->campus_id))
+                ->where(function ($sub) use ($like) {
+                    $sub->where('name', 'like', $like)
+                        ->orWhere('student_id', 'like', $like)
+                        ->orWhere('staff_id', 'like', $like);
+                })
+                ->select('id', 'name', 'student_id', 'staff_id')
+                ->limit(6)
+                ->get();
+            foreach ($people as $person) {
+                $out[] = ['label' => $person->name, 'query' => $person->name, 'hint' => $person->display_id ?: 'Person'];
+            }
+        }
+
+        // Prefix matches first ("bl" -> "Blue bottle" before "Noble pen"),
+        // then shorter labels, so the likeliest completion leads.
+        $lower = mb_strtolower($q);
+        usort($out, function ($a, $b) use ($lower) {
+            $pa = mb_stripos($a['label'], $lower);
+            $pb = mb_stripos($b['label'], $lower);
+            $pa = $pa === false ? PHP_INT_MAX : ($pa === 0 ? 0 : 1);
+            $pb = $pb === false ? PHP_INT_MAX : ($pb === 0 ? 0 : 1);
+
+            return [$pa, mb_strlen($a['label'])] <=> [$pb, mb_strlen($b['label'])];
+        });
+
+        return $out;
+    }
+
+    /** Found items this viewer may see — counter intake rows are staff-only. */
+    private function visibleFoundItems(bool $isStaff)
+    {
+        return FoundItem::query()->when(!$isStaff, fn ($query) => $query->where(function ($sub) {
+            $sub->whereNull('intake_channel')
+                ->orWhere('intake_channel', '!=', FoundItem::CHANNEL_COUNTER_INTAKE);
+        }));
+    }
+
     private function searchFoundItems(User $viewer, string $q, bool $isStaff, int $limit): array
     {
         return FoundItem::query()

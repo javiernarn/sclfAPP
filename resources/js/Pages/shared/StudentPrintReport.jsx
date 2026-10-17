@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useParams } from 'react-router-dom';
 import axios from '../../config/axiosConfig';
@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 import logo from '../../assets/images/site-logo.png';
 import { ArrowLeft, Printer } from '../../Components/icons';
 import { AreaChart, DonutChart, PALETTE, humanize, fmt } from '../../Components/charts';
-import { Section, Card, Tiles } from '../../Components/shared/PrintParts';
+import { Section, Card, Tiles, PhotoBox } from '../../Components/shared/PrintParts';
 import StyledQrCode from '../../Components/shared/StyledQrCode';
 import './PrintReport.css';
 
@@ -19,6 +19,13 @@ import './PrintReport.css';
 //
 // The token in the address only identifies the account; the server decides
 // whether the signed-in person may see it (see PrintReportController).
+
+// Keep the one-page layout: show the first 3 statuses and fold the rest into "Other".
+const capEntries = (entries, n = 3) => {
+    if (entries.length <= n) return entries;
+    const rest = entries.slice(n).reduce((sum, [, v]) => sum + (Number(v) || 0), 0);
+    return [...entries.slice(0, n), ['other', rest]];
+};
 
 const dateText = (d) => new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -35,6 +42,9 @@ export default function StudentPrintReport() {
     const [loading, setLoading] = useState(true);
     const [problem, setProblem] = useState('');
     const [qrReady, setQrReady] = useState(false);
+    const paperRef = useRef(null);
+    const qrBlockRef = useRef(null);
+    const [chartH, setChartH] = useState(92);
 
     useEffect(() => {
         let cancelled = false;
@@ -63,6 +73,45 @@ export default function StudentPrintReport() {
         return () => clearTimeout(t);
     }, [data]);
 
+    // Fit-to-page: the sheet is exactly one A4 page, so whatever space the data
+    // doesn't use is handed back to the chart, QR code and spacing instead of
+    // being left blank. Measured on screen (same 190mm width as the printout).
+    const PAGE_PX = (274 / 25.4) * 96 - 8;
+    const measure = () => {
+        const paper = paperRef.current;
+        const qr = qrBlockRef.current;
+        if (!paper || !qr) return null;
+        // Height from the top of the content box (on paper the 10mm padding becomes the @page margin).
+        const padTop = parseFloat(getComputedStyle(paper).paddingTop) || 0;
+        return qr.getBoundingClientRect().bottom - (paper.getBoundingClientRect().top + padTop);
+    };
+    const setFit = (sVal) => {
+        const paper = paperRef.current;
+        if (!paper) return;
+        paper.style.setProperty('--qr-w', `${106 + 150 * sVal}px`);
+        paper.style.setProperty('--fit-gap', `${26 * sVal}px`);
+    };
+    useLayoutEffect(() => {
+        if (!data || !qrReady) return;
+        setFit(0);
+        const h0 = measure();
+        if (h0 == null) return;
+        const extra = PAGE_PX - h0;
+        const wantChart = 92 + Math.max(0, Math.min(extra * 0.45, 150));
+        if (Math.abs(wantChart - chartH) > 1) { setChartH(Math.round(wantChart)); return; }
+        // Chart height is settled: grow the QR code and spacing as far as the page allows.
+        let lo = 0; let hi = 1;
+        setFit(1);
+        if (measure() <= PAGE_PX) { return; }
+        for (let i = 0; i < 12; i += 1) {
+            const mid = (lo + hi) / 2;
+            setFit(mid);
+            if (measure() <= PAGE_PX) lo = mid; else hi = mid;
+        }
+        setFit(lo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data, qrReady, chartH]);
+
     // Browsers use document.title as the default PDF file name.
     useEffect(() => {
         const prev = document.title;
@@ -86,6 +135,7 @@ export default function StudentPrintReport() {
     const svcEntries = Object.entries(report?.service_requests_by_status || {});
     const incEntries = Object.entries(report?.incidents_by_status || {});
     const recent = report?.recent || [];
+    const violations = data?.violations || { count: 0, pending: null, items: [] };
 
     const tiles = [
         { label: 'Total reports', value: fmt(kpis.reports) },
@@ -98,7 +148,7 @@ export default function StudentPrintReport() {
     return (
         <div className="pr-root">
             <style>{`
-                @page { size: A4 portrait; margin: 10mm 10mm 14mm; }
+                @page { size: A4 portrait; margin: 8mm 10mm 12mm; }
                 @page { @bottom-left { content: "SCLF — Opol Community College · Confidential"; font-size: 8pt; color: #6b7280; }
                         @bottom-right { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #6b7280; } }
             `}</style>
@@ -126,26 +176,32 @@ export default function StudentPrintReport() {
             </div>
 
             <div className="pr-stage">
-                <div className="pr-paper pr-portrait pr-student">
-                    <header className="pr-head">
-                        <div className="pr-head-brand">
-                            <img src={logo} alt="Opol Community College logo" className="pr-logo" />
-                            <div>
-                                <div className="pr-college">Opol Community College</div>
-                                <div className="pr-sys">Smart Campus Lost &amp; Found (SCLF)</div>
-                                <h1 className="pr-title">{roleLabel} Dashboard Report</h1>
+                <div className="pr-paper pr-portrait pr-student" ref={paperRef}>
+                    <header className="pr-head pr-head-student">
+                        <div className="pr-head-main">
+                            <div className="pr-head-brand">
+                                <img src={logo} alt="Opol Community College logo" className="pr-logo" />
+                                <div>
+                                    <div className="pr-college">Opol Community College</div>
+                                    <div className="pr-sys">Smart Campus Lost &amp; Found (SCLF)</div>
+                                    <h1 className="pr-title">{roleLabel} Dashboard Report</h1>
+                                </div>
                             </div>
+                            {subject && (
+                                <div className="pr-idcard">
+                                    <div className="pr-idcard-name">{subject.name}</div>
+                                    <dl className="pr-idcard-grid">
+                                        <div><dt>{isInstructor ? 'Instructor ID' : 'Student ID'}</dt><dd>{subject.display_id || '—'}</dd></div>
+                                        <div><dt>Generated</dt><dd>{generatedAt.toLocaleString()}</dd></div>
+                                        {(subject.course || subject.department) && (
+                                            <div><dt>{subject.course ? 'Course' : 'Department'}</dt><dd>{subject.course || subject.department}</dd></div>
+                                        )}
+                                        {subject.email && <div className="pr-idcard-wide"><dt>Email</dt><dd>{subject.email}</dd></div>}
+                                    </dl>
+                                </div>
+                            )}
                         </div>
-                        {subject && (
-                            <dl className="pr-meta">
-                                <div><dt>Name</dt><dd>{subject.name}</dd></div>
-                                <div><dt>{isInstructor ? 'Instructor ID' : 'Student ID'}</dt><dd>{subject.display_id || '—'}</dd></div>
-                                {(subject.course || subject.department) && (
-                                    <div><dt>{subject.course ? 'Course' : 'Department'}</dt><dd>{subject.course || subject.department}</dd></div>
-                                )}
-                                <div><dt>Generated</dt><dd>{generatedAt.toLocaleString()}</dd></div>
-                            </dl>
-                        )}
+                        {subject && <PhotoBox src={subject.profile_picture_url} name={subject.name} />}
                     </header>
 
                     {loading && <p className="pr-state">Preparing report…</p>}
@@ -166,7 +222,7 @@ export default function StudentPrintReport() {
                                     <AreaChart
                                         data={report.monthly || []}
                                         xKey="label"
-                                        height={185}
+                                        height={chartH}
                                         live={false}
                                         series={[
                                             { key: 'reports', label: 'Reports', color: 'var(--ch-1)' },
@@ -177,8 +233,8 @@ export default function StudentPrintReport() {
                                 <Card title="Report status" subtitle="What happened to each report.">
                                     {lostEntries.length ? (
                                         <DonutChart
-                                            size={140}
-                                            thickness={16}
+                                            size={92}
+                                            thickness={13}
                                             centerLabel="Reports"
                                             data={lostEntries.map(([k, v], i) => ({ label: humanize(k), value: v, color: PALETTE[i % PALETTE.length] }))}
                                         />
@@ -186,52 +242,74 @@ export default function StudentPrintReport() {
                                 </Card>
                             </div>
 
-                            <div className="pr-row pr-row-tables">
-                                <Card title="Recent reports" subtitle="Most recently updated.">
-                                    {recent.length ? (
+                            {(() => {
+                                const statusTable = (entries, empty) => (entries.length ? (
+                                    <table className="pr-table"><tbody>
+                                        {capEntries(entries).map(([k, v]) => <tr key={k}><td>{humanize(k)}</td><td className="num">{fmt(v)}</td></tr>)}
+                                    </tbody></table>
+                                ) : <p className="pr-empty">{empty}</p>);
+                                const recentCard = (
+                                    <Card title="Recent reports">
+                                        {recent.length ? (
+                                            <table className="pr-table pr-table-fixed">
+                                                <thead><tr><th>Item</th><th className="pr-col-status">Status</th><th className="pr-col-date">Updated</th></tr></thead>
+                                                <tbody>
+                                                    {recent.slice(0, 3).map((r) => (
+                                                        <tr key={r.id}><td className="pr-cell-clip">{r.title}</td><td>{humanize(r.status)}</td><td>{r.at ? dateText(r.at) : '—'}</td></tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        ) : <p className="pr-empty">No reports yet.</p>}
+                                    </Card>
+                                );
+                                const claimsCard = <Card title="Claims by status">{statusTable(claimEntries, 'No claims yet.')}</Card>;
+                                // Student: recent reports + claims share one row. Instructor: recent on its own, then three small tables.
+                                return isInstructor ? (
+                                    <>
+                                        {recentCard}
+                                        <div className="pr-row pr-row-compact" style={{ marginTop: 8 }}>
+                                            {claimsCard}
+                                            <Card title="Service requests">{statusTable(svcEntries, 'None.')}</Card>
+                                            <Card title="Incident reports">{statusTable(incEntries, 'None.')}</Card>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="pr-row pr-row-compact pr-row-recent-claims">
+                                        {recentCard}
+                                        {claimsCard}
+                                    </div>
+                                );
+                            })()}
+
+                            <Section title="Violations">
+                                {violations.count > 0 ? (
+                                    <>
+                                        <p className="pr-violation-flag">
+                                            {violations.count} confirmed violation{violations.count === 1 ? '' : 's'} of the system rules
+                                            (sensitive photo/video uploaded with a report).
+                                        </p>
                                         <table className="pr-table">
-                                            <thead><tr><th>Item</th><th>Status</th><th>Updated</th></tr></thead>
+                                            <thead><tr><th>Date</th><th>Violation</th><th>Reason</th><th>Confirmed by</th></tr></thead>
                                             <tbody>
-                                                {recent.map((r) => (
-                                                    <tr key={r.id}><td>{r.title}</td><td>{humanize(r.status)}</td><td>{r.at ? dateText(r.at) : '—'}</td></tr>
+                                                {violations.items.slice(0, 3).map((v) => (
+                                                    <tr key={v.id}>
+                                                        <td>{v.at ? dateText(v.at) : '—'}</td>
+                                                        <td>Sensitive content upload</td>
+                                                        <td>{v.reason || '—'}</td>
+                                                        <td>{v.confirmed_by || '—'}</td>
+                                                    </tr>
                                                 ))}
                                             </tbody>
                                         </table>
-                                    ) : <p className="pr-empty">No reports yet.</p>}
-                                </Card>
-
-                                <Card title="Claims by status" subtitle="Claims this account has filed.">
-                                    {claimEntries.length ? (
-                                        <table className="pr-table">
-                                            <thead><tr><th>Status</th><th className="num">Claims</th></tr></thead>
-                                            <tbody>
-                                                {claimEntries.map(([k, v]) => (
-                                                    <tr key={k}><td>{humanize(k)}</td><td className="num">{fmt(v)}</td></tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    ) : <p className="pr-empty">No claims yet.</p>}
-                                </Card>
-                            </div>
-
-                            {isInstructor && (svcEntries.length > 0 || incEntries.length > 0) && (
-                                <div className="pr-row pr-row-tables">
-                                    <Card title="Service requests" subtitle="Facilities / IT requests submitted.">
-                                        {svcEntries.length ? (
-                                            <table className="pr-table"><tbody>
-                                                {svcEntries.map(([k, v]) => <tr key={k}><td>{humanize(k)}</td><td className="num">{fmt(v)}</td></tr>)}
-                                            </tbody></table>
-                                        ) : <p className="pr-empty">None.</p>}
-                                    </Card>
-                                    <Card title="Incident reports" subtitle="Security incidents reported.">
-                                        {incEntries.length ? (
-                                            <table className="pr-table"><tbody>
-                                                {incEntries.map(([k, v]) => <tr key={k}><td>{humanize(k)}</td><td className="num">{fmt(v)}</td></tr>)}
-                                            </tbody></table>
-                                        ) : <p className="pr-empty">None.</p>}
-                                    </Card>
-                                </div>
-                            )}
+                                        {violations.items.length > 3 && <p className="pr-violation-pending">+ {violations.items.length - 3} more on record.</p>}
+                                    </>
+                                ) : (
+                                    <p className="pr-no-violations">No violations. This account has no confirmed violations of the system rules.</p>
+                                )}
+                                {violations.pending > 0 && (
+                                    <p className="pr-violation-pending">{violations.pending} file{violations.pending === 1 ? '' : 's'} still waiting for review (not counted yet).</p>
+                                )}
+                            </Section>
 
                             <p className="pr-campus-line">
                                 Campus-wide, <b>{report.campus?.recovery_rate ?? 0}%</b> of reported lost items have been recovered,
@@ -239,7 +317,7 @@ export default function StudentPrintReport() {
                             </p>
 
                             {/* ---- QR (left) + info and Authorized Personnel signature (right) ---- */}
-                            <div className="pr-qr-block">
+                            <div className="pr-qr-block" ref={qrBlockRef}>
                                 <div className="pr-qr-code">
                                     <StyledQrCode
                                         value={qrUrl}
@@ -267,10 +345,6 @@ export default function StudentPrintReport() {
                                 </div>
                             </div>
 
-                            <footer className="pr-foot">
-                                <span>SCLF — Opol Community College · Confidential</span>
-                                <span>Generated {generatedAt.toLocaleString()}</span>
-                            </footer>
                         </>
                     )}
                 </div>

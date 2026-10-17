@@ -35,10 +35,25 @@ class ClaimController extends Controller
             $query->where('claimant_id', $request->user()->id);
         }
 
+        $isStaff = $request->user()->hasAnyRole(['security_officer', 'admin', 'staff']);
+        $queueOrder = $isStaff && $request->status === Claim::STATUS_RELEASE_PENDING;
+
+        // Release queue is first come, first served: oldest claim on top.
+        // Every other view keeps newest first.
         $claims = $query
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
-            ->latest()
+            ->when($queueOrder, fn ($q) => $q->orderBy('created_at')->orderBy('id'), fn ($q) => $q->latest())
             ->paginate(10);
+
+        if ($isStaff) {
+            // Place in line across ALL ready-for-release claims, not just this page.
+            $line = Claim::where('status', Claim::STATUS_RELEASE_PENDING)
+                ->orderBy('created_at')->orderBy('id')->pluck('id')->values()->flip();
+            $claims->getCollection()->transform(function ($c) use ($line) {
+                $c->setAttribute('queue_position', $line->has($c->id) ? $line[$c->id] + 1 : null);
+                return $c;
+            });
+        }
 
         return response()->json($claims);
     }

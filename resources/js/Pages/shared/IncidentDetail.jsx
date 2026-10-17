@@ -12,6 +12,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm, useDiscardConfirm } from '../../context/ConfirmContext';
 import { roleNameAndId } from '../../utils/roleLabel';
+import { initialsOf } from '../../utils/initials';
 
 const CATEGORY_OPTIONS = ['theft', 'vandalism', 'trespassing', 'altercation', 'suspicious_activity', 'safety_hazard', 'lost_item_dispute', 'other'];
 const SEVERITY_OPTIONS = ['low', 'medium', 'high', 'critical'];
@@ -41,7 +42,8 @@ export default function IncidentDetail() {
     const navigate = useNavigate();
     const { user, roles } = useAuth();
     const isStaff = Array.isArray(roles) && roles.some((r) => ['security_officer', 'admin', 'staff'].includes(r));
-    const isAdmin = Array.isArray(roles) && (roles.includes('admin') || roles.includes('staff'));
+    // Edit / delete of a filed report is Administrator-only (see SecurityIncidentPolicy).
+    const isAdmin = Array.isArray(roles) && roles.includes('admin');
     const toast = useToast();
     const confirm = useConfirm();
     const discardConfirm = useDiscardConfirm();
@@ -188,6 +190,7 @@ export default function IncidentDetail() {
             message: `Permanently remove "${incident.title}" from the record. This cannot be undone.`,
             confirmLabel: 'Delete report',
             tone: 'danger',
+            typeToConfirm: { phrase: initialsOf(incident.reporter?.name), label: `Type the reporter's initials (${incident.reporter?.name || 'no reporter'}) to confirm:` },
         });
         if (!ok) return;
 
@@ -228,9 +231,7 @@ export default function IncidentDetail() {
     // handling this: whoever resolved it, otherwise whoever it's assigned to.
     const manager = incident.resolver || incident.assignee;
 
-    const canEdit = isStaff
-        ? incident.status !== 'closed'
-        : (incident.reporter?.id === user?.id && incident.status === 'reported');
+    const canEdit = isAdmin && incident.status !== 'closed';
 
     return (
         <DashboardShell

@@ -3,7 +3,7 @@ import axios from '../../config/axiosConfig';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     ArrowLeft, Package, Tag, MapPin, Calendar, Boxes, UserCircle,
-    HelpCircle, CheckCircle2, Sparkles,
+    HelpCircle, CheckCircle2, Sparkles, MessageSquare,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ImageViewer from '../../Components/shared/ImageViewer';
@@ -185,6 +185,39 @@ export default function FoundItemDetail() {
                     </div>
                 )}
             </div>
+
+            {(isStaff || isOwnFind) && (item.verification_notes || item.disposition_notes || item.status === 'pending_review') && (
+                <div className="ds-card">
+                    <div className="ds-card-title ds-card-title-icon"><MessageSquare size={17} /> Security notes</div>
+                    {item.status === 'pending_review' && !item.verification_notes && (
+                        <p className="ds-card-desc" style={{ marginBottom: 0 }}>
+                            {isOwnFind
+                                ? 'Please wait — Security will verify your report before the item is stored and matched. You will get a notification once it is reviewed.'
+                                : 'Waiting for a Security officer to verify this report.'}
+                        </p>
+                    )}
+                    {item.verification_notes && (
+                        <div className="ds-info-item" style={{ marginTop: 8 }}>
+                            <span className="ds-info-icon"><MessageSquare size={16} /></span>
+                            <div className="ds-info-text">
+                                <div className="ds-info-label">
+                                    Verification{item.security_officer?.name ? ` · ${item.security_officer.name}` : ''}
+                                </div>
+                                <div className="ds-info-value" style={{ fontWeight: 500, whiteSpace: 'pre-wrap' }}>{item.verification_notes}</div>
+                            </div>
+                        </div>
+                    )}
+                    {item.disposition_notes && (
+                        <div className="ds-info-item" style={{ marginTop: 8 }}>
+                            <span className="ds-info-icon"><MessageSquare size={16} /></span>
+                            <div className="ds-info-text">
+                                <div className="ds-info-label">Disposition{item.disposition_method ? ` · ${item.disposition_method}` : ''}</div>
+                                <div className="ds-info-value" style={{ fontWeight: 500, whiteSpace: 'pre-wrap' }}>{item.disposition_notes}</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {isStaff && matches.length > 0 && (
                 <div className="ds-card">

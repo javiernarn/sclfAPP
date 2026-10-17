@@ -4,7 +4,7 @@ import { Bell, CheckCheck, Inbox } from '../icons';
 import AccountMenu from './AccountMenu';
 import Tooltip from './Tooltip';
 import { useNotifications } from '../../context/NotificationContext';
-import { routeForNotification } from '../../utils/notificationRoutes';
+import { destinationForNotification } from '../../utils/notificationRoutes';
 
 // Same badge-label map as NotificationsPage/SclfNotification — kept local
 // (rather than imported) since it's presentational-only here: just picks
@@ -102,10 +102,23 @@ export default function NotificationBell({ isDark, theme }) {
         };
     }, [open]);
 
+    // While the dropdown is open, keep its list fresh so a notification that
+    // arrives in the meantime shows up without closing and reopening it.
+    useEffect(() => {
+        if (!open) return undefined;
+        const t = setInterval(() => { if (!document.hidden) refreshRecent({ quiet: true }); }, 15000);
+        return () => clearInterval(t);
+    }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Has a destination -> go straight there. No destination -> open the
+    // Notifications page with that notification highlighted, where tapping
+    // it shows the full details.
     const openNotification = async (n) => {
-        if (!n.read_at) await markAsRead(n.id);
+        if (!n.read_at) markAsRead(n.id);
         setOpen(false);
-        navigate(routeForNotification(n));
+        const dest = destinationForNotification(n);
+        if (dest) navigate(dest);
+        else navigate('/app/notifications', { state: { highlight: n.id } });
     };
 
     const badgeLabel = unreadCount > 99 ? '99+' : String(unreadCount);
@@ -136,6 +149,7 @@ export default function NotificationBell({ isDark, theme }) {
                 menuRef={menuRef}
                 placement="bottom-end"
                 width={360}
+                phoneFull
                 theme={theme || (isDark ? 'dark' : 'light')}
                 className="ds-menu ds-notif-menu"
             >

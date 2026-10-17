@@ -9,6 +9,7 @@ import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hoo
 import logo from "../../assets/images/site-logo.png";
 import AccountMenu from "./AccountMenu";
 import GlobalSearchBar from "./GlobalSearchBar";
+import MobileSearch from "./MobileSearch";
 import Tooltip from "./Tooltip";
 import HelpHints from "./HelpHints";
 import DashboardGreeting from "./DashboardGreeting";
@@ -806,6 +807,9 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
 
                         <div className="ds-topbar-actions">
                             <GlobalSearchBar />
+                            {/* Phones / very narrow windows: the same search as an icon that
+                                opens a blurred overlay under the header. */}
+                            <MobileSearch />
                             <HelpHints roles={roles} navRole={navRole} isDark={isDark} />
                             <NotificationBell isDark={isDark} theme={menuTheme} />
                             <div className="ds-menu-wrap">

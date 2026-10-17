@@ -30,3 +30,29 @@ export function routeForNotification(n) {
     }
     return '/app/notifications';
 }
+
+// Like routeForNotification, but returns null when the notification points
+// at nothing specific (no deep link, or a related model we have no screen
+// for). Callers use null to open the notification's own detail view
+// instead of bouncing the person to a page that is not about it.
+export function destinationForNotification(n) {
+    const link = n?.data?.link;
+    if (typeof link === 'string' && link.startsWith('/app/')) return link;
+    const relatedType = n?.data?.related_type;
+    const relatedId = n?.data?.related_id;
+    if (relatedType && relatedId && NOTIFICATION_ROUTE_FOR_TYPE[relatedType]) {
+        return NOTIFICATION_ROUTE_FOR_TYPE[relatedType](relatedId);
+    }
+    return null;
+}
+
+// Friendly name for where a notification leads, for the "Open …" button.
+const DESTINATION_LABEL = {
+    'App\\Models\\Claim': 'claim',
+    'App\\Models\\LostItem': 'lost item',
+    'App\\Models\\FoundItem': 'found item',
+    'App\\Models\\SecurityIncident': 'incident',
+    'App\\Models\\ServiceRequest': 'service request',
+    'App\\Models\\ActionRequest': 'request',
+};
+export const destinationLabel = (n) => DESTINATION_LABEL[n?.data?.related_type] || 'page';

@@ -128,3 +128,52 @@
 
 .ds-global-search-result-title { font-size: 13.5px; font-weight: 700; }
 .ds-global-search-result-subtitle { font-size: 12px; opacity: 0.6; text-transform: capitalize; }
+
+/* ---- Shared panel body (desktop dropdown + phone overlay) ---- */
+.ds-sp-lead { flex-shrink: 0; opacity: 0.5; }
+.ds-sp-hint {
+    margin-left: auto;
+    padding-left: 8px;
+    font-size: 11px;
+    opacity: 0.55;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.ds-sp-suggestion .ds-global-search-result-text,
+.ds-sp-recent .ds-global-search-result-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-sp-label-row { display: flex; align-items: center; justify-content: space-between; }
+.ds-sp-link-btn {
+    border: none; background: transparent; color: inherit; cursor: pointer;
+    font-size: 11px; font-weight: 700; opacity: 0.6; text-transform: none; letter-spacing: 0; padding: 0;
+}
+.ds-sp-link-btn:hover { opacity: 1; text-decoration: underline; }
+.ds-sp-recent-row { display: flex; align-items: center; gap: 2px; }
+.ds-sp-recent-row .ds-global-search-result { flex: 1; min-width: 0; }
+.ds-sp-page-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 9px; flex-shrink: 0; opacity: 0.8;
+    background: rgba(128,128,128,0.14);
+}
+.ds-sp-chevron { margin-left: auto; opacity: 0.35; flex-shrink: 0; }
+
+/* A phone always uses the overlay (<MobileSearch>) — even a big one turned
+   sideways that is wider than the 720px breakpoint above. */
+.ds-shell.ds-phone .ds-global-search { display: none; }
+
+/* Scrolls with wheel/touch, but no visible scrollbar. */
+.ds-global-search-panel { scrollbar-width: none; -ms-overflow-style: none; }
+.ds-global-search-panel::-webkit-scrollbar { display: none; }
+
+/* Clock button beside "Suggested for you" -> opens the recent-searches list */
+.ds-sp-recent-btn {
+    position: relative; display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border: none; border-radius: 8px; cursor: pointer;
+    background: transparent; color: inherit; opacity: 0.7; text-transform: none; letter-spacing: 0;
+}
+.ds-sp-recent-btn:hover { opacity: 1; background: rgba(128,128,128,0.16); }
+.ds-sp-recent-count {
+    position: absolute; top: -2px; right: -2px; min-width: 15px; height: 15px; padding: 0 3px;
+    border-radius: 999px; font-size: 9px; font-weight: 800; line-height: 15px; text-align: center;
+    background: var(--tk-accent-text, #4f46e5); color: var(--tk-surface, #fff);
+}
+.ds-sp-back { display: inline-flex; align-items: center; gap: 2px; opacity: 0.85; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 800; }

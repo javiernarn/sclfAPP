@@ -6,7 +6,7 @@ import useRoleLabel from '../../hooks/useRoleLabel';
 import logo from '../../assets/images/site-logo.png';
 import { ArrowLeft, Printer, Camera } from '../../Components/icons';
 import { AreaChart, DonutChart, BarChart, RankedBars, PALETTE, humanize, fmt } from '../../Components/charts';
-import { Section, Card, Tiles } from '../../Components/shared/PrintParts';
+import { Section, Card, Tiles, PhotoBox } from '../../Components/shared/PrintParts';
 import StudentQrScanModal from '../../Components/shared/StudentQrScanModal';
 import './PrintReport.css';
 
@@ -181,7 +181,7 @@ export default function PrintReport() {
                 that doesn't understand the footer margin boxes still applies
                 the size/margins. */}
             <style>{`
-                @page { size: A4 ${orientation}; margin: 10mm 10mm 14mm; }
+                @page { size: A4 ${orientation}; margin: 17mm 10mm 14mm; }
                 @page { @bottom-left { content: "SCLF — Opol Community College · Confidential"; font-size: 8pt; color: #6b7280; }
                         @bottom-right { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #6b7280; } }
             `}</style>
@@ -232,6 +232,7 @@ export default function PrintReport() {
             {/* ===== The sheet ===== */}
             <div className="pr-stage">
                 <div className={`pr-paper pr-${orientation}`}>
+                    {kind === 'admin' ? (
                     <header className="pr-head">
                         <div className="pr-head-brand">
                             <img src={logo} alt="Opol Community College logo" className="pr-logo" />
@@ -247,6 +248,30 @@ export default function PrintReport() {
                             <div><dt>Prepared by</dt><dd>{printedBy} · {roleTitle}</dd></div>
                         </dl>
                     </header>
+                    ) : (
+                        /* Security: details fill the space beside the 2x2 photo (admin and staff have no photo). */
+                        <header className="pr-head pr-head-student">
+                            <div className="pr-head-main">
+                                <div className="pr-head-brand">
+                                    <img src={logo} alt="Opol Community College logo" className="pr-logo" />
+                                    <div>
+                                        <div className="pr-college">Opol Community College</div>
+                                        <div className="pr-sys">Smart Campus Lost &amp; Found (SCLF)</div>
+                                        <h1 className="pr-title">{reportName}</h1>
+                                    </div>
+                                </div>
+                                <div className="pr-idcard">
+                                    <div className="pr-idcard-name">{printedBy}</div>
+                                    <dl className="pr-idcard-grid">
+                                        <div><dt>Role</dt><dd>{roleTitle}</dd></div>
+                                        <div><dt>Generated</dt><dd>{generatedAt.toLocaleString()}</dd></div>
+                                        <div className="pr-idcard-span"><dt>Period</dt><dd>{periodText} ({days} days)</dd></div>
+                                    </dl>
+                                </div>
+                            </div>
+                            <PhotoBox src={user?.profile_picture_url} name={user?.name} />
+                        </header>
+                    )}
 
                     {loading && !data && <p className="pr-state">Preparing report…</p>}
                     {error && (
@@ -459,10 +484,6 @@ export default function PrintReport() {
                                 <div className="pr-sign-date">Date signed: ____________________</div>
                             </div>
 
-                            <footer className="pr-foot">
-                                <span>SCLF — Opol Community College · Confidential</span>
-                                <span>Generated {generatedAt.toLocaleString()}</span>
-                            </footer>
                         </>
                     )}
                 </div>

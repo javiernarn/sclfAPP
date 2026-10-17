@@ -116,6 +116,10 @@ return [
             'api/matches/*/dismiss',
             // Read-only: scores an unsaved draft report, stores nothing.
             'api/matches/preview',
+            // Reviewing sensitive photos/videos: staff, like security, can mark,
+            // confirm or dismiss a violation without a per-action approval.
+            'api/violations/*',
+            'api/report-attachments/*/violation',
         ],
     ],
 
@@ -145,6 +149,31 @@ return [
             6 => 'S', // Saturday
             0 => 'U', // Sunday
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Violations / sensitive-upload scanner
+    |--------------------------------------------------------------------------
+    |
+    | The manual flow (reviewers press "Mark as violation") needs none of this.
+    | With `enabled` true, every new report photo is sent to a moderation API
+    | by App\Jobs\ScanAttachmentJob (queue worker / Hostinger cron). A hit
+    | holds the file for review; it never counts against anyone until a
+    | reviewer confirms it. Provider: Google Vision SafeSearch.
+    |
+    */
+    'moderation' => [
+        'enabled' => env('SCLF_MODERATION_ENABLED', false),
+        'provider' => env('SCLF_MODERATION_PROVIDER', 'google_vision'),
+        'api_key' => env('SCLF_MODERATION_API_KEY'),
+        // Likelihood at or above which a category is a hit:
+        // VERY_UNLIKELY < UNLIKELY < POSSIBLE < LIKELY < VERY_LIKELY
+        'threshold' => env('SCLF_MODERATION_THRESHOLD', 'LIKELY'),
+        'timeout' => env('SCLF_MODERATION_TIMEOUT', 20),
+        // Optional: comma-separated words that flag a photo when the OCR text
+        // in it contains one. Empty = text is not checked.
+        'blocked_words' => env('SCLF_MODERATION_BLOCKED_WORDS', ''),
     ],
 
 ];

@@ -8,10 +8,10 @@ const NotificationContext = createContext(null);
 // Short enough that a new notification shows up without a reload, long
 // enough not to hammer the API — the same tradeoff the existing web push
 // system exists to cover for anything more time-critical than this.
-const POLL_MS = 60000;
+const POLL_MS = 30000;
 // Admin <-> staff approval requests are waiting on a person, so those two
 // roles check for new notifications more often.
-const POLL_MS_APPROVAL_ROLES = 30000;
+const POLL_MS_APPROVAL_ROLES = 20000;
 // Ignore focus/visibility catch-up checks that come right after a poll.
 const MIN_GAP_MS = 5000;
 
@@ -62,9 +62,10 @@ export function NotificationProvider({ children }) {
         }
     }, [user]);
 
-    const refreshRecent = useCallback(async () => {
+    const refreshRecent = useCallback(async ({ quiet = false } = {}) => {
         if (!user) return;
-        setLoadingRecent(true);
+        // quiet = background refresh: don't flash the loading skeleton.
+        if (!quiet) setLoadingRecent(true);
         try {
             const { data } = await axios.get('/notifications', {
                 params: { limit: PREVIEW_LIMIT },
@@ -75,7 +76,7 @@ export function NotificationProvider({ children }) {
         } catch {
             // ignore — dropdown just stays on whatever it last had
         } finally {
-            setLoadingRecent(false);
+            if (!quiet) setLoadingRecent(false);
         }
     }, [user]);
 

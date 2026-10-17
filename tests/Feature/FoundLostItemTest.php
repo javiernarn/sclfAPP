@@ -152,14 +152,22 @@ class FoundLostItemTest extends TestCase
         $response->assertStatus(201);
     }
 
-    public function test_a_lost_item_owner_can_delete_archive_their_own_report(): void
+    public function test_a_lost_item_owner_can_no_longer_delete_their_own_filed_report(): void
     {
+        // Filed reports are locked: only the Administrator can edit or delete them.
         $student = $this->makeUser('student');
         $lostItem = LostItem::factory()->create(['user_id' => $student->id]);
 
-        $response = $this->actingAs($student)->deleteJson("/api/lost-items/{$lostItem->id}");
+        $this->actingAs($student)->deleteJson("/api/lost-items/{$lostItem->id}")->assertStatus(403);
+        $this->assertDatabaseHas('lost_items', ['id' => $lostItem->id, 'deleted_at' => null]);
+    }
 
-        $response->assertStatus(200);
+    public function test_an_administrator_can_delete_a_filed_lost_item_report(): void
+    {
+        $admin = $this->makeUser('admin');
+        $lostItem = LostItem::factory()->create();
+
+        $this->actingAs($admin)->deleteJson("/api/lost-items/{$lostItem->id}")->assertStatus(200);
         $this->assertSoftDeleted('lost_items', ['id' => $lostItem->id]);
     }
 

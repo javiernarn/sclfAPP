@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Violation;
 use App\Services\Audit\AuditLogService;
 use Illuminate\Http\Request;
 
@@ -64,6 +65,43 @@ class PrintReportController extends Controller
                 'profile_picture_url' => $subject->profile_picture_url,
             ],
             'report' => $analytics->personalPayload($subject),
+            'violations' => $this->violationsFor($subject, $viewer),
         ]);
+    }
+
+    /**
+     * Confirmed violations for the printed dashboard. The count is zero (and
+     * `items` empty) for a clean record so the page can print "No violations".
+     * Files still waiting for review are only counted for the handler roles —
+     * they are not a finding against the person yet.
+     *
+     * @return array{count:int, pending:int|null, items:array<int,array<string,mixed>>}
+     */
+    private function violationsFor(User $subject, User $viewer): array
+    {
+        $confirmed = Violation::where('user_id', $subject->id)->confirmed();
+
+        $items = (clone $confirmed)
+            ->with('reviewer:id,name')
+            ->latest('reviewed_at')
+            ->limit(10)
+            ->get()
+            ->map(fn (Violation $v) => [
+                'id' => $v->id,
+                'type' => $v->type,
+                'source' => $v->source,
+                'reason' => $v->reason,
+                'at' => optional($v->reviewed_at ?? $v->created_at)->toIso8601String(),
+                'confirmed_by' => $v->reviewer?->name,
+            ])
+            ->values();
+
+        return [
+            'count' => $confirmed->count(),
+            'pending' => $viewer->hasAnyRole(self::HANDLER_ROLES)
+                ? Violation::where('user_id', $subject->id)->where('status', Violation::STATUS_PENDING)->count()
+                : null,
+            'items' => $items,
+        ];
     }
 }

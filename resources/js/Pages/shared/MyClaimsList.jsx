@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Package, ChevronRight, Eye, Trash2 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ViewToggle from '../../Components/shared/ViewToggle';
@@ -11,11 +11,20 @@ import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmContext';
 import { CLAIM_STATUS, claimStatusLabel, claimStatusBadgeClass } from '../../utils/claimStatus';
 import { itemChannelLabel, itemChannelBadgeClass, itemChannelIcon } from '../../utils/itemChannel';
+import { initialsOf } from '../../utils/initials';
 
 const FILTERS = [
     { key: '', label: 'All' },
     ...Object.keys(CLAIM_STATUS).map((key) => ({ key, label: CLAIM_STATUS[key].label })),
 ];
+
+// Place in the hand-over line (first come, first served). Only staff get a
+// position from the API, and only for claims that are Ready for Release.
+const QueueBadge = ({ claim }) => (claim.queue_position && claim.status === 'release_pending' ? (
+    <span className={`ds-badge ${claim.queue_position === 1 ? 'ds-badge-found' : 'ds-badge-claimed'}`} title="Place in the release line, first come first served">
+        {claim.queue_position === 1 ? 'Serve first' : `#${claim.queue_position} in line`}
+    </span>
+) : null);
 
 export default function MyClaimsList() {
     const { roles } = useAuth();
@@ -27,7 +36,10 @@ export default function MyClaimsList() {
     const [claims, setClaims] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [status, setStatus] = useState('');
+    // ?status=release_pending lets the Security dashboard deep-link straight
+    // into the hand-over queue.
+    const [searchParams] = useSearchParams();
+    const [status, setStatus] = useState(() => (CLAIM_STATUS[searchParams.get('status')] ? searchParams.get('status') : ''));
     const [busyId, setBusyId] = useState(null);
     const [view, setView] = useViewMode('claims');
 
@@ -56,6 +68,7 @@ export default function MyClaimsList() {
             confirmLabel: 'Delete claim',
             cancelLabel: 'Keep it',
             tone: 'danger',
+            typeToConfirm: { phrase: initialsOf(claim.claimant?.name), label: `Type the claimant's initials (${claim.claimant?.name || 'unknown'}) to confirm:` },
         });
         if (!ok) return;
 
@@ -97,6 +110,12 @@ export default function MyClaimsList() {
                             </div>
                             <ViewToggle mode={view} onChange={setView} />
                         </div>
+
+                        {isStaff && status === 'release_pending' && claims.length > 0 && (
+                            <p className="ds-card-desc" style={{ margin: '10px 0' }}>
+                                Release line — oldest claim first. Hand over in this order (first come, first served).
+                            </p>
+                        )}
 
                         {error && <div className="ds-error">{error}</div>}
 
@@ -142,7 +161,10 @@ export default function MyClaimsList() {
                                                         {itemChannelLabel(c.found_item?.intake_channel)}
                                                     </span>
                                                 </td>
-                                                <td><span className={claimStatusBadgeClass(c.status)}>{claimStatusLabel(c.status)}</span></td>
+                                                <td>
+                                                    <span className={claimStatusBadgeClass(c.status)}>{claimStatusLabel(c.status)}</span>
+                                                    {isStaff && <> <QueueBadge claim={c} /></>}
+                                                </td>
                                                 <td>
                                                     <div className="ds-table-actions">
                                                         <span className="ds-btn ds-btn-view ds-btn-sm">
@@ -198,6 +220,7 @@ export default function MyClaimsList() {
                                                     <ChannelIcon size={13} />
                                                     {itemChannelLabel(c.found_item?.intake_channel)}
                                                 </span>
+                                                {isStaff && <QueueBadge claim={c} />}
                                                 <span className={claimStatusBadgeClass(c.status)}>{claimStatusLabel(c.status)}</span>
                                                 <span className="ds-btn ds-btn-view ds-btn-sm">
                                                     <Eye size={13} /> View Details <ChevronRight size={13} />

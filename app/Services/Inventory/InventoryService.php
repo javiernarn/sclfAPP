@@ -44,7 +44,7 @@ class InventoryService
                 $approved ? SclfNotification::TYPE_FOUND_REPORT_APPROVED : SclfNotification::TYPE_FOUND_REPORT_REJECTED,
                 $approved ? 'Found report approved' : 'Found report rejected',
                 $approved
-                    ? 'Thank you — your found item report has been verified and is being stored.'
+                    ? 'Thank you — your found item report has been verified and is being stored.' . ($notes ? " Note from Security: {$notes}" : '')
                     : 'Your found item report was rejected.' . ($notes ? " Reason: {$notes}" : ''),
                 FoundItem::class,
                 $item->id,

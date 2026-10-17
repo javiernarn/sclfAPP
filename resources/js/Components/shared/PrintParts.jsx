@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import '../../Pages/shared/PrintReport.css';
 
 // Small building blocks shared by the printable reports (admin/security
@@ -45,6 +45,40 @@ export function Tiles({ items, days }) {
                         : t.note ? <div className="pr-tile-note">{t.note}</div> : null}
                 </div>
             ))}
+        </div>
+    );
+}
+
+// 2x2 inch ID-style photo for the printed reports. Shows the person's profile
+// picture, or a blank box labelled "PHOTO" when there is none (or it fails to load).
+// Click it to flip to a blank "PHOTO" side — for people who'd rather glue on a
+// physical 2x2 photo. Whichever side is showing is what gets printed.
+export function PhotoBox({ src, name }) {
+    const [broken, setBroken] = useState(false);
+    const [flipped, setFlipped] = useState(false);
+    const showImage = !!src && !broken;
+    return (
+        <div className="pr-photo-wrap">
+            <button
+                type="button"
+                className="pr-photo"
+                data-flipped={flipped ? 'true' : 'false'}
+                onClick={() => setFlipped((f) => !f)}
+                aria-pressed={flipped}
+                title={flipped ? 'Click to show the profile photo again' : 'Click to flip to a blank box for a physical 2x2 photo'}
+            >
+                <span className="pr-photo-inner">
+                    <span className="pr-photo-face pr-photo-front">
+                        {showImage
+                            ? <img src={src} alt={name ? `Photo of ${name}` : 'Profile photo'} onError={() => setBroken(true)} />
+                            : <span className="pr-photo-text">PHOTO<span className="pr-photo-size">2x2</span></span>}
+                    </span>
+                    <span className="pr-photo-face pr-photo-back">
+                        <span className="pr-photo-text">PHOTO<span className="pr-photo-size">2x2</span></span>
+                    </span>
+                </span>
+            </button>
+            <div className="pr-photo-hint">{flipped ? 'Blank — paste a 2x2 photo. Click to flip back.' : 'Click photo to flip (blank for a physical 2x2).'}</div>
         </div>
     );
 }

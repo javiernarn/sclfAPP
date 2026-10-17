@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { sessionBus } from '../../utils/eventBus';
 import { useAppTheme, isDarkTheme } from '../../hooks/useAppTheme';
 import './DeviceSignedOutModal.css';
+import './Popups.css';
 
 // How long the alert stays up so the person can actually read it.
 const SECONDS = 12;

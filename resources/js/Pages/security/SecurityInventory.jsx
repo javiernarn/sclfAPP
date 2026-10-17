@@ -161,6 +161,7 @@ function LocationEditor({ location, type, onSaved, onDeleted }) {
             message: `Remove ${location.code} entirely? This only works while nothing is shelved there and no one's queued at it.`,
             confirmLabel: 'Delete location',
             tone: 'danger',
+            typeToConfirm: { phrase: location.code },
         });
         if (!ok) return;
 

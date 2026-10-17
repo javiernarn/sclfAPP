@@ -24,11 +24,11 @@ class LostItemPolicy
 
     public function update(User $user, LostItem $lostItem): bool
     {
-        return $user->id === $lostItem->user_id || $user->hasAnyRole(['admin', 'staff', 'security_officer']);
+        return $user->isAdmin(); // filed reports are locked — Administrator only
     }
 
     public function delete(User $user, LostItem $lostItem): bool
     {
-        return $user->id === $lostItem->user_id || $user->hasAdminAccess();
+        return $user->isAdmin(); // filed reports are locked — Administrator only
     }
 }

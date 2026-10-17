@@ -1,0 +1,118 @@
+/*
+ * Popups.css — popups and toasts that render OUTSIDE the dashboard shell
+ * (confirm dialog, admin-approval dialog, toasts) take their colors from the
+ * selected theme, the same palette the shell uses (see DashboardShell.css:
+ * --ds-edge, --ds-pop-bg, the .ds-btn-primary gradients).
+ *
+ * The element carries data-sclf-theme="<theme>" (white, black, maroon, blue,
+ * yellow, dark-white, dark-blue, dark-yellow, dark-maroon), kept live by
+ * useAppTheme, and everything below reads these tokens:
+ *   --pt-bg / --pt-fg      surface and text
+ *   --pt-edge              the solid 1.5px outline
+ *   --pt-accent            primary button gradient   (--pt-accent-fg = its text)
+ *   --pt-accent-solid      flat accent (icons, focus ring)
+ */
+[data-sclf-theme] {
+    --pt-bg: #ffffff;
+    --pt-fg: #0b1220;
+    --pt-edge: #c3ccdb;
+    --pt-accent: linear-gradient(135deg, #4f46e5, #7c3aed 50%, #0ea5e9);
+    --pt-accent-fg: #ffffff;
+    --pt-accent-solid: #6366f1;
+    --pt-shadow: 0 24px 60px rgba(2, 6, 23, 0.22);
+}
+[data-sclf-theme="black"] {
+    --pt-bg: #12161f; --pt-fg: #e7ecf3; --pt-edge: #323b4a;
+    --pt-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+[data-sclf-theme="maroon"] {
+    --pt-bg: #fffafb; --pt-edge: #e8b3bc;
+    --pt-accent: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); --pt-accent-solid: #9f1239;
+}
+[data-sclf-theme="blue"] {
+    --pt-bg: #f8fbff; --pt-edge: #a9cdf5;
+    --pt-accent: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); --pt-accent-solid: #2563eb;
+}
+[data-sclf-theme="yellow"] {
+    --pt-bg: #fffcf5; --pt-fg: #1c1408; --pt-edge: #e6c477;
+    --pt-accent: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); --pt-accent-fg: #1c1408; --pt-accent-solid: #d97706;
+}
+[data-sclf-theme^="dark-"] {
+    --pt-bg: #0a0a0a; --pt-fg: #e7ecf3; --pt-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+}
+[data-sclf-theme="dark-white"] {
+    --pt-edge: #2a2a2a; --pt-accent: #f2f2f2; --pt-accent-fg: #000000; --pt-accent-solid: #e5e5e5;
+}
+[data-sclf-theme="dark-blue"] {
+    --pt-edge: #2f5fae;
+    --pt-accent: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); --pt-accent-solid: #38bdf8;
+}
+[data-sclf-theme="dark-yellow"] {
+    --pt-edge: #a8761c;
+    --pt-accent: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); --pt-accent-fg: #1c1408; --pt-accent-solid: #f59e0b;
+}
+[data-sclf-theme="dark-maroon"] {
+    --pt-edge: #b5485c;
+    --pt-accent: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); --pt-accent-solid: #f87171;
+}
+
+/* ---------- confirm dialog (+ admin approval dialog) ---------- */
+.sclf-confirm-card.sclf-popup {
+    background: var(--pt-bg);
+    color: var(--pt-fg);
+    border: 1.5px solid var(--pt-edge);
+    box-shadow: var(--pt-shadow);
+}
+.sclf-popup .sclf-confirm-icon-default,
+.sclf-popup .sclf-confirm-icon-discard {
+    background: color-mix(in srgb, var(--pt-accent-solid) 16%, transparent);
+    color: var(--pt-accent-solid);
+}
+.sclf-popup .sclf-confirm-btn-ghost {
+    background: color-mix(in srgb, var(--pt-fg) 8%, transparent);
+    color: var(--pt-fg);
+}
+.sclf-popup .sclf-confirm-btn-ghost:hover { background: color-mix(in srgb, var(--pt-fg) 14%, transparent); }
+.sclf-popup .sclf-confirm-btn-primary,
+.sclf-popup .sclf-confirm-btn:not(.sclf-confirm-btn-ghost):not(.sclf-confirm-btn-danger) {
+    background: var(--pt-accent);
+    color: var(--pt-accent-fg);
+}
+.sclf-popup textarea, .sclf-popup input[type="text"] {
+    background: var(--pt-bg); color: var(--pt-fg); border-color: var(--pt-edge);
+}
+
+/* dropdown inside the confirm dialog (e.g. "Reason") */
+.sclf-confirm-field { text-align: left; margin: -8px 0 18px; }
+.sclf-confirm-field label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; opacity: 0.8; }
+.sclf-confirm-field select {
+    width: 100%; font: inherit; font-size: 13.5px; padding: 10px 12px; border-radius: 10px;
+    background: var(--pt-bg); color: var(--pt-fg);
+    border: 1.5px solid var(--pt-edge);
+    color-scheme: light;
+}
+[data-sclf-theme="black"] .sclf-confirm-field select,
+[data-sclf-theme^="dark-"] .sclf-confirm-field select { color-scheme: dark; }
+.sclf-confirm-field select:focus { outline: 2px solid var(--pt-accent-solid); outline-offset: 1px; }
+.sclf-confirm-field select option { background: var(--pt-bg); color: var(--pt-fg); }
+.sclf-popup .sclf-confirm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ---------- toasts ---------- */
+.sclf-toast-viewport[data-sclf-theme] .sclf-toast {
+    background: color-mix(in srgb, var(--pt-bg) 94%, transparent);
+    color: var(--pt-fg);
+    border: 1.5px solid var(--pt-edge);
+    box-shadow: var(--pt-shadow);
+}
+.sclf-toast-viewport[data-sclf-theme] .sclf-toast-icon { opacity: 0.75; }
+.sclf-toast-viewport[data-sclf-theme] .sclf-toast-close:hover { background: color-mix(in srgb, var(--pt-fg) 10%, transparent); }
+/* Only the background and text follow the theme. The outline keeps its
+   meaning: green = success, red = error, amber = warning, blue = info. */
+.sclf-toast-viewport[data-sclf-theme] .sclf-toast-success { border-color: #16a34a !important; }
+.sclf-toast-viewport[data-sclf-theme] .sclf-toast-error   { border-color: #ef4444 !important; }
+.sclf-toast-viewport[data-sclf-theme] .sclf-toast-warning { border-color: #f59e0b !important; }
+.sclf-toast-viewport[data-sclf-theme] .sclf-toast-info    { border-color: #0ea5e9 !important; }
+
+/* Other popups that sit outside the shell (own look, just outlined). */
+.pr-modal { border: 1.5px solid #c3ccdb; }
+.ios-alert { border: 1.5px solid #3a4457; }

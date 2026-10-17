@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Camera, Upload, X } from '../icons';
+import './Popups.css';
 
 /**
  * Reads the QR code printed at the bottom of a student's/instructor's

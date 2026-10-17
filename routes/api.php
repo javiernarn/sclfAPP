@@ -22,6 +22,7 @@ use App\Http\Controllers\PushController;
 use App\Http\Controllers\QrController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ReportAttachmentController;
+use App\Http\Controllers\ViolationController;
 use App\Http\Controllers\SecurityIncidentController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\StorageLocationController;
@@ -152,6 +153,14 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     // so this endpoint can't surface anything the person couldn't already
     // reach through that section's own list page.
     Route::get('/search', [SearchController::class, 'index']);
+    // Suggestive search: role-aware suggestions when the box opens, and
+    // type-ahead completions as the person types.
+    Route::middleware('throttle:120,1')->get('/search/suggestions', [SearchController::class, 'suggestions']);
+    // Recent (successful) searches, stored per account in recent_searches.
+    Route::get('/search/recent', [SearchController::class, 'recent']);
+    Route::post('/search/recent', [SearchController::class, 'storeRecent']);
+    Route::delete('/search/recent/{id}', [SearchController::class, 'destroyRecent'])->whereNumber('id');
+    Route::delete('/search/recent', [SearchController::class, 'clearRecent']);
 
     // Security Incidents — reporting is open to any authenticated user
     // (student/instructor/officer/admin); index()/show() self-scope to
@@ -191,6 +200,13 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
 
     // --- Security Officer / Admin only ---
     Route::middleware('role:security_officer,admin,staff')->group(function () {
+        // Violations — reviewing sensitive photos/videos on reports. Staff
+        // need no admin approval for these (see sclf.staff_approval.exempt_paths).
+        Route::get('/violations', [ViolationController::class, 'index']);
+        Route::post('/report-attachments/{attachment}/violation', [ViolationController::class, 'flag']);
+        Route::post('/violations/{violation}/confirm', [ViolationController::class, 'confirm']);
+        Route::post('/violations/{violation}/dismiss', [ViolationController::class, 'dismiss']);
+
         Route::post('/found-items/{foundItem}/verify', [FoundItemController::class, 'verify']);
 
         // Lost & found match queue — the handlers' (security / admin / staff)

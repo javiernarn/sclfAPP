@@ -40,6 +40,30 @@
 .sclf-confirm-title { font-size: 17px; font-weight: 800; margin: 0 0 8px; }
 .sclf-confirm-message { font-size: 13.5px; line-height: 1.55; opacity: 0.72; margin: 0 0 22px; }
 
+.sclf-confirm-typed { text-align: left; margin: -6px 0 18px; }
+.sclf-confirm-typed label { display: block; font-size: 12.5px; margin-bottom: 6px; opacity: 0.85; }
+.sclf-confirm-phrase {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: 800;
+    background: rgba(226, 84, 58, 0.12);
+    color: #c43d24;
+    padding: 1px 6px;
+    border-radius: 6px;
+    user-select: all;
+}
+.sclf-confirm-typed input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1.5px solid rgba(27, 31, 59, 0.2);
+    font-size: 14px;
+    background: transparent;
+    color: inherit;
+}
+.sclf-confirm-typed input:focus { outline: none; border-color: #e2543a; box-shadow: 0 0 0 3px rgba(226, 84, 58, 0.18); }
+.sclf-confirm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
 .sclf-confirm-actions { display: flex; gap: 10px; }
 .sclf-confirm-btn {
     flex: 1;

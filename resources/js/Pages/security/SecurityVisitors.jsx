@@ -13,6 +13,7 @@ import VisitorDetailsModal from '../../Components/shared/VisitorDetailsModal';
 import VisitorBadgeFlip, { dayColorFor } from '../../Components/shared/VisitorBadgeFlip';
 import { filterPhoneInput, isValidPhone, FORMAT_ERRORS, FORMAT_HINTS } from '../../utils/validators';
 import { PH_ID_GROUPS, PH_ID_OPTIONS, OTHER_ID_VALUE } from '../../config/philippineIds';
+import { initialsOf } from '../../utils/initials';
 
 const PURPOSE_OPTIONS = [
     { value: 'meeting', label: 'Meeting' },
@@ -383,6 +384,7 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
             message: `Remove the log entry for ${visitor.full_name} entirely? This cannot be undone.`,
             confirmLabel: 'Delete entry',
             tone: 'danger',
+            typeToConfirm: { phrase: initialsOf(visitor.full_name), label: `Type the visitor's initials (${visitor.full_name}) to confirm:` },
         });
         if (!ok) return;
 
