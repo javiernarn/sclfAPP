@@ -40,22 +40,22 @@ export default function SearchPanelBody({ search, showPages = true }) {
                     {recent.length === 0 && (
                         <div className="ds-global-search-empty">No successful searches yet. Searches that find something show up here.</div>
                     )}
-                    {recent.map((term) => (
-                        <div key={term} className="ds-sp-recent-row">
+                    {recent.map((item) => (
+                        <div key={item.id ?? item.term} className="ds-sp-recent-row">
                             <button
                                 type="button"
                                 className="ds-global-search-result ds-sp-recent"
-                                onClick={() => pickSuggestion(term)}
+                                onClick={() => pickSuggestion(item.term)}
                             >
                                 <Clock size={14} className="ds-sp-lead" />
-                                <span className="ds-global-search-result-title">{term}</span>
+                                <span className="ds-global-search-result-title">{item.term}</span>
                             </button>
                             <button
                                 type="button"
                                 className="ds-global-search-clear ds-sp-remove"
-                                onClick={() => dropRecent(term)}
+                                onClick={() => dropRecent(item)}
                                 title="Remove"
-                                aria-label={`Remove ${term} from recent searches`}
+                                aria-label={`Remove ${item.term} from recent searches`}
                             >
                                 <X size={13} />
                             </button>
