@@ -55,7 +55,7 @@
         <div style="text-align: center; border-top: 1px solid #dee2e6; padding-top: 20px; color: #666; font-size: 14px;">
             <p style="margin: 5px 0;"><strong>Student Campus Lost &amp; Found &middot; Opol Community College</strong></p>
             <p style="margin: 5px 0;">This is an automated message. Please do not reply directly to this email.</p>
-            <p style="margin: 5px 0;">&copy; {{ date('Y') }} Opol Community College. All rights reserved.</p>
+            <p style="margin: 5px 0;">&copy; 2026 Opol Community College. All rights reserved.</p>
         </div>
     </div>
 </body>

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Audit\AuditLogService;
+use App\Services\Auth\RefreshTokenService;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,17 +23,27 @@ class PasswordResetController extends Controller
     private const FIND_MAX_ATTEMPTS = 5;
     private const FIND_DECAY_SECONDS = 600; // 10 minutes
 
+    // Same wording whether or not the email is registered, so this endpoint
+    // can't be used to find out who has an account.
+    private const GENERIC_FOUND = 'If an account exists for this email, you can request a reset link.';
+    private const GENERIC_SENT = 'If an account exists for this email, a password reset link has been sent.';
+
+    public function __construct(
+        protected AuditLogService $audit,
+        protected RefreshTokenService $tokens,
+    ) {
+    }
+
     private function findThrottleKey(Request $request): string
     {
         return 'find-account|' . Str::lower($request->input('email')) . '|' . $request->ip();
     }
 
     /**
-     * Step 1 of the recovery flow: look up the account by email.
-     *
-     * Mirrors the Alumni system's "Find my account" step exactly — on a
-     * match it hands back the name/email so the UI can show a masked
-     * "Account found" confirmation before offering to email a reset link.
+     * Step 1 of the recovery flow. Kept as a separate step so the UI flow is
+     * unchanged, but it no longer looks anything up: every email gets the
+     * same answer (see GENERIC_FOUND), so it cannot be used to discover which
+     * students have an account or what their names are.
      */
     public function findAccount(Request $request): JsonResponse
     {
@@ -52,22 +64,13 @@ class PasswordResetController extends Controller
 
         RateLimiter::hit($throttleKey, self::FIND_DECAY_SECONDS);
 
-        $email = strtolower(trim($request->email));
-        $user = User::where('email', $email)->first();
-
-        if (!$user) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No account found with this email address.',
-            ], 404);
-        }
-
+        // Never reveal whether the account exists, and never echo back a
+        // stored name. Only the caller's own input is returned.
         return response()->json([
             'success' => true,
-            'message' => 'Account found',
+            'message' => self::GENERIC_FOUND,
             'data' => [
-                'full_name' => trim($user->first_name . ' ' . $user->last_name) ?: $user->name,
-                'email' => $user->email,
+                'email' => strtolower(trim($request->email)),
             ],
         ]);
     }
@@ -85,18 +88,17 @@ class PasswordResetController extends Controller
 
         $email = strtolower(trim($request->email));
 
-        if (!User::where('email', $email)->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No account found with this email address.',
-            ], 404);
-        }
-
-        Password::sendResetLink(['email' => $email]);
+        // Send after the response goes out so a registered address (which
+        // has to build and send an email) can't be told apart from an
+        // unknown one by response time. Laravel's own broker still applies
+        // its 60-second per-account throttle.
+        dispatch(function () use ($email) {
+            Password::sendResetLink(['email' => $email]);
+        })->afterResponse();
 
         return response()->json([
             'success' => true,
-            'message' => 'Password reset link has been sent to your email.',
+            'message' => self::GENERIC_SENT,
         ]);
     }
 
@@ -118,6 +120,21 @@ class PasswordResetController extends Controller
                     'password' => Hash::make($password),
                     'remember_token' => Str::random(60),
                 ])->save();
+
+                // A reset means the old password may have been compromised,
+                // so end every session that was opened with it (all devices,
+                // access + refresh tokens) and make the person sign in again.
+                $user->tokens()->delete();
+                $this->tokens->revokeAllForUser($user);
+
+                $this->audit->log(
+                    'auth.password_reset',
+                    $user,
+                    "Password for user #{$user->id} was reset through the email link; all sessions were signed out.",
+                    null,
+                    null,
+                    $user,
+                );
 
                 event(new PasswordReset($user));
             }

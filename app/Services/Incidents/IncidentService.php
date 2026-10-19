@@ -145,6 +145,14 @@ class IncidentService
      */
     public function delete(SecurityIncident $incident, User $actor): void
     {
+        // A confirmed violation is a record against the uploader; it must be
+        // undone first so deleting a report never silently erases it.
+        if (\App\Models\Violation::confirmedOn($incident)) {
+            throw ValidationException::withMessages([
+                'report' => \App\Models\Violation::lockMessage('deleted', $actor->isAdmin()),
+            ]);
+        }
+
         $this->audit->log(
             'incident.deleted',
             $incident,

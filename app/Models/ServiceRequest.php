@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\RemembersWhoDeleted;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ServiceRequest extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, RemembersWhoDeleted;
 
     public const STATUS_SUBMITTED = 'submitted';
     public const STATUS_ACKNOWLEDGED = 'acknowledged';
@@ -73,6 +74,21 @@ class ServiceRequest extends Model
     // copy the lifecycle endpoints (assign/resolve/close/…) return — so the
     // detail page never loses them after an action.
     protected $with = ['attachments'];
+
+    // True while a file on this report is a confirmed violation — the UI
+    // uses it to explain why Delete / Cancel is unavailable.
+    protected $appends = ['violation_locked'];
+
+    public function getViolationLockedAttribute(): bool
+    {
+        if ($this->relationLoaded('attachments')) {
+            return $this->attachments->contains(
+                fn ($a) => $a->relationLoaded('violation') && $a->violation?->status === \App\Models\Violation::STATUS_CONFIRMED
+            );
+        }
+
+        return \App\Models\Violation::confirmedOn($this) !== null;
+    }
 
     protected $fillable = [
         'campus_id',

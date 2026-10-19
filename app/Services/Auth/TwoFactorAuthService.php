@@ -4,6 +4,7 @@ namespace App\Services\Auth;
 
 use App\Models\User;
 use App\Services\Audit\AuditLogService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
@@ -98,7 +99,17 @@ class TwoFactorAuthService
             return false;
         }
 
-        return $this->totp->verify($user->two_factor_secret, $code);
+        $step = $this->totp->matchingStep($user->two_factor_secret, $code);
+
+        if ($step === null) {
+            return false;
+        }
+
+        // Replay protection: each 30-second code works once. Cache::add()
+        // only succeeds for the first caller, so a code that was just used
+        // (or sniffed and re-submitted) is refused. The entry outlives the
+        // widest window the code could still be accepted in.
+        return Cache::add("2fa-used|{$user->id}|{$step}", 1, now()->addMinutes(3));
     }
 
     /**

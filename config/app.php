@@ -55,6 +55,9 @@ return [
         //live URL OR localhost
    'url' => env('APP_URL', 'http://localhost'),
 
+    // Set FORCE_HTTPS=true on the live server so generated links use https://.
+    'force_https' => (bool) env('FORCE_HTTPS', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

@@ -50,6 +50,8 @@ export default function IncidentDetail() {
 
     const [incident, setIncident] = useState(null);
     const [loading, setLoading] = useState(true);
+    // Why it couldn't be opened (e.g. "deleted on ... by an Administrator"), straight from the server.
+    const [loadError, setLoadError] = useState('');
     const [busy, setBusy] = useState(false);
     const [officerId, setOfficerId] = useState('');
     const [officers, setOfficers] = useState([]);
@@ -67,10 +69,17 @@ export default function IncidentDetail() {
 
     const load = () => {
         setLoading(true);
+        setLoadError('');
         axios.get(`/security-incidents/${id}`)
             .then((res) => setIncident(res.data.data))
             .catch((err) => {
-                toast.error(err?.response?.data?.message || 'Could not load this incident.', { title: 'Could not load' });
+                const status = err?.response?.status;
+                if (status === 404 || status === 410) {
+                    // The global handler already toasted the reason; keep it on the page too.
+                    setLoadError(err?.response?.data?.message || '');
+                } else {
+                    toast.error(err?.response?.data?.message || 'Could not load this incident.', { title: 'Could not load' });
+                }
             })
             .finally(() => setLoading(false));
     };
@@ -220,7 +229,7 @@ export default function IncidentDetail() {
                 <div className="ds-card">
                     <div className="ds-empty">
                         <Lock size={18} style={{ verticalAlign: -3, marginRight: 6 }} />
-                        This incident couldn't be found, or you don't have access to it.
+                        {loadError || "This incident couldn't be found, or you don't have access to it."}
                     </div>
                 </div>
             </DashboardShell>
@@ -395,7 +404,12 @@ export default function IncidentDetail() {
                 <div className="ds-card">
                     <h3 style={{ color: '#dc2626' }}>Danger Zone</h3>
                     <p className="ds-card-desc">Permanently remove this incident report. This cannot be undone.</p>
-                    <button type="button" className="ds-btn ds-btn-danger" disabled={deleting} onClick={deleteIncident}>
+                    {incident.violation_locked && (
+                        <p className="ds-card-desc" style={{ color: '#dc2626', fontWeight: 600 }}>
+                            A file on this report is marked as a violation, so the report can’t be deleted. Scroll to the attached files and choose “Undo — not a violation” first, then you can delete it.
+                        </p>
+                    )}
+                    <button type="button" className="ds-btn ds-btn-danger" disabled={deleting || incident.violation_locked} title={incident.violation_locked ? 'Undo the violation first' : undefined} onClick={deleteIncident}>
                         <Trash2 size={14} style={{ verticalAlign: -2, marginRight: 6 }} />
                         {deleting ? 'Deleting…' : 'Delete Report'}
                     </button>

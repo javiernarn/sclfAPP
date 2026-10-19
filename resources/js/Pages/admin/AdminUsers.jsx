@@ -155,7 +155,7 @@ export default function AdminUsers() {
     const validateEdit = () => {
         const errs = {};
         if (editForm.phone_number && !isValidPhone(editForm.phone_number)) errs.phone_number = FORMAT_ERRORS.phone;
-        if (editForm.password && editForm.password.length < 8) errs.password = 'Password must be at least 8 characters.';
+        if (editForm.password && editForm.password.length < 8) errs.password = 'Use 8+ characters with an uppercase letter, a lowercase letter and a number.';
         setEditErrors(errs);
         return Object.keys(errs).length === 0;
     };
@@ -269,7 +269,7 @@ export default function AdminUsers() {
     const validate = () => {
         const errs = {};
         if (form.phone_number && !isValidPhone(form.phone_number)) errs.phone_number = FORMAT_ERRORS.phone;
-        if (form.password && form.password.length < 8) errs.password = 'Password must be at least 8 characters.';
+        if (form.password && form.password.length < 8) errs.password = 'Use 8+ characters with an uppercase letter, a lowercase letter and a number.';
         setFieldErrors(errs);
         return Object.keys(errs).length === 0;
     };
@@ -445,7 +445,7 @@ export default function AdminUsers() {
                         </div>
                         <div className="ds-field">
                             <label htmlFor="password">Temporary Password <span className="ds-required">*</span></label>
-                            <input type="text" id="password" name="password" placeholder="8+ characters" value={form.password} onChange={handleChange} minLength={8} required
+                            <input type="text" id="password" name="password" placeholder="8+ chars: upper, lower, number" value={form.password} onChange={handleChange} minLength={8} required
                                 aria-invalid={!!fieldErrors.password} />
                             <p className="ds-field-hint">Share this with them directly — they can change it themselves afterward from their Profile page.</p>
                             {fieldErrors.password && <div className="ds-field-error">{fieldErrors.password}</div>}

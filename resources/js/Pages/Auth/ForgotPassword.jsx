@@ -9,22 +9,14 @@ import AuthShell, {
     LedgerGhostButton,
     Stamp,
 } from '../../Components/shared/AuthShell';
-import { Mail, User, CheckCircle2 } from '../../Components/icons';
+import { Mail, CheckCircle2 } from '../../Components/icons';
 
 // ---------------------------------------------------------------------------
-// Mirrors the Alumni system's recovery flow exactly: find the account by
-// email -> show a masked "Account found" confirmation -> send (or resend)
-// the reset link. Same three steps, same masking, just dressed in SCLF's
-// own Ledger look instead of Alumni's card layout.
+// Recovery flow: enter email -> confirm the (masked) email -> send (or resend)
+// the reset link. For security the server never says whether an account
+// exists and never returns a name, so this screen can only ever show back the
+// email the person typed. The wording is deliberately "if an account exists".
 // ---------------------------------------------------------------------------
-
-const maskName = (name) => {
-    if (!name) return '';
-    return name
-        .split(' ')
-        .map((part) => (part.length <= 1 ? part : part.charAt(0) + '*'.repeat(part.length - 1)))
-        .join(' ');
-};
 
 const maskEmail = (email) => {
     if (!email) return '';
@@ -53,13 +45,13 @@ export default function ForgotPassword() {
 
         try {
             const { data } = await axios.post('/password/find-account', { email }, { silent: true });
-            setFoundUser({ fullName: data.data.full_name, email: data.data.email });
+            setFoundUser({ email: data?.data?.email || email });
             setView('found');
         } catch (err) {
             const status = err.response?.status;
             const message = status === 429
                 ? (err.response?.data?.message || 'Too many attempts. Please try again later.')
-                : (err.response?.data?.message || 'No account found with this email address.');
+                : (err.response?.data?.message || 'Something went wrong. Please try again.');
             setError(message);
         } finally {
             setLoading(false);
@@ -92,11 +84,11 @@ export default function ForgotPassword() {
             docType="RECOVERY REQUEST"
             caseSeed="REC"
             centerHead={view === 'found'}
-            title={view === 'found' ? <>Account <span className="accent">found</span></> : <>Recover <span className="accent">access</span></>}
-            subtitle={view === 'found' ? "We'll send a secure password reset link to your registered email." : "Give us the email on your record and we'll help you find it."}
+            title={view === 'found' ? <>Confirm your <span className="accent">email</span></> : <>Recover <span className="accent">access</span></>}
+            subtitle={view === 'found' ? "If this email is registered, we'll send a secure password reset link to it." : "Give us the email on your record and we'll help you find it."}
             railHeadline={view === 'found' ? 'Almost there.' : 'Locked out happens to everyone.'}
             railNote={view === 'found'
-                ? "Click Send Reset Link and we'll email you a secure link. It expires in 60 minutes, so use it soon."
+                ? "Click Send Reset Link. If the email is on record, you'll get a secure link that expires in 60 minutes."
                 : "Confirm the email tied to your record and we'll help you get back to tracking lost items around campus."}
             footer={<>Remembered it after all? <Link to="/login">Back to sign in</Link></>}
         >
@@ -131,15 +123,11 @@ export default function ForgotPassword() {
                     ) : (
                         <div className="lg-found-badge">
                             <CheckCircle2 size={15} strokeWidth={2.5} />
-                            Account Found
+                            Ready to send
                         </div>
                     )}
 
                     <div className="lg-found-box">
-                        <div className="lg-found-row">
-                            <User size={14} strokeWidth={2.25} />
-                            {maskName(foundUser?.fullName)}
-                        </div>
                         <div className="lg-found-row">
                             <Mail size={14} strokeWidth={2.25} />
                             {maskEmail(foundUser?.email)}
@@ -148,7 +136,7 @@ export default function ForgotPassword() {
 
                     {emailSent && (
                         <LedgerBanner tone="notice">
-                            A password reset link is on its way to <strong>{maskEmail(foundUser?.email)}</strong>. Check your inbox — and the spam folder, just in case.
+                            If <strong>{maskEmail(foundUser?.email)}</strong> is registered, a password reset link is on its way. Check your inbox — and the spam folder, just in case.
                         </LedgerBanner>
                     )}
 

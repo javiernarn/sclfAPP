@@ -21,7 +21,7 @@ class LostItemController extends Controller
         $lostItems = LostItem::with('user:id,name')
             ->when($request->boolean('mine'), fn ($q) => $q->where('user_id', auth()->id()))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
-            ->when($request->q, fn ($q) => $q->where('item_name', 'like', "%{$request->q}%"))
+            ->when($request->q, fn ($q) => $q->where('item_name', 'like', \App\Support\Like::contains($request->q)))
             ->latest()
             ->paginate(10)
             ->through(fn ($item) => [

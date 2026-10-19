@@ -1,32 +1,51 @@
 import secureLocalStorage from 'react-secure-storage';
 
-// Separate from the *session token* remember-me in axiosConfig.js (which
-// controls whether you stay logged in) — this one remembers the actual
-// email/password so the Login form can prefill itself on the next visit.
+// "Keep me signed in" also remembers the email + password so the Login form
+// can prefill itself — but ONLY for this browser tab (sessionStorage).
 //
-// Security note: secureLocalStorage encrypts what it stores, but the
-// decryption key ships inside the frontend JS bundle, so this is
-// obfuscation, not real protection — anyone with access to the browser/
-// device (or DevTools) can still recover a saved password. That's an
-// inherent limitation of storing a password in the browser at all, not
-// something this hook can fully close. It's only ever written when the
-// person explicitly checks "Keep me signed in", and it's the person's own
-// device/browser storage.
+// Why not localStorage: anything in localStorage stays on the device forever
+// and is readable by any script on the page, so a saved password there
+// outlives the session and is exposed to a single XSS bug or a shared
+// computer. sessionStorage is wiped by the browser as soon as the tab or
+// window is closed, and it is never shared with other tabs.
+//
+// Students who want the form prefilled on later visits can let their
+// browser's own password manager do it: the Login inputs already carry the
+// standard autocomplete="email" / "current-password" attributes, and the
+// browser stores that in its encrypted vault instead of in this app.
 const KEY = 'sclf_remembered_credentials';
 
-export function loadRememberedCredentials() {
+// Older versions kept this in localStorage (via react-secure-storage). Delete
+// that copy the first time we run, so nobody's password stays behind there.
+function purgeLegacyStorage() {
     try {
-        const raw = secureLocalStorage.getItem(KEY);
+        secureLocalStorage.removeItem(KEY);
+    } catch (e) {
+        // ignore
+    }
+    try {
+        window.localStorage.removeItem(KEY);
+    } catch (e) {
+        // ignore
+    }
+}
+
+export function loadRememberedCredentials() {
+    purgeLegacyStorage();
+    try {
+        const raw = window.sessionStorage.getItem(KEY);
         if (!raw) return null;
-        return typeof raw === 'string' ? JSON.parse(raw) : raw;
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : null;
     } catch (e) {
         return null;
     }
 }
 
 export function saveRememberedCredentials(email, password) {
+    purgeLegacyStorage();
     try {
-        secureLocalStorage.setItem(KEY, JSON.stringify({ email, password }));
+        window.sessionStorage.setItem(KEY, JSON.stringify({ email, password }));
     } catch (e) {
         // Storage can fail in private/incognito modes — fail silently,
         // it's a convenience feature, not a required one.
@@ -34,8 +53,9 @@ export function saveRememberedCredentials(email, password) {
 }
 
 export function clearRememberedCredentials() {
+    purgeLegacyStorage();
     try {
-        secureLocalStorage.removeItem(KEY);
+        window.sessionStorage.removeItem(KEY);
     } catch (e) {
         // ignore
     }

@@ -44,7 +44,10 @@ const AUTH_ACTIONS = new Set(['auth.login', 'auth.logout']);
 export default function AdminUserDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { user: currentUser } = useAuth();
+    const { user: currentUser, roles: myRoles } = useAuth();
+    // The audit trail and activity feed are Admin-only on the server; staff see
+    // the rest of this page without those two sections' data.
+    const isAdminViewer = Array.isArray(myRoles) && myRoles.includes('admin');
     const { label: roleLabel } = useRoleLabel();
 
     const [user, setUser] = useState(null);
@@ -105,19 +108,30 @@ export default function AdminUserDetail() {
     };
 
     useEffect(() => {
+        if (!isAdminViewer) {
+            setLogs([]);
+            setLogsLoading(false);
+            return;
+        }
         setLogsLoading(true);
         axios.get('/audit-logs', { params: { user_id: id } })
             .then((res) => setLogs(res.data.data || []))
+            .catch(() => setLogs([]))
             .finally(() => setLogsLoading(false));
-    }, [id]);
+    }, [id, isAdminViewer]);
 
     useEffect(() => {
+        if (!isAdminViewer) {
+            setActivitySummary(null);
+            setActivityLoading(false);
+            return;
+        }
         setActivityLoading(true);
         axios.get(`/admin/activity/users/${id}/summary`, { params: { days: 30 } })
             .then((res) => setActivitySummary(res.data.data))
             .catch(() => setActivitySummary(null))
             .finally(() => setActivityLoading(false));
-    }, [id]);
+    }, [id, isAdminViewer]);
 
     const authLogs = useMemo(() => logs.filter((l) => AUTH_ACTIONS.has(l.action)), [logs]);
     const visibleLogs = logFilter === 'auth' ? authLogs : logs;
@@ -400,9 +414,11 @@ export default function AdminUserDetail() {
                     </ul>
                 )}
 
-                <Link to="/app/admin/audit-log" className="ds-back-link" style={{ marginTop: 12, marginBottom: 0 }}>
-                    Open full Audit Log <ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} />
-                </Link>
+                {isAdminViewer && (
+                    <Link to="/app/admin/audit-log" className="ds-back-link" style={{ marginTop: 12, marginBottom: 0 }}>
+                        Open full Audit Log <ArrowLeft size={14} style={{ transform: 'rotate(180deg)' }} />
+                    </Link>
+                )}
             </div>
         </DashboardShell>
     );

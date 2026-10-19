@@ -131,3 +131,4 @@
 .att-btn:disabled { opacity: .55; cursor: not-allowed; }
 .att-btn-danger { background: #dc2626; border-color: #dc2626; color: #fff; }
 .att-btn-danger:hover:not(:disabled) { background: #b91c1c; border-color: #b91c1c; }
+.att-lock-note { margin: 0; flex-basis: 100%; font-size: 11px; line-height: 1.4; opacity: 0.75; }

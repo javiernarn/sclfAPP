@@ -232,8 +232,16 @@ export default function SetupAccountPage() {
         const nextFieldErrors = {};
 
         if (step === 1) {
-            if (!profileFile) {
-                toast.error('Please upload a profile picture so staff can verify you at a glance.', { title: 'Photo required' });
+            // A photo is only mandatory when the account has none yet. The
+            // seeded Admin (and any staff the admin gave a photo) already
+            // has one on file, so they can keep it or press "Change photo".
+            if (!profileFile && !user?.profile_picture_url) {
+                toast.error(
+                    isAdmin
+                        ? 'Please upload a profile picture for your account.'
+                        : 'Please upload a profile picture so others at the school can recognize you.',
+                    { title: 'Photo required' }
+                );
                 return false;
             }
             if (!form.first_name.trim()) nextFieldErrors.first_name = 'First name is required.';
@@ -293,7 +301,9 @@ export default function SetupAccountPage() {
             if (form.gender) data.append('gender', form.gender);
             data.append('password', form.password);
             data.append('password_confirmation', form.password_confirmation);
-            data.append('profile_picture', profileFile);
+            // Only send a photo when the person picked a new one; otherwise
+            // the picture already on the account is kept.
+            if (profileFile) data.append('profile_picture', profileFile);
 
             await completeSetup(data);
 
@@ -391,7 +401,7 @@ export default function SetupAccountPage() {
                                         <button type="button" className="lg-avatar-btn" onClick={handlePickPhoto}>
                                             {profileImage ? 'Change photo' : 'Upload photo'}
                                         </button>
-                                        <span className="lg-row-hint" style={{ marginTop: 0 }}>Square image, max 5MB. Required so staff can verify you.</span>
+                                        <span className="lg-row-hint" style={{ marginTop: 0 }}>{isAdmin ? 'Square image, max 5MB.' : 'Square image, max 5MB. Required so others can recognize you.'}</span>
                                     </div>
                                     <input
                                         ref={fileInputRef}

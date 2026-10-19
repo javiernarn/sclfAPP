@@ -41,8 +41,8 @@ class UserController extends Controller
             )
             ->with('roles:id,name')
             ->when($request->role, fn ($q) => $q->role($request->role))
-            ->when($request->q, fn ($q) => $q->where('name', 'like', "%{$request->q}%")
-                ->orWhere('email', 'like', "%{$request->q}%"))
+            ->when($request->q, fn ($q) => $q->where('name', 'like', \App\Support\Like::contains($request->q))
+                ->orWhere('email', 'like', \App\Support\Like::contains($request->q)))
             ->latest()
             ->paginate(15);
 
@@ -152,6 +152,11 @@ class UserController extends Controller
             'must_setup_profile' => true,
         ]);
 
+        // The admin vouches for the address they typed in, so these accounts
+        // skip the email-verification step (email_verified_at is not
+        // mass-assignable, hence forceFill).
+        $user->forceFill(['email_verified_at' => now()])->save();
+
         $user->assignRole($validated['role']);
 
         $this->audit->log(
@@ -205,7 +210,7 @@ class UserController extends Controller
                 'sometimes', 'email', 'max:255', 'lowercase',
                 \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user->id),
             ],
-            'password' => ['sometimes', 'nullable', 'string', 'min:8'],
+            'password' => ['sometimes', 'nullable', 'string', \Illuminate\Validation\Rules\Password::defaults()],
             'phone_number' => [
                 'sometimes', 'nullable', 'string', 'regex:/^09\d{9}$/',
                 \Illuminate\Validation\Rule::unique('users', 'phone_number')->ignore($user->id),

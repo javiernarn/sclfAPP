@@ -2,6 +2,17 @@
 
 return [
 
+    // Refresh token in an HttpOnly cookie (see App\Support\RefreshCookie and
+    // SECURITY_PHASES/PHASE_6.md). Turn off with SCLF_REFRESH_COOKIE=false to
+    // return to the old mode without rebuilding the frontend.
+    'refresh_cookie' => [
+        'enabled' => env('SCLF_REFRESH_COOKIE', true),
+        // Also accept a refresh token sent in the request body while cookie
+        // mode is on (only for clients that cannot use cookies). Keep false.
+        'allow_body' => env('SCLF_REFRESH_ALLOW_BODY', false),
+    ],
+
+
     /*
     |--------------------------------------------------------------------------
     | Unclaimed item retention period

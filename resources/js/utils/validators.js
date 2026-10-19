@@ -11,9 +11,20 @@ export const PH_PHONE_REGEX = /^09\d{9}$/;
 // School student IDs: YYYY-N-NNNNN (e.g. 2021-2-04062).
 export const STUDENT_ID_REGEX = /^\d{4}-\d-\d{5}$/;
 
-// Institutional email convention: occ.lastname.firstname@gmail.com
-// (lowercase letters only in each name segment, dot separated).
-export const SCHOOL_EMAIL_REGEX = /^occ\.[a-z]+\.[a-z]+@gmail\.com$/;
+// Institutional email convention: occ.lastname.firstname@gmail.com, with
+// optional digits after the first name (occ.antiquina.joneejohn1234@gmail.com).
+// The lastname segment must also match the Last name typed on the form —
+// see isValidSchoolEmail().
+export const SCHOOL_EMAIL_REGEX = /^occ\.([a-z]+)\.([a-z]+)(\d{0,6})@gmail\.com$/;
+
+// "De la Cruz" -> "delacruz", "Peña-Reyes" -> "penareyes": the form a last
+// name takes inside the email (lowercase a-z only). Mirrors
+// AuthController::emailNameSegment().
+export const emailNameSegment = (value) => String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z]/g, '');
 
 // Staff / security / instructor / admin ID numbers are whatever the school
 // issued (e.g. ADMIN-09874589, SEC-2026-0001, 2019-0042) — letters, digits,
@@ -29,7 +40,7 @@ export const FORMAT_HINTS = {
     staffId: 'Your school-issued ID number: letters, numbers, dashes, dots or slashes (3-50 characters).',
     phone: 'Philippine mobile number: 11 digits starting with 09, e.g. 09171234567.',
     studentId: 'Format: YYYY-N-NNNNN, e.g. 2021-2-04062.',
-    email: 'Format: occ.lastname.firstname@gmail.com (all lowercase).',
+    email: 'Format: occ.lastname.firstname@gmail.com (all lowercase). The lastname must match your Last name; numbers after the first name are optional.',
     name: 'Letters, spaces, hyphens and apostrophes only — no numbers.',
     password: 'At least 8 characters, with an uppercase letter, a lowercase letter and a number.',
 };
@@ -40,6 +51,7 @@ export const FORMAT_ERRORS = {
     phone: 'Enter a valid Philippine mobile number, e.g. 09171234567.',
     studentId: 'Use the format YYYY-N-NNNNN, e.g. 2021-2-04062.',
     email: 'Use the format occ.lastname.firstname@gmail.com.',
+    emailLastName: (lastName) => `The email must start with occ.${emailNameSegment(lastName) || 'lastname'}. so it matches your Last name.`,
     name: 'This field can only contain letters, spaces, hyphens and apostrophes.',
 };
 
@@ -49,6 +61,12 @@ export const FORMAT_ERRORS = {
 export const isValidPhone = (value) => PH_PHONE_REGEX.test(String(value || '').trim());
 export const isValidStudentId = (value) => STUDENT_ID_REGEX.test(String(value || '').trim());
 export const isValidSchoolEmail = (value) => SCHOOL_EMAIL_REGEX.test(String(value || '').trim().toLowerCase());
+// True when the email's lastname segment equals the (normalised) Last name.
+export const emailMatchesLastName = (email, lastName) => {
+    const m = SCHOOL_EMAIL_REGEX.exec(String(email || '').trim().toLowerCase());
+    const expected = emailNameSegment(lastName);
+    return !!m && expected !== '' && m[1] === expected;
+};
 export const isValidStaffId = (value) => STAFF_ID_REGEX.test(String(value || '').trim());
 export const isValidEmail = (value) => GENERIC_EMAIL_REGEX.test(String(value || '').trim());
 export const isNameLike = (value) => /^[a-zA-Z\u00C0-\u017F\s'-]*$/.test(value ?? '');

@@ -181,7 +181,7 @@ class ServiceRequestController extends Controller
         try {
             $serviceRequest = $this->requests->cancel($serviceRequest, $request->user());
         } catch (ValidationException $e) {
-            return response()->json(['success' => false, 'errors' => $e->errors()], 422);
+            return response()->json(['success' => false, 'message' => collect($e->errors())->flatten()->first(), 'errors' => $e->errors()], 422);
         }
 
         return response()->json(['success' => true, 'message' => 'Request cancelled.', 'data' => $serviceRequest]);

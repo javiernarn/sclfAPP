@@ -146,8 +146,8 @@ class VisitorController extends Controller
                 fn ($query) => $query->where('campus_id', $viewer->campus_id)
             )
             ->where(function ($w) use ($q) {
-                $w->where('name', 'like', "%{$q}%")
-                    ->orWhere('student_id', 'like', "%{$q}%");
+                $w->where('name', 'like', \App\Support\Like::contains($q))
+                    ->orWhere('student_id', 'like', \App\Support\Like::contains($q));
             })
             ->orderBy('name')
             ->limit(8)

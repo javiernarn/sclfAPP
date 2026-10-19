@@ -20,6 +20,9 @@ Schedule::command('disposition:sweep')->dailyAt('02:00');
 // jobs here it's actually sized to matter if it's skipped for a while.
 Schedule::command('activity:prune')->dailyAt('02:30');
 
+// Alerts the admins (log + one email per hour) when logins or traffic look like an attack.
+Schedule::command('security:watch')->everyTenMinutes();
+
 // Matching v2: keep open matches in step with edited reports even if nobody
 // opens the Matches page. (The page also re-scores stale rows on load.)
 Schedule::command('matches:rescore')->hourly();

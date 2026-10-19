@@ -41,6 +41,8 @@ export default function ServiceRequestDetail() {
 
     const [request, setRequest] = useState(null);
     const [loading, setLoading] = useState(true);
+    // Why it couldn't be opened (e.g. "deleted on ... by an Administrator"), straight from the server.
+    const [loadError, setLoadError] = useState('');
     const [busy, setBusy] = useState(false);
     const [completionNotes, setCompletionNotes] = useState('');
 
@@ -50,10 +52,17 @@ export default function ServiceRequestDetail() {
 
     const load = () => {
         setLoading(true);
+        setLoadError('');
         axios.get(`/service-requests/${id}`)
             .then((res) => setRequest(res.data.data))
             .catch((err) => {
-                toast.error(err?.response?.data?.message || 'Could not load this request.', { title: 'Could not load' });
+                const status = err?.response?.status;
+                if (status === 404 || status === 410) {
+                    // The global handler already toasted the reason; keep it on the page too.
+                    setLoadError(err?.response?.data?.message || '');
+                } else {
+                    toast.error(err?.response?.data?.message || 'Could not load this request.', { title: 'Could not load' });
+                }
             })
             .finally(() => setLoading(false));
     };
@@ -161,7 +170,7 @@ export default function ServiceRequestDetail() {
                 <div className="ds-card">
                     <div className="ds-empty">
                         <Lock size={18} style={{ verticalAlign: -3, marginRight: 6 }} />
-                        This request couldn't be found, or you don't have access to it.
+                        {loadError || "This request couldn't be found, or you don't have access to it."}
                     </div>
                 </div>
             </DashboardShell>
@@ -270,7 +279,13 @@ export default function ServiceRequestDetail() {
 
             {canCancel && (
                 <div className="ds-card">
-                    <button className="ds-btn ds-btn-secondary" disabled={busy} onClick={cancel}>
+                    {request.violation_locked && (
+                        <p className="ds-card-desc" style={{ color: '#dc2626', fontWeight: 600 }}>
+                            A file on this request is marked as a violation, so it can’t be cancelled.
+                            {isStaff ? ' Undo the violation on the file first, then cancel.' : ' Ask the Administrator to undo the violation first.'}
+                        </p>
+                    )}
+                    <button className="ds-btn ds-btn-secondary" disabled={busy || request.violation_locked} title={request.violation_locked ? 'Undo the violation first' : undefined} onClick={cancel}>
                         <XCircle size={14} style={{ verticalAlign: -2, marginRight: 4 }} /> Cancel Request
                     </button>
                 </div>

@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\RemembersWhoDeleted;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Claim extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, RemembersWhoDeleted;
 
     public const STATUS_PENDING = 'pending';
     public const STATUS_UNDER_REVIEW = 'under_review';

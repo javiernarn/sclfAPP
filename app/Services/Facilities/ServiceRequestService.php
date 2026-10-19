@@ -284,6 +284,13 @@ class ServiceRequestService
             throw ValidationException::withMessages(['status' => 'This request can no longer be cancelled.']);
         }
 
+        // Same rule as deleting an incident: undo the violation first.
+        if (\App\Models\Violation::confirmedOn($request)) {
+            throw ValidationException::withMessages([
+                'report' => \App\Models\Violation::lockMessage('cancelled', $actor->isAdmin()),
+            ]);
+        }
+
         return DB::transaction(function () use ($request, $actor) {
             $request->update([
                 'status' => ServiceRequest::STATUS_CANCELLED,

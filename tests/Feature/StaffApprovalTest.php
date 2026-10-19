@@ -163,7 +163,7 @@ class StaffApprovalTest extends TestCase
         // Cannot be created as admin...
         $this->actingWithToken($admin)->postJson('/api/admin/users', [
             'first_name' => 'New', 'last_name' => 'Person', 'email' => 'new@example.com',
-            'password' => 'password123', 'role' => 'admin',
+            'password' => 'Password123', 'role' => 'admin',
         ])->assertStatus(422);
 
         // ...nor promoted.
@@ -173,7 +173,7 @@ class StaffApprovalTest extends TestCase
         // Staff role is available.
         $this->actingWithToken($admin)->postJson('/api/admin/users', [
             'first_name' => 'New', 'last_name' => 'Staff', 'email' => 'staff2@example.com',
-            'password' => 'password123', 'role' => 'staff',
+            'password' => 'Password123', 'role' => 'staff',
         ])->assertCreated();
     }
 
@@ -289,7 +289,7 @@ class StaffApprovalTest extends TestCase
 
         $body = [
             'first_name' => 'Ina', 'last_name' => 'Cruz', 'email' => 'ina.cruz@example.com',
-            'password' => 'password123', 'role' => 'instructor',
+            'password' => 'Password123', 'role' => 'instructor',
         ];
 
         $this->actingWithToken($staff)->postJson('/api/admin/users', $body)
@@ -352,7 +352,7 @@ class StaffApprovalTest extends TestCase
 
         $body = [
             'first_name' => 'Ina', 'last_name' => 'Cruz', 'email' => 'ina.cruz@example.com',
-            'password' => 'password123', 'role' => 'security_officer',
+            'password' => 'Password123', 'role' => 'security_officer',
         ];
 
         // Asking without saying which role is refused: the admin must know what they approve.

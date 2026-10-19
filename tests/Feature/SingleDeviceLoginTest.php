@@ -10,6 +10,7 @@ use Tests\TestCase;
 class SingleDeviceLoginTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\InteractsWithRefreshCookie;
 
     private const LAPTOP_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36';
     private const IPHONE_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
@@ -56,7 +57,7 @@ class SingleDeviceLoginTest extends TestCase
         $laptop = $this->loginFrom(self::LAPTOP_UA)->assertOk();
         $this->loginFrom(self::IPHONE_UA)->assertOk();
 
-        $this->postJson('/api/token/refresh', ['refresh_token' => $laptop->json('refresh_token')])
+        $this->refreshWith($this->refreshTokenFrom($laptop))
             ->assertStatus(401)
             ->assertJson(['code' => 'session_displaced', 'device' => 'iPhone · Safari']);
     }
@@ -68,9 +69,9 @@ class SingleDeviceLoginTest extends TestCase
         $this->loginFrom(self::LAPTOP_UA)->assertOk();
         $iphone = $this->loginFrom(self::IPHONE_UA)->assertOk();
 
-        $this->postJson('/api/token/refresh', ['refresh_token' => $iphone->json('refresh_token')])
+        $this->refreshWith($this->refreshTokenFrom($iphone))
             ->assertOk()
-            ->assertJsonStructure(['access_token', 'refresh_token', 'expires_in']);
+            ->assertJsonStructure(['access_token', 'expires_in']);
     }
 
     public function test_feature_can_be_disabled_via_config(): void

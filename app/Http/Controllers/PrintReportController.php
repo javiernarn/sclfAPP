@@ -82,7 +82,7 @@ class PrintReportController extends Controller
         $confirmed = Violation::where('user_id', $subject->id)->confirmed();
 
         $items = (clone $confirmed)
-            ->with('reviewer:id,name')
+            ->with('reviewer:id,name', 'reviewer.roles:id,name')
             ->latest('reviewed_at')
             ->limit(10)
             ->get()
@@ -92,7 +92,9 @@ class PrintReportController extends Controller
                 'source' => $v->source,
                 'reason' => $v->reason,
                 'at' => optional($v->reviewed_at ?? $v->created_at)->toIso8601String(),
-                'confirmed_by' => $v->reviewer?->name,
+                // Role only (Administrator / Security Officer / Staff) — the
+                // person reading their own printout isn't shown a staff name.
+                'confirmed_by' => $v->reviewerRoleLabel(),
             ])
             ->values();
 

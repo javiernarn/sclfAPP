@@ -5,6 +5,20 @@
 
     RewriteEngine On
 
+    # --- Force HTTPS (live server) -------------------------------------------
+    # Everything except localhost is sent to https://. Works behind a proxy that
+    # sets X-Forwarded-Proto too. Hostinger: enable the free SSL first.
+    RewriteCond %{HTTPS} off
+    RewriteCond %{HTTP:X-Forwarded-Proto} !https
+    RewriteCond %{HTTP_HOST} !^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$ [NC]
+    RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # --- Never serve hidden files or sensitive file types ---------------------
+    # (.env, .git, .htpasswd, *.sql, *.log, *.bak ...). Letting
+    # /.well-known/ through keeps SSL certificate renewal working.
+    RewriteRule "(^|/)\.(?!well-known/)" - [F,L]
+    RewriteRule "\.(env|sql|sqlite|log|bak|old|orig|swp|ini|lock|md)$" - [F,L,NC]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

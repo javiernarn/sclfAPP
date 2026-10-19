@@ -12,6 +12,8 @@ import {
     isValidPhone,
     isValidStudentId,
     isValidSchoolEmail,
+    emailMatchesLastName,
+    emailNameSegment,
     humanizeValidationErrors,
     FORMAT_HINTS,
     FORMAT_ERRORS,
@@ -225,6 +227,7 @@ export default function RegisterPage() {
         if (step === 2) {
             if (isBlank(form.email)) nextFieldErrors.email = 'Email address is required.';
             else if (!isValidSchoolEmail(form.email)) nextFieldErrors.email = FORMAT_ERRORS.email;
+            else if (!emailMatchesLastName(form.email, form.last_name)) nextFieldErrors.email = FORMAT_ERRORS.emailLastName(form.last_name);
             if (isBlank(form.phone_number)) nextFieldErrors.phone_number = 'Phone number is required.';
             else if (!isValidPhone(form.phone_number)) nextFieldErrors.phone_number = FORMAT_ERRORS.phone;
             if (isBlank(form.gender)) nextFieldErrors.gender = 'Please select your gender.';
@@ -478,7 +481,7 @@ export default function RegisterPage() {
                                     value={form.email}
                                     onChange={handleChange}
                                     autoComplete="email"
-                                    placeholder="occ.lastname.firstname@gmail.com"
+                                    placeholder={`occ.${emailNameSegment(form.last_name) || 'lastname'}.firstname@gmail.com`}
                                     aria-invalid={!!fieldErrors.email}
                                     autoFocus
                                     required

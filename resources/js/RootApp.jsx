@@ -4,11 +4,15 @@ import { useAuth } from './context/AuthContext';
 import { publicRoutes, adminRoutes, securityRoutes, studentRoutes } from './routes';
 import MainPage from './Pages/Main/MainPage';
 import SetupAccountPage from './Pages/Profile/SetupAccountPage';
+import VerifyEmailNotice from './Pages/Auth/VerifyEmailNotice';
 import ApprovalRequestModal from './Components/shared/ApprovalRequestModal';
 import DeviceSignedOutModal from './Components/shared/DeviceSignedOutModal';
 import useServiceWorkerNavigation from './hooks/useServiceWorkerNavigation';
 
 const SETUP_PATH = '/app/setup-account';
+const VERIFY_PATH = '/app/verify-email';
+// Pages only the Admin may open (staff are blocked on the server too).
+const ADMIN_ONLY_PATHS = ['/app/admin/requests', '/app/admin/audit-log', '/app/admin/activity'];
 
 function ProtectedRoute({ children, requiredRoles }) {
     const { user, roles, loading, signedOut } = useAuth();
@@ -23,6 +27,13 @@ function ProtectedRoute({ children, requiredRoles }) {
         // login can send them straight back there.
         const dest = location.pathname + location.search;
         return <Navigate to={`/login?redirect=${encodeURIComponent(dest)}`} replace />;
+    }
+
+    // Self-registered accounts must verify their email before anything else.
+    // Mirrors EnsureEmailVerified on the backend (which is what actually
+    // enforces it). `=== false` so older responses without the flag pass.
+    if (user.email_verified === false && location.pathname !== VERIFY_PATH) {
+        return <Navigate to={VERIFY_PATH} replace />;
     }
 
     // Admin-created staff accounts (instructor/security_officer/admin)
@@ -88,6 +99,7 @@ export default function RootApp() {
                 ))}
 
                 <Route path={SETUP_PATH} element={<SetupRoute><SetupAccountPage /></SetupRoute>} />
+                <Route path={VERIFY_PATH} element={<VerifyEmailNotice />} />
 
                 {studentRoutes.map(({ path, component: Component }) => (
                     <Route key={path} path={path} element={
@@ -105,8 +117,8 @@ export default function RootApp() {
 
                 {adminRoutes.map(({ path, component: Component }) => (
                     <Route key={path} path={path} element={
-                        // Staff Requests is the admin's review queue — staff can't open it.
-                        <ProtectedRoute requiredRoles={path === '/app/admin/requests' ? ['admin'] : ['admin', 'staff']}><Component /></ProtectedRoute>
+                        // Staff Requests, Audit Log and User Activity are admin-only — staff can't open them.
+                        <ProtectedRoute requiredRoles={ADMIN_ONLY_PATHS.includes(path) ? ['admin'] : ['admin', 'staff']}><Component /></ProtectedRoute>
                     } />
                 ))}
 

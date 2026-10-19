@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\UserActivityController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\TwoFactorController;
@@ -30,8 +31,8 @@ use App\Http\Controllers\VisitorController;
 use Illuminate\Support\Facades\Route;
 
 // Public routes — no login required
-Route::post('/login', [AuthController::class, 'login']);
-Route::middleware('throttle:10,1')->post('/token/refresh', [AuthController::class, 'refreshToken']);
+Route::middleware('throttle:login-ip')->post('/login', [AuthController::class, 'login']);
+Route::middleware('throttle:refresh')->post('/token/refresh', [AuthController::class, 'refreshToken']);
 
 // Mid-login 2FA challenge: authenticated only by the short-lived
 // "2fa-pending" token issued from login() above, not a full session — so
@@ -46,7 +47,7 @@ Route::middleware(['auth:sanctum', 'throttle:10,1'])->post('/2fa/login-verify', 
 // emails/phones/student IDs are already registered (checkAvailability
 // doesn't reveal *whose* account it is, but an attacker can still brute
 // force through the whole ID space if nothing throttles the requests).
-Route::middleware('throttle:5,60')->post('/register', [AuthController::class, 'register']);
+Route::middleware('throttle:register')->post('/register', [AuthController::class, 'register']);
 Route::middleware('throttle:20,1')->post('/check-availability', [AuthController::class, 'checkAvailability']);
 
 
@@ -72,14 +73,18 @@ Route::middleware('throttle:6,1')->group(function () {
 // `staff.approval` is last on purpose: staff pass every role check below (so they
 // can read what an admin reads), then this refuses any write that the admin
 // hasn't approved. See RequireStaffApproval.
-Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'profile.setup', 'staff.approval'])->group(function () {
+Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'profile.setup', 'email.verified', 'staff.approval'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
+    // Ask for a new verification email (the only thing an unverified
+    // account may do besides /me and /logout — see EnsureEmailVerified).
+    Route::middleware('throttle:3,1')->post('/email/verification-notification', [EmailVerificationController::class, 'resend']);
     Route::get('/me', [AuthController::class, 'me']);
-    Route::post('/change-password', [AuthController::class, 'changePassword']);
+    // Checks the CURRENT password, so a stolen session must not be able to guess it.
+    Route::middleware('throttle:5,1')->post('/change-password', [AuthController::class, 'changePassword']);
 
     // Mandatory first-login setup for an admin-created staff account —
     // see ProfileController::completeSetup() and SetupAccountPage.jsx.
-    Route::post('/profile/complete-setup', [ProfileController::class, 'completeSetup']);
+    Route::middleware('throttle:10,1')->post('/profile/complete-setup', [ProfileController::class, 'completeSetup']);
 
     // Two-factor authentication management (Profile page's Security
     // card). Setup/confirm/disable all require a fully-authenticated
@@ -87,20 +92,20 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     // token, which require.full_access already guarantees for the whole
     // group.
     Route::post('/2fa/setup', [TwoFactorController::class, 'setup']);
-    Route::post('/2fa/confirm', [TwoFactorController::class, 'confirm']);
-    Route::post('/2fa/disable', [TwoFactorController::class, 'disable']);
+    Route::middleware('throttle:10,1')->post('/2fa/confirm', [TwoFactorController::class, 'confirm']);
+    Route::middleware('throttle:5,1')->post('/2fa/disable', [TwoFactorController::class, 'disable']);
 
     // Lost Items — any authenticated user may browse/search; create is
     // restricted to student/instructor via LostItemPolicy inside the controller.
     Route::get('/lost-items', [LostItemController::class, 'index']);
-    Route::post('/lost-items', [LostItemController::class, 'store']);
+    Route::middleware('throttle:reports')->post('/lost-items', [LostItemController::class, 'store']);
     Route::get('/lost-items/{lostItem}', [LostItemController::class, 'show']);
     Route::delete('/lost-items/{lostItem}', [LostItemController::class, 'destroy']);
     Route::get('/lost-items/{lostItem}/matches', [MatchController::class, 'forLostItem']);
 
     // Found Items
     Route::get('/found-items', [FoundItemController::class, 'index']);
-    Route::post('/found-items', [FoundItemController::class, 'store']);
+    Route::middleware('throttle:reports')->post('/found-items', [FoundItemController::class, 'store']);
     Route::get('/found-items/{foundItem}', [FoundItemController::class, 'show']);
     Route::get('/found-items/{foundItem}/matches', [MatchController::class, 'forFoundItem']);
     Route::get('/found-items/{foundItem}/movements', [StorageLocationController::class, 'history']);
@@ -112,9 +117,9 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
 
     // Claims
     Route::get('/claims', [ClaimController::class, 'index']);
-    Route::post('/found-items/{foundItem}/claims', [ClaimController::class, 'store']);
+    Route::middleware('throttle:reports')->post('/found-items/{foundItem}/claims', [ClaimController::class, 'store']);
     Route::get('/claims/{claim}', [ClaimController::class, 'show']);
-    Route::post('/claims/{claim}/evidence', [ClaimController::class, 'addEvidence']);
+    Route::middleware('throttle:uploads')->post('/claims/{claim}/evidence', [ClaimController::class, 'addEvidence']);
     // Private, policy-checked evidence retrieval — replaces the old
     // public('storage')-disk URL that anyone with the link could hit.
     Route::get('/claims/evidence/{evidence}/download', [ClaimController::class, 'downloadEvidence']);
@@ -168,7 +173,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     // role. Managing an incident (assign/resolve/close/reopen) is
     // officer/admin-only, see the role-restricted group below.
     Route::get('/security-incidents', [SecurityIncidentController::class, 'index']);
-    Route::post('/security-incidents', [SecurityIncidentController::class, 'store']);
+    Route::middleware('throttle:reports')->post('/security-incidents', [SecurityIncidentController::class, 'store']);
     Route::get('/security-incidents/{securityIncident}', [SecurityIncidentController::class, 'show']);
     // Editing your own fresh report lives here (any authenticated user);
     // the policy itself is what actually restricts it to the reporter
@@ -186,7 +191,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     Route::get('/report-attachments/{attachment}', [ReportAttachmentController::class, 'show']);
 
     Route::get('/service-requests', [ServiceRequestController::class, 'index']);
-    Route::post('/service-requests', [ServiceRequestController::class, 'store']);
+    Route::middleware('throttle:reports')->post('/service-requests', [ServiceRequestController::class, 'store']);
     Route::get('/service-requests/{serviceRequest}', [ServiceRequestController::class, 'show']);
     Route::post('/service-requests/{serviceRequest}/cancel', [ServiceRequestController::class, 'cancel']);
 
@@ -358,16 +363,20 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         Route::put('/admin/users/{user}', [AdminUserController::class, 'update']);
         Route::delete('/admin/users/{user}', [AdminUserController::class, 'destroy']);
         Route::post('/admin/users/{id}/restore', [AdminUserController::class, 'restore']);
-        // audit log
-        Route::get('/audit-logs', [AuditLogController::class, 'index']);
+        // audit log: the Admin only (staff don't need the raw trail of who
+        // did what, from which IP). Least privilege, see PHASE_5.md.
+        Route::middleware('role:admin')->get('/audit-logs', [AuditLogController::class, 'index']);
 
         // User Activity — device/IP/spam monitoring. Separate from
         // /audit-logs (curated business events): this is the raw
         // request-level feed recorded by TrackUserActivity, used for
         // "who's actually using this, from where, and does it look like
         // abuse" rather than "what did this account do".
-        Route::get('/admin/activity', [UserActivityController::class, 'index']);
-        Route::get('/admin/activity/users/{user}/summary', [UserActivityController::class, 'summary']);
+        // Admin only (IPs, devices and the abuse flags of every account).
+        Route::middleware('role:admin')->group(function () {
+            Route::get('/admin/activity', [UserActivityController::class, 'index']);
+            Route::get('/admin/activity/users/{user}/summary', [UserActivityController::class, 'summary']);
+        });
 
         // Departments — campus-scoped org units, distinct from users.course
         // (free-text academic program). See the departments migration.

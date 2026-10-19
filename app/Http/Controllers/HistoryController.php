@@ -55,12 +55,12 @@ class HistoryController extends Controller
             ->when($request->q, function ($q) use ($request) {
                 $term = $request->q;
                 $q->where(function ($qq) use ($term) {
-                    $qq->where('item_name', 'like', "%{$term}%")
+                    $qq->where('item_name', 'like', \App\Support\Like::contains($term))
                         ->orWhereHas('claims', fn ($c) => $c->whereHas(
                             'claimant',
-                            fn ($cc) => $cc->where('name', 'like', "%{$term}%")
-                                ->orWhere('student_id', 'like', "%{$term}%")
-                                ->orWhere('staff_id', 'like', "%{$term}%")
+                            fn ($cc) => $cc->where('name', 'like', \App\Support\Like::contains($term))
+                                ->orWhere('student_id', 'like', \App\Support\Like::contains($term))
+                                ->orWhere('staff_id', 'like', \App\Support\Like::contains($term))
                         ));
                 });
             })
@@ -146,10 +146,10 @@ class HistoryController extends Controller
             ->when($request->q, function ($q) use ($request) {
                 $term = $request->q;
                 $q->where(function ($qq) use ($term) {
-                    $qq->whereHas('foundItem', fn ($f) => $f->where('item_name', 'like', "%{$term}%"))
-                        ->orWhereHas('claimant', fn ($c) => $c->where('name', 'like', "%{$term}%")
-                            ->orWhere('student_id', 'like', "%{$term}%")
-                            ->orWhere('staff_id', 'like', "%{$term}%"));
+                    $qq->whereHas('foundItem', fn ($f) => $f->where('item_name', 'like', \App\Support\Like::contains($term)))
+                        ->orWhereHas('claimant', fn ($c) => $c->where('name', 'like', \App\Support\Like::contains($term))
+                            ->orWhere('student_id', 'like', \App\Support\Like::contains($term))
+                            ->orWhere('staff_id', 'like', \App\Support\Like::contains($term)));
                 });
             })
             ->when($request->date_from, fn ($q) => $q->whereDate('updated_at', '>=', $request->date_from))

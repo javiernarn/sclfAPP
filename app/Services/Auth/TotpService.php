@@ -55,21 +55,31 @@ class TotpService
      */
     public function verify(string $secret, string $code): bool
     {
+        return $this->matchingStep($secret, $code) !== null;
+    }
+
+    /**
+     * Same check as verify(), but returns WHICH 30-second step the code
+     * belongs to (or null if it matches none). Callers use the step number
+     * to refuse a second use of the same code (replay protection).
+     */
+    public function matchingStep(string $secret, string $code): ?int
+    {
         $code = preg_replace('/\s+/', '', $code);
 
         if (!preg_match('/^\d{6}$/', $code)) {
-            return false;
+            return null;
         }
 
         $currentStep = (int) floor(time() / self::PERIOD);
 
         foreach ([-1, 0, 1] as $drift) {
             if (hash_equals($this->generateCode($secret, $currentStep + $drift), $code)) {
-                return true;
+                return $currentStep + $drift;
             }
         }
 
-        return false;
+        return null;
     }
 
     private function generateCode(string $secret, int $step): string

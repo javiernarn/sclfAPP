@@ -159,7 +159,7 @@ class SearchService
 
     private function completions(User $viewer, string $q, bool $isStaff, bool $isAdmin): array
     {
-        $like = "%{$q}%";
+        $like = \App\Support\Like::contains($q);
         $out = [];
 
         foreach ($this->visibleFoundItems($isStaff)->where('item_name', 'like', $like)->latest()->limit(12)->pluck('item_name') as $name) {
@@ -235,7 +235,7 @@ class SearchService
                     ->orWhere('intake_channel', '!=', FoundItem::CHANNEL_COUNTER_INTAKE);
             }))
             ->where(function ($sub) use ($q) {
-                $sub->where('item_name', 'like', "%{$q}%")->orWhere('description', 'like', "%{$q}%");
+                $sub->where('item_name', 'like', \App\Support\Like::contains($q))->orWhere('description', 'like', \App\Support\Like::contains($q));
             })
             ->latest()
             ->limit($limit)
@@ -256,7 +256,7 @@ class SearchService
         // any authenticated user can already browse the full lost-items
         // list.
         return LostItem::query()
-            ->where('item_name', 'like', "%{$q}%")
+            ->where('item_name', 'like', \App\Support\Like::contains($q))
             ->latest()
             ->limit($limit)
             ->get()
@@ -277,7 +277,7 @@ class SearchService
         return Claim::query()
             ->with('foundItem:id,item_name')
             ->when(!$isStaff, fn ($query) => $query->where('claimant_id', $viewer->id))
-            ->whereHas('foundItem', fn ($sub) => $sub->where('item_name', 'like', "%{$q}%"))
+            ->whereHas('foundItem', fn ($sub) => $sub->where('item_name', 'like', \App\Support\Like::contains($q)))
             ->latest()
             ->limit($limit)
             ->get()
@@ -299,7 +299,7 @@ class SearchService
                 fn ($query) => $query->where('campus_id', $viewer->campus_id)
             )
             ->where(function ($sub) use ($q) {
-                $sub->where('title', 'like', "%{$q}%")->orWhere('description', 'like', "%{$q}%");
+                $sub->where('title', 'like', \App\Support\Like::contains($q))->orWhere('description', 'like', \App\Support\Like::contains($q));
             })
             ->latest()
             ->limit($limit)
@@ -322,7 +322,7 @@ class SearchService
                 fn ($query) => $query->where('campus_id', $viewer->campus_id)
             )
             ->where(function ($sub) use ($q) {
-                $sub->where('title', 'like', "%{$q}%")->orWhere('description', 'like', "%{$q}%");
+                $sub->where('title', 'like', \App\Support\Like::contains($q))->orWhere('description', 'like', \App\Support\Like::contains($q));
             })
             ->latest()
             ->limit($limit)
@@ -344,10 +344,10 @@ class SearchService
                 fn ($query) => $query->where('campus_id', $viewer->campus_id)
             )
             ->where(function ($w) use ($q) {
-                $w->where('full_name', 'like', "%{$q}%")
-                    ->orWhere('badge_number', 'like', "%{$q}%")
-                    ->orWhere('student_name', 'like', "%{$q}%")
-                    ->orWhere('student_number', 'like', "%{$q}%");
+                $w->where('full_name', 'like', \App\Support\Like::contains($q))
+                    ->orWhere('badge_number', 'like', \App\Support\Like::contains($q))
+                    ->orWhere('student_name', 'like', \App\Support\Like::contains($q))
+                    ->orWhere('student_number', 'like', \App\Support\Like::contains($q));
             })
             ->latest('checked_in_at')
             ->limit($limit)
@@ -380,9 +380,9 @@ class SearchService
                 fn ($query) => $query->where('campus_id', $viewer->campus_id)
             )
             ->where(function ($sub) use ($q) {
-                $sub->where('name', 'like', "%{$q}%")
-                    ->orWhere('student_id', 'like', "%{$q}%")
-                    ->orWhere('staff_id', 'like', "%{$q}%");
+                $sub->where('name', 'like', \App\Support\Like::contains($q))
+                    ->orWhere('student_id', 'like', \App\Support\Like::contains($q))
+                    ->orWhere('staff_id', 'like', \App\Support\Like::contains($q));
             })
             ->with('campus:id,name')
             ->select('id', 'name', 'student_id', 'staff_id', 'profile_picture', 'campus_id')

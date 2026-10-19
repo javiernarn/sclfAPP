@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\RemembersWhoDeleted;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class FoundItem extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, RemembersWhoDeleted;
 
     public const STATUS_PENDING_REVIEW = 'pending_review';
     public const STATUS_REJECTED = 'rejected';
@@ -127,6 +128,48 @@ class FoundItem extends Model
     ];
 
     protected $appends = ['image_url'];
+
+    /**
+     * Details only the people handling the item (security / admin / staff) and
+     * the person who reported finding it should see. Everyone else browsing the
+     * public list sees the basics (name, photo, where and when it was found).
+     *
+     * Why: the claim process asks a claimant to PROVE ownership by describing
+     * unique marks and extra details. If those are shown to every logged-in
+     * user, a dishonest claimant can read them and copy them into a claim.
+     */
+    public const CONFIDENTIAL_FIELDS = [
+        'unique_characteristics',
+        'details',
+        'verification_notes',
+        'disposition_method',
+        'disposition_notes',
+        'disposed_by',
+        'disposed_at',
+        'security_officer_id',
+        'qr_code',
+        'retention_expires_at',
+        'unclaimed_at',
+    ];
+
+    /** Can this user see the confidential fields above? */
+    public function confidentialVisibleTo(User $viewer): bool
+    {
+        return $viewer->hasAnyRole(['security_officer', 'admin', 'staff'])
+            || (int) $this->user_id === (int) $viewer->id;
+    }
+
+    /** Return this item with the confidential fields hidden when the viewer may not see them. */
+    public function redactedFor(User $viewer): static
+    {
+        if ($this->confidentialVisibleTo($viewer)) {
+            return $this;
+        }
+
+        $this->unsetRelation('securityOfficer');
+
+        return $this->makeHidden(self::CONFIDENTIAL_FIELDS);
+    }
 
     public function finder()
     {

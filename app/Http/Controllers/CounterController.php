@@ -34,9 +34,9 @@ class CounterController extends Controller
             ->role(['student', 'instructor'])
             ->where('is_active', true)
             ->where(function ($q) use ($request) {
-                $q->where('student_id', 'like', "%{$request->q}%")
-                    ->orWhere('staff_id', 'like', "%{$request->q}%")
-                    ->orWhere('name', 'like', "%{$request->q}%");
+                $q->where('student_id', 'like', \App\Support\Like::contains($request->q))
+                    ->orWhere('staff_id', 'like', \App\Support\Like::contains($request->q))
+                    ->orWhere('name', 'like', \App\Support\Like::contains($request->q));
             })
             // staff_id is required here even though it's never displayed
             // directly — it feeds the student_id/staff_id fallback on the

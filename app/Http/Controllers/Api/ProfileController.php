@@ -86,14 +86,18 @@ class ProfileController extends Controller
                 Rule::unique('users', 'phone_number')->ignore($user->id),
             ],
             'gender' => ['nullable', 'string', 'in:male,female,other,prefer_not_to_say'],
-            'profile_picture' => ['required', 'image', 'max:5120'],
+            // Required only if the account has no photo yet. The seeded Admin
+            // already carries the default avatar, so it may keep it.
+            'profile_picture' => [$user->profile_picture ? 'nullable' : 'required', 'image', 'max:5120'],
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
         ], [
             'first_name.regex' => 'First name can only contain letters, spaces, hyphens and apostrophes.',
             'last_name.regex' => 'Last name can only contain letters, spaces, hyphens and apostrophes.',
             'phone_number.regex' => 'Enter a valid Philippine mobile number, e.g. 09171234567.',
             'phone_number.unique' => 'That phone number is already linked to another account.',
-            'profile_picture.required' => 'Please add a profile photo so staff can verify you at a glance.',
+            'profile_picture.required' => $user->isAdmin()
+                ? 'Please add a profile photo for your account.'
+                : 'Please add a profile photo so others at the school can recognize you.',
             'staff_id.required' => 'Please enter your ID number.',
             'staff_id.regex' => 'ID number can only contain letters, numbers, dashes, dots and slashes.',
             'staff_id.unique' => 'That ID number is already registered to another account.',
@@ -108,7 +112,9 @@ class ProfileController extends Controller
         }
 
         $oldPicture = $user->profile_picture;
-        $profilePicturePath = $request->file('profile_picture')->store('profile-pictures', 'public');
+        $profilePicturePath = $request->hasFile('profile_picture')
+            ? $request->file('profile_picture')->store('profile-pictures', 'public')
+            : $oldPicture;
 
         $user->fill([
             'first_name' => $validated['first_name'],
@@ -127,7 +133,10 @@ class ProfileController extends Controller
         $user->must_setup_profile = false;
         $user->save();
 
-        if ($oldPicture) {
+        // Only remove the old file if it was actually replaced, and never the
+        // shared default avatar the AdminSeeder points at.
+        if ($oldPicture && $oldPicture !== $profilePicturePath
+            && !str_starts_with($oldPicture, 'profile-pictures/avatar-admin.')) {
             Storage::disk('public')->delete($oldPicture);
         }
 

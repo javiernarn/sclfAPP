@@ -9,6 +9,40 @@ import { clearRememberedCredentials } from '../hooks/useRememberedCredentials';
 const SESSION_KEY = 'sclf_token_pair';
 const LOCAL_KEY = 'token_pair';
 
+// The long-lived REFRESH token no longer lives in this app at all: the server
+// keeps it in an HttpOnly cookie that JavaScript cannot read (see
+// App\Support\RefreshCookie). What the browser keeps here is only:
+//   - the short-lived (15 min) access token, in sessionStorage, and
+//   - a harmless hint saying a refresh cookie probably exists
+//     ('persistent' = "Keep me signed in", 'session' = until the browser
+//     closes). The hint is NOT a credential; it only stops us from calling
+//     /token/refresh for visitors who were never signed in.
+// If the server runs with SCLF_REFRESH_COOKIE=false it sends the refresh
+// token in the JSON body instead, and the older storage below is used.
+const HINT_KEY = 'sclf_session_hint';
+
+const readHint = () => {
+    try { return window.localStorage.getItem(HINT_KEY); } catch { return null; }
+};
+const writeHint = (value) => {
+    try {
+        if (value) window.localStorage.setItem(HINT_KEY, value);
+        else window.localStorage.removeItem(HINT_KEY);
+    } catch { /* storage unavailable */ }
+};
+export const hasSessionHint = () => !!readHint();
+const isRemembered = () => secureLocalStorage.getItem(LOCAL_KEY) != null || readHint() === 'persistent';
+
+// Never show framework internals ("No query results for model [App\\Models\\X] 3")
+// to a person — swap them for something they can understand.
+const readableMessage = (message) => {
+    if (!message) return '';
+    if (/No query results for model|App\\Models\\/i.test(message)) {
+        return 'We couldn’t find that record. It may have been deleted or you may not have access to it.';
+    }
+    return message;
+};
+
 const instance = axios.create({
     baseURL: BASE_URL + 'api/',
     timeout: 15000,
@@ -34,6 +68,7 @@ const getStoredRefreshToken = () => getStoredPair()?.refresh_token || null;
 export const clearStoredToken = () => {
     window.sessionStorage.removeItem(SESSION_KEY);
     secureLocalStorage.removeItem(LOCAL_KEY);
+    writeHint(null);
     // A saved deep link (?redirect=) was meant for the account that just ended.
     try {
         window.sessionStorage.removeItem('sclf-post-login-redirect');
@@ -45,10 +80,33 @@ export const clearStoredToken = () => {
 export const storeTokenPair = (pair, remember = true) => {
     sessionDisplaced = false;
     clearStoredToken();
-    if (remember) {
+    if (!pair.refresh_token) {
+        // Cookie mode: only the access token is kept, always per tab.
+        window.sessionStorage.setItem(
+            SESSION_KEY,
+            JSON.stringify({ access_token: pair.access_token, expires_in: pair.expires_in })
+        );
+        writeHint(remember ? 'persistent' : 'session');
+    } else if (remember) {
         secureLocalStorage.setItem(LOCAL_KEY, pair);
     } else {
         window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(pair));
+    }
+};
+
+// Called once when the app opens in a tab that has no access token (new tab,
+// browser restarted with "Keep me signed in"): trade the refresh cookie for a
+// fresh access token. Returns true when a session was restored.
+export const restoreSession = async () => {
+    if (getStoredToken() || !hasSessionHint()) return false;
+    const remember = isRemembered();
+    try {
+        const res = await instance.post('/token/refresh', { remember }, { silent: true, skipAuthRedirect: true });
+        storeTokenPair(res.data, remember);
+        return true;
+    } catch {
+        clearStoredToken();
+        return false;
     }
 };
 
@@ -152,7 +210,8 @@ instance.interceptors.response.use(
 
         if (statusCode === 401 && !originalRequest?.skipAuthRedirect && !originalRequest?._retried && !isAuthEndpoint) {
             const refreshToken = getStoredRefreshToken();
-            if (!refreshToken) {
+            // Cookie mode has no token in JS; the session hint says a cookie may exist.
+            if (!refreshToken && !hasSessionHint()) {
                 hardLogout();
                 return Promise.reject(error);
             }
@@ -171,10 +230,10 @@ instance.interceptors.response.use(
             isRefreshing = true;
 
             try {
-                const rememberDevice = secureLocalStorage.getItem(LOCAL_KEY) != null;
+                const rememberDevice = isRemembered();
                 const res = await instance.post(
                     '/token/refresh',
-                    { refresh_token: refreshToken },
+                    refreshToken ? { refresh_token: refreshToken, remember: rememberDevice } : { remember: rememberDevice },
                     { silent: true }
                 );
                 storeTokenPair(res.data, rememberDevice);
@@ -248,6 +307,18 @@ instance.interceptors.response.use(
             return Promise.reject(error);
         }
 
+        // A record that was deleted ("... was deleted on <date> by an Administrator")
+        // or can't be found — the server already wrote a readable sentence.
+        if (statusCode === 410 || statusCode === 404) {
+            const data = error.response?.data || {};
+            showToast({
+                type: 'warning',
+                title: data.code === 'record_deleted' ? 'This was deleted' : 'Not found',
+                message: readableMessage(data.message) || 'We couldn’t find what you were looking for. It may have been removed.',
+            });
+            return Promise.reject(error);
+        }
+
         if (statusCode === 429) {
             showToast({ type: 'warning', title: 'Slow down', message: 'Too many attempts. Please wait a moment and try again.' });
             return Promise.reject(error);
@@ -263,7 +334,7 @@ instance.interceptors.response.use(
                 ? 'The request timed out. Please try again.'
                 : !error.response
                 ? 'Could not reach the server. Please check your internet connection.'
-                : error.response?.data?.message || 'An unexpected error occurred.';
+                : readableMessage(error.response?.data?.message) || 'An unexpected error occurred.';
 
         showToast({ type: 'error', title: 'Something went wrong', message: errorMessage });
         return Promise.reject(error);

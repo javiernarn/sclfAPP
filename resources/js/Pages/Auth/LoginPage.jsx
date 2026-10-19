@@ -41,6 +41,8 @@ export default function LoginPage() {
     const [searchParams] = useSearchParams();
     const sessionDisplaced = searchParams.get('type') === 'session-displaced';
     const sessionExpired = searchParams.get('type') === 'session-expired';
+    // Set by the link in the verification email (EmailVerificationController).
+    const verifyStatus = searchParams.get('verify'); // 'ok' | 'invalid' | null
     // Set when this login page was opened from a notification email's
     // "Login to View" button (?redirect=/claims/5, etc.) — stashed for
     // MainPage to pick up once the post-login "Preparing your
@@ -202,7 +204,7 @@ export default function LoginPage() {
             gate
             gateName="Opol Community College"
             gateLabel="Login"
-            gateDefaultOpen={sessionExpired || sessionDisplaced || !!redirectParam}
+            gateDefaultOpen={sessionExpired || sessionDisplaced || !!redirectParam || !!verifyStatus}
             footer={<>No record on file? <Link to="/register">Open a new case file</Link></>}
         >
             {sessionDisplaced && (
@@ -210,6 +212,12 @@ export default function LoginPage() {
             )}
             {sessionExpired && (
                 <LedgerBanner tone="error">Your session expired. Please sign in again.</LedgerBanner>
+            )}
+            {verifyStatus === 'ok' && (
+                <LedgerBanner tone="notice">Your email is verified. You can sign in now.</LedgerBanner>
+            )}
+            {verifyStatus === 'invalid' && (
+                <LedgerBanner tone="error">That verification link is invalid or has expired. Sign in and press “Resend email” to get a new one.</LedgerBanner>
             )}
 
             {twoFactorChallenge ? (
@@ -276,7 +284,7 @@ export default function LoginPage() {
                 </LedgerRow>
 
                 <div className="lg-row-checkbox" style={{ margin: '14px 0 18px' }}>
-                    <Tooltip label="Stay signed in on this device, and this form remembers your email/password next time. Uncheck on shared or public computers.">
+                    <Tooltip label="Stay signed in on this device. This form also remembers your email/password until you close this tab. Uncheck on shared or public computers.">
                         <label className="lg-remember" htmlFor="remember">
                             <input
                                 id="remember"

@@ -5,12 +5,16 @@
  * (the overlay is portaled into .ds-shell, so `.ds-shell.light ...` works).
  */
 
-/* Trigger: hidden on desktop/laptop (they have the inline search box). */
-/* (.ds-topbar prefix: must out-rank `.ds-icon-btn { display: inline-flex }`
+/* Trigger: the exact opposite of the desktop search box. That box shows only
+   at 720px and wider on a non-phone (GlobalSearchBar.css), so the icon is
+   visible everywhere else — phones, narrow windows, and the fractional
+   widths browser zoom can produce — and hidden only when the box is showing.
+   (.ds-topbar prefix: must out-rank `.ds-icon-btn { display: inline-flex }`
    from DashboardShell.css, which loads later.) */
-.ds-topbar .ds-mobile-search-btn { display: none; }
-@media (max-width: 719px) { .ds-topbar .ds-mobile-search-btn { display: inline-flex; } }
-.ds-shell.ds-phone .ds-topbar .ds-mobile-search-btn { display: inline-flex; }
+.ds-topbar .ds-mobile-search-btn { display: inline-flex; }
+@media (min-width: 720px) {
+    .ds-shell:not(.ds-phone) .ds-topbar .ds-mobile-search-btn { display: none; }
+}
 
 /* Overlay sits exactly below the header (top is set inline from the
    header's measured bottom edge), above the bottom tab bar (z 20) and

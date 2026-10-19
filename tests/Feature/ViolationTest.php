@@ -340,4 +340,75 @@ class ViolationTest extends TestCase
 
         $this->assertSame('Sexual or sexually suggestive content', $v->fresh()->reason);
     }
+
+    public function test_a_report_with_a_confirmed_violation_cannot_be_deleted_until_it_is_undone(): void
+    {
+        $student = $this->user('student');
+        $admin = $this->user('admin');
+        $security = $this->user('security_officer');
+        $att = $this->attachmentBy($student);
+
+        $this->postJson("/api/report-attachments/{$att->id}/violation", ['reason' => 'nudity'], $this->headers($security))->assertCreated();
+
+        // Locked: the admin is told to undo the violation first.
+        $this->deleteJson("/api/security-incidents/{$att->attachable_id}", [], $this->headers($admin))
+            ->assertStatus(422)
+            ->assertJsonPath('success', false);
+        $this->assertNull(SecurityIncident::find($att->attachable_id)->deleted_at);
+        $this->assertDatabaseHas('violations', ['report_attachment_id' => $att->id, 'status' => 'confirmed']);
+
+        // The detail payload says why (drives the disabled button in the UI).
+        $this->getJson("/api/security-incidents/{$att->attachable_id}", $this->headers($admin))
+            ->assertJsonPath('data.violation_locked', true);
+
+        // Undo it, and the delete goes through.
+        $violation = Violation::where('report_attachment_id', $att->id)->firstOrFail();
+        $this->postJson("/api/violations/{$violation->id}/dismiss", ['reason' => 'harmless'], $this->headers($admin))->assertOk();
+
+        $this->deleteJson("/api/security-incidents/{$att->attachable_id}", [], $this->headers($admin))->assertOk();
+    }
+
+    public function test_a_service_request_with_a_confirmed_violation_cannot_be_cancelled_by_its_owner(): void
+    {
+        Storage::fake('local');
+        $student = $this->user('student');
+        $security = $this->user('security_officer');
+
+        $request = \App\Models\ServiceRequest::create([
+            'requested_by' => $student->id,
+            'category' => \App\Models\ServiceRequest::CATEGORY_MAINTENANCE,
+            'priority' => \App\Models\ServiceRequest::PRIORITY_MEDIUM,
+            'title' => 'Leaking faucet',
+            'description' => 'Dripping.',
+            'status' => \App\Models\ServiceRequest::STATUS_SUBMITTED,
+        ]);
+        $path = UploadedFile::fake()->image('p.jpg')->store('report-attachments/test', 'local');
+        $att = $request->attachments()->create([
+            'uploaded_by' => $student->id, 'kind' => 'image', 'original_name' => 'p.jpg',
+            'mime_type' => 'image/jpeg', 'size' => 1000, 'path' => $path,
+        ]);
+
+        $this->postJson("/api/report-attachments/{$att->id}/violation", ['reason' => 'nudity'], $this->headers($security))->assertCreated();
+
+        $this->postJson("/api/service-requests/{$request->id}/cancel", [], $this->headers($student))
+            ->assertStatus(422)
+            ->assertJsonPath('success', false);
+
+        $this->assertSame(\App\Models\ServiceRequest::STATUS_SUBMITTED, $request->fresh()->status);
+    }
+
+    public function test_printed_dashboard_shows_the_reviewers_role_never_their_name(): void
+    {
+        $student = $this->user('student');
+        $admin = $this->user('admin');
+        $admin->update(['name' => 'Jonee John']);
+        $att = $this->attachmentBy($student);
+
+        $this->postJson("/api/report-attachments/{$att->id}/violation", ['reason' => 'nudity'], $this->headers($admin))->assertCreated();
+
+        $response = $this->getJson("/api/print-report/{$student->public_token}", $this->headers($student))->assertOk();
+
+        $response->assertJsonPath('violations.items.0.confirmed_by', 'Administrator');
+        $this->assertStringNotContainsString('Jonee John', $response->getContent());
+    }
 }

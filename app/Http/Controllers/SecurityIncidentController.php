@@ -149,7 +149,11 @@ class SecurityIncidentController extends Controller
     {
         $this->authorize('delete', $securityIncident);
 
-        $this->incidents->delete($securityIncident, $request->user());
+        try {
+            $this->incidents->delete($securityIncident, $request->user());
+        } catch (ValidationException $e) {
+            return response()->json(['success' => false, 'message' => collect($e->errors())->flatten()->first(), 'errors' => $e->errors()], 422);
+        }
 
         return response()->json(['success' => true, 'message' => 'Incident deleted.']);
     }

@@ -1,11 +1,20 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\PwaManifestController;
 
 // Dynamic PWA manifest — must come before the catch-all route below,
 // so the browser actually gets /manifest.json instead of the SPA shell.
 Route::get('/manifest.json', PwaManifestController::class)->name('pwa.manifest');
+
+// Link from the verification email. Must come before the catch-all route
+// below. Name 'verification.verify' is what Laravel's VerifyEmail
+// notification looks for when it builds the signed URL.
+Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+    ->whereNumber('id')
+    ->middleware('throttle:10,1')
+    ->name('verification.verify');
 
 // Simple sitemap of the public (non-authenticated) pages, so Google has
 // something to crawl and index beyond the login-gated dashboard routes.

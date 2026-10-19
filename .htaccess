@@ -1,0 +1,22 @@
+# SAFETY NET for shared hosting.
+#
+# The correct setup is to point the domain's document root at the `public`
+# folder. If that is not possible (or you uploaded the whole project into
+# public_html by mistake), this file sends every request into `public/` so
+# that .env, app/, storage/, vendor/ and the rest can never be downloaded.
+# If the document root already is `public`, this file is simply never used.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Hidden files and folders: never.
+    RewriteRule "(^|/)\.(?!well-known/)" - [F,L]
+
+    # Everything else is served from public/.
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>

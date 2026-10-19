@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\Audit\AuditLogService;
 use App\Services\Auth\RefreshTokenReuseException;
 use App\Services\Auth\RefreshTokenService;
+use App\Support\RefreshCookie;
 use App\Services\Auth\SessionDisplacedException;
 use App\Services\Auth\TwoFactorAuthService;
 use Illuminate\Http\Request;
@@ -49,11 +50,14 @@ class AuthController extends Controller
         }
 
         return [
-            'user' => $user->only(
+            'user' => array_merge($user->only(
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
                 'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course',
                 'profile_picture_url', 'two_factor_enabled', 'must_setup_profile', 'public_token'
-            ),
+            ), [
+                // The React app sends unverified accounts to /app/verify-email.
+                'email_verified' => $user->hasVerifiedEmail(),
+            ]),
             'roles' => $user->getRoleNames(),
         ];
     }
@@ -96,13 +100,38 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * "De la Cruz" -> "delacruz", "Peña-Reyes" -> "penareyes": a name as it
+     * appears inside the occ.lastname.firstname email. Mirrors
+     * emailNameSegment() in resources/js/utils/validators.js.
+     */
+    private static function emailNameSegment(string $name): string
+    {
+        $ascii = \Illuminate\Support\Str::ascii($name);
+
+        return preg_replace('/[^a-z]/', '', strtolower($ascii));
+    }
+
     public function register(Request $request)
     {
         $validated = $request->validate([
             'first_name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'-]+$/u'],
             'last_name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'-]+$/u'],
             // Institutional email convention: occ.lastname.firstname@gmail.com
-            'email' => ['required', 'string', 'email', 'max:255', 'lowercase', 'unique:users', 'regex:/^occ\.[a-z]+\.[a-z]+@gmail\.com$/i'],
+            // (optional digits after the first name). The lastname segment
+            // must equal the Last name submitted on the form.
+            'email' => [
+                'required', 'string', 'email', 'max:255', 'lowercase', 'unique:users',
+                'regex:/^occ\.[a-z]+\.[a-z]+\d{0,6}@gmail\.com$/i',
+                function ($attribute, $value, $fail) use ($request) {
+                    $expected = self::emailNameSegment((string) $request->input('last_name'));
+                    $actual = explode('.', strtolower((string) $value))[1] ?? '';
+
+                    if ($expected === '' || $actual !== $expected) {
+                        $fail('The email must start with occ.' . ($expected ?: 'lastname') . '. so it matches your Last name.');
+                    }
+                },
+            ],
             // Philippine mobile numbers: 11 digits starting with 09.
             'phone_number' => ['required', 'string', 'regex:/^09\d{9}$/', 'unique:users,phone_number'],
             'address' => 'required|string|max:255',
@@ -110,13 +139,13 @@ class AuthController extends Controller
             // School ID convention: YYYY-N-NNNNN, e.g. 2021-2-04062.
             'student_id' => ['required', 'string', 'max:50', 'regex:/^\d{4}-\d-\d{5}$/', 'unique:users'],
             'course' => 'required|string|max:255',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => ['required', 'string', 'confirmed', Password::defaults()],
             'profile_picture' => 'required|image|max:5120',
         ], [
             'profile_picture.required' => 'A profile picture is required so staff can verify you at a glance.',
             'first_name.regex' => 'First name can only contain letters, spaces, hyphens and apostrophes.',
             'last_name.regex' => 'Last name can only contain letters, spaces, hyphens and apostrophes.',
-            'email.regex' => 'Email must follow the format occ.lastname.firstname@gmail.com.',
+            'email.regex' => 'Email must follow the format occ.lastname.firstname@gmail.com (numbers after the first name are optional).',
             'email.unique' => 'That email address is already in use by another account. Please sign in instead, or use a different email.',
             'phone_number.regex' => 'Enter a valid Philippine mobile number, e.g. 09171234567.',
             'phone_number.unique' => 'That phone number is already linked to another account.',
@@ -147,21 +176,26 @@ class AuthController extends Controller
 
         $this->audit->log('user.registered', $user, "Student account #{$user->id} self-registered.");
 
+        // Self-registered accounts must prove they own the email address.
+        // They are signed in so they can see the "check your email" screen
+        // and ask for a new link, but EnsureEmailVerified keeps the rest of
+        // the API closed until they click the link.
+        EmailVerificationController::send($user);
+
         $pair = $this->tokens->issue($user, $request);
 
         // Registering signs them straight in, so this counts as their
         // first session — their next login is a "Welcome back".
         $user->recordLogin();
 
-        return response()->json(array_merge(
+        return RefreshCookie::respond($request, array_merge(
             $this->userPayload($user),
             [
                 'first_login' => true,
                 'access_token' => $pair['access_token'],
-                'refresh_token' => $pair['refresh_token'],
                 'expires_in' => $pair['expires_in'],
             ]
-        ), 201);
+        ), $pair['refresh_token'], true, 201);
     }
 
     public function login(Request $request)
@@ -228,15 +262,15 @@ class AuthController extends Controller
 
         $firstLogin = $user->recordLogin();
 
-        return response()->json(array_merge(
+        // "Keep me signed in" -> a 30-day refresh cookie; otherwise a session cookie.
+        return RefreshCookie::respond($request, array_merge(
             $this->userPayload($user),
             [
                 'first_login' => $firstLogin,
                 'access_token' => $pair['access_token'],
-                'refresh_token' => $pair['refresh_token'],
                 'expires_in' => $pair['expires_in'],
             ]
-        ));
+        ), $pair['refresh_token'], $request->boolean('remember'));
     }
 
     /**
@@ -248,36 +282,48 @@ class AuthController extends Controller
      */
     public function refreshToken(Request $request)
     {
-        $validated = $request->validate([
-            'refresh_token' => ['required', 'string'],
-        ]);
+        // Cookie mode: the token only ever comes from the HttpOnly cookie. A
+        // refresh token in the request body is accepted only when the cookie
+        // switch is off (legacy mode) or SCLF_REFRESH_ALLOW_BODY=true.
+        $bodyAllowed = ! RefreshCookie::enabled() || config('sclf.refresh_cookie.allow_body', false);
+        $raw = RefreshCookie::read($request) ?? ($bodyAllowed ? $request->input('refresh_token') : null);
+
+        if (! is_string($raw) || $raw === '') {
+            return RefreshCookie::forget($request, response()->json([
+                'message' => 'Your session has expired. Please sign in again.',
+                'errors' => ['refresh_token' => ['Your session has expired. Please sign in again.']],
+            ], 422));
+        }
 
         try {
-            $pair = $this->tokens->rotate($validated['refresh_token'], $request);
+            $pair = $this->tokens->rotate($raw, $request);
         } catch (SessionDisplacedException $e) {
             // 401 + machine-readable code: the frontend shows the
             // "signed in on another device" alert instead of a generic
             // session-expired toast.
-            return response()->json([
+            return RefreshCookie::forget($request, response()->json([
                 'message' => $e->getMessage(),
                 'code' => 'session_displaced',
                 'device' => $e->device,
-            ], 401);
+            ], 401));
         } catch (RefreshTokenReuseException $e) {
-            throw ValidationException::withMessages([
-                'refresh_token' => [$e->getMessage()],
-            ]);
+            return RefreshCookie::forget($request, response()->json([
+                'message' => $e->getMessage(),
+                'errors' => ['refresh_token' => [$e->getMessage()]],
+            ], 422));
         } catch (\RuntimeException $e) {
-            throw ValidationException::withMessages([
-                'refresh_token' => ['Your session has expired. Please sign in again.'],
-            ]);
+            return RefreshCookie::forget($request, response()->json([
+                'message' => 'Your session has expired. Please sign in again.',
+                'errors' => ['refresh_token' => ['Your session has expired. Please sign in again.']],
+            ], 422));
         }
 
-        return response()->json([
+        // The browser app tells us whether this session was a "keep me signed
+        // in" one, so the rotated cookie keeps the same lifetime.
+        return RefreshCookie::respond($request, [
             'access_token' => $pair['access_token'],
-            'refresh_token' => $pair['refresh_token'],
             'expires_in' => $pair['expires_in'],
-        ]);
+        ], $pair['refresh_token'], $request->boolean('remember'));
     }
 
     public function logout(Request $request)
@@ -288,7 +334,7 @@ class AuthController extends Controller
         $this->tokens->revokeForAccessToken($accessTokenId);
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Logged out successfully']);
+        return RefreshCookie::forget($request, response()->json(['message' => 'Logged out successfully']));
     }
 
     public function me(Request $request)

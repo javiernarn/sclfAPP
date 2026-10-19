@@ -191,11 +191,11 @@ const NAV_BY_ROLE = {
         { to: "/app/admin/users", label: "Users", icon: UserCircle },
         // Admin: approve/pending/reject staff requests. Staff: their own requests.
         { to: "/app/admin/requests", label: "Staff Requests", icon: ClipboardCheck, adminOnly: true },
-        { to: "/app/admin/audit-log", label: "Audit Log", icon: ShieldCheck },
+        { to: "/app/admin/audit-log", label: "Audit Log", icon: ShieldCheck, adminOnly: true },
         // Raw request-level feed (IP/device/spam flags) — deliberately a
         // separate page from Audit Log above, which is the curated
         // "what actions happened" trail. See Admin\UserActivityController.
-        { to: "/app/admin/activity", label: "User Activity", icon: Activity },
+        { to: "/app/admin/activity", label: "User Activity", icon: Activity, adminOnly: true },
         // No separate /app/admin/counter-dashboard route exists — this
         // points straight at the security path, which ProtectedRoute
         // already allows admins into (securityRoutes' requiredRoles

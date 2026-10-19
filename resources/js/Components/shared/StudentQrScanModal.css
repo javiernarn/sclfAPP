@@ -1,0 +1,117 @@
+/*
+ * Scan student QR — a checkpoint-style scanner.
+ * The camera is the hero: it runs edge to edge across the top of the dialog,
+ * with our own gold corner brackets (school colours) instead of the library's
+ * default overlay. The one moving part is the sweep line, and it only runs
+ * while the camera is actually live.
+ * Pinned to a light palette like the rest of the print page, and inherits its serif.
+ */
+.sq-backdrop {
+    position: fixed; inset: 0; z-index: 60;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+    background: rgba(26, 12, 17, 0.62);
+}
+.sq-sheet {
+    width: min(440px, 100%); max-height: 100%; overflow-y: auto;
+    background: #fffdfb; color: #1f1a1c;
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(26, 12, 17, 0.45);
+    animation: sq-rise 0.2s ease-out both;
+}
+@keyframes sq-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ---- viewfinder ---- */
+.sq-view { position: relative; aspect-ratio: 4 / 3; background: #1b1114; overflow: hidden; }
+.sq-view video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* The reader looks at a centred square, 2/3 of the picture height, so the
+   frame is drawn exactly there — what's inside the brackets is what's read. */
+.sq-frame { position: absolute; top: 50%; left: 50%; height: 66.6667%; aspect-ratio: 1; transform: translate(-50%, -50%); pointer-events: none; }
+.sq-c { position: absolute; width: 26px; height: 26px; border: 0 solid #e6a817; transition: border-color 0.15s ease; }
+.sq-c-tl { top: 0; left: 0; border-top-width: 4px; border-left-width: 4px; border-top-left-radius: 8px; }
+.sq-c-tr { top: 0; right: 0; border-top-width: 4px; border-right-width: 4px; border-top-right-radius: 8px; }
+.sq-c-bl { bottom: 0; left: 0; border-bottom-width: 4px; border-left-width: 4px; border-bottom-left-radius: 8px; }
+.sq-c-br { bottom: 0; right: 0; border-bottom-width: 4px; border-right-width: 4px; border-bottom-right-radius: 8px; }
+.sq-view.is-miss .sq-c { border-color: #ef4444; }
+
+.sq-sweep {
+    position: absolute; left: 6%; right: 6%; top: 8%; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, transparent, #e6a817 20%, #e6a817 80%, transparent);
+    box-shadow: 0 0 12px 1px rgba(230, 168, 23, 0.55);
+    opacity: 0;
+}
+.sq-view.is-live .sq-sweep { opacity: 1; animation: sq-sweep 2.4s ease-in-out infinite alternate; }
+@keyframes sq-sweep { from { top: 8%; } to { top: 90%; } }
+
+.sq-close {
+    position: absolute; top: 10px; right: 10px;
+    width: 34px; height: 34px; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(20, 10, 13, 0.55); color: #fff;
+}
+.sq-close:hover { background: rgba(20, 10, 13, 0.8); }
+.sq-close:focus-visible, .sq-upload:focus-visible, .sq-paste button:focus-visible { outline: 2px solid #7f1d2e; outline-offset: 2px; }
+
+.sq-status {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    display: flex; align-items: center; gap: 8px;
+    padding: 22px 14px 10px;
+    font-size: 12.5px; font-weight: 700; color: #fff;
+    background: linear-gradient(to top, rgba(20, 10, 13, 0.78), transparent);
+}
+.sq-dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; flex-shrink: 0; }
+.sq-dot-live { background: #e6a817; }
+.sq-dot-off { background: #ef4444; }
+
+.sq-cam-err {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 24px; text-align: center; font-size: 13px; line-height: 1.5; color: #f3e9ec;
+    background: #1b1114;
+}
+.sq-view.is-off .sq-frame { display: none; }
+
+/* ---- below the viewfinder ---- */
+.sq-body { padding: 18px 20px 20px; }
+.sq-title { margin: 0 0 4px; font-size: 19px; font-weight: 700; line-height: 1.25; }
+.sq-sub { margin: 0 0 14px; font-size: 13px; line-height: 1.5; color: #5b5155; }
+
+/* Input + Open read as one control. */
+.sq-paste { display: flex; }
+.sq-paste input {
+    flex: 1; min-width: 0; font: inherit; font-size: 13.5px; color: #1f1a1c; background: #fff;
+    padding: 10px 12px; border: 1.5px solid #cfc6c9; border-right: 0; border-radius: 10px 0 0 10px;
+}
+.sq-paste input::placeholder { color: #8d8286; }
+.sq-paste input:focus { outline: none; border-color: #7f1d2e; }
+.sq-paste button {
+    font: inherit; font-size: 13.5px; font-weight: 700; cursor: pointer;
+    padding: 0 18px; color: #fff; background: #7f1d2e;
+    border: 1.5px solid #7f1d2e; border-radius: 0 10px 10px 0;
+}
+.sq-paste button:hover:not(:disabled) { background: #67172a; border-color: #67172a; }
+.sq-paste button:disabled { background: #d9c4c9; border-color: #d9c4c9; cursor: not-allowed; }
+
+.sq-error { margin: 10px 0 0; padding-left: 10px; border-left: 3px solid #b91c1c; font-size: 12.5px; line-height: 1.45; color: #991b1b; }
+
+.sq-upload {
+    display: inline-flex; align-items: center; gap: 7px; margin-top: 14px; padding: 4px 0;
+    font: inherit; font-size: 13px; font-weight: 700; color: #7f1d2e;
+    background: none; border: 0; cursor: pointer;
+}
+.sq-upload:hover { text-decoration: underline; }
+
+/* Phones: a bottom sheet, easy to reach with a thumb. */
+@media (max-width: 560px) {
+    .sq-backdrop { align-items: flex-end; padding: 0; }
+    .sq-sheet { width: 100%; border-radius: 18px 18px 0 0; }
+    .sq-view { aspect-ratio: 1 / 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sq-sheet { animation: none; }
+    .sq-view.is-live .sq-sweep { animation: none; top: 50%; }
+}
+
+/* Never part of the printed report. */
+@media print { .sq-backdrop { display: none !important; } }

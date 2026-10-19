@@ -280,14 +280,15 @@ class PlatformServicesTest extends TestCase
 
     // --- Password Reset ---
 
-    public function test_find_account_reports_no_match_for_an_unknown_email(): void
+    public function test_find_account_gives_the_same_generic_answer_for_an_unknown_email(): void
     {
+        // Phase 1 (H5): the endpoint must not reveal whether an account exists.
         $response = $this->postJson('/api/password/find-account', ['email' => 'nobody@example.com']);
 
-        $response->assertStatus(404)->assertJson(['success' => false]);
+        $response->assertStatus(200)->assertJson(['success' => true]);
     }
 
-    public function test_find_account_returns_masked_details_for_a_known_email(): void
+    public function test_find_account_does_not_return_a_name_for_a_known_email(): void
     {
         $this->makeUser('student')->update(['email' => 'jane@example.com', 'first_name' => 'Jane', 'last_name' => 'Doe']);
 
@@ -295,12 +296,13 @@ class PlatformServicesTest extends TestCase
 
         $response->assertStatus(200)->assertJson(['success' => true]);
         $this->assertEquals('jane@example.com', $response->json('data.email'));
+        $this->assertArrayNotHasKey('full_name', $response->json('data'));
     }
 
     public function test_find_account_locks_out_after_five_attempts(): void
     {
         for ($i = 0; $i < 5; $i++) {
-            $this->postJson('/api/password/find-account', ['email' => 'nobody@example.com'])->assertStatus(404);
+            $this->postJson('/api/password/find-account', ['email' => 'nobody@example.com'])->assertStatus(200);
         }
 
         $response = $this->postJson('/api/password/find-account', ['email' => 'nobody@example.com']);
@@ -308,11 +310,11 @@ class PlatformServicesTest extends TestCase
         $response->assertStatus(429);
     }
 
-    public function test_send_reset_link_rejects_an_unknown_email(): void
+    public function test_send_reset_link_gives_a_generic_answer_for_an_unknown_email(): void
     {
         $response = $this->postJson('/api/forgot-password', ['email' => 'nobody@example.com']);
 
-        $response->assertStatus(404)->assertJson(['success' => false]);
+        $response->assertStatus(200)->assertJson(['success' => true]);
     }
 
     public function test_reset_password_with_a_valid_token_updates_the_password(): void
@@ -325,12 +327,12 @@ class PlatformServicesTest extends TestCase
         $response = $this->postJson('/api/reset-password', [
             'token' => $token,
             'email' => 'jane@example.com',
-            'password' => 'brand-new-password',
-            'password_confirmation' => 'brand-new-password',
+            'password' => 'Brand-new-password1',
+            'password_confirmation' => 'Brand-new-password1',
         ]);
 
         $response->assertStatus(200)->assertJson(['success' => true]);
-        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('brand-new-password', $user->fresh()->password));
+        $this->assertTrue(\Illuminate\Support\Facades\Hash::check('Brand-new-password1', $user->fresh()->password));
     }
 
     public function test_reset_password_with_an_invalid_token_fails(): void
@@ -341,8 +343,8 @@ class PlatformServicesTest extends TestCase
         $response = $this->postJson('/api/reset-password', [
             'token' => 'not-a-real-token',
             'email' => 'jane@example.com',
-            'password' => 'brand-new-password',
-            'password_confirmation' => 'brand-new-password',
+            'password' => 'Brand-new-password1',
+            'password_confirmation' => 'Brand-new-password1',
         ]);
 
         $response->assertStatus(422)->assertJson(['success' => false]);

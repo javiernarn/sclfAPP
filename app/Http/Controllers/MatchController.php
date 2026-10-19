@@ -68,8 +68,8 @@ class MatchController extends Controller
             ->when(is_numeric($minScore), fn ($q) => $q->where('score', '>=', (int) $minScore))
             ->when($request->query('q'), function ($q, $term) {
                 $q->where(function ($w) use ($term) {
-                    $w->whereHas('lostItem', fn ($l) => $l->where('item_name', 'like', "%{$term}%")->orWhere('brand', 'like', "%{$term}%")->orWhere('model', 'like', "%{$term}%"))
-                        ->orWhereHas('foundItem', fn ($f) => $f->where('item_name', 'like', "%{$term}%")->orWhere('brand', 'like', "%{$term}%")->orWhere('model', 'like', "%{$term}%"));
+                    $w->whereHas('lostItem', fn ($l) => $l->where('item_name', 'like', \App\Support\Like::contains($term))->orWhere('brand', 'like', \App\Support\Like::contains($term))->orWhere('model', 'like', \App\Support\Like::contains($term)))
+                        ->orWhereHas('foundItem', fn ($f) => $f->where('item_name', 'like', \App\Support\Like::contains($term))->orWhere('brand', 'like', \App\Support\Like::contains($term))->orWhere('model', 'like', \App\Support\Like::contains($term)));
                 });
             })
             ->orderByDesc('score')

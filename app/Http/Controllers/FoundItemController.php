@@ -42,12 +42,17 @@ class FoundItemController extends Controller
             ->when($request->category, fn ($q) => $q->where('category', $request->category))
             ->when($request->q, function ($q) use ($request) {
                 $q->where(function ($sub) use ($request) {
-                    $sub->where('item_name', 'like', "%{$request->q}%")
-                        ->orWhere('description', 'like', "%{$request->q}%");
+                    $sub->where('item_name', 'like', \App\Support\Like::contains($request->q))
+                        ->orWhere('description', 'like', \App\Support\Like::contains($request->q));
                 });
             })
             ->latest()
             ->paginate(12);
+
+        // Hide verification-critical details from people who are not handling
+        // the item and did not report it (see FoundItem::CONFIDENTIAL_FIELDS).
+        $viewer = $request->user();
+        $items->getCollection()->transform(fn (FoundItem $item) => $item->redactedFor($viewer));
 
         return response()->json($items);
     }
@@ -99,9 +104,15 @@ class FoundItemController extends Controller
     {
         $this->authorize('view', $foundItem);
 
-        $foundItem->load(['finder:id,name', 'storageLocation', 'securityOfficer:id,name']);
+        $viewer = request()->user();
 
-        return response()->json($foundItem);
+        $foundItem->load(['finder:id,name', 'storageLocation']);
+
+        if ($foundItem->confidentialVisibleTo($viewer)) {
+            $foundItem->load('securityOfficer:id,name');
+        }
+
+        return response()->json($foundItem->redactedFor($viewer));
     }
 
     public function verify(VerifyFoundItemRequest $request, FoundItem $foundItem)

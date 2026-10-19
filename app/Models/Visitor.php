@@ -4,11 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Concerns\RemembersWhoDeleted;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Visitor extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, RemembersWhoDeleted;
 
     public const STATUS_CHECKED_IN = 'checked_in';
     public const STATUS_CHECKED_OUT = 'checked_out';

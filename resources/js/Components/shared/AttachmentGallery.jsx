@@ -232,6 +232,11 @@ export default function AttachmentGallery({ attachments, title = 'Photos & Video
                             </button>
                         </>
                     )}
+                    {status === 'confirmed' && (
+                        <p className="att-lock-note">
+                            Recorded against the uploader. While this stands, the report can’t be deleted or cancelled{isAdmin ? ' — undo it first to do that.' : '.'}
+                        </p>
+                    )}
                     {status === 'confirmed' && isAdmin && (
                         <button type="button" className="att-btn" disabled={busy} onClick={() => dismissViolation(item)}>
                             Undo — not a violation

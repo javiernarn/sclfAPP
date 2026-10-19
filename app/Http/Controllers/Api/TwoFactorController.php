@@ -3,17 +3,25 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Services\Audit\AuditLogService;
 use App\Services\Auth\RefreshTokenService;
+use App\Support\RefreshCookie;
 use App\Services\Auth\TwoFactorAuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 class TwoFactorController extends Controller
 {
+    // 5 wrong codes per account, then a 10-minute cooldown.
+    private const LOGIN_2FA_MAX_ATTEMPTS = 5;
+    private const LOGIN_2FA_DECAY_SECONDS = 600;
+
     public function __construct(
         protected TwoFactorAuthService $twoFactor,
         protected RefreshTokenService $tokens,
+        protected AuditLogService $audit,
     ) {
     }
 
@@ -99,6 +107,26 @@ class TwoFactorController extends Controller
         $user = $request->user();
         $code = trim($validated['code']);
 
+        // Per-ACCOUNT lockout. The route-level throttle only slows one
+        // caller down; without this, someone who already knows the password
+        // could keep logging in to collect fresh pending tokens and keep
+        // guessing 6-digit codes. Failures are counted per user, so every
+        // new pending token shares the same budget.
+        $lockKey = '2fa-login|' . $user->id;
+
+        if (RateLimiter::tooManyAttempts($lockKey, self::LOGIN_2FA_MAX_ATTEMPTS)) {
+            $minutes = (int) ceil(RateLimiter::availableIn($lockKey) / 60);
+
+            $this->audit->log('auth.2fa_locked', $user, "2FA login locked for user #{$user->id} after too many wrong codes.");
+
+            // Drop the pending token so it can't be reused while locked.
+            $request->user()->currentAccessToken()?->delete();
+
+            throw ValidationException::withMessages([
+                'code' => ["Too many incorrect codes. Please sign in again in {$minutes} minute" . ($minutes === 1 ? '' : 's') . '.'],
+            ]);
+        }
+
         // Recovery codes are formatted XXXX-XXXX (see
         // TwoFactorAuthService::generateRecoveryCodes) vs. a plain 6-digit
         // TOTP code, so which check to run is unambiguous from the shape
@@ -108,10 +136,16 @@ class TwoFactorController extends Controller
             : $this->twoFactor->verifyCode($user, $code);
 
         if (!$verified) {
+            RateLimiter::hit($lockKey, self::LOGIN_2FA_DECAY_SECONDS);
+
+            $this->audit->log('auth.2fa_failed', $user, "Wrong 2FA code entered for user #{$user->id}.");
+
             throw ValidationException::withMessages([
                 'code' => ['That code is invalid or has expired.'],
             ]);
         }
+
+        RateLimiter::clear($lockKey);
 
         // The pending token has done its job — replace it with the real
         // thing rather than letting it linger until its 5-minute expiry.
@@ -121,17 +155,16 @@ class TwoFactorController extends Controller
 
         $firstLogin = $user->recordLogin();
 
-        return response()->json([
+        return RefreshCookie::respond($request, [
             'first_login' => $firstLogin,
-            'user' => $user->only(
+            'user' => array_merge($user->only(
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
                 'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course',
                 'profile_picture_url', 'two_factor_enabled', 'public_token'
-            ),
+            ), ['email_verified' => $user->hasVerifiedEmail()]),
             'roles' => $user->getRoleNames(),
             'access_token' => $pair['access_token'],
-            'refresh_token' => $pair['refresh_token'],
             'expires_in' => $pair['expires_in'],
-        ]);
+        ], $pair['refresh_token'], $request->boolean('remember'));
     }
 }

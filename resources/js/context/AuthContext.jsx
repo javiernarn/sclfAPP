@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios, { storeTokenPair, getStoredToken, clearStoredToken } from '../config/axiosConfig';
+import axios, { storeTokenPair, getStoredToken, clearStoredToken, restoreSession } from '../config/axiosConfig';
 import { clearLoginMemory } from '../utils/welcome';
 import { getCurrentSubscription, disablePush } from '../utils/push';
 
@@ -14,21 +14,35 @@ export function AuthProvider({ children }) {
     const [signedOut, setSignedOut] = useState(false);
 
     useEffect(() => {
-        const token = getStoredToken();
-        if (!token) {
-            setLoading(false);
-            return;
-        }
+        let cancelled = false;
 
-        axios.get('/me')
-            .then(res => {
+        (async () => {
+            // A tab with no access token may still own a refresh cookie
+            // ("Keep me signed in", or another tab of this browser): trade it
+            // for a fresh access token before deciding nobody is signed in.
+            let token = getStoredToken();
+            if (!token && (await restoreSession())) {
+                token = getStoredToken();
+            }
+
+            if (!token) {
+                if (!cancelled) setLoading(false);
+                return;
+            }
+
+            try {
+                const res = await axios.get('/me');
+                if (cancelled) return;
                 setUser(res.data.user);
                 setRoles(res.data.roles);
-            })
-            .catch(() => {
+            } catch {
                 clearStoredToken();
-            })
-            .finally(() => setLoading(false));
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+
+        return () => { cancelled = true; };
     }, []);
 
     // If this browser/device is still carrying a push subscription from
@@ -76,7 +90,7 @@ export function AuthProvider({ children }) {
     // step and holding onto temp_token for verifyTwoFactor() below rather
     // than this resolving into a signed-in state right away.
     const login = async (email, password, remember = false) => {
-        const res = await axios.post('/login', { email, password }, { silent: true });
+        const res = await axios.post('/login', { email, password, remember }, { silent: true });
 
         if (res.data.two_factor_required) {
             return res.data;
@@ -92,7 +106,7 @@ export function AuthProvider({ children }) {
     const verifyTwoFactor = async (tempToken, code, remember = false) => {
         const res = await axios.post(
             '/2fa/login-verify',
-            { code },
+            { code, remember },
             { silent: true, headers: { Authorization: `Bearer ${tempToken}` } }
         );
         await applySession(res.data, remember);

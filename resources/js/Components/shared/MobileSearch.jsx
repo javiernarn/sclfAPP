@@ -142,7 +142,7 @@ export default function MobileSearch() {
                             <button type="button" className="ds-msearch-cancel" onClick={dismiss}>Cancel</button>
                         </div>
                         <div className="ds-msearch-scroll">
-                            <SearchPanelBody search={search} />
+                            <SearchPanelBody search={search} showPages={false} />
                         </div>
                     </div>
                 </div>,

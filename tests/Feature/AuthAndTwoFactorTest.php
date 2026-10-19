@@ -12,6 +12,7 @@ use Tests\TestCase;
 class AuthAndTwoFactorTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Concerns\InteractsWithRefreshCookie;
 
     protected function makeUser(string $role = 'student', array $attributes = []): User
     {
@@ -56,7 +57,7 @@ class AuthAndTwoFactorTest extends TestCase
         ]);
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['user', 'roles', 'access_token', 'refresh_token', 'expires_in']);
+            ->assertJsonStructure(['user', 'roles', 'access_token', 'expires_in']);
     }
 
     public function test_first_login_is_flagged_and_later_logins_are_not(): void
@@ -129,13 +130,13 @@ class AuthAndTwoFactorTest extends TestCase
         $user = $this->makeUser('student', ['email' => 'jane@example.com', 'password' => bcrypt('secret123')]);
 
         $login = $this->postJson('/api/login', ['email' => 'jane@example.com', 'password' => 'secret123']);
-        $refreshToken = $login->json('refresh_token');
+        $refreshToken = $this->refreshTokenFrom($login);
 
-        $response = $this->postJson('/api/token/refresh', ['refresh_token' => $refreshToken]);
+        $response = $this->refreshWith($refreshToken);
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['access_token', 'refresh_token', 'expires_in']);
-        $this->assertNotEquals($refreshToken, $response->json('refresh_token'));
+            ->assertJsonStructure(['access_token', 'expires_in']);
+        $this->assertNotEquals($refreshToken, $this->refreshTokenFrom($response));
     }
 
     public function test_reusing_an_already_rotated_refresh_token_revokes_the_whole_family(): void
@@ -143,13 +144,13 @@ class AuthAndTwoFactorTest extends TestCase
         $user = $this->makeUser('student', ['email' => 'jane@example.com', 'password' => bcrypt('secret123')]);
 
         $login = $this->postJson('/api/login', ['email' => 'jane@example.com', 'password' => 'secret123']);
-        $original = $login->json('refresh_token');
+        $original = $this->refreshTokenFrom($login);
 
         // First rotation succeeds and consumes the original token.
-        $this->postJson('/api/token/refresh', ['refresh_token' => $original])->assertStatus(200);
+        $this->refreshWith($original)->assertStatus(200);
 
         // Replaying the now-stale original token should be rejected...
-        $replay = $this->postJson('/api/token/refresh', ['refresh_token' => $original]);
+        $replay = $this->refreshWith($original);
         $replay->assertStatus(422);
 
         // ...and it should have revoked every token descended from that
@@ -164,11 +165,11 @@ class AuthAndTwoFactorTest extends TestCase
         $user = $this->makeUser('student', ['email' => 'jane@example.com', 'password' => bcrypt('secret123')]);
 
         $login = $this->postJson('/api/login', ['email' => 'jane@example.com', 'password' => 'secret123']);
-        $rawToken = $login->json('refresh_token');
+        $rawToken = $this->refreshTokenFrom($login);
 
         RefreshToken::where('user_id', $user->id)->update(['expires_at' => now()->subDay()]);
 
-        $response = $this->postJson('/api/token/refresh', ['refresh_token' => $rawToken]);
+        $response = $this->refreshWith($rawToken);
 
         $response->assertStatus(422);
     }
@@ -190,8 +191,8 @@ class AuthAndTwoFactorTest extends TestCase
 
         $response = $this->actingAs($user)->postJson('/api/change-password', [
             'current_password' => 'wrong-current',
-            'password' => 'brand-new-password',
-            'password_confirmation' => 'brand-new-password',
+            'password' => 'Brand-new-password1',
+            'password_confirmation' => 'Brand-new-password1',
         ]);
 
         $response->assertStatus(422)->assertJsonValidationErrors('current_password');
@@ -207,8 +208,8 @@ class AuthAndTwoFactorTest extends TestCase
         $response = $this->withHeader('Authorization', "Bearer {$currentToken->plainTextToken}")
             ->postJson('/api/change-password', [
                 'current_password' => 'secret123',
-                'password' => 'brand-new-password',
-                'password_confirmation' => 'brand-new-password',
+                'password' => 'Brand-new-password1',
+                'password_confirmation' => 'Brand-new-password1',
             ]);
 
         $response->assertStatus(200);
@@ -286,7 +287,7 @@ class AuthAndTwoFactorTest extends TestCase
         $response = $this->withHeader('Authorization', "Bearer {$pendingToken}")
             ->postJson('/api/2fa/login-verify', ['code' => $this->currentTotpCode($secret)]);
 
-        $response->assertStatus(200)->assertJsonStructure(['access_token', 'refresh_token']);
+        $response->assertStatus(200)->assertJsonStructure(['access_token']);
     }
 
     public function test_verify_login_with_wrong_code_is_rejected(): void

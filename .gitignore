@@ -1,24 +1,81 @@
-*.log
-.DS_Store
+# ===========================================================
+# SCLF - Student Campus Lost & Found  |  .gitignore
+# ===========================================================
+
+# ---- Secrets & environment (NEVER commit) ------------------
 .env
-.env.backup
-.env.production
-.phpactor.json
-.phpunit.result.cache
-/.fleet
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
+.env.*
+!.env.example
+!.env.production.example
 /auth.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+/storage/*.key
+.rnd
+openssl.cnf
+
+# ---- Markdown / internal notes & docs ----------------------
+*.md
+# Uncomment the next line if you want a README on GitHub:
+# !README.md
+/SECURITY_PHASES/
+/docs/
+/optional/
+
+# ---- Dependencies & build output ---------------------------
+/vendor
 /node_modules
 /public/build
 /public/hot
 /public/storage
-/storage/*.key
+/.vite
+/dist
+
+# ---- Logs, caches, compiled files --------------------------
+*.log
+/storage/logs/*.log
+/storage/framework/views/*.php
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/
 /storage/pail
-/vendor
+/bootstrap/cache/*.php
+.phpunit.result.cache
+/.phpunit.cache
+
+# ---- User uploads & private data ---------------------------
+/storage/app/private/
+/storage/app/public/found-items/
+/storage/app/public/profile-pictures/
+/storage/app/matching/
+
+# ---- Local databases / dumps / backups ---------------------
+*.sqlite
+*.sqlite3
+*.sql
+*.sql.gz
+*.bak
+*.backup
+*.zip
+*.tar.gz
+
+# ---- Test artifacts ----------------------------------------
+/playwright-report/
+/test-results/
+/blob-report/
+
+# ---- Editor / OS files -------------------------------------
+.DS_Store
+Thumbs.db
+Desktop.ini
+/.idea
+/.vscode
+/.fleet
+/.nova
+/.zed
+.phpactor.json
 Homestead.json
 Homestead.yaml
-Thumbs.db

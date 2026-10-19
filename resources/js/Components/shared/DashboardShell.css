@@ -569,6 +569,19 @@ body { overflow: hidden; }
         margin: 0 0 8px;
     }
 }
+
+/* Header account menu on phones: the Theme panel (218px wide) used to hang
+   off the menu's LEFT edge, so it ran past the right edge of the screen and
+   got cut off. Pin it to the menu's right edge instead so it opens inward,
+   and never let it exceed the screen. (Sidebar menu is align-bottom and is
+   left alone.) */
+@media (max-width: 640px) {
+    .ds-theme-popover.ds-theme-popover-align-top {
+        left: auto; right: 0;
+        width: min(218px, calc(100vw - 24px));
+        max-width: calc(100vw - 24px);
+    }
+}
 .ds-menu.light .ds-theme-popover { background: #fff; border: 1.5px solid #c3ccdb; box-shadow: 0 20px 40px rgba(2,6,23,0.16); color: #0b1220; }
 .ds-menu.dark .ds-theme-popover { background: #12161f; border: 1.5px solid #323b4a; box-shadow: 0 20px 40px rgba(0,0,0,0.5); color: #e7ecf3; }
 .ds-theme-popover-title {

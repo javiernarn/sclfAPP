@@ -38,8 +38,8 @@ class RegistrationRoleSafetyTest extends TestCase
             'gender' => 'male',
             'student_id' => '2021-2-04062',
             'course' => 'BS Information Technology',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
             'profile_picture' => UploadedFile::fake()->image('avatar.jpg'),
         ], $overrides);
     }
@@ -107,5 +107,29 @@ class RegistrationRoleSafetyTest extends TestCase
         ]);
 
         $response->assertStatus(422);
+    }
+
+    public function test_registration_email_must_contain_the_submitted_last_name(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        // Last name on the form is Delacruz, email says someone else.
+        $this->postJson('/api/register', $this->validRegistrationPayload([
+            'email' => 'occ.santos.juan@gmail.com',
+        ]))->assertStatus(422)->assertJsonValidationErrors('email');
+
+        // Missing the occ. prefix.
+        $this->postJson('/api/register', $this->validRegistrationPayload([
+            'email' => 'delacruz.juan@gmail.com',
+        ]))->assertStatus(422)->assertJsonValidationErrors('email');
+    }
+
+    public function test_registration_email_accepts_matching_last_name_with_optional_digits(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $this->postJson('/api/register', $this->validRegistrationPayload([
+            'email' => 'occ.delacruz.juan1234@gmail.com',
+        ]))->assertStatus(201);
     }
 }

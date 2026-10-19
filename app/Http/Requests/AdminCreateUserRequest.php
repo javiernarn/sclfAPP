@@ -17,7 +17,7 @@ class AdminCreateUserRequest extends FormRequest
             'first_name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'-]+$/u'],
             'last_name' => ['required', 'string', 'max:255', 'regex:/^[\pL\s\'-]+$/u'],
             'email' => ['required', 'email', 'max:255', 'lowercase', 'unique:users'],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::defaults()],
             'role' => ['required', 'in:instructor,security_officer,staff'],
             // Philippine mobile numbers: 11 digits starting with 09.
             'phone_number' => ['nullable', 'string', 'regex:/^09\d{9}$/', 'unique:users,phone_number'],
