@@ -1,10 +1,28 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTween } from './useTween';
 import { PALETTE, fmt } from './utils';
 import useDismiss, { isTouch } from './useDismiss';
 
 /** Animated donut with centre total, hover highlight and a value/percent legend. */
-export default function DonutChart({ data = [], size = 168, thickness = 20, centerLabel = 'Total' }) {
+// True on phone-width screens, so the ring can shrink and sit beside its legend.
+function useNarrow(max = 600) {
+    const q = `(max-width: ${max}px)`;
+    const [narrow, setNarrow] = useState(() => typeof window !== 'undefined' && window.matchMedia ? window.matchMedia(q).matches : false);
+    useEffect(() => {
+        if (!window.matchMedia) return undefined;
+        const mq = window.matchMedia(q);
+        const on = (e) => setNarrow(e.matches);
+        setNarrow(mq.matches);
+        mq.addEventListener ? mq.addEventListener('change', on) : mq.addListener(on);
+        return () => { mq.removeEventListener ? mq.removeEventListener('change', on) : mq.removeListener(on); };
+    }, [q]);
+    return narrow;
+}
+
+export default function DonutChart({ data = [], size: sizeProp = 168, thickness: thicknessProp = 20, centerLabel = 'Total' }) {
+    const narrow = useNarrow();
+    const size = narrow ? Math.min(sizeProp, 120) : sizeProp;
+    const thickness = narrow ? Math.min(thicknessProp, 15) : thicknessProp;
     const [active, setActive] = useState(null);
     const wrapRef = useRef(null);
     const clear = useCallback(() => setActive(null), []);

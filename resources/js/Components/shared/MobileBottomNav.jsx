@@ -49,7 +49,11 @@ const MobileBottomNav = ({ tabs, pathname, hidden, menuOpen, onMenu, sidebarId }
                     tabIndex={hidden ? -1 : undefined}
                     // Re-tapping the tab you're already on scrolls back to
                     // the top, like a native app's tab bar.
-                    onClick={active ? scrollPageToTop : undefined}
+                    onClick={() => {
+                        // Light haptic tick where supported (Android), like a native tab bar.
+                        try { navigator.vibrate?.(8); } catch { /* ignore */ }
+                        if (active) scrollPageToTop();
+                    }}
                 >
                     <span className="ds-bottomnav-icon">
                         <Icon size={22} strokeWidth={2} active={active} />

@@ -22,6 +22,7 @@ class EnsureEmailVerified
         'api/me',
         'api/logout',
         'api/email/verification-notification',
+        'api/email/verify-code',
     ];
 
     public function handle(Request $request, Closure $next): Response

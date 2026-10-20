@@ -1,10 +1,14 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, HelpCircle } from '../Components/icons';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { AlertTriangle, HelpCircle, ShieldAlert, ShieldCheck, Camera, ChevronRight, ChevronDown, Printer } from '../Components/icons';
 import '../Components/shared/ConfirmDialog.css';
 import '../Components/shared/Popups.css';
 import { useAppTheme } from '../hooks/useAppTheme';
 
 const ConfirmContext = createContext(null);
+
+// Icons a notice row can ask for by name (see `points` in the usage notes).
+const NOTICE_ICONS = { shield: ShieldAlert, check: ShieldCheck, camera: Camera, alert: AlertTriangle };
 
 /**
  * useConfirm() returns an async function: `await confirm({ ... })` resolves
@@ -32,14 +36,28 @@ const ConfirmContext = createContext(null);
  *       delaySeconds: 5,                    // optional "think about it" countdown (default 5 when typeToConfirm is set)
  *   });
  * The red button stays disabled until the phrase matches AND the countdown ends.
+ *
+ * Short "read this first" notice (icon rows instead of a wall of text, a
+ * visible countdown bar so people actually read it, and an optional link):
+ *   const ok = await confirm({
+ *       title: 'Before you continue',
+ *       points: [{ icon: 'shield', tone: 'danger', lead: 'Violations block clearance', text: '...' }],
+ *       details: 'Full policy text, folded away until "Read the full notice" is opened.',
+ *       link: { href: '/app/print/abc', label: 'Check my violations', hint: 'Opens here — you come back to this notice' },
+ *       delaySeconds: 8,
+ *   });
  */
 export function ConfirmProvider({ children }) {
     const [state, setState] = useState(null);
     const resolver = useRef(null);
     const { theme } = useAppTheme();
+    const navigate = useNavigate();
+    const location = useLocation();
     const [picked, setPicked] = useState('');
     const [typed, setTyped] = useState('');
     const [secondsLeft, setSecondsLeft] = useState(0);
+    const [secondsTotal, setSecondsTotal] = useState(0);
+    const [showDetails, setShowDetails] = useState(false);
 
     const confirm = useCallback((options = {}) => {
         return new Promise((resolve) => {
@@ -55,14 +73,19 @@ export function ConfirmProvider({ children }) {
                 select: options.select || null,
                 // Optional type-to-confirm: { phrase, label }. Delete stays locked until it's typed.
                 typeToConfirm: options.typeToConfirm?.phrase ? options.typeToConfirm : null,
+                // Optional compact notice: icon rows, a folded "full notice", and one link.
+                points: Array.isArray(options.points) ? options.points : null,
+                details: options.details || '',
+                link: options.link?.href ? options.link : null,
             });
             setPicked('');
             setTyped('');
-            setSecondsLeft(
-                options.typeToConfirm?.phrase
-                    ? Math.max(0, options.delaySeconds ?? 5)
-                    : Math.max(0, options.delaySeconds ?? 0)
-            );
+            setShowDetails(false);
+            const delay = options.typeToConfirm?.phrase
+                ? Math.max(0, options.delaySeconds ?? 5)
+                : Math.max(0, options.delaySeconds ?? 0);
+            setSecondsLeft(delay);
+            setSecondsTotal(delay);
         });
     }, []);
 
@@ -87,17 +110,74 @@ export function ConfirmProvider({ children }) {
         }
     };
 
+    // The notice's link (e.g. "Check my violations") opens in THIS tab, not a new one:
+    // a new tab starts without the sign-in token and would bounce to "session expired".
+    // We remember where the person was so the page they land on can bring them back
+    // here and show this notice again.
+    const openLink = (e) => {
+        e.preventDefault();
+        const href = state.link.href;
+        const backTo = `${location.pathname}${location.search}`;
+        close(false);
+        navigate(href, { state: { backTo, reopenNotice: true } });
+    };
+
     return (
         <ConfirmContext.Provider value={confirm}>
             {children}
             {state && (
                 <div className="sclf-confirm-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) close(false); }}>
-                    <div className="sclf-confirm-card sclf-popup" data-sclf-theme={theme} role="alertdialog" aria-modal="true" aria-labelledby="sclf-confirm-title">
+                    <div className={`sclf-confirm-card sclf-popup${state.points ? ' sclf-confirm-card-notice' : ''}`} data-sclf-theme={theme} role="alertdialog" aria-modal="true" aria-labelledby="sclf-confirm-title">
                         <div className={`sclf-confirm-icon sclf-confirm-icon-${state.tone}`}>
                             {state.tone === 'danger' ? <AlertTriangle size={20} /> : <HelpCircle size={20} />}
                         </div>
                         <h3 id="sclf-confirm-title" className="sclf-confirm-title">{state.title}</h3>
-                        <p className="sclf-confirm-message">{state.message}</p>
+                        {state.message && <p className="sclf-confirm-message">{state.message}</p>}
+                        {state.points && (
+                            <ul className="sclf-notice-list">
+                                {state.points.map((pt, i) => {
+                                    const Icon = NOTICE_ICONS[pt.icon] || ShieldCheck;
+                                    return (
+                                        <li key={i} className={`sclf-notice-row sclf-notice-${pt.tone || 'info'}`}>
+                                            <span className="sclf-notice-ico"><Icon size={16} /></span>
+                                            <span className="sclf-notice-copy">
+                                                <strong>{pt.lead}</strong> {pt.text}
+                                            </span>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
+                        {state.link && (
+                            <a className="sclf-notice-link" href={state.link.href} onClick={openLink}>
+                                <Printer size={15} />
+                                <span>
+                                    {state.link.label}
+                                    {state.link.hint && <small>{state.link.hint}</small>}
+                                </span>
+                                <ChevronRight size={14} />
+                            </a>
+                        )}
+                        {state.details && (
+                            <div className="sclf-notice-more">
+                                <button type="button" className="sclf-notice-more-btn" aria-expanded={showDetails} onClick={() => setShowDetails((v) => !v)}>
+                                    {showDetails ? 'Hide the full notice' : 'Read the full notice'}
+                                    <ChevronDown size={14} className={showDetails ? 'is-open' : ''} />
+                                </button>
+                                {showDetails && <p>{state.details}</p>}
+                            </div>
+                        )}
+                        {secondsTotal > 0 && (
+                            <div className="sclf-confirm-timer" role="timer" aria-label="Reading time">
+                                <div className="sclf-confirm-timer-track">
+                                    <div
+                                        className="sclf-confirm-timer-fill"
+                                        style={{ width: `${Math.min(100, ((secondsTotal - secondsLeft) / secondsTotal) * 100)}%` }}
+                                    />
+                                </div>
+                                <span>{secondsLeft > 0 ? `Please read first — you can continue in ${secondsLeft}s` : 'Thanks for reading — you can continue.'}</span>
+                            </div>
+                        )}
                         {state.select && (
                             <div className="sclf-confirm-field">
                                 <label htmlFor="sclf-confirm-select">{state.select.label}</label>

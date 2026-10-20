@@ -7,7 +7,10 @@ import FormSkeleton from '../../Components/shared/FormSkeleton';
 import { useToast } from '../../context/ToastContext';
 import AttachmentPicker from '../../Components/shared/AttachmentPicker';
 import { useConfirm } from '../../context/ConfirmContext';
+import { useAuth } from '../../context/AuthContext';
+import { reportNotice } from '../../Components/shared/reportNotice';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
+import useReopenNotice from '../../hooks/useReopenNotice';
 
 const CATEGORY_OPTIONS = [
     { value: 'theft', label: 'Theft' },
@@ -45,13 +48,6 @@ const EMPTY_FORM = {
     occurred_at: nowLocal(),
 };
 
-const LEGITIMACY_NOTICE =
-    "Before you continue: only file an incident report for something that actually happened. Security and the administrators " +
-    "act on what you write here, so please describe it accurately and honestly rather than guessing, exaggerating, or filling " +
-    "it in as a test. This report is kept as an official campus record, and any photos or videos you attach can be viewed by " +
-    "Security, Admin and Staff. Reports that turn out to be false, exaggerated, or submitted as a joke waste response time, " +
-    "are treated as misuse of the system, and accounts that repeatedly do this may be suspended or disabled. By clicking " +
-    "\"I Agree, Unlock Form\" you're confirming this report is genuine.";
 
 export default function IncidentCreate() {
     const [form, setForm] = useState(EMPTY_FORM);
@@ -63,6 +59,7 @@ export default function IncidentCreate() {
     const navigate = useNavigate();
     const toast = useToast();
     const confirm = useConfirm();
+    const { user } = useAuth();
     const [unlocked, setUnlocked] = useState(false);
 
     const isDirty = files.length > 0 || Object.entries(form).some(([key, value]) => value !== EMPTY_FORM[key]);
@@ -89,15 +86,15 @@ export default function IncidentCreate() {
     const handleCancel = () => guardedAction(() => navigate('/app/incidents'));
 
     const handleUnlockRequest = async () => {
-        const agreed = await confirm({
-            title: 'Make sure this report is genuine',
-            message: LEGITIMACY_NOTICE,
-            confirmLabel: 'I Agree, Unlock Form',
-            cancelLabel: 'Cancel',
-            tone: 'danger',
-        });
+        const agreed = await confirm(reportNotice({
+            kind: 'incident',
+            printHref: user?.public_token ? `/app/print/${user.public_token}` : null,
+        }));
         if (agreed) setUnlocked(true);
     };
+
+    // Back from "Check my violations" → show this notice again.
+    useReopenNotice(handleUnlockRequest);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

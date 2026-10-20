@@ -16,7 +16,8 @@ export default function AreaChart({ data = [], series = [], xKey = 'label', heig
     const [hover, setHover] = useState(null);
     const clear = useCallback(() => setHover(null), []);
     useDismiss(ref, hover !== null, clear);
-    const height = width < 420 ? Math.min(baseHeight, 220) : baseHeight;
+    // Phones: a shorter plot leaves no empty band under the lines.
+    const height = width < 420 ? Math.min(baseHeight, 190) : baseHeight;
     const n = data.length;
 
     const target = series.flatMap((s) => data.map((d) => Number(d[s.key]) || 0));

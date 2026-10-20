@@ -214,7 +214,7 @@ export default function LoginPage() {
                 <LedgerBanner tone="error">Your session expired. Please sign in again.</LedgerBanner>
             )}
             {verifyStatus === 'ok' && (
-                <LedgerBanner tone="notice">Your email is verified. You can sign in now.</LedgerBanner>
+                <LedgerBanner tone="notice">Email verified. You can close this tab and go back to the SCLF app. If you are signing in here instead, you can sign in now.</LedgerBanner>
             )}
             {verifyStatus === 'invalid' && (
                 <LedgerBanner tone="error">That verification link is invalid or has expired. Sign in and press “Resend email” to get a new one.</LedgerBanner>

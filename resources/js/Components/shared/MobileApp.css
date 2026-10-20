@@ -1,0 +1,208 @@
+/*
+ * MobileApp.css
+ * -------------
+ * The "feels like a real phone app" layer, on top of MobileLayout.css.
+ * Phones only (<= 600px, plus landscape phones where noted) — desktop and
+ * tablet are untouched.
+ *
+ *   1. Touch behaviour   no tap flash, no double-tap zoom, press feedback,
+ *                        no rubber-band bounce of the whole page.
+ *   2. App bar           slim translucent top bar showing the page name.
+ *   3. Tab bar           bigger targets, pill indicator, rounded top.
+ *   4. Side drawer       app-style navigation drawer, 48px rows.
+ *   5. Bottom sheets     dialogs/pop-ups slide up from the bottom edge with
+ *                        a grab handle (instead of a centred web modal).
+ *   6. Inputs & lists    48px fields, chunky rows, full-width actions.
+ *   7. Page transition   each screen fades/slides in like a native push.
+ *
+ * Portaled dialogs live outside .ds-shell, so their selectors are doubled
+ * (.x.x) to out-rank the component stylesheets whatever the load order.
+ */
+
+@keyframes m-sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes m-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes m-page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 600px) {
+
+    /* ---------- 1. touch behaviour ---------- */
+    .ds-shell {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-touch-callout: none;
+    }
+    .ds-shell a, .ds-shell button, .ds-shell [role="button"], .ds-shell label, .ds-shell summary {
+        touch-action: manipulation;           /* no 300ms delay / double-tap zoom */
+    }
+    /* App chrome isn't selectable text; content and inputs still are. */
+    .ds-shell .ds-topbar, .ds-shell .ds-bottomnav, .ds-shell .ds-sidebar,
+    .ds-shell .ds-btn, .ds-shell .ds-filter-chip, .ds-shell .ds-view-toggle {
+        -webkit-user-select: none; user-select: none;
+    }
+    .ds-shell .ds-main {
+        overscroll-behavior-y: contain;       /* no page bounce / accidental browser pull-to-refresh */
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+    }
+    .ds-shell .ds-main::-webkit-scrollbar { display: none; }
+
+    /* Press feedback: things physically "press in" under the finger. */
+    .ds-shell .ds-btn, .ds-shell .ds-icon-btn, .ds-shell .ds-filter-chip,
+    .ds-shell .ds-list-item-link, .ds-shell a.ds-list-item, .ds-shell .ds-info-item,
+    .ds-shell .ds-history-card, .ds-shell .ds-stat-card, .ds-shell .ds-nav-link {
+        transition: transform 0.12s ease, background-color 0.15s ease, opacity 0.15s ease;
+    }
+    .ds-shell .ds-btn:active:not(:disabled),
+    .ds-shell .ds-icon-btn:active,
+    .ds-shell .ds-filter-chip:active { transform: scale(0.96); }
+    .ds-shell .ds-list-item-link:active,
+    .ds-shell a.ds-list-item:active,
+    .ds-shell .ds-history-card:active,
+    .ds-shell .ds-stat-card:active { transform: scale(0.985); }
+    .ds-shell .ds-nav-link:active { transform: scale(0.98); }
+
+    /* ---------- 2. app bar ---------- */
+    .ds-shell .ds-topbar {
+        min-height: 56px;
+    }
+    .ds-shell .ds-topbar-left { gap: 10px; flex: 1 1 auto; }
+    .ds-shell .ds-topbar-brand { gap: 9px; flex: 1 1 auto; min-width: 0; }
+    .ds-shell .ds-topbar-brand img { width: 32px; height: 32px; }
+    .ds-shell .ds-topbar-brand span {
+        font-size: 16px; font-weight: 800; letter-spacing: -0.01em;
+        overflow: hidden; text-overflow: ellipsis;
+    }
+    .ds-shell .ds-icon-btn { width: 40px; height: 40px; border-radius: 12px; }
+    .ds-shell .ds-topbar-actions { gap: 6px; }
+    .ds-shell .ds-profile-btn { padding: 2px; }
+
+    /* ---------- 3. tab bar ---------- */
+    .ds-shell.ds-phone { --ds-bottomnav-h: 64px; }
+    .ds-shell.ds-phone .ds-bottomnav {
+        border-top-width: 1px;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -6px 24px rgba(2, 6, 23, 0.07);
+    }
+    .ds-shell.ds-phone .ds-bottomnav-icon { width: 58px; height: 32px; }
+    .ds-shell.ds-phone .ds-bottomnav-label { font-size: 11px; }
+    .ds-shell.ds-phone .ds-bottomnav-item.is-active .ds-bottomnav-icon { animation: m-fade 0.2s ease both; }
+
+    /* ---------- 4. side drawer ---------- */
+    .ds-shell .ds-sidebar {
+        width: min(86vw, 320px);
+        border-radius: 0 24px 24px 0;
+        box-shadow: 0 0 48px rgba(2, 6, 23, 0.35);
+    }
+    .ds-shell .ds-nav-link { min-height: 48px; padding: 0 14px; font-size: 14.5px; border-radius: 14px; }
+    .ds-shell .ds-nav-link .ds-nav-icon { display: inline-flex; }
+    .ds-shell .ds-user-row { min-height: 56px; }
+    .ds-shell .ds-sidebar-backdrop { backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+
+    /* ---------- 5. bottom sheets ---------- */
+    .sclf-confirm-backdrop.sclf-confirm-backdrop,
+    .ds-edit-backdrop.ds-edit-backdrop,
+    .ds-nd-backdrop.ds-nd-backdrop,
+    .srd-backdrop.srd-backdrop,
+    .sq-backdrop.sq-backdrop,
+    .pr-modal-backdrop.pr-modal-backdrop {
+        align-items: flex-end; justify-content: center;
+        padding: 0; padding-top: env(safe-area-inset-top);
+        animation: m-fade 0.2s ease both;
+        -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    }
+    .ds-edit-backdrop.ds-edit-backdrop { overflow-y: auto; }
+
+    .sclf-confirm-card.sclf-confirm-card,
+    .ds-edit-card.ds-edit-card,
+    .ds-nd-card.ds-nd-card,
+    .ds-shell .srd-card,
+    .sq-sheet.sq-sheet,
+    .pr-modal.pr-modal {
+        position: relative;
+        width: 100%; max-width: none; margin: 0;
+        border-radius: 24px 24px 0 0;
+        max-height: calc(100dvh - 48px - env(safe-area-inset-top));
+        padding-bottom: max(18px, env(safe-area-inset-bottom));
+        animation: m-sheet-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+        box-shadow: 0 -12px 48px rgba(0, 0, 0, 0.3);
+    }
+    /* Confirm dialog: left-aligned actions get stacked, primary first. */
+    .sclf-confirm-card.sclf-confirm-card { padding: 22px 20px max(20px, env(safe-area-inset-bottom)); }
+    .sclf-confirm-actions { flex-direction: column-reverse; gap: 8px; }
+    .sclf-confirm-btn { min-height: 48px; border-radius: 14px; font-size: 15px; }
+    .sclf-confirm-card-notice.sclf-confirm-card-notice { max-height: calc(100dvh - 48px); }
+
+    /* Grab handle on every sheet. */
+    .sclf-confirm-card.sclf-confirm-card::before,
+    .ds-edit-card.ds-edit-card::before,
+    .ds-nd-card.ds-nd-card::before,
+    .ds-shell .srd-card::before,
+    .sq-sheet.sq-sheet::before,
+    .pr-modal.pr-modal::before {
+        content: ""; display: block; flex: none;
+        width: 38px; height: 4px; border-radius: 99px;
+        margin: 8px auto 6px; background: rgba(100, 116, 139, 0.4);
+    }
+    .sq-sheet.sq-sheet::before { position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 3; background: rgba(255, 255, 255, 0.7); }
+    .ds-shell .srd-head, .ds-nd-head { padding-top: 6px; }
+    .ds-nd-close, .srd-close { width: 36px; height: 36px; }
+
+    /* Toasts drop in under the status bar, full width, rounded like a native banner. */
+    .sclf-toast-viewport { top: max(8px, env(safe-area-inset-top)); left: 10px; right: 10px; gap: 8px; }
+
+    /* ---------- 6. inputs, lists, chips ---------- */
+    .ds-shell .ds-field input,
+    .ds-shell .ds-field select,
+    .ds-shell .ds-field textarea { min-height: 48px; border-radius: 12px; padding-left: 14px; padding-right: 14px; }
+    .ds-shell .ds-field textarea { min-height: 96px; padding-top: 12px; }
+    .ds-shell .ds-field label { font-size: 11.5px; margin-bottom: 6px; }
+    .ds-shell .ds-btn { min-height: 46px; border-radius: 13px; font-size: 14.5px; font-weight: 700; }
+    .ds-shell .ds-btn-sm { min-height: 38px; border-radius: 11px; font-size: 13px; }
+    .ds-shell .ds-btn-block { min-height: 50px; }
+
+    /* Full-width primary actions sit in a clean stack inside forms. */
+    .ds-shell form > .ds-btn-primary:last-child,
+    .ds-shell .ds-card > form > .ds-btn-primary:last-of-type { width: 100%; }
+
+    /* Filter chips scroll sideways in one tidy row instead of wrapping into a block. */
+    .ds-shell .ds-filter-row:not(:has(input)) {
+        flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px;
+        scrollbar-width: none; scroll-snap-type: x proximity;
+    }
+    .ds-shell .ds-filter-row:not(:has(input))::-webkit-scrollbar { display: none; }
+    .ds-shell .ds-filter-row:not(:has(input)) > * { flex: none; scroll-snap-align: start; }
+    .ds-shell .ds-filter-chip { min-height: 38px; }
+
+    /* List rows: card-like, thumb + text, big tap area. */
+    .ds-shell .ds-list-item { border-radius: 16px; }
+    .ds-shell .ds-list-item-title { font-size: 15px; }
+    .ds-shell .ds-list-item-meta { font-size: 12.5px; }
+    .ds-shell .ds-thumb { border-radius: 12px; }
+    .ds-shell .ds-badge { font-size: 11px; }
+
+    /* Section headings read like native group titles. */
+    .ds-shell .ds-card-title { font-size: 15px; }
+    .ds-shell .ds-view-toggle { align-self: stretch; }
+    .ds-shell .ds-view-toggle-btn { flex: 1; justify-content: center; min-height: 36px; }
+
+    /* ---------- 7. page transition ---------- */
+    .ds-shell .ds-main > * { animation: m-fade 0.14s ease-out both; }
+}
+
+@media (max-width: 600px) and (prefers-reduced-motion: reduce) {
+    .ds-shell .ds-main > *,
+    .sclf-confirm-card.sclf-confirm-card, .ds-edit-card.ds-edit-card, .ds-nd-card.ds-nd-card,
+    .ds-shell .srd-card, .sq-sheet.sq-sheet, .pr-modal.pr-modal { animation: none; }
+    .ds-shell .ds-main { scroll-behavior: auto; }
+}
+
+/* Landscape phones: sheets become centred and narrow again (there's no height to slide up). */
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+    .sclf-confirm-backdrop.sclf-confirm-backdrop,
+    .ds-nd-backdrop.ds-nd-backdrop,
+    .srd-backdrop.srd-backdrop { align-items: center; padding: 10px; }
+    .sclf-confirm-card.sclf-confirm-card,
+    .ds-nd-card.ds-nd-card,
+    .ds-shell .srd-card { max-width: 520px; border-radius: 18px; }
+    .ds-shell.ds-phone { --ds-bottomnav-h: 52px; }
+    .ds-shell.ds-phone .ds-bottomnav { border-radius: 0; }
+}

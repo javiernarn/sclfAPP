@@ -78,6 +78,8 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     // Ask for a new verification email (the only thing an unverified
     // account may do besides /me and /logout — see EnsureEmailVerified).
     Route::middleware('throttle:3,1')->post('/email/verification-notification', [EmailVerificationController::class, 'resend']);
+    // Finish verifying with the 6-digit code from the email (no browser hop).
+    Route::middleware('throttle:10,1')->post('/email/verify-code', [EmailVerificationController::class, 'verifyCode']);
     Route::get('/me', [AuthController::class, 'me']);
     // Checks the CURRENT password, so a stolen session must not be able to guess it.
     Route::middleware('throttle:5,1')->post('/change-password', [AuthController::class, 'changePassword']);

@@ -140,4 +140,32 @@ class Phase2EmailVerificationTest extends TestCase
         $created = User::where('email', 'ana.reyes@example.com')->firstOrFail();
         $this->assertNotNull($created->email_verified_at);
     }
+
+    public function test_the_six_digit_code_verifies_the_account_without_the_link(): void
+    {
+        $user = $this->makeUser('student', ['email_verified_at' => null]);
+        $code = app(\App\Services\Auth\EmailVerificationCodeService::class)->issue($user);
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson('/api/email/verify-code', ['code' => $code])
+            ->assertOk()
+            ->assertJson(['email_verified' => true]);
+
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
+    }
+
+    public function test_a_wrong_code_is_rejected_and_locks_after_five_tries(): void
+    {
+        $user = $this->makeUser('student', ['email_verified_at' => null]);
+        $service = app(\App\Services\Auth\EmailVerificationCodeService::class);
+        $code = $service->issue($user);
+        $wrong = $code === '000000' ? '111111' : '000000';
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->actingAs($user, 'sanctum')->postJson('/api/email/verify-code', ['code' => $wrong])->assertStatus(422);
+        }
+
+        $this->actingAs($user, 'sanctum')->postJson('/api/email/verify-code', ['code' => $code])->assertStatus(422);
+        $this->assertFalse($user->fresh()->hasVerifiedEmail());
+    }
 }

@@ -310,3 +310,31 @@
 @media print { .pr-student { box-sizing: border-box; padding: 0 2px !important; } }
 .pr-idcard-span { grid-column: 1 / -1; }
 .pr-head-student .pr-head-brand { align-items: center; }
+
+/* ---------- "Preparing your report…" loader (shown while the sheet fits itself) ----------
+   The sheet is kept visibility:hidden (it still lays out and measures) until the
+   fit is final, so it appears once at its real size — no shrink-then-grow. */
+.pr-stage { position: relative; }
+.pr-loading {
+    position: absolute; left: 0; right: 0; top: 0; z-index: 5;
+    min-height: min(70vh, 520px); padding: 40px 20px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    text-align: center; color: #111827;
+}
+.pr-loading-spin { display: block; width: 44px; height: 44px; box-sizing: border-box; border-radius: 50%; border: 4px solid rgba(127,29,46,0.15); border-top-color: #7f1d2e; animation: pr-loading-rot 0.8s linear infinite; }
+@keyframes pr-loading-rot { to { transform: rotate(360deg); } }
+.pr-loading-title { margin: 6px 0 0; font-size: 16px; font-weight: 800; }
+.pr-loading-sub { margin: 0; font-size: 13px; color: #4b5563; }
+.pr-loading-bar { width: min(260px, 70%); height: 6px; margin-top: 10px; border-radius: 99px; background: #d1d5db; overflow: hidden; }
+.pr-loading-bar i { display: block; height: 100%; border-radius: 99px; background: #7f1d2e; transition: width 0.4s ease; }
+/* While preparing, the hidden A4 sheet must NOT take up space — it used to make the
+   page tall (scrollbar) and pushed the loader to the top where it got cut off.
+   The sheet stays laid out (so it can be measured) but is taken out of the flow, the
+   page can't scroll, and the loader is centred in the whole remaining screen. */
+.pr-root.is-prep { display: flex; flex-direction: column; overflow: hidden; }
+.pr-root.is-prep .pr-toolbar { flex: none; }
+.pr-root.is-prep .pr-stage { flex: 1 1 auto; min-height: 0; padding: 0; overflow: hidden; display: flex; }
+.pr-root.is-prep .pr-loading { position: static; flex: 1 1 auto; min-height: 0; padding: 24px 20px; }
+.pr-root.is-prep .pr-paper { position: absolute; top: 0; left: 0; margin: 0; visibility: hidden; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .pr-loading-spin { animation-duration: 2.4s; } .pr-loading-bar i { transition: none; } }
+@media print { .pr-loading { display: none !important; } }

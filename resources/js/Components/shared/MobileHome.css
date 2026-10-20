@@ -1,0 +1,40 @@
+/* MobileHome — phone-only launcher. Everything sits inside the media query
+   so desktop/tablet are untouched. Works 320px → 600px, light + dark. */
+.mh { display: none; }
+
+@media (max-width: 600px) {
+    .ds-shell .mh { display: block; margin-bottom: 14px; }
+
+    .mh-hero {
+        position: relative; overflow: hidden;
+        padding: 16px 16px 18px; border-radius: 24px;
+        /* Text follows the theme: white on coloured themes, black on the white "Dark" accent. */
+        color: var(--tk-accent-on, #fff);
+        background:
+            radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,.22), transparent 55%),
+            var(--tk-accent, linear-gradient(135deg, #4338ca, #4f46e5 50%, #6366f1));
+        box-shadow: 0 14px 30px -12px rgba(var(--tk-accent-rgb, 79,70,229), .55);
+    }
+    .mh-hero::after {            /* the real OCC logo, black & white, faded behind the text */
+        content: ""; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+        width: 132px; height: 132px; pointer-events: none;
+        background: var(--mh-logo) center / contain no-repeat;
+        filter: grayscale(1) contrast(1.1);
+        opacity: .22;
+    }
+    .mh-hero-top { display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
+    .mh-school { min-width: 0; flex: 1; line-height: 1.2; }
+    .mh-school b { display: block; font-size: 14px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mh-school small { font-size: 11px; opacity: .85; font-weight: 600; }
+    .mh-role {
+        display: inline-flex; align-items: center; gap: 4px; flex: none;
+        padding: 4px 9px; border-radius: 99px; font-size: 11px; font-weight: 700;
+        background: rgba(128,128,128,.25); background: color-mix(in srgb, currentColor 16%, transparent);
+    }
+    .mh-hello { margin: 16px 0 2px; font-size: 24px; font-weight: 800; letter-spacing: -.02em; position: relative; z-index: 1; }
+    .mh-sub { margin: 0; font-size: 13px; opacity: .9; position: relative; z-index: 1; }
+}
+
+@media (max-width: 340px) {
+    .mh-role { display: none; }
+}

@@ -28,7 +28,7 @@ export function greetingFor(date = new Date()) {
 }
 
 // Open-Meteo WMO weather codes -> short text + emoji.
-function describeWeather(code, isDay) {
+export function describeWeather(code, isDay) {
     if (code === 0) return isDay ? ["Clear sky", "☀️"] : ["Clear night", "🌙"];
     if (code === 1) return isDay ? ["Mostly clear", "🌤️"] : ["Mostly clear", "🌙"];
     if (code === 2) return ["Partly cloudy", "⛅"];
@@ -45,7 +45,7 @@ function describeWeather(code, isDay) {
 // Shared across dashboard mounts so navigating back doesn't refetch each time.
 let weatherCache = null; // { at, data }
 
-function useOpolWeather() {
+export function useOpolWeather() {
     const [weather, setWeather] = useState(weatherCache?.data ?? null);
     const [failed, setFailed] = useState(false);
 

@@ -17,7 +17,14 @@
         <div style="margin-bottom: 30px;">
             <h2 style="color: #0f2a5c; font-size: 20px; margin-bottom: 15px;">Hello {{ $fullName }},</h2>
 
-            <p>Thanks for registering with the Student Campus Lost &amp; Found system. Please confirm that this email address is yours by clicking the button below.</p>
+            <p>Thanks for registering with the Student Campus Lost &amp; Found system. Please confirm that this email address is yours by clicking the button below, or by typing the 6-digit code into the SCLF app.</p>
+
+            @if (!empty($code))
+            <div style="text-align: center; margin: 25px 0 5px;">
+                <p style="margin: 0 0 8px; font-size: 14px; color: #666;">Your verification code</p>
+                <div style="display: inline-block; background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px 28px; font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #0f2a5c; font-family: 'Courier New', monospace;">{{ $code }}</div>
+            </div>
+            @endif
 
             <div style="text-align: center; margin: 30px 0;">
                 <a href="{{ $verifyUrl }}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">Verify My Email</a>
@@ -25,7 +32,7 @@
 
             <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; margin: 20px 0; border-radius: 12px;">
                 <strong>⏳ Link Expiration</strong>
-                <p style="margin: 10px 0 0; font-size: 14px;">This verification link will expire in <strong>60 minutes</strong> for security purposes. If it expires, sign in and request a new one.</p>
+                <p style="margin: 10px 0 0; font-size: 14px;">This verification link and code will expire in <strong>60 minutes</strong> for security purposes. If it expires, sign in and request a new one.</p>
             </div>
 
             <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; margin: 20px 0; border-radius: 12px;">

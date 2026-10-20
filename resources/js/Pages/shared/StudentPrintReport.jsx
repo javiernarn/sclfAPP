@@ -1,6 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import axios from '../../config/axiosConfig';
 import { useAuth } from '../../context/AuthContext';
 import logo from '../../assets/images/site-logo.png';
@@ -34,14 +33,23 @@ export default function StudentPrintReport() {
     const { roles } = useAuth();
     const list = Array.isArray(roles) ? roles : [];
     const isHandler = list.includes('admin') || list.includes('staff') || list.includes('security_officer');
-    const backPath = isHandler
-        ? (list.includes('admin') || list.includes('staff') ? '/app/admin/print-report' : '/app/security/print-report')
-        : '/app/dashboard';
+    // Opened from a report form's notice ("Check my violations")? Back returns to that
+    // form and shows the notice again. Otherwise it goes to the usual dashboard.
+    const { state: navState } = useLocation();
+    const cameFrom = typeof navState?.backTo === 'string' && navState.backTo.startsWith('/app/') ? navState.backTo : null;
+    const backPath = cameFrom
+        || (isHandler
+            ? (list.includes('admin') || list.includes('staff') ? '/app/admin/print-report' : '/app/security/print-report')
+            : '/app/dashboard');
+    const backLabel = cameFrom ? 'Back to the form' : (isHandler ? 'Back to print report' : 'Back to dashboard');
 
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [problem, setProblem] = useState('');
     const [qrReady, setQrReady] = useState(false);
+    // The sheet re-fits itself to the A4 page after it loads. That work is kept
+    // hidden behind a short "Preparing…" loader, so it only appears at its final size.
+    const [fitted, setFitted] = useState(false);
     const paperRef = useRef(null);
     const qrBlockRef = useRef(null);
     const [chartH, setChartH] = useState(92);
@@ -52,6 +60,7 @@ export default function StudentPrintReport() {
         setProblem('');
         setData(null);
         setQrReady(false);
+        setFitted(false);
         axios.get(`/print-report/${encodeURIComponent(token)}`, { silent: true })
             .then((res) => { if (!cancelled) setData(res.data); })
             .catch((err) => {
@@ -69,7 +78,7 @@ export default function StudentPrintReport() {
     // Let the QR finish drawing before Print is offered (it paints in a short animation).
     useEffect(() => {
         if (!data) return undefined;
-        const t = setTimeout(() => setQrReady(true), 1400);
+        const t = setTimeout(() => setQrReady(true), 700);
         return () => clearTimeout(t);
     }, [data]);
 
@@ -92,25 +101,27 @@ export default function StudentPrintReport() {
         paper.style.setProperty('--fit-gap', `${26 * sVal}px`);
     };
     useLayoutEffect(() => {
-        if (!data || !qrReady) return;
+        if (!data) return;
         setFit(0);
         const h0 = measure();
-        if (h0 == null) return;
+        if (h0 == null) { setFitted(true); return; }
         const extra = PAGE_PX - h0;
         const wantChart = 92 + Math.max(0, Math.min(extra * 0.45, 150));
         if (Math.abs(wantChart - chartH) > 1) { setChartH(Math.round(wantChart)); return; }
         // Chart height is settled: grow the QR code and spacing as far as the page allows.
         let lo = 0; let hi = 1;
         setFit(1);
-        if (measure() <= PAGE_PX) { return; }
+        if (measure() <= PAGE_PX) { setFitted(true); return; }
         for (let i = 0; i < 12; i += 1) {
             const mid = (lo + hi) / 2;
             setFit(mid);
             if (measure() <= PAGE_PX) lo = mid; else hi = mid;
         }
         setFit(lo);
+        setFitted(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data, qrReady, chartH]);
+    }, [data, chartH]);
+
 
     // Browsers use document.title as the default PDF file name.
     useEffect(() => {
@@ -121,6 +132,11 @@ export default function StudentPrintReport() {
         }
         return () => { document.title = prev; };
     }, [data]);
+
+    const prepStep = !data ? 'Loading your report…' : 'Fitting to one page…';
+    const prepPercent = !data ? 35 : 90;
+    const sheetReady = fitted || !!problem;
+    const canPrint = !!data && qrReady && fitted;
 
     const subject = data?.subject;
     const report = data?.report;
@@ -146,7 +162,7 @@ export default function StudentPrintReport() {
     ];
 
     return (
-        <div className="pr-root">
+        <div className={`pr-root ${sheetReady ? '' : 'is-prep'}`}>
             <style>{`
                 @page { size: A4 portrait; margin: 8mm 10mm 12mm; }
                 @page { @bottom-left { content: "SCLF — Opol Community College · Confidential"; font-size: 8pt; color: #6b7280; }
@@ -155,12 +171,12 @@ export default function StudentPrintReport() {
 
             <div className="pr-toolbar">
                 <div className="pr-toolbar-row">
-                    <Link to={backPath} className="pr-back"><ArrowLeft size={16} /> {isHandler ? 'Back to print report' : 'Back to dashboard'}</Link>
+                    <Link to={backPath} state={cameFrom ? { reopenNotice: true } : undefined} className="pr-back"><ArrowLeft size={16} /> {backLabel}</Link>
                     <strong className="pr-toolbar-title">
                         {subject ? `${roleLabel} Dashboard Report — ${subject.name}` : 'Dashboard Report'}
                     </strong>
-                    <button type="button" className="pr-print-btn" onClick={() => window.print()} disabled={!data || !qrReady}>
-                        <Printer size={16} /> {data && !qrReady ? 'Preparing…' : 'Print / Save as PDF'}
+                    <button type="button" className="pr-print-btn" onClick={() => window.print()} disabled={!canPrint}>
+                        <Printer size={16} /> {data && !canPrint ? 'Preparing…' : 'Print / Save as PDF'}
                     </button>
                 </div>
                 {data && !data.viewer_is_self && (
@@ -176,7 +192,15 @@ export default function StudentPrintReport() {
             </div>
 
             <div className="pr-stage">
-                <div className="pr-paper pr-portrait pr-student" ref={paperRef}>
+                {!sheetReady && (
+                    <div className="pr-loading" role="status" aria-live="polite">
+                        <span className="pr-loading-spin" aria-hidden="true" />
+                        <p className="pr-loading-title">Preparing your report…</p>
+                        <p className="pr-loading-sub">{prepStep}</p>
+                        <div className="pr-loading-bar" aria-hidden="true"><i style={{ width: `${prepPercent}%` }} /></div>
+                    </div>
+                )}
+                <div className="pr-paper pr-portrait pr-student" ref={paperRef} style={sheetReady ? undefined : { visibility: 'hidden' }}>
                     <header className="pr-head pr-head-student">
                         <div className="pr-head-main">
                             <div className="pr-head-brand">
@@ -204,7 +228,6 @@ export default function StudentPrintReport() {
                         {subject && <PhotoBox src={subject.profile_picture_url} name={subject.name} />}
                     </header>
 
-                    {loading && <p className="pr-state">Preparing report…</p>}
                     {!loading && problem && <p className="pr-state">{problem}</p>}
 
                     {data && (

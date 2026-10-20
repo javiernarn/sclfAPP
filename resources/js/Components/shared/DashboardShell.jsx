@@ -22,6 +22,13 @@ import "./themes.css";
 // Imported AFTER DashboardShell.css on purpose: its phone-only overrides
 // rely on coming later in the cascade.
 import MobileBottomNav from "./MobileBottomNav";
+import DotLogo from "./DotLogo";
+// One compact, consistent phone layout for every page (no dead space).
+// Last on purpose: its rules are all scoped under `.ds-shell` and sit inside
+// phone media queries, so they only ever refine what came before.
+import "./MobileLayout.css";
+// Native-app feel on phones: bottom sheets, press feedback, app bar, transitions.
+import "./MobileApp.css";
 import {
     LayoutDashboard,
     PackageSearch,
@@ -447,6 +454,8 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     }, [location.pathname, navItems]);
 
     const isActive = (item) => item.to === activeNavTo;
+    // Phone app bar shows the current screen's name (like a native title bar).
+    const pageLabel = navItems.find((item) => item.to === activeNavTo)?.label || "SCLF";
 
     // Restore the sidebar's scroll position after a route change, and make
     // sure the active link is visible (e.g. when opened directly on a page
@@ -665,7 +674,12 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                             })}
                         </ul>
 
-                        <div className="ds-sidebar-spacer" />
+                        {/* Student / Instructor only (few nav links): on the slide-over
+                            (non-desktop) sidebar, fill the empty space with the OCC
+                            logo drawn as coloured dots. See DotLogo.jsx. */}
+                        <div className={`ds-sidebar-spacer ${navRole === "student" && !isDesktop ? "has-dotlogo" : ""}`}>
+                            {navRole === "student" && !isDesktop && <DotLogo />}
+                        </div>
                     </div>
 
                     {/* Phones don't show the pinned page footer (the tab bar
@@ -799,8 +813,10 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     className="ds-topbar-brand"
                                     aria-label={canPrint ? "Print report" : undefined}
                                 >
-                                    <img src={logo} alt="SCLF Logo" {...guardImageEvents} />
-                                    <span>SCLF</span>
+                                    {/* Phones: no logo in the header (the page name is enough;
+                                        the logo is already in the slide-over sidebar). */}
+                                    {!isPhone && <img src={logo} alt="SCLF Logo" {...guardImageEvents} />}
+                                    <span>{isPhone ? pageLabel : "SCLF"}</span>
                                 </Link>
                             </Tooltip>
                         </div>

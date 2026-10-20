@@ -1,0 +1,217 @@
+/*
+ * MobileLayout.css
+ * ----------------
+ * One consistent, compact phone layout for EVERY page inside <DashboardShell>
+ * (student, instructor, security, admin) — dashboards, lists, forms, details.
+ *
+ * Goals
+ *   - No dead space: tighter page padding, cards that size to their content,
+ *     stat cards laid out icon-left instead of icon-on-top, full-width action
+ *     buttons that share a row evenly, charts/donuts that use the full width.
+ *   - Same spacing scale everywhere (8 / 12 px) so pages feel like one app.
+ *   - Works from 320px (small Androids) up to 600px (large phones).
+ *
+ * Every selector is prefixed with `.ds-shell` so it out-ranks the page-level
+ * stylesheets (charts.css, DashboardGreeting.css, ...) no matter which order
+ * the bundler emits them in. Imported last in DashboardShell.jsx.
+ * Desktop / tablet layouts are untouched (everything sits in the media query).
+ */
+
+@media (max-width: 600px) {
+    /* ---------- spacing scale ---------- */
+    .ds-shell {
+        --m-gap: 12px;       /* between cards / blocks */
+        --m-gap-sm: 8px;     /* between tiny items */
+        --m-pad: 14px;       /* inside cards */
+        --m-edge: 12px;      /* page side padding */
+    }
+
+    /* ---------- top bar ---------- */
+    .ds-shell .ds-topbar {
+        padding-top: max(8px, env(safe-area-inset-top));
+        padding-bottom: 8px;
+        padding-left: max(var(--m-edge), env(safe-area-inset-left));
+        padding-right: max(var(--m-edge), env(safe-area-inset-right));
+        gap: 8px;
+    }
+    .ds-shell .ds-topbar-actions { gap: 6px; }
+
+    /* ---------- page area ---------- */
+    .ds-shell .ds-main {
+        padding-top: 12px;
+        padding-bottom: max(var(--m-gap), env(safe-area-inset-bottom));
+        padding-left: max(var(--m-edge), env(safe-area-inset-left));
+        padding-right: max(var(--m-edge), env(safe-area-inset-right));
+    }
+
+    /* ---------- page header (title + actions) ---------- */
+    .ds-shell .ds-header { gap: 10px; margin-bottom: var(--m-gap); }
+    .ds-shell .ds-header .ds-title { margin-bottom: 4px; }
+    .ds-shell .ds-eyebrow { margin-bottom: 8px; padding: 4px 10px; font-size: 10px; }
+    .ds-shell .ds-subtitle { max-width: none; font-size: 13px; }
+    .ds-shell .ds-actions { width: 100%; gap: var(--m-gap-sm); }
+    .ds-shell .ds-actions > .ds-btn { flex: 1 1 0; min-width: 0; }
+
+    /* ---------- greeting (dashboards) ---------- */
+    .ds-shell .ds-header.ds-header-greeting { gap: 10px; margin-bottom: 10px; }
+    .ds-shell .ds-header-greeting .ds-greeting { flex: 1 1 100%; }
+    .ds-shell .ds-header-greeting .ds-greeting .ds-eyebrow { margin-bottom: 6px; }
+    .ds-shell .ds-header-greeting .ds-greeting-title { font-size: 21px; }
+    .ds-shell .ds-header-greeting .ds-greeting-sub { max-width: none; margin-top: 4px; font-size: 12.5px; line-height: 1.4; }
+
+    /* Clock + weather: one tidy block, no tall stack. */
+    .ds-shell .ds-header-greeting .ds-greeting-widget {
+        flex: 1 1 100%; margin-left: 0;
+        flex-direction: column; align-items: stretch; flex-wrap: nowrap;
+        gap: 8px; padding: 10px 12px; border-radius: 14px;
+    }
+    .ds-shell .ds-gw-clock {
+        flex-direction: row; flex-wrap: wrap; align-items: baseline;
+        justify-content: space-between; gap: 0 10px;
+    }
+    .ds-shell .ds-gw-time { font-size: 20px; }
+    .ds-shell .ds-gw-date { font-size: 11.5px; }
+    .ds-shell .ds-gw-sep { display: block; width: auto; height: 1px; align-self: stretch; }
+    .ds-shell .ds-gw-weather { gap: 10px; }
+    .ds-shell .ds-gw-wicon { font-size: 26px; }
+    .ds-shell .ds-gw-temp b { font-size: 16px; }
+    .ds-shell .ds-gw-detail,
+    .ds-shell .ds-gw-loc { white-space: normal; font-size: 11px; line-height: 1.35; }
+
+    /* ---------- dashboard toolbar (Live + Refresh + Print) ---------- */
+    .ds-shell .ch-toolbar {
+        flex-direction: column; align-items: stretch; flex-wrap: nowrap;
+        gap: var(--m-gap-sm); margin-bottom: 10px;
+    }
+    .ds-shell .ch-toolbar > .ch-live { align-self: flex-start; }
+    .ds-shell .ch-toolbar-actions {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+        gap: var(--m-gap-sm); width: 100%; margin-left: 0;
+    }
+    .ds-shell .ch-toolbar-actions > * { min-width: 0; }
+    .ds-shell .ch-toolbar-actions .ds-btn { width: 100%; white-space: nowrap; }
+
+    /* ---------- buttons: comfortable tap size ---------- */
+    .ds-shell .ds-btn { min-height: 40px; }
+    .ds-shell .ds-btn-sm { min-height: 34px; }
+
+    /* ---------- cards ---------- */
+    .ds-shell .ds-card {
+        padding: var(--m-pad); border-radius: 16px; margin-bottom: var(--m-gap);
+    }
+    .ds-shell .ds-card-desc { margin-bottom: 10px; font-size: 12.5px; }
+    .ds-shell .ds-card-head { margin-bottom: 10px; gap: var(--m-gap-sm); }
+    .ds-shell .ds-list-head-row { margin-bottom: 10px; gap: var(--m-gap-sm); }
+    .ds-shell .ch-card { margin-bottom: var(--m-gap); }
+    .ds-shell .ch-row { gap: var(--m-gap); margin-bottom: var(--m-gap); }
+    .ds-shell .ch-card-head { margin-bottom: 4px; }
+    .ds-shell .ch-card-head .ds-card-desc { margin-bottom: 6px; }
+    .ds-shell .ch-empty { margin: 10px 0; }
+
+    /* ---------- stat / KPI cards: icon on the left, value + label stacked ---------- */
+    .ds-shell .ds-stat-grid,
+    .ds-shell .ch-kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px; margin-bottom: var(--m-gap);
+    }
+    .ds-shell .ds-stat-grid > *:last-child:nth-child(odd),
+    .ds-shell .ch-kpi-grid > *:last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+    .ds-shell .ds-stat-card { padding: 10px 12px; border-radius: 14px; min-width: 0; }
+    .ds-shell .ds-stat-card:has(.ds-stat-icon),
+    .ds-shell .ch-kpi {
+        display: grid; grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 10px; align-items: center;
+    }
+    .ds-shell .ds-stat-card .ds-stat-icon { grid-row: 1 / span 3; margin: 0; width: 34px; height: 34px; }
+    .ds-shell .ds-stat-card:has(.ds-stat-icon) > :not(.ds-stat-icon):not(.ch-kpi-top):not(.ch-spark-wrap) { grid-column: 2; min-width: 0; }
+    .ds-shell .ds-stat-value, .ds-shell .ch-kpi-value { font-size: 22px; line-height: 1.1; }
+    .ds-shell .ds-stat-label { margin-top: 1px; line-height: 1.25; }
+
+    /* KPI: icon block (+ delta chip) sits in the left column. */
+    .ds-shell .ch-kpi-top {
+        grid-column: 1; grid-row: 1 / span 3; margin: 0;
+        flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    }
+    .ds-shell .ch-kpi-top .ds-stat-icon { grid-row: auto; }
+    .ds-shell .ch-kpi:hover { transform: none; box-shadow: none; }
+
+    /* A KPI that has a trend line gets the full row, with the line drawn
+       clearly on the right (full opacity, thicker stroke, end dot) so you can
+       actually see whether it is going up or down. The other cards keep
+       their compact 2-column layout. */
+    .ds-shell .ch-kpi:has(> .ch-spark-wrap) { grid-column: 1 / -1; padding-right: 12px; }
+    .ds-shell .ch-kpi > .ch-spark-wrap {
+        position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+        left: auto; bottom: auto; width: 44%; height: 46px; margin: 0;
+        opacity: 1; pointer-events: auto; z-index: 0;
+    }
+    .ds-shell .ch-kpi .ch-spark { height: 100%; margin: 0; overflow: visible; }
+    .ds-shell .ch-kpi .ch-spark path:last-child { stroke-width: 2.6; }
+    /* Keep the "odd one out" card from leaving a hole when the first card spans the row. */
+    .ds-shell .ch-kpi-grid:has(> .ch-kpi:first-child > .ch-spark-wrap) > :last-child:nth-child(even) { grid-column: 1 / -1; }
+    .ds-shell .ch-kpi > :not(.ch-spark-wrap) { position: relative; z-index: 1; }
+
+    /* Dashboard section blocks (Security / Admin) */
+    .ds-shell .ds-dashboard-section { margin-bottom: var(--m-gap); }
+    .ds-shell .ds-dashboard-section-body { gap: 10px; }
+
+    /* ---------- charts ---------- */
+    .ds-shell .ch-legend { margin: 2px 0 4px; }
+    .ds-shell .ch-donut {
+        flex-wrap: nowrap; justify-content: space-between; align-items: center;
+        gap: 12px; padding-top: 0;
+    }
+    .ds-shell .ch-donut-legend { flex: 1 1 0; min-width: 0; }
+    .ds-shell .ch-donut-legend li { padding: 7px 6px; }
+    .ds-shell .ch-meter-grid { gap: 8px; margin-top: 4px; }
+    .ds-shell .ch-meter { padding: 8px 10px; }
+    .ds-shell .ch-feed-item { padding: 7px 4px; }
+    .ds-shell .ch-ranked { gap: 9px; margin-top: 4px; }
+
+    /* ---------- lists, info grids, filters, tables ---------- */
+    .ds-shell .ds-list { gap: var(--m-gap-sm); }
+    .ds-shell .ds-list-item { padding: 12px; }
+    .ds-shell .ds-info-grid { gap: var(--m-gap-sm); }
+    .ds-shell .ds-filter-row { gap: var(--m-gap-sm); margin-bottom: 12px; }
+    .ds-shell .ds-empty { padding: 24px 12px; }
+    .ds-shell .ds-table-wrap { border-radius: 12px; }
+    .ds-shell .ds-field { margin-bottom: 12px; }
+    .ds-shell .ds-field input,
+    .ds-shell .ds-field select,
+    .ds-shell .ds-field textarea { font-size: 16px; } /* stops iOS zoom-on-focus */
+    .ds-shell .ds-form-row-2 { grid-template-columns: 1fr; }
+    .ds-shell .ds-back-link { margin-bottom: 10px; }
+
+    /* Last block on a page never leaves a gap above the tab bar. */
+    .ds-shell .ds-main > :last-child { margin-bottom: 0; }
+}
+
+/* Very small phones (320–360px): trim a little more, keep two-up stat cards. */
+@media (max-width: 360px) {
+    .ds-shell { --m-edge: 10px; --m-pad: 12px; }
+    .ds-shell .ds-header-greeting .ds-greeting-title { font-size: 19px; }
+    .ds-shell .ds-stat-value, .ds-shell .ch-kpi-value { font-size: 20px; }
+    .ds-shell .ds-stat-card .ds-stat-icon { width: 30px; height: 30px; }
+    .ds-shell .ds-stat-card:has(.ds-stat-icon),
+    .ds-shell .ch-kpi { column-gap: 8px; }
+    .ds-shell .ds-stat-card { padding: 9px 10px; }
+}
+
+/* Landscape phones: wide but short — use the width, save the height. */
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+    .ds-shell.ds-phone .ds-main { padding-top: 10px; padding-bottom: 10px; }
+    .ds-shell.ds-phone .ch-kpi-grid,
+    .ds-shell.ds-phone .ds-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+    .ds-shell.ds-phone .ch-row.cols-2-1,
+    .ds-shell.ds-phone .ch-row.cols-1-1 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .ds-shell.ds-phone .ds-header-greeting .ds-greeting-widget { flex: 1 1 100%; flex-direction: row; align-items: center; }
+    .ds-shell.ds-phone .ds-gw-sep { width: 1px; height: auto; }
+}
+
+/* Smaller donut ring on phones -> tighter centre label. */
+@media (max-width: 600px) {
+    .ds-shell .ch-donut-center { padding: 0 14px; }
+    .ds-shell .ch-donut-center strong { font-size: 20px; }
+    .ds-shell .ch-donut-center span { font-size: 10px; margin-top: 2px; }
+}

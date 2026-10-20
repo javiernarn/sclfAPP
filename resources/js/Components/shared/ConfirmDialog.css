@@ -83,6 +83,47 @@
 .sclf-confirm-btn-danger { background: #e2543a; color: #fff; }
 .sclf-confirm-btn-danger:hover { opacity: 0.9; }
 
+/* ---------- compact "read this first" notice ---------- */
+.sclf-confirm-card-notice { max-width: 440px; max-height: calc(100vh - 40px); overflow-y: auto; }
+.sclf-confirm-card-notice .sclf-confirm-title { margin-bottom: 14px; }
+.sclf-notice-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; text-align: left; }
+.sclf-notice-row {
+    display: flex; gap: 10px; align-items: flex-start;
+    padding: 9px 11px; border-radius: 10px;
+    background: rgba(27, 31, 59, 0.05);
+    font-size: 13px; line-height: 1.45;
+}
+.sclf-notice-ico { flex: none; margin-top: 1px; display: inline-flex; opacity: 0.75; }
+.sclf-notice-danger { background: rgba(226, 84, 58, 0.1); }
+.sclf-notice-danger .sclf-notice-ico { color: #e2543a; opacity: 1; }
+.sclf-notice-warn { background: rgba(212, 167, 61, 0.14); }
+.sclf-notice-warn .sclf-notice-ico { color: #b5842e; opacity: 1; }
+.sclf-notice-copy strong { font-weight: 800; }
+
+.sclf-notice-link {
+    display: flex; align-items: center; gap: 10px; text-align: left;
+    padding: 10px 12px; margin-bottom: 10px; border-radius: 10px;
+    border: 1.5px dashed rgba(27, 31, 59, 0.28);
+    color: inherit; text-decoration: none; font-size: 13px; font-weight: 700;
+}
+.sclf-notice-link > span { flex: 1; display: flex; flex-direction: column; }
+.sclf-notice-link small { font-weight: 500; opacity: 0.65; font-size: 11.5px; }
+.sclf-notice-link:hover { border-style: solid; }
+
+.sclf-notice-more { text-align: left; margin-bottom: 12px; }
+.sclf-notice-more-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none; border: none; padding: 2px 0; cursor: pointer;
+    font: inherit; font-size: 12px; font-weight: 700; color: inherit; opacity: 0.7;
+}
+.sclf-notice-more-btn svg { transition: transform 0.15s ease; }
+.sclf-notice-more-btn svg.is-open { transform: rotate(180deg); }
+.sclf-notice-more p { margin: 6px 0 0; font-size: 12px; line-height: 1.55; opacity: 0.7; }
+
+.sclf-confirm-timer { margin: 0 0 14px; text-align: left; font-size: 12px; font-weight: 600; opacity: 0.85; }
+.sclf-confirm-timer-track { height: 5px; border-radius: 99px; background: rgba(27, 31, 59, 0.12); overflow: hidden; margin-bottom: 6px; }
+.sclf-confirm-timer-fill { height: 100%; border-radius: 99px; background: #e2543a; transition: width 1s linear; }
+
 @keyframes sclf-confirm-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes sclf-confirm-pop {
     from { opacity: 0; transform: scale(0.94) translateY(6px); }

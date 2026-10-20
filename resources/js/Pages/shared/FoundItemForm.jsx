@@ -5,19 +5,16 @@ import FormSkeleton from '../../Components/shared/FormSkeleton';
 import { useToast } from '../../context/ToastContext';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import { useConfirm } from '../../context/ConfirmContext';
+import { useAuth } from '../../context/AuthContext';
+import { reportNotice } from '../../Components/shared/reportNotice';
 import ItemReportFields from '../../Components/shared/ItemReportFields';
+import useReopenNotice from '../../hooks/useReopenNotice';
 
 const EMPTY_FORM = {
     item_name: '', description: '', category: '', brand: '', color: '', model: '',
     unique_characteristics: '', location_found: '', date_found: '', details: {},
 };
 
-const LEGITIMACY_NOTICE =
-    "Before you continue: only file a report for an item you actually found. What you enter here is what Security uses " +
-    "to verify the rightful owner, so please describe it accurately and honestly rather than guessing or filling this " +
-    "in as a test. Reports that turn out to be fake, exaggerated, or submitted as a joke are treated as misuse of the " +
-    "Lost & Found system, and accounts that repeatedly do this may be suspended or disabled. By clicking " +
-    "\"I Agree, Unlock Form\" you're confirming this report is genuine.";
 
 export default function FoundItemForm({ onCancel, onCreated }) {
     const [form, setForm] = useState(EMPTY_FORM);
@@ -29,6 +26,7 @@ export default function FoundItemForm({ onCancel, onCreated }) {
     const [unlocked, setUnlocked] = useState(false);
     const toast = useToast();
     const confirm = useConfirm();
+    const { user } = useAuth();
 
     const isDirty = Object.entries(form).some(([key, value]) => (key === 'details' ? Object.values(value || {}).some(Boolean) : value !== EMPTY_FORM[key])) || !!image;
     const { guardedAction } = useUnsavedChangesGuard(isDirty, {
@@ -50,15 +48,15 @@ export default function FoundItemForm({ onCancel, onCreated }) {
     const handleCancel = () => guardedAction(() => onCancel && onCancel());
 
     const handleUnlockRequest = async () => {
-        const agreed = await confirm({
-            title: 'Make sure this report is genuine',
-            message: LEGITIMACY_NOTICE,
-            confirmLabel: 'I Agree, Unlock Form',
-            cancelLabel: 'Cancel',
-            tone: 'danger',
-        });
+        const agreed = await confirm(reportNotice({
+            kind: 'found',
+            printHref: user?.public_token ? `/app/print/${user.public_token}` : null,
+        }));
         if (agreed) setUnlocked(true);
     };
+
+    // Back from "Check my violations" → show this notice again.
+    useReopenNotice(handleUnlockRequest);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

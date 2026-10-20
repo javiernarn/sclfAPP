@@ -38,6 +38,9 @@ export default function Sparkline({ values = [], color = 'var(--ch-1)', height =
                 <path d={`${line} L${W},${height} L0,${height} Z`} fill={`url(#sg${id})`} />
                 <path d={line} fill="none" style={{ stroke: color }} strokeWidth="2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
             </svg>
+            {pts.length > 0 && hover === null && (
+                <span className="ch-spark-end" style={{ left: `${pts[pts.length - 1][0]}%`, top: pts[pts.length - 1][1], background: color }} />
+            )}
             {hp && (
                 <>
                     <span className="ch-spark-dot" style={{ left: `${hp[0]}%`, top: hp[1], background: color }} />

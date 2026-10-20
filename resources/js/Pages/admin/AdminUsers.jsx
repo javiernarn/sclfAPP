@@ -287,19 +287,30 @@ export default function AdminUsers() {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!validate()) {
-            toast.warning('Please fix the highlighted fields before submitting.');
-            return;
-        }
+    // ---- Create account with a 15-second "Undo" window ----
+    // Submitting clears the form and starts a countdown toast; the account is only
+    // created when the countdown ends. Undo puts everything back in the form to edit.
+    const pendingCreate = useRef(null);          // { id, commit } while a countdown is running
+    const formRef = useRef({ dirty: false });
+    formRef.current.dirty = isDirty;
+    const loadRef = useRef(load);
+    loadRef.current = load;
+
+    const restoreForm = (snap, errors = {}) => {
+        setForm(snap.form);
+        setPhoto(snap.photo);
+        setPhotoPreview(snap.photo ? URL.createObjectURL(snap.photo) : null);
+        setFieldErrors(errors);
+    };
+
+    const createAccount = async (snap) => {
         setBusy(true);
         try {
             const payload = new FormData();
-            Object.entries(form).forEach(([key, value]) => {
+            Object.entries(snap.form).forEach(([key, value]) => {
                 if (value !== '' && value !== null && value !== undefined) payload.append(key, value);
             });
-            if (photo) payload.append('profile_picture', photo);
+            if (snap.photo) payload.append('profile_picture', snap.photo);
 
             const res = await axios.post('/admin/users', payload, {
                 silent: true,
@@ -307,18 +318,21 @@ export default function AdminUsers() {
             });
             const staffId = res.data?.data?.user?.staff_id;
             toast.success(
-                `Account created for ${form.first_name} ${form.last_name}` + (staffId ? ` — ID ${staffId}.` : '.'),
+                `Account created for ${snap.form.first_name} ${snap.form.last_name}` + (staffId ? ` — ID ${staffId}.` : '.'),
                 { title: 'Account created' }
             );
-            setForm(emptyForm);
-            clearPhoto();
-            setFieldErrors({});
-            load();
+            loadRef.current();
         } catch (err) {
-            if (err?.approvalHandled) return; // approval dialog is showing
+            // Something went wrong after the countdown: give the form back (unless they
+            // already started a new one) so nothing has to be retyped.
+            const canRestore = !formRef.current.dirty;
+            if (err?.approvalHandled) { // approval dialog is showing
+                if (canRestore) restoreForm(snap);
+                return;
+            }
             const errors = err?.response?.data?.errors;
             if (errors) {
-                setFieldErrors(Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, v[0]])));
+                if (canRestore) restoreForm(snap, Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, v[0]])));
                 const dupField = ['email', 'phone_number'].find((f) => errors[f]);
                 if (dupField) {
                     const label = dupField === 'email' ? 'email address' : 'phone number';
@@ -327,12 +341,66 @@ export default function AdminUsers() {
                     toast.error(Object.values(errors).flat().join('\n'), { title: 'Please check the form' });
                 }
             } else {
+                if (canRestore) restoreForm(snap);
                 toast.error(err?.response?.data?.message || 'Could not create account.');
             }
         } finally {
             setBusy(false);
         }
     };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!validate()) {
+            toast.warning('Please fix the highlighted fields before submitting.');
+            return;
+        }
+        // A second account submitted while the first is still counting down: finish the first now.
+        pendingCreate.current?.commit();
+
+        const snap = { form, photo };
+        const who = `${form.first_name} ${form.last_name}`.trim();
+        const roleName = ROLE_META[form.role]?.label || 'account';
+        setForm(emptyForm);
+        clearPhoto();
+        setFieldErrors({});
+
+        const entry = { id: null, done: false };
+        entry.commit = () => {
+            if (entry.done) return;
+            entry.done = true;
+            if (pendingCreate.current === entry) pendingCreate.current = null;
+            if (entry.id) toast.dismiss(entry.id);
+            createAccount(snap);
+        };
+        pendingCreate.current = entry;
+        entry.id = toast.undo({
+            type: 'info',
+            title: `Creating ${roleName.toLowerCase()} account…`,
+            message: `${who} will be added when the timer ends. Press Undo to go back and edit the form.`,
+            onExpire: entry.commit,
+            onUndo: async () => {
+                if (entry.done) return true;
+                if (formRef.current.dirty) {
+                    const replace = await confirm({
+                        title: 'Replace what you typed?',
+                        message: `Undoing brings back ${who}'s details and replaces what is in the form now.`,
+                        confirmLabel: 'Bring it back',
+                        cancelLabel: 'Keep typing',
+                    });
+                    if (!replace) return false;
+                    if (entry.done) return true; // the timer ran out while the dialog was open
+                }
+                entry.done = true;
+                if (pendingCreate.current === entry) pendingCreate.current = null;
+                restoreForm(snap);
+                return true;
+            },
+        });
+    };
+
+    // Leaving the page mid-countdown shouldn't silently drop the account — finish it.
+    useEffect(() => () => { pendingCreate.current?.commit(); }, []);
 
     const handleClear = async () => {
         const ok = await discardConfirm(isDirty, {

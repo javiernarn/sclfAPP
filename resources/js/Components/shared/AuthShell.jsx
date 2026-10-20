@@ -44,10 +44,11 @@ import occBg from "../../assets/images/occ.webp";
 // ---------------------------------------------------------------------------
 const buildCaseNumber = (prefix) => {
     const now = new Date();
-    const y = now.getFullYear();
-    const seed = (now.getMonth() + 1) * 31 + now.getDate();
-    const serial = String((seed * 17) % 900 + 100);
-    return `SCLF-${y}-${prefix}-${serial}`;
+    const pad = (n) => String(n).padStart(2, "0");
+    const date = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
+    const time = `${pad(now.getHours())}${pad(now.getMinutes())}`;
+    // e.g. SCLF-LOG-20261020-1357 (date + time the page was opened)
+    return `SCLF-${prefix}-${date}-${time}`;
 };
 
 // Remembers whether the Login dropdown was opened, so coming back to the

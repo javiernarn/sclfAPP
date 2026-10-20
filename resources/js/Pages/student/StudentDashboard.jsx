@@ -6,6 +6,8 @@ import {
     Wrench, ShieldAlert, Activity, Printer,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import useIsPhone from '../../hooks/useIsPhone';
+import MobileHome from '../../Components/shared/MobileHome';
 import RefreshButton from '../../Components/shared/RefreshButton';
 import DashboardSkeleton from '../../Components/shared/DashboardSkeleton';
 import {
@@ -15,11 +17,20 @@ import {
 export default function StudentDashboard() {
     const { user, roles } = useAuth();
     const { token } = useParams();
+    const isPhone = useIsPhone();
     const isInstructor = Array.isArray(roles) && roles.includes('instructor');
     const { data, loading, error, updatedAt, refresh } = usePolling('/analytics/me', { interval: 20000 });
     // The account's own user token — the dashboard address and the printed
     // copy's QR code are built from it (/app/dashboard/{token}, /app/print/{token}).
     const ownToken = user?.public_token;
+    // On phones MobileHome is the one greeting; the desktop greeting/clock block is dropped.
+    const shellProps = isPhone
+        ? {}
+        : {
+            eyebrow: isInstructor ? 'Instructor Portal' : 'Student Portal',
+            greeting: { name: user?.name },
+            subtitle: "Report items you've lost, or check what's been found around campus.",
+        };
 
     useEffect(() => {
         document.title = "Dashboard | SCLF - Opol Community College";
@@ -35,11 +46,8 @@ export default function StudentDashboard() {
 
     if (loading && !data) {
         return (
-            <DashboardShell
-                eyebrow={isInstructor ? 'Instructor Portal' : 'Student Portal'}
-                greeting={{ name: user?.name }}
-                subtitle="Report items you've lost, or check what's been found around campus."
-            >
+            <DashboardShell {...shellProps}>
+                {isPhone && <MobileHome name={user?.name} role={isInstructor ? 'Instructor' : 'Student'} />}
                 <DashboardSkeleton statCount={3} cardCount={2} />
             </DashboardShell>
         );
@@ -51,11 +59,13 @@ export default function StudentDashboard() {
     const incByStatus = data?.incidents_by_status || {};
 
     return (
-        <DashboardShell
-            eyebrow={isInstructor ? 'Instructor Portal' : 'Student Portal'}
-            greeting={{ name: user?.name }}
-            subtitle="Report items you've lost, or check what's been found around campus."
-        >
+        <DashboardShell {...shellProps}>
+            {isPhone && (
+                <MobileHome
+                    name={user?.name}
+                    role={isInstructor ? 'Instructor' : 'Student'}
+                />
+            )}
             <div className="ch-toolbar">
                 <LiveBadge updatedAt={updatedAt} error={error} />
                 <div className="ch-toolbar-actions">

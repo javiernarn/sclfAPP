@@ -74,6 +74,7 @@
 .ch-tip { position: absolute; transform: translateX(-50%); pointer-events: none; z-index: 5; min-width: 120px; padding: 8px 10px; border-radius: 10px; background: var(--ch-tip-bg); color: var(--ch-tip-fg); font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.28); }
 .ch-tip-mini { min-width: 0; white-space: nowrap; padding: 4px 8px; font-size: 11.5px; }
 .ch-spark-wrap { position: relative; touch-action: pan-y; }
+.ch-spark-end { position: absolute; width: 7px; height: 7px; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; box-shadow: 0 0 0 3px rgba(128,128,128,.25); }
 .ch-spark-dot { position: absolute; width: 8px; height: 8px; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid var(--ch-tip-fg); pointer-events: none; }
 .ch-donut-seg { cursor: pointer; }
 .ch-donut-ring, .ch-donut-legend { -webkit-tap-highlight-color: transparent; }

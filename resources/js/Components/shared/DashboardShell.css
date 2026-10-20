@@ -247,6 +247,33 @@ body { overflow: hidden; }
 .ds-shell.blue .ds-nav-link.active { background: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); box-shadow: 0 8px 18px rgba(37,99,235,0.35); }
 .ds-shell.yellow .ds-nav-link.active { background: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); box-shadow: 0 8px 18px rgba(217,119,6,0.35); color: #1c1408; }
 .ds-sidebar-spacer { flex: 1; min-height: 8px; }
+/* OCC dot-logo that fills the empty sidebar space (student/instructor, phone
+   slide-over only). Absolutely positioned inside the spacer so it never adds
+   scroll height: it simply scales down (or vanishes) on short screens. */
+.ds-sidebar-spacer.has-dotlogo { position: relative; min-height: 0; pointer-events: none; }
+.ds-dotlogo {
+    position: absolute; top: 50%; left: 50%;
+    width: min(100%, 220px); height: calc(100% - 16px);
+    transform: translate(-50%, -50%);
+    user-select: none;
+}
+/* Digits follow the theme: by default they use the sidebar's own text colour
+   (dark on light themes, light on dark), then pick up each theme's accent. */
+.ds-dotlogo { --dl-color: currentColor; }
+.ds-shell.maroon .ds-dotlogo { --dl-color: #7f1d2e; }
+.ds-shell.blue .ds-dotlogo { --dl-color: #1e40af; }
+.ds-shell.yellow .ds-dotlogo { --dl-color: #b45309; }
+.ds-shell.dk-blue .ds-dotlogo,
+.ds-shell.dk-yellow .ds-dotlogo,
+.ds-shell.dk-maroon .ds-dotlogo,
+.ds-shell.dk-white .ds-dotlogo { --dl-color: rgba(255,255,255,0.92); }
+/* Tiny numbers, one <text> per grid cell; size is set per <g>. */
+.ds-dotlogo text {
+    fill: var(--dl-color);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, "Courier New", monospace;
+    font-weight: 700;
+    text-anchor: middle; dominant-baseline: central;
+}
 /* Line under the logo row — same 1px line as .ds-sidebar-footer's top border
    (colour comes from --ds-edge below), so the sidebar is framed top and bottom.
    The brand row's own bottom padding gives the gap above it. */

@@ -96,3 +96,36 @@
 @media (prefers-reduced-motion: reduce) {
     .sclf-toast { animation: none; }
 }
+
+/* ---- Undo toast: countdown ring + Undo button + draining bar ---- */
+.sclf-toast-undo { position: relative; align-items: center; overflow: hidden; padding-bottom: 16px; }
+.sclf-undo-ring { position: relative; flex-shrink: 0; width: 38px; height: 38px; display: inline-grid; place-items: center; }
+.sclf-undo-ring svg { transform: rotate(-90deg); }
+.sclf-undo-ring circle { fill: none; stroke-width: 3; }
+.sclf-undo-ring-track { stroke: currentColor; opacity: 0.12; }
+.sclf-undo-ring-fill {
+    stroke: #16a34a; stroke-linecap: round;
+    stroke-dasharray: 100; stroke-dashoffset: 0;
+    animation: sclf-undo-ring var(--undo-s, 15s) linear forwards;
+}
+.sclf-undo-ring-num { position: absolute; font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.sclf-undo-btn {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px;
+    padding: 7px 12px; border-radius: 999px; cursor: pointer;
+    font: inherit; font-size: 12.5px; font-weight: 800; color: inherit;
+    background: transparent; border: 1.5px solid currentColor;
+    transition: background 0.15s, color 0.15s;
+}
+.sclf-toast-viewport.light .sclf-undo-btn:hover { background: #0b1220; color: #fff; }
+.sclf-toast-viewport.dark .sclf-undo-btn:hover { background: #e7ecf3; color: #0b1220; }
+.sclf-undo-btn:focus-visible { outline: 2px solid #16a34a; outline-offset: 2px; }
+.sclf-undo-bar {
+    position: absolute; left: 0; bottom: 0; height: 4px; width: 100%;
+    background: #16a34a; transform-origin: left center;
+    animation: sclf-undo-bar var(--undo-s, 15s) linear forwards;
+}
+@keyframes sclf-undo-ring { to { stroke-dashoffset: 100; } }
+@keyframes sclf-undo-bar { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) {
+    .sclf-undo-ring-fill, .sclf-undo-bar { animation: none; }
+}

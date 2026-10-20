@@ -46,7 +46,11 @@ class AppServiceProvider extends ServiceProvider
         VerifyEmail::toMailUsing(function ($notifiable, string $url) {
             $fullName = trim(($notifiable->first_name ?? '') . ' ' . ($notifiable->last_name ?? '')) ?: $notifiable->name;
 
-            return new \App\Mail\VerifyEmailMail($fullName, $url, $notifiable->email);
+            // A fresh 6-digit code travels with the link, so the person can
+            // finish verifying inside the installed app without opening a browser.
+            $code = app(\App\Services\Auth\EmailVerificationCodeService::class)->issue($notifiable);
+
+            return new \App\Mail\VerifyEmailMail($fullName, $url, $notifiable->email, $code);
         });
 
         // One password policy for every place a password is set (register,

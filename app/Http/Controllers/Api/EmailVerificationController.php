@@ -5,13 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Audit\AuditLogService;
+use App\Services\Auth\EmailVerificationCodeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 
 class EmailVerificationController extends Controller
 {
-    public function __construct(protected AuditLogService $audit)
+    public function __construct(protected AuditLogService $audit, protected EmailVerificationCodeService $codes)
     {
     }
 
@@ -51,6 +52,46 @@ class EmailVerificationController extends Controller
         }
 
         return redirect('/login?verify=ok');
+    }
+
+    /**
+     * Verify with the 6-digit code from the email, typed inside the app
+     * itself. Same result as clicking the link, without leaving the PWA.
+     */
+    public function verifyCode(Request $request)
+    {
+        $request->validate(['code' => ['required', 'digits:6']]);
+
+        $user = $request->user();
+
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'Your email is already verified.', 'email_verified' => true]);
+        }
+
+        $result = $this->codes->check($user, (string) $request->input('code'));
+
+        if ($result !== EmailVerificationCodeService::OK) {
+            $messages = [
+                EmailVerificationCodeService::INVALID => 'That code is not correct. Please check it and try again.',
+                EmailVerificationCodeService::EXPIRED => 'That code has expired. Press "Resend email" to get a new one.',
+                EmailVerificationCodeService::LOCKED => 'Too many wrong attempts. Press "Resend email" to get a new code.',
+            ];
+
+            return response()->json(['message' => $messages[$result], 'email_verified' => false], 422);
+        }
+
+        $user->markEmailAsVerified();
+
+        $this->audit->log(
+            'auth.email_verified',
+            $user,
+            "User #{$user->id} verified their email address with a code.",
+            null,
+            null,
+            $user,
+        );
+
+        return response()->json(['message' => 'Your email is verified.', 'email_verified' => true]);
     }
 
     /**

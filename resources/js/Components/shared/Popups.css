@@ -97,6 +97,14 @@
 .sclf-confirm-field select option { background: var(--pt-bg); color: var(--pt-fg); }
 .sclf-popup .sclf-confirm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* compact notice rows follow the theme too */
+.sclf-popup .sclf-notice-row { background: color-mix(in srgb, var(--pt-fg) 6%, transparent); }
+.sclf-popup .sclf-notice-danger { background: color-mix(in srgb, #e2543a 14%, transparent); }
+.sclf-popup .sclf-notice-warn { background: color-mix(in srgb, #d4a73d 18%, transparent); }
+.sclf-popup .sclf-notice-link { border-color: var(--pt-edge); }
+.sclf-popup .sclf-confirm-timer-track { background: color-mix(in srgb, var(--pt-fg) 14%, transparent); }
+.sclf-popup .sclf-confirm-timer-fill { background: var(--pt-accent-solid); }
+
 /* ---------- toasts ---------- */
 .sclf-toast-viewport[data-sclf-theme] .sclf-toast {
     background: color-mix(in srgb, var(--pt-bg) 94%, transparent);
