@@ -15,6 +15,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | One report per day (per account, per report type)
+    |--------------------------------------------------------------------------
+    |
+    | SCLF_ONE_REPORT_PER_DAY=true  -> each student account may submit `limit`
+    |                                  lost report, found report, incident
+    |                                  report and service request per day
+    |                                  (each type counted separately).
+    | SCLF_ONE_REPORT_PER_DAY=false -> no limit.
+    | Only the listed roles are limited; staff/security/admin are not.
+    | See App\Http\Middleware\OneReportPerDay.
+    |
+    */
+    'daily_report_limit' => [
+        'enabled' => env('SCLF_ONE_REPORT_PER_DAY', true),
+        'limit' => env('SCLF_REPORTS_PER_DAY', 1),
+        'roles' => array_filter(array_map('trim', explode(',', env('SCLF_REPORT_LIMIT_ROLES', 'student')))),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Unclaimed item retention period
     |--------------------------------------------------------------------------
     |
@@ -131,6 +151,9 @@ return [
             // confirm or dismiss a violation without a per-action approval.
             'api/violations/*',
             'api/report-attachments/*/violation',
+            // Approving a lost report (queues the alert emails): staff do this
+            // themselves, same as security/admin, no per-action admin approval.
+            'api/lost-items/*/approve',
         ],
     ],
 
@@ -186,5 +209,13 @@ return [
         // in it contains one. Empty = text is not checked.
         'blocked_words' => env('SCLF_MODERATION_BLOCKED_WORDS', ''),
     ],
+
+    // Master switch for the "classmate lost an item" email to all students and
+    // instructors when a lost report is approved. Keep false while on a mail
+    // plan with a daily cap (Gmail ~500/day). Approval itself works either way.
+    'broadcast_lost_item_emails' => env('SCLF_BROADCAST_LOST_ITEM_EMAILS', false),
+
+    // Recipients per BCC email (max 100; Gmail's per-message limit).
+    'broadcast_batch_size' => env('SCLF_BROADCAST_BATCH_SIZE', 50),
 
 ];

@@ -317,10 +317,18 @@ export default function AdminUsers() {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
             const staffId = res.data?.data?.user?.staff_id;
+            const emailSent = res.data?.data?.email_sent;
             toast.success(
-                `Account created for ${snap.form.first_name} ${snap.form.last_name}` + (staffId ? ` — ID ${staffId}.` : '.'),
+                `Account created for ${snap.form.first_name} ${snap.form.last_name}` + (staffId ? ` — ID ${staffId}.` : '.')
+                + (emailSent ? ` Their sign-in details were emailed to ${snap.form.email}.` : ''),
                 { title: 'Account created' }
             );
+            if (emailSent === false) {
+                toast.warning(
+                    `We couldn't email ${snap.form.email}. Please give them their sign-in details yourself.`,
+                    { title: 'Email not sent' }
+                );
+            }
             loadRef.current();
         } catch (err) {
             // Something went wrong after the countdown: give the form back (unless they

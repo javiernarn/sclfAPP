@@ -25,7 +25,7 @@
 
             <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; margin: 20px 0; border-radius: 12px;">
                 <strong>⏳ Link Expiration</strong>
-                <p style="margin: 10px 0 0; font-size: 14px;">This reset link will expire in <strong>60 minutes</strong> for security purposes.</p>
+                <p style="margin: 10px 0 0; font-size: 14px;">This reset link will expire in <strong>60 minutes</strong> for security purposes. It can also be used <strong>only once</strong> &mdash; after your password is changed, or if you request a newer link, this one stops working.</p>
             </div>
 
             <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; margin: 20px 0; border-radius: 12px;">

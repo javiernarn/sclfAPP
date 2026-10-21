@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'profile.setup' => \App\Http\Middleware\EnsureProfileSetupComplete::class,
             'email.verified' => \App\Http\Middleware\EnsureEmailVerified::class,
             'staff.approval' => \App\Http\Middleware\RequireStaffApproval::class,
+            'daily.report' => \App\Http\Middleware\OneReportPerDay::class,
         ]);
 
         // Runs after the route so it can capture the response status code,

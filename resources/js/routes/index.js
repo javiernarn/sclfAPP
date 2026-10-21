@@ -24,6 +24,7 @@ import SecurityDashboard from '../Pages/security/SecurityDashboard';
 import PrintReport from '../Pages/shared/PrintReport';
 import StudentPrintReport from '../Pages/shared/StudentPrintReport';
 import SecurityFoundItemsReview from '../Pages/security/SecurityFoundItemsReview';
+import SecurityLostItemsReview from '../Pages/security/SecurityLostItemsReview';
 import SecurityMatches from '../Pages/security/SecurityMatches';
 import SecurityInventory from '../Pages/security/SecurityInventory';
 import SecurityCounter from '../Pages/security/SecurityCounter';
@@ -47,6 +48,9 @@ const publicRoutes = [
     { path: '/login', component: LoginPage },
     { path: '/register', component: RegisterPage },
     { path: '/forgot-password', component: ForgotPassword },
+    // Static route first on purpose: it's the "password changed" page the form
+    // is replaced with after a successful reset (see ResetPassword.jsx).
+    { path: '/reset-password/success', component: ResetPassword },
     { path: '/reset-password/:token', component: ResetPassword },
 ];
 
@@ -74,6 +78,8 @@ const securityRoutes = [
     { path: '/app/security/dashboard', component: SecurityDashboard },
     { path: '/app/security/print-report', component: PrintReport },
     { path: '/app/security/found-items', component: SecurityFoundItemsReview },
+    // Approve lost reports -> emails students/instructors (security / admin / staff).
+    { path: '/app/security/lost-items', component: SecurityLostItemsReview },
     // Match queue for whoever handles lost & found (security / admin / staff).
     { path: '/app/security/matches', component: SecurityMatches },
     { path: '/app/security/claims', component: MyClaimsList },

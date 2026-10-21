@@ -415,9 +415,9 @@ export function LedgerBanner({ tone = "error", children }) {
 }
 
 /** Big rotated "stamp" mark used on success states (verified / sent / reset). */
-export function Stamp({ label = "VERIFIED" }) {
+export function Stamp({ label = "VERIFIED", tone = "ok" }) {
     return (
-        <div className="lg-stamp" aria-hidden="true">
+        <div className={`lg-stamp${tone === "danger" ? " lg-stamp--danger" : ""}`} aria-hidden="true">
             <span>{label}</span>
         </div>
     );
@@ -771,6 +771,8 @@ const LEDGER_CSS = `
         color: var(--lg-ok); font-weight: 800; font-size: 15px; letter-spacing: 0.14em;
         transform: rotate(-4deg); opacity: 0.9;
     }
+    /* Red stamp for dead / refused states (e.g. "LINK REVOKED"). */
+    .lg-stamp--danger { border-color: var(--lg-danger); color: var(--lg-danger); }
 
     /* ============ BUTTONS ============ */
     .lg-submit {
@@ -796,6 +798,11 @@ const LEDGER_CSS = `
     .lg-wrap.dark .lg-ghost { border: 1.5px solid rgba(96,165,250,0.38); color: #e6efff; }
     .lg-wrap.light .lg-ghost:hover { background: #f4f7fb; }
     .lg-wrap.dark .lg-ghost:hover { background: rgba(96,165,250,0.10); }
+
+    /* Stacked, equal-width buttons with a clear gap (primary above, ghost below). */
+    .lg-stack { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+    .lg-stack .lg-submit { margin-top: 0; }
+    .lg-stack .lg-ghost { width: 100%; }
 
     .lg-actions-row { display: flex; gap: 10px; align-items: center; }
     .lg-actions-row .lg-submit { flex: 1; margin-top: 0; }

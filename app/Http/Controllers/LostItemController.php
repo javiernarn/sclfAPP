@@ -21,6 +21,9 @@ class LostItemController extends Controller
         $lostItems = LostItem::with('user:id,name')
             ->when($request->boolean('mine'), fn ($q) => $q->where('user_id', auth()->id()))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
+            // Review queue for security / admin / staff: ?approval=pending | approved
+            ->when($request->approval === 'pending', fn ($q) => $q->whereNull('approved_at'))
+            ->when($request->approval === 'approved', fn ($q) => $q->whereNotNull('approved_at'))
             ->when($request->q, fn ($q) => $q->where('item_name', 'like', \App\Support\Like::contains($request->q)))
             ->latest()
             ->paginate(10)
@@ -31,6 +34,11 @@ class LostItemController extends Controller
                 'status' => $item->status,
                 'date_lost' => $item->date_lost,
                 'reporter' => $item->user->name ?? 'Deactivated account',
+                'description' => $item->description,
+                'brand' => $item->brand,
+                'color' => $item->color,
+                'location_lost' => $item->location_lost,
+                'approved_at' => $item->approved_at,
             ]);
 
         return response()->json($lostItems);
@@ -115,6 +123,45 @@ class LostItemController extends Controller
             'data' => $lostItem,
             'matches_found' => count($matches),
         ], 201);
+    }
+
+    /**
+     * Security / admin / staff approve a lost report. Returns immediately;
+     * the email blast to students + instructors runs on the queue.
+     */
+    public function approve(Request $request, LostItem $lostItem)
+    {
+        $data = $request->validate(['note' => 'nullable|string|max:500']);
+
+        // Atomic: a double-click or two approvers can never trigger two broadcasts.
+        $claimed = LostItem::whereKey($lostItem->id)->whereNull('approved_at')->update([
+            'approved_at' => now(),
+            'approved_by' => $request->user()->id,
+            'approval_note' => $data['note'] ?? null,
+        ]);
+
+        if (! $claimed) {
+            return response()->json(['success' => true, 'already_approved' => true, 'message' => 'Already approved.']);
+        }
+
+        $this->audit->log('lost_item.approved', $lostItem, "Lost item #{$lostItem->id} approved.");
+
+        // Emails to all users are controlled by SCLF_BROADCAST_LOST_ITEM_EMAILS.
+        // When off, the report is still approved; nobody is emailed.
+        $emailsOn = (bool) config('sclf.broadcast_lost_item_emails');
+
+        if ($emailsOn) {
+            // Runs right after this response is sent, in the same process: no queue worker needed.
+            \App\Jobs\BroadcastLostItemJob::dispatchAfterResponse($lostItem->id, $request->user()->id);
+        }
+
+        return response()->json([
+            'success' => true,
+            'emails_enabled' => $emailsOn,
+            'message' => $emailsOn
+                ? 'Approved. Emails are being sent to everyone now.'
+                : 'Approved. Email broadcast is turned off.',
+        ]);
     }
 
     public function show(LostItem $lostItem)

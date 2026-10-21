@@ -43,10 +43,17 @@ class LostItem extends Model
         'image_path',
         'contact_info',
         'status',
+        'approved_at',
+        'approved_by',
+        'approval_note',
+        'broadcast_started_at',
+        'broadcast_finished_at',
+        'broadcast_count',
     ];
 
     protected $casts = [
         'date_lost' => 'date',
+        'approved_at' => 'datetime',
         'details' => 'array',
     ];
 

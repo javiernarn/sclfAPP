@@ -173,6 +173,7 @@ const NAV_BY_ROLE = {
         { to: "/app/security/counter", label: "Counter", icon: PackageCheck },
         { to: "/app/security/counter-dashboard", label: "Counter Dashboard", icon: ListOrdered },
         { to: "/app/security/found-items", label: "Found Item Reviews", icon: PackageSearch },
+        { to: "/app/security/lost-items", label: "Lost Item Reviews", icon: PackageSearch },
         // Security is the hands-on handler of lost & found, so it sees the
         // lost reports too and works the match queue (not just found reviews).
         { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
@@ -190,6 +191,7 @@ const NAV_BY_ROLE = {
     admin: [
         { to: "/app/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
         { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
+        { to: "/app/security/lost-items", label: "Lost Item Reviews", icon: PackageSearch },
         { to: "/app/found-items", label: "Found Items", icon: PackageSearch },
         // Same match queue Security works (admin oversees; staff can view,
         // actions need admin approval).

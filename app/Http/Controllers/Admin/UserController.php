@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdminCreateUserRequest;
+use App\Mail\AccountCreatedMail;
+use App\Models\Campus;
 use App\Models\Claim;
 use App\Models\FoundItem;
 use App\Models\User;
 use App\Services\Audit\AuditLogService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class UserController extends Controller
 {
@@ -167,14 +171,63 @@ class UserController extends Controller
                 ' by ' . ($request->user()->isAdmin() ? 'admin' : 'staff') . ' #' . $request->user()->id
         );
 
+        // Tell the new user their account exists, with the details the admin
+        // entered and the temporary password. A mail failure never undoes the
+        // account — the admin is told instead (see `email_sent`).
+        $emailSent = $this->sendAccountCreatedEmail($user, $validated, $staffId, $request->user());
+
         return response()->json([
             'success' => true,
             'message' => 'Account created successfully.',
             'data' => [
                 'user' => $user->only('id', 'name', 'email', 'staff_id', 'gender', 'profile_picture_url'),
                 'role' => $validated['role'],
+                'email_sent' => $emailSent,
             ],
         ], 201);
+    }
+
+    /**
+     * Email the new account's owner their details + temporary password in the
+     * branded SCLF format (resources/views/emails/account-created.blade.php).
+     * Sent right away, not queued, so the password never sits in the jobs
+     * table. The password is never written to the audit log.
+     */
+    protected function sendAccountCreatedEmail(User $user, array $validated, ?string $staffId, User $creator): bool
+    {
+        $roleLabels = [
+            'instructor' => 'Instructor',
+            'security_officer' => 'Security Officer',
+            'staff' => 'Staff',
+            'admin' => 'Admin',
+        ];
+        $genderLabels = [
+            'male' => 'Male',
+            'female' => 'Female',
+            'other' => 'Other',
+            'prefer_not_to_say' => 'Prefer not to say',
+        ];
+
+        try {
+            Mail::send(new AccountCreatedMail(
+                fullName: $user->name,
+                userEmail: $user->email,
+                temporaryPassword: $validated['password'],
+                roleLabel: $roleLabels[$validated['role']] ?? ucfirst($validated['role']),
+                staffId: $staffId,
+                campusName: ! empty($validated['campus_id']) ? Campus::find($validated['campus_id'])?->name : null,
+                phoneNumber: $validated['phone_number'] ?? null,
+                genderLabel: $genderLabels[$validated['gender'] ?? ''] ?? null,
+                createdBy: $creator->name ?: ($creator->isAdmin() ? 'the SCLF Administrator' : 'SCLF Staff'),
+                loginUrl: rtrim(config('app.url'), '/') . '/login',
+            ));
+
+            return true;
+        } catch (Throwable $e) {
+            report($e);
+
+            return false;
+        }
     }
 
     /**

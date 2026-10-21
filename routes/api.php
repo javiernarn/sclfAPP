@@ -62,6 +62,12 @@ Route::middleware('throttle:6,1')->group(function () {
     Route::post('/reset-password', [PasswordResetController::class, 'reset']);
 });
 
+// Read-only check the Reset Password page makes as soon as it opens: is this
+// emailed link still usable (not used, not expired, not replaced)? Separate
+// from the group above so merely opening/refreshing the page doesn't eat the
+// 6-per-minute budget the real reset needs.
+Route::middleware('throttle:30,1')->post('/password/reset-token/check', [PasswordResetController::class, 'checkToken']);
+
 // Protected routes — must be logged in (valid Sanctum token) AND have an
 // account that hasn't been disabled by an administrator, AND (via
 // require.full_access) hold a real session token rather than a
@@ -100,14 +106,14 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     // Lost Items — any authenticated user may browse/search; create is
     // restricted to student/instructor via LostItemPolicy inside the controller.
     Route::get('/lost-items', [LostItemController::class, 'index']);
-    Route::middleware('throttle:reports')->post('/lost-items', [LostItemController::class, 'store']);
+    Route::middleware(['throttle:reports', 'daily.report:lost'])->post('/lost-items', [LostItemController::class, 'store']);
     Route::get('/lost-items/{lostItem}', [LostItemController::class, 'show']);
     Route::delete('/lost-items/{lostItem}', [LostItemController::class, 'destroy']);
     Route::get('/lost-items/{lostItem}/matches', [MatchController::class, 'forLostItem']);
 
     // Found Items
     Route::get('/found-items', [FoundItemController::class, 'index']);
-    Route::middleware('throttle:reports')->post('/found-items', [FoundItemController::class, 'store']);
+    Route::middleware(['throttle:reports', 'daily.report:found'])->post('/found-items', [FoundItemController::class, 'store']);
     Route::get('/found-items/{foundItem}', [FoundItemController::class, 'show']);
     Route::get('/found-items/{foundItem}/matches', [MatchController::class, 'forFoundItem']);
     Route::get('/found-items/{foundItem}/movements', [StorageLocationController::class, 'history']);
@@ -175,7 +181,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     // role. Managing an incident (assign/resolve/close/reopen) is
     // officer/admin-only, see the role-restricted group below.
     Route::get('/security-incidents', [SecurityIncidentController::class, 'index']);
-    Route::middleware('throttle:reports')->post('/security-incidents', [SecurityIncidentController::class, 'store']);
+    Route::middleware(['throttle:reports', 'daily.report:incident'])->post('/security-incidents', [SecurityIncidentController::class, 'store']);
     Route::get('/security-incidents/{securityIncident}', [SecurityIncidentController::class, 'show']);
     // Editing your own fresh report lives here (any authenticated user);
     // the policy itself is what actually restricts it to the reporter
@@ -193,7 +199,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     Route::get('/report-attachments/{attachment}', [ReportAttachmentController::class, 'show']);
 
     Route::get('/service-requests', [ServiceRequestController::class, 'index']);
-    Route::middleware('throttle:reports')->post('/service-requests', [ServiceRequestController::class, 'store']);
+    Route::middleware(['throttle:reports', 'daily.report:service'])->post('/service-requests', [ServiceRequestController::class, 'store']);
     Route::get('/service-requests/{serviceRequest}', [ServiceRequestController::class, 'show']);
     Route::post('/service-requests/{serviceRequest}/cancel', [ServiceRequestController::class, 'cancel']);
 
@@ -215,6 +221,9 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         Route::post('/violations/{violation}/dismiss', [ViolationController::class, 'dismiss']);
 
         Route::post('/found-items/{foundItem}/verify', [FoundItemController::class, 'verify']);
+
+        // Approve a lost report -> queued email to students/instructors.
+        Route::post('/lost-items/{lostItem}/approve', [LostItemController::class, 'approve']);
 
         // Lost & found match queue — the handlers' (security / admin / staff)
         // view of every pairing the matching engine recorded.
