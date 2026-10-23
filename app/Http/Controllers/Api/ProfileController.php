@@ -90,7 +90,10 @@ class ProfileController extends Controller
             // already carries the default avatar, so it may keep it.
             'profile_picture' => [$user->profile_picture ? 'nullable' : 'required', 'image', 'max:5120'],
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
+            // Instructors must choose the course they teach during setup.
+            'teaching_course' => [$user->hasRole('instructor') ? 'required' : 'prohibited', 'string', 'max:255'],
         ], [
+            'teaching_course.required' => 'Please select the course you teach.',
             'first_name.regex' => 'First name can only contain letters, spaces, hyphens and apostrophes.',
             'last_name.regex' => 'Last name can only contain letters, spaces, hyphens and apostrophes.',
             'phone_number.regex' => 'Enter a valid Philippine mobile number, e.g. 09171234567.',
@@ -126,6 +129,9 @@ class ProfileController extends Controller
             'gender' => $validated['gender'] ?? null,
             'profile_picture' => $profilePicturePath,
         ]);
+        if ($user->hasRole('instructor')) {
+            $user->teaching_course = $validated['teaching_course'];
+        }
         if ($user->isAdmin() && isset($validated['email'])) {
             $user->email = $validated['email'];
         }
@@ -166,7 +172,7 @@ class ProfileController extends Controller
             'message' => 'Your account is ready.',
             'user' => $user->fresh()->only(
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
-                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course',
+                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course', 'teaching_course',
                 'profile_picture_url', 'two_factor_enabled', 'must_setup_profile', 'public_token'
             ),
         ]);

@@ -39,13 +39,15 @@ class AccountCreatedEmailTest extends TestCase
         $this->actingWithToken($this->admin())->postJson('/api/admin/users', [
             'first_name' => 'Jon', 'last_name' => 'Zkie', 'email' => 'jonzkieab3@gmail.com',
             'password' => 'TempPass123', 'role' => 'instructor', 'phone_number' => '09171234567', 'gender' => 'male',
+            'teaching_course' => 'BS Information Technology',
         ])->assertCreated()->assertJsonPath('data.email_sent', true);
 
         Mail::assertSent(AccountCreatedMail::class, function (AccountCreatedMail $mail) {
             return $mail->hasTo('jonzkieab3@gmail.com')
                 && $mail->temporaryPassword === 'TempPass123'
                 && $mail->roleLabel === 'Instructor'
-                && $mail->phoneNumber === '09171234567';
+                && $mail->phoneNumber === '09171234567'
+                && $mail->teachingCourse === 'BS Information Technology';
         });
     }
 

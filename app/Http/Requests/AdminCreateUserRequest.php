@@ -27,6 +27,10 @@ class AdminCreateUserRequest extends FormRequest
             // campus-scoped enforcement for security_officer accounts is
             // applied separately, not forced here at creation time.
             'campus_id' => ['nullable', 'exists:campuses,id'],
+            // Instructors only, optional here: the course they teach, picked
+            // from the same Department/Course list students use at
+            // registration. The instructor must confirm it at first-login setup.
+            'teaching_course' => ['nullable', 'string', 'max:255'],
             // Optional at creation — staff can also add one later from
             // their own Profile page. Same limits as self-registration.
             'profile_picture' => ['nullable', 'image', 'max:5120'],

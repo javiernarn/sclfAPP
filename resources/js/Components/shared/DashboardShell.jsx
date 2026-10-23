@@ -22,6 +22,8 @@ import "./themes.css";
 // Imported AFTER DashboardShell.css on purpose: its phone-only overrides
 // rely on coming later in the cascade.
 import MobileBottomNav from "./MobileBottomNav";
+import MobileQuickActions, { QuickActionsContext } from "./MobileQuickActions";
+import { useNotifications } from "../../context/NotificationContext";
 import DotLogo from "./DotLogo";
 // One compact, consistent phone layout for every page (no dead space).
 // Last on purpose: its rules are all scoped under `.ds-shell` and sit inside
@@ -29,6 +31,8 @@ import DotLogo from "./DotLogo";
 import "./MobileLayout.css";
 // Native-app feel on phones: bottom sheets, press feedback, app bar, transitions.
 import "./MobileApp.css";
+// Student/instructor "real app" look — loaded last so it out-ranks the shared phone layers above.
+import "./MobileUserApp.css";
 import {
     LayoutDashboard,
     PackageSearch,
@@ -71,7 +75,8 @@ const THEME_OPTIONS = [
     { key: "yellow", label: "Yellow" },
     { key: "maroon", label: "Maroon" },
 ];
-// "Custom" list — shown when the Custom button beside "Choose Theme" is on.
+// Black list — shown after tapping the "Black" button beside "Choose Theme"
+// (that button then reads "White" and takes you back to the regular list).
 // Every entry is a black (dark) shell; the second half of the badge is the
 // accent color. Pure black (#000) base, unlike the slate-toned Dark theme.
 const CUSTOM_THEME_OPTIONS = [
@@ -130,10 +135,11 @@ const ThemePicker = ({ open, onToggle, current, onPick, side = "right", align = 
                             type="button"
                             className={`ds-theme-custom-btn ${custom ? "is-on" : ""}`}
                             onClick={() => setCustom((v) => !v)}
-                            aria-pressed={custom}
-                            title={custom ? "Back to the regular themes" : "Show custom (black) themes"}
+                            aria-label={custom ? "Switch to the white themes" : "Switch to the black themes"}
+                            title={custom ? "Back to the white themes" : "Show the black themes"}
                         >
-                            Custom
+                            {/* Shows where the tap takes you: Black -> black themes, then White -> back. */}
+                            {custom ? "White" : "Black"}
                         </button>
                     </div>
                     {options.map((t) => (
@@ -172,11 +178,10 @@ const NAV_BY_ROLE = {
         { to: "/app/security/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
         { to: "/app/security/counter", label: "Counter", icon: PackageCheck },
         { to: "/app/security/counter-dashboard", label: "Counter Dashboard", icon: ListOrdered },
-        { to: "/app/security/found-items", label: "Found Item Reviews", icon: PackageSearch },
-        { to: "/app/security/lost-items", label: "Lost Item Reviews", icon: PackageSearch },
-        // Security is the hands-on handler of lost & found, so it sees the
-        // lost reports too and works the match queue (not just found reviews).
+        // Lost / Found each have one page; pending reports are reviewed on its
+        // "Pending review" tab (no separate review pages).
         { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
+        { to: "/app/found-items", label: "Found Items", icon: PackageSearch },
         { to: "/app/security/matches", label: "Matches", icon: Handshake },
         { to: "/app/security/claims", label: "Claims", icon: ClipboardCheck },
         { to: "/app/security/inventory", label: "Inventory", icon: Boxes },
@@ -191,7 +196,6 @@ const NAV_BY_ROLE = {
     admin: [
         { to: "/app/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
         { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
-        { to: "/app/security/lost-items", label: "Lost Item Reviews", icon: PackageSearch },
         { to: "/app/found-items", label: "Found Items", icon: PackageSearch },
         // Same match queue Security works (admin oversees; staff can view,
         // actions need admin approval).
@@ -239,16 +243,16 @@ const NAV_BY_ROLE = {
 // To change what a role gets, just edit its four entries here.
 const MOBILE_TABS_BY_ROLE = {
     student: [
-        { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
-        { to: "/app/found-items", label: "Found Items", icon: PackageCheck },
-        { to: "/app/claims", label: "My Claims", icon: ClipboardCheck },
+        { to: "/app/dashboard", label: "Home", fullLabel: "Dashboard", icon: LayoutDashboard },
+        { to: "/app/lost-items", label: "Lost", fullLabel: "Lost Items", icon: PackageSearch },
+        { to: "/app/found-items", label: "Found", fullLabel: "Found Items", icon: PackageCheck },
+        { to: "/app/claims", label: "Claims", fullLabel: "My Claims", icon: ClipboardCheck },
     ],
     // Follows the intake → claim → release pipeline an officer works
     // through. Counter, Inventory, Visitors etc. live under Menu.
     security_officer: [
         { to: "/app/security/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
-        { to: "/app/security/found-items", label: "Reviews", fullLabel: "Found Item Reviews", icon: PackageCheck },
+        { to: "/app/found-items", label: "Found", fullLabel: "Found Items", icon: PackageCheck },
         { to: "/app/security/claims", label: "Claims", icon: ClipboardCheck },
         { to: "/app/security/qr-scanner", label: "Scan", fullLabel: "QR Release Scanner", icon: QrCode },
     ],
@@ -295,6 +299,10 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     // phone-specific below is gated on this, so desktop/laptop/tablet
     // behave exactly as before.
     const isPhone = useIsPhone();
+    // Student/instructor phone app: raised "+" tab, unread dot on Menu.
+    const { unreadCount } = useNotifications();
+    const [quickOpen, setQuickOpen] = useState(false);
+    const quickActionsApi = useMemo(() => ({ open: () => setQuickOpen(true) }), []);
 
     const [menuOpen, setMenuOpen] = useState(false);
     const [sidebarMenuOpen, setSidebarMenuOpen] = useState(false);
@@ -598,7 +606,10 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
 
     return (
         <>
-        <div className={`ds-shell ds-layout ${theme} ${isDark ? "dark" : "light"} ${theme.startsWith("dark-") ? `dk-${theme.slice(5)}` : ""} ${isPhone ? "ds-phone" : ""}`}>
+        <div className={`ds-shell ds-layout ${theme} ${isDark ? "dark" : "light"} ${theme.startsWith("dark-") ? `dk-${theme.slice(5)}` : ""} ${isPhone ? "ds-phone" : ""} ${isPhone && navRole === "student" ? "ds-user-app" : ""}`}>
+                {isPhone && navRole === "student" && (
+                    <MobileQuickActions open={quickOpen} onClose={() => setQuickOpen(false)} />
+                )}
                 <div
                     className={`ds-sidebar-backdrop ${sidebarOpen ? "open" : ""}`}
                     onClick={() => setSidebarOpen(false)}
@@ -910,7 +921,9 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                             </div>
                         )}
 
-                        {children}
+                        <QuickActionsContext.Provider value={quickActionsApi}>
+                            {children}
+                        </QuickActionsContext.Provider>
                     </main>
 
                     {/* Pinned footer — part of the .ds-content flex column, same
@@ -927,6 +940,8 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                             menuOpen={sidebarOpen}
                             onMenu={() => setSidebarOpen(true)}
                             sidebarId="ds-sidebar"
+                            fab={navRole === "student" ? { label: "Create a report", short: "Report", onClick: () => setQuickOpen(true) } : undefined}
+                            menuBadge={navRole === "student" ? unreadCount : 0}
                         />
                     ) : (
                     <footer className="ds-footer">

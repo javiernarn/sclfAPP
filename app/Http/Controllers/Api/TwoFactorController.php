@@ -159,7 +159,7 @@ class TwoFactorController extends Controller
             'first_login' => $firstLogin,
             'user' => array_merge($user->only(
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
-                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course',
+                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course', 'teaching_course',
                 'profile_picture_url', 'two_factor_enabled', 'public_token'
             ), ['email_verified' => $user->hasVerifiedEmail()]),
             'roles' => $user->getRoleNames(),

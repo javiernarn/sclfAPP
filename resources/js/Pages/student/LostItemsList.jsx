@@ -8,6 +8,7 @@ import useViewMode from '../../hooks/useViewMode';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import LostItemForm from './LostItemForm';
+import LostItemReviewPanel from '../../Components/shared/LostItemReviewPanel';
 
 const badgeClass = (status) => {
     const key = (status || '').toLowerCase();
@@ -40,6 +41,19 @@ export default function LostItemsList() {
     // "Create" swaps this page's list for the report form (kept in the URL
     // as ?new=1 so the browser Back button and old links behave).
     const creating = canCreate && searchParams.get('new') === '1';
+    // Admin / staff / security also review pending reports right here
+    // (the old separate "Lost Item Reviews" page), on their own tab.
+    const isReviewer = !canCreate;
+    const tab = isReviewer && searchParams.get('tab') === 'review' ? 'review' : 'all';
+    const setTab = (t) => setSearchParams(t === 'review' ? { tab: 'review' } : {});
+    const [pendingCount, setPendingCount] = useState(0);
+    const [reviewKey, setReviewKey] = useState(0);
+    const loadPending = () => {
+        if (!isReviewer) return;
+        axios.get('/lost-items', { params: { approval: 'pending' } })
+            .then(res => setPendingCount((res.data.data || []).length))
+            .catch(() => {});
+    };
     const openCreate = () => setSearchParams({ new: '1' });
     const closeCreate = () => setSearchParams({}, { replace: true });
 
@@ -56,23 +70,40 @@ export default function LostItemsList() {
             .then(res => setItems(res.data.data))
             .catch(() => setError('Could not load lost items right now.'))
             .finally(() => setLoading(false));
+        loadPending();
     };
 
     useEffect(load, []);
 
     return (
-        <DashboardShell onRefresh={creating ? undefined : () => load()} refreshing={loading}
+        <DashboardShell onRefresh={creating ? undefined : () => { if (tab === 'review') { setReviewKey((k) => k + 1); loadPending(); } else load(); }} refreshing={loading}
             eyebrow="Lost & Found"
             title={creating ? "Report a Lost Item" : "Lost Items"}
             subtitle={creating
                 ? "Give as much detail as you can — it helps the community find a match faster."
                 : "Everything the community has reported lost around campus."}
         >
+            {isReviewer && !creating && (
+                <div className="ds-tabs" role="tablist" style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+                    <button type="button" role="tab" aria-selected={tab === 'all'}
+                        className={`ds-btn ${tab === 'all' ? 'ds-btn-primary' : 'ds-btn-secondary'}`}
+                        onClick={() => setTab('all')}>
+                        All lost items
+                    </button>
+                    <button type="button" role="tab" aria-selected={tab === 'review'}
+                        className={`ds-btn ${tab === 'review' ? 'ds-btn-primary' : 'ds-btn-secondary'}`}
+                        onClick={() => setTab('review')}>
+                        Pending review{pendingCount > 0 ? ` (${pendingCount})` : ''}
+                    </button>
+                </div>
+            )}
             {creating ? (
                 <LostItemForm
                     onCancel={closeCreate}
                     onCreated={() => { closeCreate(); load(); }}
                 />
+            ) : tab === 'review' ? (
+                <LostItemReviewPanel key={reviewKey} onChanged={() => { loadPending(); load(); }} />
             ) : (
             <div className="ds-card">
                 <div className="ds-list-head-row" style={{ justifyContent: 'flex-end' }}>

@@ -8,6 +8,7 @@ import useViewMode from '../../hooks/useViewMode';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import FoundItemForm from './FoundItemForm';
+import FoundItemReviewPanel from '../../Components/shared/FoundItemReviewPanel';
 import { itemChannelLabel, itemChannelBadgeClass, itemChannelIcon } from '../../utils/itemChannel';
 
 const badgeClass = (status) => {
@@ -49,6 +50,19 @@ export default function FoundItemsList() {
     // "Create" swaps this page's list for the report form (kept in the URL
     // as ?new=1 so the browser Back button and old links behave).
     const creating = canCreate && searchParams.get('new') === '1';
+    // Admin / staff / security also verify pending reports right here
+    // (the old separate "Found Item Reviews" page), on their own tab.
+    const isReviewer = !canCreate;
+    const tab = isReviewer && searchParams.get('tab') === 'review' ? 'review' : 'all';
+    const setTab = (t) => setSearchParams(t === 'review' ? { tab: 'review' } : {});
+    const [pendingCount, setPendingCount] = useState(0);
+    const [reviewKey, setReviewKey] = useState(0);
+    const loadPending = () => {
+        if (!isReviewer) return;
+        axios.get('/found-items', { params: { status: 'pending_review' } })
+            .then(res => setPendingCount((res.data.data || []).length))
+            .catch(() => {});
+    };
     const openCreate = () => setSearchParams({ new: '1' });
     const closeCreate = () => setSearchParams({}, { replace: true });
 
@@ -83,7 +97,7 @@ export default function FoundItemsList() {
             });
     };
 
-    useEffect(() => { load('', { initial: true }); }, []);
+    useEffect(() => { load('', { initial: true }); loadPending(); }, []);
 
     // Debounced live search — waits ~400ms after typing stops before
     // hitting the server, so a fast typist doesn't fire a request per
@@ -100,18 +114,34 @@ export default function FoundItemsList() {
     }, [q]);
 
     return (
-        <DashboardShell onRefresh={creating ? undefined : () => load(q, { initial: true })} refreshing={loading || searching}
+        <DashboardShell onRefresh={creating ? undefined : () => { if (tab === 'review') { setReviewKey((k) => k + 1); loadPending(); } else { load(q, { initial: true }); loadPending(); } }} refreshing={loading || searching}
             eyebrow="Lost & Found"
             title={creating ? "Report a Found Item" : "Found Items"}
             subtitle={creating
                 ? "Thank you for turning this in — Security will verify your report before it's stored."
                 : "Verified items currently being held by Security, ready to be matched with an owner."}
         >
+            {isReviewer && !creating && (
+                <div className="ds-tabs" role="tablist" style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+                    <button type="button" role="tab" aria-selected={tab === 'all'}
+                        className={`ds-btn ${tab === 'all' ? 'ds-btn-primary' : 'ds-btn-secondary'}`}
+                        onClick={() => setTab('all')}>
+                        All found items
+                    </button>
+                    <button type="button" role="tab" aria-selected={tab === 'review'}
+                        className={`ds-btn ${tab === 'review' ? 'ds-btn-primary' : 'ds-btn-secondary'}`}
+                        onClick={() => setTab('review')}>
+                        Pending review{pendingCount > 0 ? ` (${pendingCount})` : ''}
+                    </button>
+                </div>
+            )}
             {creating ? (
                 <FoundItemForm
                     onCancel={closeCreate}
                     onCreated={() => { closeCreate(); load(q, { initial: true }); }}
                 />
+            ) : tab === 'review' ? (
+                <FoundItemReviewPanel key={reviewKey} onChanged={() => { loadPending(); load(q); }} />
             ) : (
             <div className="ds-card">
                 <div className="ds-list-head-row">

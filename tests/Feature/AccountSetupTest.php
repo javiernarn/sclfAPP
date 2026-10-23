@@ -81,10 +81,24 @@ class AccountSetupTest extends TestCase
         foreach (['instructor', 'staff'] as $i => $role) {
             $user = $this->pendingUser($role);
 
-            $this->submit($user, $this->payload(['staff_id' => "ID-{$role}-{$i}"]))->assertOk();
+            // Instructors must also pick the course they teach; for everyone else the field is prohibited.
+            $extra = $role === 'instructor' ? ['teaching_course' => 'BS Information Technology'] : [];
+
+            $this->submit($user, $this->payload(['staff_id' => "ID-{$role}-{$i}"] + $extra))->assertOk();
 
             $this->assertSame(strtoupper("ID-{$role}-{$i}"), $user->fresh()->staff_id);
         }
+    }
+
+    public function test_an_instructor_must_pick_the_course_they_teach(): void
+    {
+        $instructor = $this->pendingUser('instructor');
+
+        $this->submit($instructor, $this->payload())
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('teaching_course');
+
+        $this->assertTrue($instructor->fresh()->must_setup_profile);
     }
 
     public function test_the_id_number_is_required(): void

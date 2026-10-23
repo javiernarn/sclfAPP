@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdminCreateUserRequest;
 use App\Mail\AccountCreatedMail;
+use App\Mail\AccountUpdatedMail;
 use App\Models\Campus;
 use App\Models\Claim;
 use App\Models\FoundItem;
@@ -141,6 +142,8 @@ class UserController extends Controller
             'phone_number' => $validated['phone_number'] ?? null,
             'gender' => $validated['gender'] ?? null,
             'campus_id' => $validated['campus_id'] ?? null,
+            // Teaching course is only meaningful for instructors.
+            'teaching_course' => $validated['role'] === 'instructor' ? ($validated['teaching_course'] ?? null) : null,
             'staff_id' => $staffId,
             'profile_picture' => $profilePicturePath,
             'password' => Hash::make($validated['password']),
@@ -218,8 +221,11 @@ class UserController extends Controller
                 campusName: ! empty($validated['campus_id']) ? Campus::find($validated['campus_id'])?->name : null,
                 phoneNumber: $validated['phone_number'] ?? null,
                 genderLabel: $genderLabels[$validated['gender'] ?? ''] ?? null,
-                createdBy: $creator->name ?: ($creator->isAdmin() ? 'the SCLF Administrator' : 'SCLF Staff'),
+                // Role only (never the person's name) so the recipient knows who
+                // set up the account: the Administrator or a Staff member.
+                createdBy: $creator->isAdmin() ? 'the Administrator' : 'SCLF Staff',
                 loginUrl: rtrim(config('app.url'), '/') . '/login',
+                teachingCourse: $validated['role'] === 'instructor' ? ($validated['teaching_course'] ?? null) : null,
             ));
 
             return true;
@@ -227,6 +233,60 @@ class UserController extends Controller
             report($e);
 
             return false;
+        }
+    }
+
+    /** Readable account fields, used to work out what an edit changed. */
+    protected function accountSnapshot(User $user): array
+    {
+        $roleLabels = ['instructor' => 'Instructor', 'security_officer' => 'Security Officer', 'staff' => 'Staff', 'admin' => 'Admin', 'student' => 'Student'];
+        $role = $user->roles->pluck('name')->first();
+        $genderLabels = ['male' => 'Male', 'female' => 'Female', 'other' => 'Other', 'prefer_not_to_say' => 'Prefer not to say'];
+
+        return [
+            'Full name' => $user->name,
+            'Email' => $user->email,
+            'Role' => $role ? ($roleLabels[$role] ?? ucwords(str_replace('_', ' ', $role))) : null,
+            'ID number' => $user->staff_id ?: $user->student_id,
+            'Campus' => $user->campus_id ? Campus::find($user->campus_id)?->name : null,
+            'Phone number' => $user->phone_number,
+            'Gender' => $genderLabels[$user->gender ?? ''] ?? null,
+            'Teaching course' => $user->hasRole('instructor') ? $user->teaching_course : null,
+            'Account status' => $user->is_active ? 'Active' : 'Disabled',
+        ];
+    }
+
+    /**
+     * Tell the person what an admin/staff edit changed (role, ID, email...).
+     * Best-effort: a mail failure must never fail the edit itself.
+     */
+    protected function sendAccountUpdatedEmail(User $user, array $before, bool $passwordReset, User $editor): void
+    {
+        $after = $this->accountSnapshot($user);
+        $changes = [];
+        foreach ($after as $label => $new) {
+            if (($before[$label] ?? null) !== $new) {
+                $changes[] = ['label' => $label, 'old' => $before[$label] ?? null, 'new' => $new];
+            }
+        }
+
+        if (! $changes && ! $passwordReset) {
+            return;
+        }
+
+        $updatedBy = $editor->isAdmin() ? 'the Administrator' : 'SCLF Staff';
+        $loginUrl = rtrim(config('app.url'), '/') . '/login';
+
+        try {
+            Mail::send(new AccountUpdatedMail($user->name, $user->email, $changes, $passwordReset, $updatedBy, $loginUrl));
+
+            // Email address changed: also warn the previous address.
+            $oldEmail = $before['Email'] ?? null;
+            if ($oldEmail && $oldEmail !== $user->email) {
+                Mail::send(new AccountUpdatedMail($user->name, $oldEmail, $changes, false, $updatedBy, $loginUrl, toOldAddress: true));
+            }
+        } catch (Throwable $e) {
+            report($e);
         }
     }
 
@@ -272,6 +332,11 @@ class UserController extends Controller
             'campus_id' => 'sometimes|nullable|exists:campuses,id',
             'is_active' => 'sometimes|boolean',
             'role' => 'sometimes|in:student,instructor,security_officer,staff,admin',
+            // ID number for the NEW role, typed by the admin when changing
+            // role (the person can't redo first-time setup). Blank = auto-generate.
+            'id_number' => ['sometimes', 'nullable', 'string', 'max:50'],
+            // Teaching course (instructors only), from the registration course list.
+            'teaching_course' => ['sometimes', 'nullable', 'string', 'max:255'],
             'profile_picture' => ['sometimes', 'nullable', 'image', 'max:5120'],
         ], [
             'email.unique' => 'That email address is already in use by another account.',
@@ -309,9 +374,31 @@ class UserController extends Controller
             abort(422, 'You cannot remove your own admin role.');
         }
 
-        $before = $user->only('name', 'first_name', 'last_name', 'email', 'phone_number', 'gender', 'campus_id');
+        // Validate a manually typed ID for the new role before anything is saved.
+        $newIdNumber = trim((string) ($validated['id_number'] ?? ''));
+        $roleChanging = isset($validated['role']) && ! $user->hasRole($validated['role']);
+        if ($roleChanging && $newIdNumber !== '') {
+            // Any real ID is accepted as typed (e.g. SEC-1591-221-02026) — only a
+            // loose character check, since actual ID numbers don't all follow
+            // the auto-generated PREFIX-YYYY-NNNN pattern.
+            if (! preg_match('/^[A-Za-z0-9][A-Za-z0-9\-\/\. ]{0,49}$/', $newIdNumber)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'id_number' => 'ID number can only contain letters, numbers, dashes, slashes and dots.',
+                ]);
+            }
+            $column = (User::STAFF_ID_PREFIXES[$validated['role']] ?? null) ? 'staff_id' : 'student_id';
+            $taken = User::withTrashed()->where($column, $newIdNumber)->where('id', '!=', $user->id)->exists();
+            if ($taken) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'id_number' => 'That ID number is already used by another account.',
+                ]);
+            }
+        }
 
-        $attributes = collect($validated)->except(['role', 'password', 'profile_picture'])->toArray();
+        $before = $user->only('name', 'first_name', 'last_name', 'email', 'phone_number', 'gender', 'campus_id');
+        $emailSnapshot = $this->accountSnapshot($user);
+
+        $attributes = collect($validated)->except(['role', 'password', 'profile_picture', 'id_number', 'teaching_course'])->toArray();
         if (isset($validated['first_name']) || isset($validated['last_name'])) {
             $attributes['name'] = trim(
                 ($validated['first_name'] ?? $user->first_name) . ' ' . ($validated['last_name'] ?? $user->last_name)
@@ -329,6 +416,17 @@ class UserController extends Controller
             }
         }
 
+        // Teaching course belongs to instructors only: set/clear it with the
+        // account's resulting role.
+        $resultingRole = $validated['role'] ?? $user->roles->pluck('name')->first();
+        if ($resultingRole !== 'instructor') {
+            if ($user->teaching_course !== null && isset($validated['role'])) {
+                $attributes['teaching_course'] = null;
+            }
+        } elseif (array_key_exists('teaching_course', $validated)) {
+            $attributes['teaching_course'] = $validated['teaching_course'] ?: null;
+        }
+
         $user->fill($attributes);
 
         $passwordReset = array_key_exists('password', $validated) && filled($validated['password']);
@@ -339,7 +437,26 @@ class UserController extends Controller
         $user->save();
 
         if (isset($validated['role'])) {
+            $previousRole = $user->roles->pluck('name')->first();
             $user->syncRoles([$validated['role']]);
+
+            // Role changed (e.g. Instructor -> Security Officer): the account
+            // needs an ID for its new role. Use the number the admin typed, or
+            // auto-generate one with the new role's prefix (SEC-YYYY-NNNN).
+            if ($previousRole !== $validated['role']) {
+                $newPrefix = User::STAFF_ID_PREFIXES[$validated['role']] ?? null;
+                if ($newPrefix) {
+                    $user->staff_id = $newIdNumber !== '' ? $newIdNumber : User::generateStaffId($validated['role']);
+                    $user->student_id = null; // display_id prefers student_id, so clear the old one
+                } else {
+                    // Student: keep the typed student ID; staff ID no longer applies.
+                    $user->staff_id = null;
+                    if ($newIdNumber !== '') {
+                        $user->student_id = $newIdNumber;
+                    }
+                }
+                $user->save();
+            }
         }
 
         // A password reset is effectively a recovery action — sign out
@@ -349,6 +466,8 @@ class UserController extends Controller
         if ($passwordReset) {
             $user->tokens()->delete();
         }
+
+        $this->sendAccountUpdatedEmail($user->fresh('roles'), $emailSnapshot, $passwordReset, $request->user());
 
         $auditMessage = "User #{$user->id} updated by admin #" . $request->user()->id;
         if ($passwordReset) {

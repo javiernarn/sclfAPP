@@ -218,6 +218,7 @@ export default function AdminUserDetail() {
                         user.gender ? user.gender.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase()) : null
                     } />
                     {user.course && <InfoItem icon={GraduationCap} label="Course" value={user.course} />}
+                    {user.teaching_course && <InfoItem icon={GraduationCap} label="Teaching course" value={user.teaching_course} />}
                     {user.address && <InfoItem icon={MapPin} label="Address" value={user.address} />}
                     <InfoItem
                         icon={Calendar}

@@ -64,6 +64,8 @@ export default function StudentDashboard() {
                 <MobileHome
                     name={user?.name}
                     role={isInstructor ? 'Instructor' : 'Student'}
+                    kpis={kpis}
+                    campus={data?.campus}
                 />
             )}
             <div className="ch-toolbar">
@@ -79,12 +81,14 @@ export default function StudentDashboard() {
             </div>
 
             {/* ---- Personal KPIs ---- */}
+            {!isPhone && (
             <div className="ch-kpi-grid">
                 <KpiCard icon={ClipboardList} label="Total Reports" value={kpis.reports} color="var(--ch-1)" series={dailySeries} />
                 <KpiCard icon={Hourglass} label="Pending" value={kpis.pending} color="var(--ch-4)" goodWhen="down" />
                 <KpiCard icon={CircleCheck} label="Recovered" value={kpis.recovered} color="var(--ch-good)" />
                 <KpiCard icon={Handshake} label="Active Claims" value={kpis.active_claims} color="var(--ch-3)" />
             </div>
+            )}
 
             {/* ---- Trend + status ---- */}
             <div className="ch-row cols-2-1">
@@ -130,6 +134,7 @@ export default function StudentDashboard() {
             )}
 
             {/* ---- Campus-wide headline (no personal data of others exposed) ---- */}
+            {!isPhone && (
             <div className="ds-card" style={{ marginBottom: 16 }}>
                 <div className="ds-card-title ds-card-title-icon"><CircleCheck size={18} strokeWidth={2} /> Campus Recovery Rate</div>
                 <p className="ds-card-desc" style={{ marginBottom: 0 }}>
@@ -137,6 +142,7 @@ export default function StudentDashboard() {
                     <strong>{data.campus?.items_on_shelf ?? 0}</strong> unclaimed items currently on the shelf.
                 </p>
             </div>
+            )}
         </DashboardShell>
     );
 }

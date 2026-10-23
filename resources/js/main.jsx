@@ -9,6 +9,8 @@ import { ToastProvider } from './context/ToastContext';
 import { ConfirmProvider } from './context/ConfirmContext';
 import RootApp from './RootApp';
 import { registerServiceWorker } from './utils/push';
+import './utils/pwaInstall'; // start listening for the browser's install event before React mounts
+import InstallPrompt from './Components/shared/InstallPrompt';
 
 // Registering here (rather than only when the user flips the settings
 // toggle on) means the worker is already installed and ready by the time
@@ -32,6 +34,7 @@ ReactDOM.createRoot(document.getElementById('app')).render(
                             /notifications while a user session exists. */}
                         <NotificationProvider>
                             <RootApp />
+                            <InstallPrompt />
                         </NotificationProvider>
                     </AuthProvider>
                 </ConfirmProvider>

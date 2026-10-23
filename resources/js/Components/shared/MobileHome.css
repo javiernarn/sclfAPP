@@ -1,40 +1,112 @@
-/* MobileHome — phone-only launcher. Everything sits inside the media query
-   so desktop/tablet are untouched. Works 320px → 600px, light + dark. */
+/* MobileHome — phone-only home screen for students / instructors.
+   Everything sits inside the media query, so desktop and tablet are
+   untouched. Works 320px → 600px in all nine themes (uses --tk-* tokens). */
 .mh { display: none; }
 
 @media (max-width: 600px) {
-    .ds-shell .mh { display: block; margin-bottom: 14px; }
+    .ds-shell .mh { display: block; margin-bottom: 4px; }
 
+    /* ---------- hero ---------- */
     .mh-hero {
         position: relative; overflow: hidden;
-        padding: 16px 16px 18px; border-radius: 24px;
-        /* Text follows the theme: white on coloured themes, black on the white "Dark" accent. */
+        padding: 16px 16px 16px; border-radius: 26px;
         color: var(--tk-accent-on, #fff);
         background:
-            radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,.22), transparent 55%),
+            radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,.24), transparent 55%),
             var(--tk-accent, linear-gradient(135deg, #4338ca, #4f46e5 50%, #6366f1));
-        box-shadow: 0 14px 30px -12px rgba(var(--tk-accent-rgb, 79,70,229), .55);
+        box-shadow: 0 16px 32px -14px rgba(var(--tk-accent-rgb, 79,70,229), .6);
     }
-    .mh-hero::after {            /* the real OCC logo, black & white, faded behind the text */
-        content: ""; position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
-        width: 132px; height: 132px; pointer-events: none;
+    .mh-hero-top { display: flex; align-items: center; gap: 12px; position: relative; z-index: 1; }
+    .mh-avatar {
+        flex: none; width: 48px; height: 48px; border-radius: 16px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-weight: 800; font-size: 17px; letter-spacing: .02em;
+        background: rgba(255,255,255,.22) center / cover no-repeat;
+        background: color-mix(in srgb, currentColor 20%, transparent) center / cover no-repeat;
+        box-shadow: inset 0 0 0 2px color-mix(in srgb, currentColor 35%, transparent);
+    }
+    .mh-who { flex: 1; min-width: 0; line-height: 1.15; }
+    .mh-who small { display: block; font-size: 12.5px; font-weight: 600; opacity: .85; }
+    .mh-who b { display: block; font-size: 24px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mh-hero::after {            /* big OCC logo behind the text: fully inside the card, top-aligned with the content */
+        content: ""; position: absolute; top: 10px; right: 12px;
+        width: 128px; height: 128px; pointer-events: none;
         background: var(--mh-logo) center / contain no-repeat;
         filter: grayscale(1) contrast(1.1);
-        opacity: .22;
+        opacity: .2;
     }
-    .mh-hero-top { display: flex; align-items: center; gap: 10px; position: relative; z-index: 1; }
-    .mh-school { min-width: 0; flex: 1; line-height: 1.2; }
-    .mh-school b { display: block; font-size: 14px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .mh-school small { font-size: 11px; opacity: .85; font-weight: 600; }
-    .mh-role {
-        display: inline-flex; align-items: center; gap: 4px; flex: none;
-        padding: 4px 9px; border-radius: 99px; font-size: 11px; font-weight: 700;
-        background: rgba(128,128,128,.25); background: color-mix(in srgb, currentColor 16%, transparent);
+    .mh-sub { margin: 12px 0 0; font-size: 13px; opacity: .92; position: relative; z-index: 1; }
+    .mh-school {
+        margin-top: 10px; padding-top: 10px; position: relative; z-index: 1;
+        border-top: 1px solid rgba(255,255,255,.25);
+        border-top: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+        line-height: 1.25;
     }
-    .mh-hello { margin: 16px 0 2px; font-size: 24px; font-weight: 800; letter-spacing: -.02em; position: relative; z-index: 1; }
-    .mh-sub { margin: 0; font-size: 13px; opacity: .9; position: relative; z-index: 1; }
+    .mh-school b { display: block; font-size: 13.5px; font-weight: 800; }
+    .mh-school span { font-size: 11.5px; opacity: .85; font-weight: 600; }
+
+    /* ---------- main action ---------- */
+    .mh-cta {
+        display: flex; align-items: center; gap: 14px; margin-top: 12px; padding: 14px 14px;
+        border-radius: 22px; text-decoration: none; color: inherit;
+        background: var(--tk-surface, #fff);
+        border: 1.5px solid var(--tk-edge, #c3ccdb);
+        box-shadow: 0 10px 24px -16px var(--tk-shadow, rgba(2,6,23,.3));
+        touch-action: manipulation; transition: transform .12s ease;
+    }
+    button.mh-cta { width: 100%; text-align: left; font: inherit; cursor: pointer; -webkit-appearance: none; appearance: none; }
+    .mh-cta:active { transform: scale(.98); }
+    .mh-cta-icon {
+        flex: none; width: 48px; height: 48px; border-radius: 16px;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: inherit; background: transparent; border: 1.5px solid currentColor;
+    }
+    .mh-cta-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .mh-cta-text b { font-size: 16.5px; font-weight: 800; letter-spacing: -.01em; }
+    .mh-cta-text small { font-size: 12.5px; opacity: .65; }
+    .mh-cta > svg { flex: none; opacity: .4; }
+
+    /* ---------- section heading ---------- */
+    .mh-h { margin: 18px 2px 8px; font-size: 15px; font-weight: 800; letter-spacing: -.01em; }
+
+    /* ---------- stats: all four visible, 2 x 2 ----------
+       Each card is a plain number + label, centred, with its outline icon
+       drawn large and faint BEHIND the text (same idea as the logo above),
+       instead of a small boxed icon in the corner. */
+    .mh-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .mh-stat {
+        position: relative; overflow: hidden; isolation: isolate;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+        min-width: 0; min-height: 112px; padding: 14px 10px; border-radius: 20px; text-align: center;
+        background: var(--tk-surface, #fff); border: 1.5px solid var(--tk-edge, #c3ccdb);
+    }
+    .mh-stat-icon {
+        position: absolute; inset: 0; z-index: 0; pointer-events: none;
+        display: flex; align-items: center; justify-content: center;
+        color: inherit; opacity: .1;
+    }
+    .mh-stat b { position: relative; z-index: 1; font-size: 32px; font-weight: 800; line-height: 1; letter-spacing: -.02em; }
+    .mh-stat small { position: relative; z-index: 1; font-size: 12.5px; font-weight: 700; opacity: .75; overflow-wrap: anywhere; }
+
+    /* ---------- campus pulse ---------- */
+    .mh-pulse {
+        display: flex; align-items: center; gap: 14px; margin-top: 12px; padding: 14px; border-radius: 20px;
+        background: var(--tk-surface, #fff); border: 1.5px solid var(--tk-edge, #c3ccdb);
+    }
+    .mh-ring {
+        --p: 0%;
+        flex: none; width: 64px; height: 64px; border-radius: 50%;
+        display: grid; place-items: center; position: relative;
+        background: conic-gradient(var(--tk-accent-text, #4f46e5) var(--p), rgba(148,163,184,.25) 0);
+    }
+    .mh-ring::before { content: ""; position: absolute; inset: 7px; border-radius: 50%; background: var(--tk-surface, #fff); }
+    .mh-ring span { position: relative; font-size: 15px; font-weight: 800; }
+    .mh-pulse-text { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+    .mh-pulse-text b { font-size: 14.5px; font-weight: 800; }
+    .mh-pulse-text small { font-size: 12.5px; line-height: 1.4; opacity: .7; }
 }
 
 @media (max-width: 340px) {
-    .mh-role { display: none; }
+    .mh-who b { font-size: 21px; }
 }
+

@@ -20,8 +20,9 @@
 // ============================================================================
 
 import { deviceModelsFor, allDeviceModels } from './deviceModels';
+import { ITEM_RULES, EXTRA_ITEMS, NO_BRAND } from './itemRules';
 
-export const NO_BRAND = 'No brand / Unbranded';
+export { NO_BRAND };
 
 // --- Shared palette ---------------------------------------------------------
 export const COLORS = [
@@ -57,6 +58,8 @@ export const PLACES = [
     'Hallway / Corridor', 'Stairs', 'Parking area', 'Waiting shed', 'Bleachers / Stage',
     'Student lounge', 'Classroom', 'Multipurpose hall', 'Guidance Office', 'Bookstore',
     'Tricycle / Jeepney terminal outside', 'Field / Garden',
+    'Locker area', 'Habal-habal / Tricycle waiting area', 'Drafting / Engineering room', 'Skills / Nursing laboratory',
+    'Auditorium / AVR', 'Student organization room', 'Dormitory / Boarding house',
 ];
 
 // --- Categories -------------------------------------------------------------
@@ -250,9 +253,7 @@ export const CATALOG = [
     {
         name: 'Keys',
         items: ['House key', 'Locker key', 'Motorcycle key', 'Car key / Remote', 'Padlock with key', 'Bunch of keys', 'Keychain', 'Classroom / Office key'],
-        brands: ['Honda', 'Yamaha', 'Suzuki', 'Kawasaki', 'Toyota', 'Mitsubishi', 'Ford', 'Isuzu', 'Nissan', NO_BRAND],
-        brandLabel: 'Vehicle / Brand',
-        hasModel: false,
+        brands: [NO_BRAND],
         traits: ['Keychain / charm', 'Number of keys', 'Plastic key cover color', 'Remote fob attached', 'Key tag with number', 'Lanyard or carabiner'],
         places: ['Parking area', 'Classroom', 'Guard house / Gate', 'Covered court / Gym', 'Faculty room'],
     },
@@ -326,11 +327,26 @@ export const CATEGORY_NAMES = CATALOG.map((c) => c.name);
 export const findCategory = (name) => CATALOG.find((c) => norm(c.name) === norm(name)) || null;
 
 // Match item names loosely too, so "Smartphone" or "smart phone" still finds the item entry.
-export const itemsFor = (category) => dedupe(findCategory(category)?.items || []);
+export const itemsFor = (category) => {
+    const cat = findCategory(category);
+    return dedupe([...(cat?.items || []), ...(EXTRA_ITEMS[cat?.name] || [])]);
+};
+
+// The per-item rule (itemRules.js) for the picked item, or null for a typed / unknown item.
+export const ruleFor = (category, itemName) => {
+    const cat = findCategory(category);
+    const rules = cat && ITEM_RULES[cat.name];
+    if (!rules || !itemName) return null;
+    const hit = Object.entries(rules).find(([k]) => norm(k) === norm(itemName));
+    return hit ? hit[1] : null;
+};
 
 export const brandsFor = (category, itemName) => {
     const cat = findCategory(category);
     if (!cat) return [];
+    const rule = ruleFor(category, itemName);
+    if (rule?.noBrand) return [];
+    if (rule?.brands) return dedupe([...rule.brands, ...(rule.brands.includes(NO_BRAND) ? [] : [NO_BRAND])]);
     const specific = cat.itemBrands && Object.entries(cat.itemBrands).find(([k]) => norm(k) === norm(itemName));
     if (specific) return dedupe([...specific[1], NO_BRAND]);
     return dedupe(cat.brands);
@@ -341,6 +357,12 @@ const flatModels = (m) => (Array.isArray(m) ? m : Object.values(m || {}).flat())
 // Models for brand (+ the specific item, so a Samsung phone and a Samsung tablet get different lists).
 export const modelsFor = (category, brand, itemName) => {
     if (!brand) return [];
+    const rule = ruleFor(category, itemName);
+    if (rule?.noBrand || rule?.noModel) return [];
+    if (rule?.models) {
+        const own = Object.entries(rule.models).find(([k]) => norm(k) === norm(brand));
+        return own ? dedupe(own[1]) : [];
+    }
     const dev = deviceModelsFor(brand, itemName);
     if (dev && dev.length) return dedupe(dev);
     const cat = findCategory(category);
@@ -420,6 +442,8 @@ export const attributesFor = (category, itemName) => {
     if (!cat) return [];
     const a = ATTRIBUTES[cat.name];
     if (!a) return [];
+    const rule = ruleFor(category, itemName);
+    if (rule?.attrs) return rule.attrs;
     const hit = Object.entries(a.items || {}).find(([k]) => norm(k) === norm(itemName));
     if (hit) return hit[1];
     // Phones sometimes carry the legacy item name "Smartphone".
@@ -427,14 +451,29 @@ export const attributesFor = (category, itemName) => {
     return a.default || [];
 };
 
-export const traitsFor = (category) => dedupe(findCategory(category)?.traits || []);
+export const traitsFor = (category, itemName) => {
+    const own = ruleFor(category, itemName)?.traits;
+    return dedupe(own && own.length ? own : (findCategory(category)?.traits || []));
+};
 
-export const hasBrand = (category) => findCategory(category)?.hasBrand !== false;
-export const hasModel = (category) => findCategory(category)?.hasModel !== false;
+export const hasBrand = (category, itemName) => findCategory(category)?.hasBrand !== false && !ruleFor(category, itemName)?.noBrand;
+export const hasModel = (category, itemName) => {
+    if (findCategory(category)?.hasModel === false) return false;
+    const r = ruleFor(category, itemName);
+    return !(r?.noBrand || r?.noModel);
+};
+
+// Field wording can change per item ("Bank" for an ATM card, "Motorcycle brand" for a motorcycle key).
+export const brandLabelFor = (category, itemName) => ruleFor(category, itemName)?.brandLabel || findCategory(category)?.brandLabel || 'Brand';
+export const modelLabelFor = (category, itemName) => ruleFor(category, itemName)?.modelLabel || findCategory(category)?.modelLabel || 'Model';
+export const modelHintFor = (category, itemName) => {
+    const r = ruleFor(category, itemName);
+    return r && 'modelHint' in r ? r.modelHint : findCategory(category)?.modelHint;
+};
 
 // Places grouped: the ones this kind of item usually turns up first.
-export const placeOptions = (category) => {
-    const likely = findCategory(category)?.places || [];
+export const placeOptions = (category, itemName) => {
+    const likely = ruleFor(category, itemName)?.places || findCategory(category)?.places || [];
     const likelySet = new Set(likely.map(norm));
     return [
         ...likely.map((p) => ({ value: p, group: 'Likely for this item' })),
@@ -468,8 +507,8 @@ export const reconcileOnCategoryChange = (form, nextCategory) => {
     if (isListed(form.brand, brandsFor(prev, form.item_name))) next.brand = '';
     if (isListed(form.model, [...flatModels(findCategory(prev)?.models), ...allDeviceModels()])) next.model = '';
     next.details = {}; // spec fields differ per category
-    if (!hasBrand(nextCategory)) { next.brand = ''; next.model = ''; }
-    if (!hasModel(nextCategory)) next.model = '';
+    if (!hasBrand(nextCategory, next.item_name)) { next.brand = ''; next.model = ''; }
+    if (!hasModel(nextCategory, next.item_name)) next.model = '';
     return next;
 };
 
@@ -479,9 +518,14 @@ export const reconcileOnItemChange = (form, nextItem) => {
     const next = { ...form, item_name: nextItem };
     const oldList = brandsFor(form.category, form.item_name);
     const newList = brandsFor(form.category, nextItem);
-    if (isListed(form.brand, oldList) && !isListed(form.brand, newList)) { next.brand = ''; next.model = ''; }
+    if (!hasBrand(form.category, nextItem)) {
+        // e.g. House key -> Classroom key: the brand field disappears, so drop what was picked from a list.
+        if (isListed(form.brand, oldList) || !form.item_name) { next.brand = ''; next.model = ''; }
+    }
+    else if (isListed(form.brand, oldList) && !isListed(form.brand, newList)) { next.brand = ''; next.model = ''; }
     // A model picked from the old item's list doesn't belong to the new item (Galaxy A15 -> Galaxy Tab).
     else if (isListed(form.model, modelsFor(form.category, form.brand, form.item_name)) && !isListed(form.model, modelsFor(form.category, form.brand, nextItem))) next.model = '';
+    if (!hasModel(form.category, nextItem) && isListed(form.model, modelsFor(form.category, form.brand, form.item_name))) next.model = '';
     // Keep only the spec values that still apply to the new item.
     const keep = new Set(attributesFor(form.category, nextItem).map((x) => x.key));
     next.details = Object.fromEntries(Object.entries(form.details || {}).filter(([k]) => keep.has(k)));

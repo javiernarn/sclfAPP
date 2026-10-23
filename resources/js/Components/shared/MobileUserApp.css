@@ -1,0 +1,183 @@
+/*
+ * MobileUserApp.css
+ * -----------------
+ * The "real mobile app" look for STUDENTS and INSTRUCTORS on phones.
+ *
+ * Scope: every rule starts with `.ds-shell.ds-user-app`, a class DashboardShell
+ * adds only when (a) the device is a phone and (b) the account is a
+ * student/instructor. Admin, Security, tablet and desktop are untouched.
+ *
+ * It sits on top of MobileLayout.css + MobileApp.css (imported last) and only
+ * uses the shell's theme tokens (--tk-*), so all nine themes keep working.
+ *
+ *   1. Tab bar         raised centre "Report" button, unread dot on Menu
+ *   2. App bar         frosted, page name as a bold title
+ *   3. Page header     big title, quiet subtitle
+ *   4. Lists           rounded item cards: thumb · text · status, tap = press
+ *   5. Filters/search  pill search, chip row with accent when selected
+ *   6. Cards & forms   softer cards, big inputs, sticky primary action
+ *   7. Dashboard bits  compact toolbar, hero spacing
+ */
+
+@keyframes ua-pop { 0% { transform: scale(.6); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+
+@media (max-width: 600px) {
+
+    /* ---------- 1. tab bar ---------- */
+    .ds-shell.ds-user-app { --ds-bottomnav-h: 66px; }
+    .ds-shell.ds-user-app .ds-bottomnav {
+        overflow: visible;
+        border-radius: 24px 24px 0 0;
+        border-top-width: 1px;
+        box-shadow: 0 -8px 28px rgba(2, 6, 23, 0.10);
+    }
+    .ds-shell.ds-user-app .ds-bottomnav-icon { position: relative; width: 54px; height: 32px; }
+    .ds-shell.ds-user-app .ds-bottomnav-item.is-active .ds-bottomnav-icon {
+        background: var(--bn-accent-soft);
+        animation: ua-pop .28s ease both;
+    }
+    .ds-shell.ds-user-app .ds-bottomnav-dot {
+        position: absolute; top: 2px; right: 10px; width: 10px; height: 10px; border-radius: 50%;
+        background: #ef4444; box-shadow: 0 0 0 2px var(--bn-bg, #fff);
+    }
+
+    /* The raised create button. */
+    .ds-shell.ds-user-app .ds-bottomnav-fab {
+        flex: 1 1 0; min-width: 0; position: relative;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+        padding: 0; border: 0; background: none; font: inherit; color: var(--bn-idle);
+        cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .ds-shell.ds-user-app .ds-bottomnav-fab-btn {
+        width: 54px; height: 54px; margin-top: -26px; border-radius: 20px;
+        display: inline-flex; align-items: center; justify-content: center;
+        color: var(--tk-accent-on, #fff);
+        background: var(--tk-accent, linear-gradient(135deg, #4338ca, #4f46e5 50%, #6366f1));
+        box-shadow: 0 10px 22px -6px rgba(var(--tk-accent-rgb, 79,70,229), .65), 0 0 0 5px var(--bn-bg, #fff);
+        transition: transform .14s ease, box-shadow .14s ease;
+    }
+    .ds-shell.ds-user-app .ds-bottomnav-fab:active .ds-bottomnav-fab-btn { transform: scale(.9) rotate(45deg); }
+    .ds-shell.ds-user-app .ds-bottomnav-fab .ds-bottomnav-label { color: var(--bn-accent); font-weight: 800; }
+    .ds-shell.ds-user-app .ds-bottomnav-fab:focus-visible { outline: 2px solid var(--bn-accent); outline-offset: 2px; border-radius: 16px; }
+
+    /* ---------- 2. app bar ---------- */
+    .ds-shell.ds-user-app .ds-topbar {
+        -webkit-backdrop-filter: blur(16px) saturate(1.4); backdrop-filter: blur(16px) saturate(1.4);
+        border-bottom-width: 1px;
+    }
+    .ds-shell.ds-user-app .ds-topbar-brand span { font-size: 18px; font-weight: 800; letter-spacing: -.015em; }
+    .ds-shell.ds-user-app .ds-icon-btn { width: 42px; height: 42px; border-radius: 14px; }
+
+    /* ---------- 3. page header ---------- */
+    .ds-shell.ds-user-app .ds-main { padding-top: 14px; padding-bottom: 24px; }
+    .ds-shell.ds-user-app .ds-header { margin-bottom: 14px; }
+    .ds-shell.ds-user-app .ds-header .ds-eyebrow { display: none; }
+    .ds-shell.ds-user-app .ds-title { font-size: 26px; letter-spacing: -.02em; margin-bottom: 2px; }
+    .ds-shell.ds-user-app .ds-subtitle { font-size: 13.5px; opacity: .7; line-height: 1.4; }
+    .ds-shell.ds-user-app .ds-actions > .ds-btn-primary { min-height: 50px; border-radius: 16px; font-size: 15px; }
+
+    /* ---------- 4. lists ---------- */
+    .ds-shell.ds-user-app .ds-list { gap: 10px; }
+    .ds-shell.ds-user-app .ds-list-item {
+        padding: 14px; border-radius: 20px; border-width: 1.5px;
+        box-shadow: 0 8px 22px -18px var(--tk-shadow, rgba(2, 6, 23, .5));
+        background: var(--tk-surface, #fff);
+        transition: transform .12s ease;
+    }
+    .ds-shell.ds-user-app.dark .ds-list-item,
+    .ds-shell.ds-user-app.dk-white .ds-list-item { background: var(--tk-surface); }
+    .ds-shell.ds-user-app .ds-list-item:active { transform: scale(.985); }
+    .ds-shell.ds-user-app .ds-list-item-main { gap: 12px; }
+    .ds-shell.ds-user-app .ds-thumb {
+        width: 48px; height: 48px; border-radius: 16px; flex: none;
+        color: var(--tk-accent-text, #4f46e5);
+        background: rgba(var(--tk-accent-rgb, 79, 70, 229), .12);
+        border: 0;
+    }
+    .ds-shell.ds-user-app .ds-thumb img { border-radius: inherit; }
+    .ds-shell.ds-user-app .ds-list-item-title { font-size: 15.5px; line-height: 1.25; margin-bottom: 4px; overflow-wrap: anywhere; }
+    .ds-shell.ds-user-app .ds-list-item-meta { font-size: 12.5px; opacity: .62; line-height: 1.35; }
+
+    /* Status + action share one calm row under the text, divided by a hairline. */
+    .ds-shell.ds-user-app .ds-list-item-side {
+        flex-wrap: nowrap; justify-content: space-between; align-items: center; gap: 10px;
+        padding-top: 10px; margin-top: 2px;
+        border-top: 1px dashed rgba(148, 163, 184, .4);
+    }
+    .ds-shell.ds-user-app .ds-list-item-side .ds-badge { font-size: 11.5px; padding: 5px 11px; }
+    .ds-shell.ds-user-app .ds-list-item-side .ds-btn,
+    .ds-shell.ds-user-app .ds-list-item-side .ds-btn-sm,
+    .ds-shell.ds-user-app .ds-list-item-side .ds-btn-view { flex: 0 1 auto; min-height: 36px; padding: 0 14px; white-space: nowrap; }
+
+    .ds-shell.ds-user-app .ds-badge { border-radius: 99px; font-weight: 750; }
+    .ds-shell.ds-user-app .ds-empty {
+        padding: 36px 20px; margin-top: 4px; border-radius: 22px; font-size: 14px; opacity: .8;
+        border: 1.5px dashed var(--tk-edge, #c3ccdb); background: var(--tk-field, transparent);
+    }
+
+    /* ---------- 5. search + filters ---------- */
+    .ds-shell.ds-user-app .ds-filter-row input[type="text"],
+    .ds-shell.ds-user-app .ds-filter-row input[type="search"],
+    .ds-shell.ds-user-app .ds-filter-row input:not([type]) {
+        min-height: 48px; border-radius: 99px; padding-left: 44px; font-size: 16px;
+        background: var(--tk-field, #f4f7fb);
+    }
+    .ds-shell.ds-user-app .ds-filter-chip {
+        min-height: 40px; padding: 0 16px; border-radius: 99px; font-size: 13px;
+        background: var(--tk-field, #f4f7fb); border-color: var(--tk-edge, #c3ccdb);
+    }
+    .ds-shell.ds-user-app .ds-filter-chip.is-active {
+        background: var(--tk-accent, #4f46e5); color: var(--tk-accent-on, #fff);
+        border-color: transparent;
+        box-shadow: 0 8px 16px -10px rgba(var(--tk-accent-rgb, 79, 70, 229), .8);
+    }
+    /* Chip row bleeds to the screen edge so it clearly scrolls sideways. */
+    .ds-shell.ds-user-app .ds-filter-row:not(:has(input)) {
+        margin-left: calc(var(--m-edge, 12px) * -1); margin-right: calc(var(--m-edge, 12px) * -1);
+        padding-left: var(--m-edge, 12px); padding-right: var(--m-edge, 12px);
+    }
+
+    /* ---------- 6. cards + forms ---------- */
+    .ds-shell.ds-user-app .ds-card { border-radius: 22px; padding: 16px; box-shadow: 0 10px 26px -20px var(--tk-shadow, rgba(2, 6, 23, .5)); }
+    .ds-shell.ds-user-app .ds-card-title { font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+    .ds-shell.ds-user-app .ds-field input,
+    .ds-shell.ds-user-app .ds-field select,
+    .ds-shell.ds-user-app .ds-field textarea { min-height: 52px; border-radius: 16px; }
+    .ds-shell.ds-user-app .ds-field label { font-size: 12px; font-weight: 750; margin-bottom: 7px; }
+    .ds-shell.ds-user-app .ds-btn { border-radius: 16px; min-height: 48px; }
+    .ds-shell.ds-user-app .ds-btn-sm { min-height: 38px; border-radius: 12px; }
+    .ds-shell.ds-user-app .ds-back-link { min-height: 40px; display: inline-flex; align-items: center; font-weight: 700; }
+
+    /* Create/report forms: the submit button follows you down the page. */
+    .ds-shell.ds-user-app .ds-card > form > .ds-btn-primary:last-of-type,
+    .ds-shell.ds-user-app form > .ds-btn-primary:last-child {
+        position: sticky; bottom: 10px; z-index: 5; width: 100%; min-height: 54px; font-size: 16px;
+        box-shadow: 0 14px 28px -10px rgba(var(--tk-accent-rgb, 79, 70, 229), .7);
+    }
+
+    /* ---------- 7. dashboard bits ---------- */
+    .ds-shell.ds-user-app .ch-toolbar { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 14px 2px 10px; }
+    .ds-shell.ds-user-app .ch-toolbar-actions { display: flex; width: auto; gap: 8px; }
+    .ds-shell.ds-user-app .ch-toolbar-actions .ds-btn { width: auto; min-height: 38px; padding: 0 12px; font-size: 12.5px; }
+    .ds-shell.ds-user-app .ch-card { border-radius: 22px; }
+}
+
+/* Smallest phones: the raised button shrinks a little so six slots still fit. */
+@media (max-width: 360px) {
+    .ds-shell.ds-user-app .ds-bottomnav-fab-btn { width: 50px; height: 50px; border-radius: 18px; margin-top: -22px; }
+    .ds-shell.ds-user-app .ds-bottomnav-icon { width: 44px; }
+    .ds-shell.ds-user-app .ds-title { font-size: 23px; }
+}
+
+/* Landscape phones: no raised button (there's no vertical room above the bar). */
+@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+    .ds-shell.ds-user-app .ds-bottomnav-fab-btn { margin-top: 0; width: 38px; height: 38px; border-radius: 14px; box-shadow: none; }
+    .ds-shell.ds-user-app .ds-bottomnav-fab-btn svg { width: 20px; height: 20px; }
+    .ds-shell.ds-user-app .ds-bottomnav-fab { gap: 1px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ds-shell.ds-user-app .ds-bottomnav-item.is-active .ds-bottomnav-icon { animation: none; }
+    .ds-shell.ds-user-app .ds-bottomnav-fab-btn,
+    .ds-shell.ds-user-app .ds-list-item { transition: none; }
+}

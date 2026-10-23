@@ -25,6 +25,8 @@ import AuthShell, {
     LedgerButton,
     LedgerGhostButton,
 } from '../../Components/shared/AuthShell';
+import { COURSE_GROUPS } from '../../config/courseGroups';
+import { GraduationCap } from '../../Components/icons';
 import { User, Phone, VenetianMask, Lock, Camera, Check, IdCard, Mail, MapPin } from '../../Components/icons';
 
 const GENDER_OPTIONS = [
@@ -54,6 +56,7 @@ const INITIAL_FORM = {
     first_name: '',
     last_name: '',
     staff_id: '',
+    teaching_course: '',
     email: '',
     address: '',
     phone_number: '',
@@ -127,6 +130,9 @@ export default function SetupAccountPage() {
         // Prefilled with the placeholder the system generated (or the
         // seeded Admin ID) so the person only has to correct it.
         staff_id: user?.staff_id || '',
+        // Instructors: preselected if the admin already chose one, but they
+        // still have to confirm it.
+        teaching_course: user?.teaching_course || '',
         email: user?.email || '',
         address: user?.address || '',
         phone_number: user?.phone_number || '',
@@ -145,6 +151,7 @@ export default function SetupAccountPage() {
     const idLabel = ID_LABELS[primaryRole] || 'ID number';
     // Only the single seeded Admin may replace the email on this form.
     const isAdmin = !!roles?.includes('admin');
+    const isInstructor = !!roles?.includes('instructor');
     const STEP_META = buildStepMeta(roleLabel, idLabel, isAdmin);
     const meta = STEP_META[step - 1];
 
@@ -248,6 +255,7 @@ export default function SetupAccountPage() {
             if (!form.last_name.trim()) nextFieldErrors.last_name = 'Last name is required.';
             if (!form.staff_id.trim()) nextFieldErrors.staff_id = `${idLabel} is required.`;
             else if (!isValidStaffId(form.staff_id)) nextFieldErrors.staff_id = FORMAT_ERRORS.staffId;
+            if (isInstructor && !form.teaching_course) nextFieldErrors.teaching_course = 'Please select the course you teach.';
         }
 
         if (step === 2) {
@@ -295,6 +303,7 @@ export default function SetupAccountPage() {
             data.append('first_name', form.first_name);
             data.append('last_name', form.last_name);
             data.append('staff_id', form.staff_id);
+            if (isInstructor) data.append('teaching_course', form.teaching_course);
             if (isAdmin) data.append('email', form.email);
             if (form.address.trim()) data.append('address', form.address.trim());
             if (form.phone_number) data.append('phone_number', form.phone_number);
@@ -324,7 +333,7 @@ export default function SetupAccountPage() {
                 }));
                 // Send them back to whichever step holds the conflicting
                 // field, instead of leaving them stuck on step 3.
-                if (errors.first_name || errors.last_name || errors.staff_id || errors.profile_picture) setStep(1);
+                if (errors.first_name || errors.last_name || errors.staff_id || errors.teaching_course || errors.profile_picture) setStep(1);
                 else if (errors.email || errors.address || errors.phone_number || errors.gender) setStep(2);
             }
             setBanner(
@@ -458,6 +467,25 @@ export default function SetupAccountPage() {
                                     required
                                 />
                             </LedgerRow>
+
+                            {isInstructor && (
+                                <LedgerRow
+                                    index={4}
+                                    label={<>Teaching course <span className="lg-required">*</span></>}
+                                    icon={GraduationCap}
+                                    hint={!fieldErrors.teaching_course ? 'Choose the course you teach.' : undefined}
+                                    error={fieldErrors.teaching_course}
+                                >
+                                    <LedgerSelect name="teaching_course" value={form.teaching_course} onChange={handleChange} aria-invalid={!!fieldErrors.teaching_course} required>
+                                        <option value="" disabled>Select your teaching course</option>
+                                        {COURSE_GROUPS.map((group) => (
+                                            <optgroup key={group.college} label={group.college}>
+                                                {group.courses.map((c) => <option key={c} value={c}>{c}</option>)}
+                                            </optgroup>
+                                        ))}
+                                    </LedgerSelect>
+                                </LedgerRow>
+                            )}
                         </>
                     )}
 

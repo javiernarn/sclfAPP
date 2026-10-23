@@ -28,6 +28,7 @@ class AccountCreatedMail extends Mailable
         public ?string $genderLabel,
         public string $createdBy,
         public string $loginUrl,
+        public ?string $teachingCourse = null,
     ) {
         // Set the recipient here (not only in build()) so the address is already
         // on the mailable when Mail::fake() / hasTo() inspects it.
@@ -50,6 +51,7 @@ class AccountCreatedMail extends Mailable
                 'genderLabel' => $this->genderLabel,
                 'createdBy' => $this->createdBy,
                 'loginUrl' => $this->loginUrl,
+                'teachingCourse' => $this->teachingCourse,
             ]);
     }
 }

@@ -52,7 +52,7 @@ class AuthController extends Controller
         return [
             'user' => array_merge($user->only(
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
-                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course',
+                'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course', 'teaching_course',
                 'profile_picture_url', 'two_factor_enabled', 'must_setup_profile', 'public_token'
             ), [
                 // The React app sends unverified accounts to /app/verify-email.
@@ -244,7 +244,9 @@ class AuthController extends Controller
 
         RateLimiter::clear($throttleKey);
 
-        $this->audit->log('auth.login', $user, "User #{$user->id} logged in.");
+        // Pass $user as the actor: no one is authenticated yet at this point, so
+        // without it user_id is saved as null and the Audit Log shows no name.
+        $this->audit->log('auth.login', $user, "User #{$user->id} logged in.", actor: $user);
 
         if ($this->twoFactor->isEnabled($user)) {
             // Don't hand out a real, usable token yet — just a narrowly

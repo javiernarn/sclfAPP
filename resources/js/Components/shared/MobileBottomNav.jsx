@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { Menu } from "../icons";
+import { Menu, Plus } from "../icons";
 import "./MobileBottomNav.css";
 
 // Bottom tab bar for real phones (see hooks/useIsPhone.js — desktop and
@@ -30,18 +30,35 @@ const scrollPageToTop = () => {
     }
 };
 
-const MobileBottomNav = ({ tabs, pathname, hidden, menuOpen, onMenu, sidebarId }) => (
+// `fab` (optional): a raised, centred create button — used by the student /
+// instructor app. `menuBadge` puts an unread dot on the Menu tab.
+const MobileBottomNav = ({ tabs, pathname, hidden, menuOpen, onMenu, sidebarId, fab, menuBadge }) => {
+    const fabAt = fab ? Math.ceil(tabs.length / 2) : -1;
+    return (
     <nav
         className={`ds-bottomnav ${hidden ? "is-hidden" : ""}`}
         aria-label="Quick navigation"
         aria-hidden={hidden || undefined}
     >
-        {tabs.map((tab) => {
+        {tabs.map((tab, i) => {
             const Icon = tab.icon;
             const active = isTabActive(tab, pathname);
             return (
+                <React.Fragment key={tab.to}>
+                {i === fabAt && (
+                    <button
+                        type="button"
+                        className="ds-bottomnav-fab"
+                        onClick={() => { try { navigator.vibrate?.(10); } catch { /* ignore */ } fab.onClick(); }}
+                        aria-label={fab.label}
+                        aria-haspopup="dialog"
+                        tabIndex={hidden ? -1 : undefined}
+                    >
+                        <span className="ds-bottomnav-fab-btn"><Plus size={26} strokeWidth={2.6} /></span>
+                        <span className="ds-bottomnav-label">{fab.short || "New"}</span>
+                    </button>
+                )}
                 <Link
-                    key={tab.to}
                     to={tab.to}
                     className={`ds-bottomnav-item ${active ? "is-active" : ""}`}
                     aria-label={tab.fullLabel || tab.label}
@@ -60,6 +77,7 @@ const MobileBottomNav = ({ tabs, pathname, hidden, menuOpen, onMenu, sidebarId }
                     </span>
                     <span className="ds-bottomnav-label">{tab.label}</span>
                 </Link>
+                </React.Fragment>
             );
         })}
 
@@ -75,10 +93,12 @@ const MobileBottomNav = ({ tabs, pathname, hidden, menuOpen, onMenu, sidebarId }
         >
             <span className="ds-bottomnav-icon">
                 <Menu size={22} strokeWidth={2} />
+                {menuBadge > 0 && <i className="ds-bottomnav-dot" aria-label={`${menuBadge} unread`} />}
             </span>
             <span className="ds-bottomnav-label">Menu</span>
         </button>
     </nav>
-);
+    );
+};
 
 export default MobileBottomNav;

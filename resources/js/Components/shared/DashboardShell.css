@@ -729,6 +729,31 @@ body { overflow: hidden; }
 .ds-title { font-size: clamp(20px, 4.5vw, 28px); font-weight: 800; letter-spacing: -0.01em; margin: 0 0 6px; }
 .ds-subtitle { font-size: 13.5px; opacity: 0.7; margin: 0; max-width: 52ch; }
 .ds-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+/* Header with a "create" toggle: stack it under the Refresh button. */
+.ds-actions:has(.ds-create-toggle) {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    align-self: center;          /* centre the stack against the title/description block */
+    width: 190px;                /* both buttons identical width */
+    flex-shrink: 0;
+}
+.ds-actions:has(.ds-create-toggle) > * { width: 100%; justify-content: center; }
+@media (max-width: 640px) {
+    .ds-actions:has(.ds-create-toggle) { width: 100%; align-self: stretch; }
+}
+/* Smooth open/close for a collapsible panel (height animates 0 -> auto). */
+.ds-collapse {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: grid-template-rows .35s ease, opacity .25s ease, transform .35s ease;
+}
+.ds-collapse.open { grid-template-rows: 1fr; opacity: 1; transform: none; }
+.ds-collapse-inner { overflow: hidden; min-height: 0; visibility: hidden; transition: visibility 0s .35s; }
+.ds-collapse.open .ds-collapse-inner { visibility: visible; transition-delay: 0s; }
+@media (prefers-reduced-motion: reduce) { .ds-collapse, .ds-collapse-inner { transition: none; } }
 /* Reusable building blocks shared by every authenticated page */
 .ds-card {
     border-radius: 18px;
@@ -1144,19 +1169,39 @@ body { overflow: hidden; }
 
 /* ---------- Admin > Edit User modal ---------- */
 .ds-edit-backdrop {
-    position: fixed; inset: 0; z-index: 60;
+    position: fixed; inset: 0; z-index: 200;
     background: rgba(2,6,23,0.55);
     backdrop-filter: blur(2px);
-    display: flex; align-items: flex-start; justify-content: center;
-    padding: 32px 20px;
-    overflow-y: auto;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px 20px;
+    overflow: hidden;
     animation: ds-fade-in 0.15s ease both;
 }
+/* The card is a column: fixed header, scrolling body, pinned footer.
+   That is what keeps Save / Cancel on screen however long the form gets. */
 .ds-edit-card {
     width: 100%; max-width: 560px;
-    margin: auto 0;
+    margin: 0;
+    display: flex; flex-direction: column;
+    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
+    overflow: hidden;
+    padding-bottom: 0 !important;
     animation: ds-fade-up 0.18s cubic-bezier(0.22,1,0.36,1) both;
 }
+.ds-edit-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex: none; padding-bottom: 12px; }
+.ds-edit-form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; margin: 0; }
+.ds-edit-body {
+    flex: 1 1 auto; min-height: 0;
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    margin: 0 -4px; padding: 4px 4px 12px;
+}
+.ds-edit-footer {
+    flex: none; display: flex; justify-content: flex-end; gap: 10px;
+    padding: 12px 0 max(16px, env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(148,163,184,0.28);
+}
+.ds-edit-footer .ds-btn { min-width: 120px; justify-content: center; }
 
 /* ---------- Security card / Change Password ---------- */
 .ds-security-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }

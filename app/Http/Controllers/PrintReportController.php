@@ -59,7 +59,7 @@ class PrintReportController extends Controller
                 'name' => $subject->name,
                 'display_id' => $subject->display_id,
                 'role' => $subject->hasRole('instructor') ? 'instructor' : 'student',
-                'course' => $subject->course,
+                'course' => $subject->hasRole('instructor') ? $subject->teaching_course : $subject->course,
                 'department' => optional($subject->department)->name,
                 'email' => $subject->email,
                 'profile_picture_url' => $subject->profile_picture_url,

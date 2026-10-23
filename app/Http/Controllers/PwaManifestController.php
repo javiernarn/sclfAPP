@@ -28,19 +28,31 @@ class PwaManifestController extends Controller
             'name' => 'SCLF - Opol Community College',
             'short_name' => 'SCLF',
             'description' => 'Smart Campus Lost & Found system for Opol Community College.',
-            // Scoped to /app/ (not '/') so the installed WebAPK on Android
-            // only ever intercepts authenticated app routes — /login,
-            // /register, /forgot-password, and /reset-password/{token}
-            // stay outside the scope and always open in the regular
-            // browser, e.g. when tapped from a Gmail/SMS link.
+            // Scope is the whole site ('/'), not just /app/. With '/app/', the
+            // installed app left its scope every time it opened /login,
+            // /register or /forgot-password (first launch while signed out,
+            // after logging out, an expired session) and the phone then drew
+            // a browser-style address bar over the top — so it stopped
+            // looking like a full-screen app. Inside '/', every screen stays
+            // full-screen. (Trade-off: a password-reset link tapped in Gmail
+            // now opens inside the installed app instead of the browser.)
+            'id' => '/app/dashboard',
             'start_url' => '/app/dashboard',
-            'scope' => '/app/',
+            'scope' => '/',
             'display' => 'standalone',
+            'display_override' => ['standalone', 'minimal-ui'],
             'orientation' => 'any',
             'background_color' => $isBlack ? '#0a0c12' : '#ffffff',
             'theme_color' => $isBlack ? '#0a0c12' : '#ffffff',
             'lang' => 'en-PH',
             'categories' => ['education', 'productivity'],
+            // Lets the browser answer "is this app already installed on this
+            // device?" (navigator.getInstalledRelatedApps) so the install
+            // banner stays hidden even when it is opened from a normal tab.
+            'related_applications' => [
+                ['platform' => 'webapp', 'url' => route('pwa.manifest')],
+            ],
+            'prefer_related_applications' => false,
             'icons' => [
                 [
                     'src' => asset('images/site-logo.png'),

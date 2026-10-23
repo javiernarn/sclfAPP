@@ -75,6 +75,7 @@ export default function ProfilePage() {
     // staff/security/admin see their system-generated staff_id instead,
     // under a role-appropriate label.
     const isStudent = primaryRole === 'student';
+    const isInstructor = primaryRole === 'instructor';
     const ID_LABELS = {
         admin: 'Admin ID',
         security_officer: 'Security ID',
@@ -136,6 +137,7 @@ export default function ProfilePage() {
                         <span className="ds-chip ds-chip-accent"><ShieldCheck size={12} /> {roleLabel}</span>
                         {idValue && <span className="ds-chip">{idLabel}: {idValue}</span>}
                         {isStudent && user?.course && <span className="ds-chip">{user.course}</span>}
+                        {isInstructor && user?.teaching_course && <span className="ds-chip">{user.teaching_course}</span>}
                     </div>
                 </div>
             </div>
@@ -152,6 +154,7 @@ export default function ProfilePage() {
                     <InfoItem icon={VenetianMask} label="Gender" value={genderLabel} />
                     <InfoItem icon={IdCard} label={idLabel} value={idValue} />
                     {isStudent && <InfoItem icon={GraduationCap} label="Course" value={user?.course} />}
+                    {isInstructor && <InfoItem icon={GraduationCap} label="Teaching course" value={user?.teaching_course} />}
                     <InfoItem icon={MapPin} label="Address" value={user?.address} />
                     <InfoItem icon={ShieldCheck} label="Role" value={roleLabel} />
                 </div>

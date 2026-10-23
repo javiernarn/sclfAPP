@@ -1,0 +1,56 @@
+/* MobileQuickActions — bottom sheet behind the raised "+" tab. Phone only
+   (the component is only rendered when useIsPhone() is true). Uses the
+   shell's --tk-* theme tokens so it follows all nine themes. */
+@keyframes qa-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes qa-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.qa-backdrop {
+    position: fixed; inset: 0; z-index: 220;
+    display: flex; align-items: flex-end; justify-content: center;
+    background: rgba(2, 6, 23, 0.55);
+    -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    animation: qa-fade 0.18s ease both;
+}
+.qa-sheet {
+    width: 100%; max-height: 90vh; max-height: 90dvh; overflow-y: auto;
+    padding: 0 16px max(18px, env(safe-area-inset-bottom));
+    border-radius: 26px 26px 0 0;
+    background: var(--tk-surface, #fff);
+    color: inherit;
+    border-top: 1.5px solid var(--tk-edge, #c3ccdb);
+    box-shadow: 0 -16px 48px rgba(0, 0, 0, 0.3);
+    animation: qa-up 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ds-shell.dark .qa-sheet { color: #e7ecf3; }
+.ds-shell.light .qa-sheet { color: #0b1220; }
+.qa-grab { display: block; width: 38px; height: 4px; border-radius: 99px; margin: 8px auto 10px; background: rgba(100, 116, 139, 0.4); }
+.qa-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.qa-head h2 { margin: 0; font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
+.qa-close {
+    width: 36px; height: 36px; border-radius: 12px; border: 0; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: var(--tk-field, #f4f7fb); color: inherit;
+}
+.qa-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.qa-item {
+    display: flex; align-items: center; gap: 14px; min-height: 68px; padding: 10px 12px;
+    border-radius: 18px; text-decoration: none; color: inherit;
+    background: var(--tk-field, #f4f7fb);
+    border: 1.5px solid transparent;
+    transition: transform 0.12s ease, border-color 0.15s ease;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.qa-item:active { transform: scale(0.98); border-color: var(--tk-accent-text, #4f46e5); }
+.qa-icon {
+    flex: none; width: 46px; height: 46px; border-radius: 15px; color: inherit;
+    background: transparent; border: 1.5px solid currentColor;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.qa-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.qa-text b { font-size: 15.5px; font-weight: 750; }
+.qa-text small { font-size: 12.5px; opacity: 0.65; line-height: 1.3; }
+.qa-chev { flex: none; opacity: 0.4; }
+
+@media (prefers-reduced-motion: reduce) {
+    .qa-backdrop, .qa-sheet { animation: none; }
+}

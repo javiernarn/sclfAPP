@@ -9,7 +9,7 @@ import useViewMode from '../../hooks/useViewMode';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm, useDiscardConfirm } from '../../context/ConfirmContext';
 import { useAuth } from '../../context/AuthContext';
-import { Info, RotateCcw, UserCircle, Upload, Pencil, X, KeyRound, Eye, EyeOff, IdCard } from '../../Components/icons';
+import { Info, RotateCcw, UserCircle, Upload, Pencil, X, KeyRound, Eye, EyeOff, IdCard, Plus } from '../../Components/icons';
 import {
     filterPhoneInput,
     filterNameInput,
@@ -19,6 +19,7 @@ import {
     FORMAT_ERRORS,
 } from '../../utils/validators';
 import { checkAvailability } from '../../utils/availability';
+import { COURSE_GROUPS } from '../../config/courseGroups';
 
 // Role -> label + the prefix used for that role's system-generated ID
 // number (see User::generateStaffId() on the backend). Shown next to the
@@ -34,12 +35,12 @@ const ROLE_META = {
 
 const emptyForm = {
     first_name: '', last_name: '', email: '', password: '',
-    role: 'instructor', phone_number: '', gender: '',
+    role: 'instructor', phone_number: '', gender: '', teaching_course: '',
 };
 
 const emptyEditForm = {
     first_name: '', last_name: '', email: '', password: '',
-    role: 'instructor', phone_number: '', gender: '',
+    role: 'instructor', phone_number: '', gender: '', id_number: '', teaching_course: '',
 };
 
 export default function AdminUsers() {
@@ -54,6 +55,8 @@ export default function AdminUsers() {
     const fileInputRef = useRef(null);
     const [fieldErrors, setFieldErrors] = useState({});
     const [busy, setBusy] = useState(false);
+    // The Create Account form is collapsed by default; the header button opens it.
+    const [showCreate, setShowCreate] = useState(false);
     const [busyUserId, setBusyUserId] = useState(null);
     const [showDisabled, setShowDisabled] = useState(false);
     const [view, setView] = useViewMode('admin-users');
@@ -108,6 +111,7 @@ export default function AdminUsers() {
                 : k === 'email' ? (editingUser.email || '')
                 : k === 'phone_number' ? (editingUser.phone_number || '')
                 : k === 'gender' ? (editingUser.gender || '')
+                : k === 'teaching_course' ? (editingUser.teaching_course || '')
                 : ''
         ))
         : false;
@@ -122,6 +126,8 @@ export default function AdminUsers() {
             role: (u.roles || [])[0]?.name || 'student',
             phone_number: u.phone_number || '',
             gender: u.gender || '',
+            id_number: '',
+            teaching_course: u.teaching_course || '',
         });
         setEditErrors({});
         setShowEditPassword(false);
@@ -176,7 +182,12 @@ export default function AdminUsers() {
             payload.append('email', editForm.email);
             payload.append('phone_number', editForm.phone_number || '');
             payload.append('gender', editForm.gender || '');
-            if (editForm.role !== editRole) payload.append('role', editForm.role);
+            if (editForm.role === 'instructor') payload.append('teaching_course', editForm.teaching_course || '');
+            if (editForm.role !== editRole) {
+                payload.append('role', editForm.role);
+                // ID number for the new role (blank = auto-generate on staff roles)
+                payload.append('id_number', (editForm.id_number || '').trim());
+            }
             if (editForm.password) payload.append('password', editForm.password);
             if (editPhoto) payload.append('profile_picture', editPhoto);
 
@@ -323,6 +334,7 @@ export default function AdminUsers() {
                 + (emailSent ? ` Their sign-in details were emailed to ${snap.form.email}.` : ''),
                 { title: 'Account created' }
             );
+            setShowCreate(false);
             if (emailSent === false) {
                 toast.warning(
                     `We couldn't email ${snap.form.email}. Please give them their sign-in details yourself.`,
@@ -334,6 +346,7 @@ export default function AdminUsers() {
             // Something went wrong after the countdown: give the form back (unless they
             // already started a new one) so nothing has to be retyped.
             const canRestore = !formRef.current.dirty;
+            setShowCreate(true);
             if (err?.approvalHandled) { // approval dialog is showing
                 if (canRestore) restoreForm(snap);
                 return;
@@ -455,10 +468,23 @@ export default function AdminUsers() {
 
     return (
         <DashboardShell onRefresh={() => load()} refreshing={loading}
+            actions={(
+                <button
+                    type="button"
+                    className="ds-btn ds-btn-primary ds-create-toggle"
+                    onClick={() => setShowCreate((v) => !v)}
+                    aria-expanded={showCreate}
+                    aria-controls="create-account-panel"
+                >
+                    {showCreate ? <X size={14} /> : <Plus size={14} />} {showCreate ? 'Close' : 'Create Users'}
+                </button>
+            )}
             eyebrow={roleLabel || 'Admin'}
             title="User Management"
             subtitle="Public registration only ever creates Students. Instructor, Security Officer and Staff accounts are created here — there is only one Admin."
         >
+            <div id="create-account-panel" className={`ds-collapse${showCreate ? ' open' : ''}`}>
+              <div className="ds-collapse-inner">
             <div className="ds-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                     <h3 style={{ margin: 0 }}>Create Account</h3>
@@ -539,6 +565,20 @@ export default function AdminUsers() {
                                 {form.role === 'staff' && 'Staff can view everything but need your approval for every change. '}
                                 Gets an auto-generated ID like <strong>{ROLE_META[form.role]?.idPrefix}-{new Date().getFullYear()}-0001</strong>
                             </p>
+                            {form.role === 'instructor' && (
+                                <>
+                                    <label htmlFor="teaching_course" style={{ marginTop: 10 }}>Teaching course (optional)</label>
+                                    <select id="teaching_course" name="teaching_course" value={form.teaching_course} onChange={handleChange}>
+                                        <option value="">Let the instructor choose during setup</option>
+                                        {COURSE_GROUPS.map((group) => (
+                                            <optgroup key={group.college} label={group.college}>
+                                                {group.courses.map((c) => <option key={c} value={c}>{c}</option>)}
+                                            </optgroup>
+                                        ))}
+                                    </select>
+                                    <p className="ds-field-hint">They must confirm their teaching course when they set up their account.</p>
+                                </>
+                            )}
                         </div>
                         <div className="ds-field">
                             <label htmlFor="gender">Gender (optional)</label>
@@ -578,6 +618,8 @@ export default function AdminUsers() {
                         </Tooltip>
                     </div>
                 </form>
+            </div>
+              </div>
             </div>
 
             <div className="ds-card">
@@ -761,7 +803,7 @@ export default function AdminUsers() {
             {editingUser && (
                 <div className="ds-edit-backdrop" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) closeEdit(); }}>
                     <div className="ds-card ds-edit-card" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 4 }}>
+                        <div className="ds-edit-head">
                             <div>
                                 <h3 id="edit-user-title" style={{ margin: 0 }}>Edit Account</h3>
                                 <p className="ds-card-desc" style={{ margin: '4px 0 0' }}>
@@ -773,8 +815,9 @@ export default function AdminUsers() {
                             </button>
                         </div>
 
-                        <form onSubmit={handleEditSubmit} noValidate>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '16px 0' }}>
+                        <form onSubmit={handleEditSubmit} noValidate className="ds-edit-form">
+                          <div className="ds-edit-body">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 14, margin: '4px 0 16px' }}>
                                 <span
                                     className="ds-avatar"
                                     style={{
@@ -876,6 +919,38 @@ export default function AdminUsers() {
                                     {editRole === 'admin' && (
                                         <p className="ds-field-hint">There is only one Admin account — its role can't be changed.</p>
                                     )}
+                                    {editForm.role === 'instructor' && (
+                                        <>
+                                            <label htmlFor="edit_course" style={{ marginTop: 10 }}>Teaching course</label>
+                                            <select id="edit_course" name="teaching_course" value={editForm.teaching_course} onChange={handleEditChange}>
+                                                <option value="">Not set</option>
+                                                {COURSE_GROUPS.map((group) => (
+                                                    <optgroup key={group.college} label={group.college}>
+                                                        {group.courses.map((c) => <option key={c} value={c}>{c}</option>)}
+                                                    </optgroup>
+                                                ))}
+                                            </select>
+                                        </>
+                                    )}
+                                    {editForm.role !== editRole && (
+                                        <>
+                                            <label htmlFor="edit_id_number" style={{ marginTop: 10 }}>
+                                                New {ROLE_META[editForm.role]?.label || 'role'} ID number
+                                            </label>
+                                            <input
+                                                id="edit_id_number"
+                                                name="id_number"
+                                                type="text"
+                                                value={editForm.id_number}
+                                                onChange={handleEditChange}
+                                                placeholder="Leave blank to auto-generate"
+                                            />
+                                            {editErrors.id_number && <div className="ds-field-error">{editErrors.id_number}</div>}
+                                            <p className="ds-field-hint">
+                                                Type their actual ID number exactly as issued, or leave it blank to auto-generate one.
+                                            </p>
+                                        </>
+                                    )}
                                 </div>
                                 <div className="ds-field">
                                     <label htmlFor="edit_gender">Gender (optional)</label>
@@ -904,10 +979,13 @@ export default function AdminUsers() {
                                 {editErrors.phone_number && <div className="ds-field-error">{editErrors.phone_number}</div>}
                             </div>
 
-                            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>
-                                <button className="ds-btn ds-btn-primary" disabled={editBusy}>{editBusy ? 'Saving…' : 'Save Changes'}</button>
+                          </div>
+
+                          {/* Pinned footer: the fields above scroll, these two buttons never leave the screen. */}
+                          <div className="ds-edit-footer">
                                 <button type="button" className="ds-btn ds-btn-secondary" onClick={closeEdit} disabled={editBusy}>Cancel</button>
-                            </div>
+                                <button className="ds-btn ds-btn-primary" disabled={editBusy}>{editBusy ? 'Saving…' : 'Save Changes'}</button>
+                          </div>
                         </form>
                     </div>
                 </div>

@@ -23,8 +23,7 @@ import ProfilePage from '../Pages/Profile/ProfilePage';
 import SecurityDashboard from '../Pages/security/SecurityDashboard';
 import PrintReport from '../Pages/shared/PrintReport';
 import StudentPrintReport from '../Pages/shared/StudentPrintReport';
-import SecurityFoundItemsReview from '../Pages/security/SecurityFoundItemsReview';
-import SecurityLostItemsReview from '../Pages/security/SecurityLostItemsReview';
+import { Navigate } from 'react-router-dom';
 import SecurityMatches from '../Pages/security/SecurityMatches';
 import SecurityInventory from '../Pages/security/SecurityInventory';
 import SecurityCounter from '../Pages/security/SecurityCounter';
@@ -58,6 +57,9 @@ const publicRoutes = [
 // manifest scope ("/app/") only ever claims these — not /login,
 // /register, /forgot-password, or /reset-password/:token, which must
 // stay reachable as plain browser pages (see PwaManifestController).
+const RedirectToFoundReview = () => React.createElement(Navigate, { to: '/app/found-items?tab=review', replace: true });
+const RedirectToLostReview = () => React.createElement(Navigate, { to: '/app/lost-items?tab=review', replace: true });
+
 const adminRoutes = [
     { path: '/app/admin/dashboard', component: AdminDashboard },
     // Printable dashboard report — opened from the SCLF logo menu.
@@ -77,9 +79,10 @@ const adminRoutes = [
 const securityRoutes = [
     { path: '/app/security/dashboard', component: SecurityDashboard },
     { path: '/app/security/print-report', component: PrintReport },
-    { path: '/app/security/found-items', component: SecurityFoundItemsReview },
-    // Approve lost reports -> emails students/instructors (security / admin / staff).
-    { path: '/app/security/lost-items', component: SecurityLostItemsReview },
+    // Reviews now live on the Found Items / Lost Items pages ("Pending review"
+    // tab). Old links, bookmarks and notification links still land there.
+    { path: '/app/security/found-items', component: RedirectToFoundReview },
+    { path: '/app/security/lost-items', component: RedirectToLostReview },
     // Match queue for whoever handles lost & found (security / admin / staff).
     { path: '/app/security/matches', component: SecurityMatches },
     { path: '/app/security/claims', component: MyClaimsList },

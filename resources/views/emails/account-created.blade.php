@@ -59,6 +59,12 @@
                         <td style="padding: 6px 0; font-weight: 600; color: #0f2a5c;">{{ $genderLabel }}</td>
                     </tr>
                     @endif
+                    @if(!empty($teachingCourse))
+                    <tr>
+                        <td style="padding: 6px 0; color: #666; vertical-align: top;">Course you teach</td>
+                        <td style="padding: 6px 0; font-weight: 600; color: #0f2a5c;">{{ $teachingCourse }}</td>
+                    </tr>
+                    @endif
                 </table>
             </div>
 

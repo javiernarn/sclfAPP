@@ -70,7 +70,7 @@ export default function AdminAuditLog() {
                                     <tr key={l.id}>
                                         <td className="ds-table-title">{l.action}</td>
                                         <td className="ds-table-sub" style={{ maxWidth: 320, whiteSpace: 'normal' }}>{l.description}</td>
-                                        <td className="ds-table-nowrap">{l.user ? l.user.name : '—'}</td>
+                                        <td className="ds-table-nowrap">{l.user_name ? `${l.user_name}${l.user_role ? ` (${l.user_role})` : ''}` : '—'}</td>
                                         <td className="ds-table-nowrap">
                                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                                 <DeviceIcon deviceType={ua.deviceType} size={14} />
@@ -96,7 +96,7 @@ export default function AdminAuditLog() {
                                 <div>
                                     <p className="ds-list-item-title">{l.action}</p>
                                     <p className="ds-list-item-meta">
-                                        {l.description} {l.user ? `· by ${l.user.name}` : ''}
+                                        {l.description} {l.user_name ? `· by ${l.user_name}${l.user_role ? ` (${l.user_role})` : ''}` : ''}
                                     </p>
                                     <p className="ds-list-item-meta" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                                         <DeviceIcon deviceType={ua.deviceType} size={13} />

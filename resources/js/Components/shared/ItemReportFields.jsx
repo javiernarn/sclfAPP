@@ -3,7 +3,7 @@ import ComboBox from './ComboBox';
 import LiveMatchPreview from './LiveMatchPreview';
 import {
     CATEGORY_NAMES, colorOptions, itemsFor, brandsFor, modelsFor, traitsFor, placeOptions,
-    hasBrand, hasModel, findCategory, draftDescription, attributesFor,
+    hasBrand, hasModel, findCategory, brandLabelFor, modelLabelFor, modelHintFor, draftDescription, attributesFor,
     reconcileOnCategoryChange, reconcileOnItemChange, reconcileOnBrandChange,
 } from '../../config/lostFoundCatalog';
 import './ItemReportFields.css';
@@ -33,11 +33,14 @@ export default function ItemReportFields({ kind, form, setForm, fieldErrors = {}
     const brands = useMemo(() => brandsFor(form.category, form.item_name), [form.category, form.item_name]);
     const models = useMemo(() => modelsFor(form.category, form.brand, form.item_name), [form.category, form.brand, form.item_name]);
     const attrs = useMemo(() => attributesFor(form.category, form.item_name), [form.category, form.item_name]);
-    const traits = useMemo(() => traitsFor(form.category), [form.category]);
-    const places = useMemo(() => placeOptions(form.category), [form.category]);
+    const traits = useMemo(() => traitsFor(form.category, form.item_name), [form.category, form.item_name]);
+    const places = useMemo(() => placeOptions(form.category, form.item_name), [form.category, form.item_name]);
 
-    const showBrand = hasBrand(form.category);
-    const showModel = showBrand && hasModel(form.category);
+    const showBrand = hasBrand(form.category, form.item_name);
+    const showModel = showBrand && hasModel(form.category, form.item_name);
+    const brandLabel = brandLabelFor(form.category, form.item_name);
+    const modelLabel = modelLabelFor(form.category, form.item_name);
+    const modelHint = modelHintFor(form.category, form.item_name);
 
     const set = (updater, fieldName) => {
         setForm((prev) => updater(prev));
@@ -90,24 +93,24 @@ export default function ItemReportFields({ kind, form, setForm, fieldErrors = {}
                 <div className="ds-form-row ds-form-row-2">
                     {showBrand && (
                         <div className="ds-field">
-                            <label htmlFor="brand">{cat?.brandLabel || 'Brand'}</label>
+                            <label htmlFor="brand">{brandLabel}</label>
                             <ComboBox id="brand" name="brand" value={form.brand}
                                 onChange={(v) => set((p) => reconcileOnBrandChange(p, v), 'brand')}
                                 options={brands} placeholder="Pick a brand or type it"
                                 emptyText="Pick a category / item for brand ideas — or type it." />
                             <p className="ds-field-hint">
                                 {form.item_name && brands.length
-                                    ? `Common brands for “${form.item_name}”. Choose “No brand” if it's unbranded.`
+                                    ? `Brands that really exist for “${form.item_name}”. Choose “No brand” if it's unbranded.`
                                     : 'Leave blank if you\'re not sure.'}
                             </p>
                         </div>
                     )}
                     {showModel && (
                         <div className="ds-field">
-                            <label htmlFor="model">{cat?.modelLabel || 'Model'}</label>
+                            <label htmlFor="model">{modelLabel}</label>
                             <ComboBox id="model" name="model" value={form.model}
                                 onChange={setField('model')} options={models}
-                                placeholder={models.length ? 'Pick a model or type it' : (cat?.modelHint || 'e.g. Model XR-200')}
+                                placeholder={models.length ? 'Pick a model or type it' : (modelHint || 'e.g. Model XR-200')}
                                 emptyText="Type the model printed on the item." />
                             <p className="ds-field-hint">
                                 {models.length
@@ -198,7 +201,7 @@ export default function ItemReportFields({ kind, form, setForm, fieldErrors = {}
                         onChange={setField(placeField)} options={places}
                         placeholder="Pick a place or type the exact spot" />
                     <p className="ds-field-hint">
-                        {cat?.places?.length ? `Places where “${cat.name}” usually turn up are listed first. ` : ''}
+                        {cat?.places?.length ? `Places where “${form.item_name || cat.name}” usually turn up are listed first. ` : ''}
                         Add the room or landmark if you can (e.g. “Library, 2nd floor”).
                     </p>
                 </div>
