@@ -13,7 +13,9 @@ use Symfony\Component\HttpFoundation\Response;
  * Staff pass every role check the admin does (so they can open the same
  * pages and read the same data), but this middleware refuses any write
  * (POST/PUT/PATCH/DELETE) unless the admin has approved a request for that
- * exact action on that exact record. The approval is consumed once the
+ * exact action on that exact record. The whole rule can be switched off with
+ * SCLF_STAFF_REQUIRES_APPROVAL=false (see config/sclf.php), after which staff
+ * write directly.  The approval is consumed once the
  * action succeeds. Admins and every other role are untouched.
  *
  * Because it is applied to the whole authenticated route group, a new
@@ -30,7 +32,8 @@ class RequireStaffApproval
         $user = $request->user();
 
         if (
-            !$user
+            !config('sclf.staff_approval.required', true) // SCLF_STAFF_REQUIRES_APPROVAL=false
+            || !$user
             || !$user->hasRole('staff')
             || $user->hasRole('admin')
             || in_array($request->method(), StaffApprovalService::SAFE_METHODS, true)

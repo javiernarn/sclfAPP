@@ -11,14 +11,14 @@ use Illuminate\Http\Request;
  * Data for a printed student/instructor dashboard (/app/print/{token}).
  *
  * The printed copy carries a QR code that points at this same page, so an
- * admin / staff / security officer can scan the paper and see the owner's
+ * admin / staff can scan the paper and see the owner's
  * dashboard. The token only IDENTIFIES the account; access is decided here:
  * the owner, or a lost & found handler role — nobody else.
  */
 class PrintReportController extends Controller
 {
     /** Who may open someone else's report. */
-    private const HANDLER_ROLES = ['admin', 'staff', 'security_officer'];
+    private const HANDLER_ROLES = ['admin', 'staff'];
 
     /** Whose dashboards can be printed this way. */
     private const SUBJECT_ROLES = ['student', 'instructor'];

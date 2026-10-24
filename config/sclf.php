@@ -121,6 +121,11 @@ return [
     |
     */
     'staff_approval' => [
+        // Master switch (.env: SCLF_STAFF_REQUIRES_APPROVAL).
+        //   true  = staff writes need the admin's approval (the rules below apply).
+        //   false = staff act directly, with no approval and no restriction from the admin.
+        'required' => (bool) env('SCLF_STAFF_REQUIRES_APPROVAL', true),
+
         'ttl_hours' => env('SCLF_STAFF_APPROVAL_TTL_HOURS', 24),
 
         // Request fields that are frozen at approval time. The admin approves

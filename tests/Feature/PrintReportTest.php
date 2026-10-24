@@ -77,17 +77,17 @@ class PrintReportTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_security_officer_and_admin_can_open_a_students_report_and_it_is_audited(): void
+    public function test_staff_and_admin_can_open_a_students_report_and_it_is_audited(): void
     {
         $student = $this->userWithRole('student');
 
-        $officer = User::factory()->create(['is_active' => true]);
-        $officer->assignRole('security_officer');
+        $staff = User::factory()->create(['is_active' => true]);
+        $staff->assignRole('staff');
 
         $admin = User::factory()->create(['is_active' => true]);
         $admin->assignRole('admin');
 
-        foreach ([$officer, $admin] as $viewer) {
+        foreach ([$staff, $admin] as $viewer) {
             $this->getJson("/api/print-report/{$student->public_token}", $this->authHeaders($viewer))
                 ->assertOk()
                 ->assertJsonPath('viewer_is_self', false)
@@ -95,6 +95,17 @@ class PrintReportTest extends TestCase
         }
 
         $this->assertSame(2, AuditLog::where('action', 'dashboard.report_viewed')->count());
+    }
+
+    public function test_security_officer_cannot_open_a_students_report(): void
+    {
+        $student = $this->userWithRole('student');
+
+        $officer = User::factory()->create(['is_active' => true]);
+        $officer->assignRole('security_officer');
+
+        $this->getJson("/api/print-report/{$student->public_token}", $this->authHeaders($officer))
+            ->assertForbidden();
     }
 
     public function test_instructor_report_is_available_to_handlers(): void

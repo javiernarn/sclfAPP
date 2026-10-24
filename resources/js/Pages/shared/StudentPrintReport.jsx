@@ -12,7 +12,7 @@ import './PrintReport.css';
 // Printable copy of a student's / instructor's dashboard — /app/print/{user token}.
 //
 //  * The owner opens it from "Print my dashboard" on their dashboard.
-//  * An admin / staff / security officer opens it by scanning the QR code
+//  * An admin / staff account opens it by scanning the QR code
 //    printed at the bottom of the paper (the QR encodes THIS page's address),
 //    or from the Scan button on their own Print report page.
 //
@@ -32,15 +32,13 @@ export default function StudentPrintReport() {
     const { token } = useParams();
     const { roles } = useAuth();
     const list = Array.isArray(roles) ? roles : [];
-    const isHandler = list.includes('admin') || list.includes('staff') || list.includes('security_officer');
+    const isHandler = list.includes('admin') || list.includes('staff');
     // Opened from a report form's notice ("Check my violations")? Back returns to that
     // form and shows the notice again. Otherwise it goes to the usual dashboard.
     const { state: navState } = useLocation();
     const cameFrom = typeof navState?.backTo === 'string' && navState.backTo.startsWith('/app/') ? navState.backTo : null;
     const backPath = cameFrom
-        || (isHandler
-            ? (list.includes('admin') || list.includes('staff') ? '/app/admin/print-report' : '/app/security/print-report')
-            : '/app/dashboard');
+        || (isHandler ? '/app/admin/print-report' : '/app/dashboard');
     const backLabel = cameFrom ? 'Back to the form' : (isHandler ? 'Back to print report' : 'Back to dashboard');
 
     const [data, setData] = useState(null);
@@ -186,7 +184,7 @@ export default function StudentPrintReport() {
                 )}
                 {data && data.viewer_is_self && (
                     <p className="pr-tip" style={{ flex: '1 1 100%' }}>
-                        Tip: choose <b>Save as PDF</b> in the print window. The QR code at the bottom lets an admin or security officer open this dashboard by scanning your printed copy.
+                        Tip: choose <b>Save as PDF</b> in the print window. The QR code at the bottom lets an admin or staff account open this dashboard by scanning your printed copy.
                     </p>
                 )}
             </div>
@@ -354,7 +352,7 @@ export default function StudentPrintReport() {
                                 <div className="pr-qr-side">
                                     <div className="pr-qr-text">
                                         <div className="pr-qr-title">Scan to open this dashboard</div>
-                                        <p>Admin, Staff and Security accounts can scan this code to view <b>{subject.name}</b>’s dashboard.</p>
+                                        <p>Only Admin and Staff accounts can scan this code to view <b>{subject.name}</b>’s dashboard.</p>
                                         <p className="pr-qr-url">{qrUrl}</p>
                                     </div>
                                     <div className="pr-qr-sign">

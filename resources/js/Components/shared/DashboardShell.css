@@ -1981,3 +1981,57 @@ body { overflow: hidden; }
 }
 .ds-menu.light .ds-lang-chip { background: #f4f7fb; color: #334155; }
 .ds-menu.dark .ds-lang-chip { background: #1a2029; color: #cbd5e1; }
+
+/* ==========================================================================
+   Stat cards, laptop / desktop — big solid icon on the right.
+   The icon is no longer a small tile stacked above the number (which left an
+   empty strip). It is a large solid-colour glyph filling the right side of
+   the card, so the card has no dead space and the icon is always visible.
+   Applies to every role dashboard (admin, staff, security, student,
+   instructor) because they all share .ds-stat-card / .ds-stat-icon.
+   Phones/tablets keep their own compact layout.
+   ========================================================================== */
+@media (min-width: 901px) {
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card {
+        position: relative; overflow: hidden; isolation: isolate;
+        padding: 16px 18px; min-height: 92px;
+        transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card:hover { transform: translateY(-2px); }
+
+    /* the icon: big, solid colour, centred on the right, always inside the card */
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card .ds-stat-icon {
+        position: absolute; right: 14px; top: 50%; z-index: 0;
+        width: 64px; height: 64px; margin: 0 !important; padding: 0;
+        background: transparent !important; border-radius: 0;
+        opacity: 1; transform: translateY(-50%) rotate(-8deg);
+        transition: transform .35s cubic-bezier(.2,.7,.2,1);
+        pointer-events: none;
+    }
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card .ds-stat-icon svg { width: 100%; height: 100%; stroke-width: 1.8; }
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card:hover .ds-stat-icon { transform: translateY(-50%) rotate(0deg) scale(1.08); }
+
+    /* text sits on the left and never runs under the icon */
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card > :not(.ds-stat-icon):not(.ch-kpi-top) { position: relative; z-index: 1; }
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card .ds-stat-value,
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card .ds-stat-label { padding-right: 74px; }
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card .ds-stat-value { font-size: 30px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card .ds-stat-label { font-size: 12.5px; opacity: .78; margin-top: 3px; }
+
+    /* chart KPI cards: change pill on the left of the top row; the icon is
+       positioned against the CARD (the row must stay un-positioned, or the
+       icon gets clipped to the row's small box) */
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card .ch-kpi-top { position: static; justify-content: flex-start; min-height: 0; margin-bottom: 4px; }
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card .ch-kpi-top .ch-delta { position: relative; z-index: 1; }
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card.ch-kpi .ds-stat-icon { top: 18px; transform: rotate(-8deg); }
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card.ch-kpi:hover .ds-stat-icon { transform: rotate(0deg) scale(1.08); }
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card.ch-kpi .ds-stat-value,
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card.ch-kpi .ds-stat-label { padding-right: 0; }
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card .ch-kpi-top:empty { display: none; }
+
+    /* loading placeholder: no icon block, so no dead space while loading either */
+    .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card .ds-skel-icon { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ds-shell.ds-layout .ds-stat-card, .ds-shell.ds-layout .ds-stat-card .ds-stat-icon { transition: none !important; }
+}

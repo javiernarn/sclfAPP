@@ -191,6 +191,7 @@ class ViolationTest extends TestCase
     {
         $student = $this->user('student');
         $security = $this->user('security_officer');
+        $staff = $this->user('staff'); // only admin/staff open a printed dashboard
         $att = $this->attachmentBy($student);
 
         $this->getJson("/api/print-report/{$student->public_token}", $this->headers($student))
@@ -203,12 +204,12 @@ class ViolationTest extends TestCase
         $this->getJson("/api/print-report/{$student->public_token}", $this->headers($student))
             ->assertJsonPath('violations.count', 0)
             ->assertJsonPath('violations.pending', null);
-        $this->getJson("/api/print-report/{$student->public_token}", $this->headers($security))
+        $this->getJson("/api/print-report/{$student->public_token}", $this->headers($staff))
             ->assertJsonPath('violations.pending', 1);
 
         $this->postJson("/api/violations/{$v->id}/confirm", [], $this->headers($security))->assertOk();
 
-        $this->getJson("/api/print-report/{$student->public_token}", $this->headers($security))
+        $this->getJson("/api/print-report/{$student->public_token}", $this->headers($staff))
             ->assertOk()
             ->assertJsonPath('violations.count', 1)
             ->assertJsonPath('violations.items.0.id', $v->id);
@@ -339,11 +340,12 @@ class ViolationTest extends TestCase
     {
         $student = $this->user('student');
         $security = $this->user('security_officer');
+        $staff = $this->user('staff');
         $att = $this->attachmentBy($student);
 
         $this->postJson("/api/report-attachments/{$att->id}/violation", ['reason' => 'harassment'], $this->headers($security))->assertCreated();
 
-        $this->getJson("/api/print-report/{$student->public_token}", $this->headers($security))
+        $this->getJson("/api/print-report/{$student->public_token}", $this->headers($staff))
             ->assertJsonPath('violations.items.0.reason', 'Harassment or shaming of another person');
     }
 

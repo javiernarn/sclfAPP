@@ -44,7 +44,7 @@ export default function StudentDashboard() {
 
     // /app/dashboard (or someone else's token) -> your own tokened address.
     // This page only ever shows the signed-in person's own numbers; an
-    // admin/security account opens a student's dashboard from the QR on
+    // admin/staff account opens a student's dashboard from the QR on
     // their printed copy instead (/app/print/{token}).
     if (ownToken && token !== ownToken) {
         return <Navigate to={`/app/dashboard/${ownToken}`} replace />;

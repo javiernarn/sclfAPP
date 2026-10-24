@@ -191,9 +191,12 @@ export default function PrintReport() {
                 <div className="pr-toolbar-row">
                     <Link to={homePath} className="pr-back"><ArrowLeft size={16} /> Back to dashboard</Link>
                     <strong className="pr-toolbar-title">{reportName}</strong>
-                    <button type="button" className="pr-scan-btn" onClick={() => setScanOpen(true)}>
-                        <Camera size={16} /> Scan student QR
-                    </button>
+                    {/* Only Admin and Staff scan student QR codes; the Security page has no scan button. */}
+                    {kind === 'admin' && (
+                        <button type="button" className="pr-scan-btn" onClick={() => setScanOpen(true)}>
+                            <Camera size={16} /> Scan student QR
+                        </button>
+                    )}
                     <button type="button" className="pr-print-btn" onClick={() => window.print()} disabled={!ready}>
                         <Printer size={16} /> Print / Save as PDF
                     </button>
@@ -227,7 +230,7 @@ export default function PrintReport() {
                 </div>
             </div>
 
-            <StudentQrScanModal open={scanOpen} onClose={() => setScanOpen(false)} />
+            {kind === 'admin' && <StudentQrScanModal open={scanOpen} onClose={() => setScanOpen(false)} />}
 
             {/* ===== The sheet ===== */}
             <div className="pr-stage">
