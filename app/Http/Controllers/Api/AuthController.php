@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Support\PrivateMedia;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Audit\AuditLogService;
@@ -155,7 +156,7 @@ class AuthController extends Controller
 
         $profilePicturePath = null;
         if ($request->hasFile('profile_picture')) {
-            $profilePicturePath = $request->file('profile_picture')->store('profile-pictures', 'public');
+            $profilePicturePath = $request->file('profile_picture')->store('profile-pictures', PrivateMedia::DISK);
         }
 
         $user = User::create([

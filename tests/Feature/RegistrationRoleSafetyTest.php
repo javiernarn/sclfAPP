@@ -28,7 +28,7 @@ class RegistrationRoleSafetyTest extends TestCase
      */
     protected function validRegistrationPayload(array $overrides = []): array
     {
-        Storage::fake('public');
+        Storage::fake('local');
 
         return array_merge([
             'first_name' => 'Juan',

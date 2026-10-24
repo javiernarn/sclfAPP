@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\PrivateMedia;
 use App\Http\Requests\StoreFoundItemRequest;
 use App\Http\Requests\VerifyFoundItemRequest;
 use App\Models\FoundItem;
@@ -63,7 +64,7 @@ class FoundItemController extends Controller
 
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('found-items', 'public');
+            $imagePath = $request->file('image')->store('found-items', PrivateMedia::DISK);
         }
 
         $item = FoundItem::create([

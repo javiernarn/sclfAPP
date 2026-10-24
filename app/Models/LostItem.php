@@ -57,6 +57,34 @@ class LostItem extends Model
         'details' => 'array',
     ];
 
+    /**
+     * Who may see this report.
+     *
+     * A report stays private to its reporter and the lost-and-found handlers
+     * (security / admin / staff) until a handler approves it (approved_at);
+     * after that any signed-in user can browse it. This is the ONE place that
+     * rule lives: the list, the single-report view, and global search all use
+     * it, so they cannot drift apart.
+     */
+    public function scopeVisibleTo($query, User $viewer)
+    {
+        if ($viewer->hasAnyRole(User::LOST_FOUND_HANDLER_ROLES)) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($viewer) {
+            $q->whereNotNull($q->getModel()->qualifyColumn('approved_at'))
+                ->orWhere($q->getModel()->qualifyColumn('user_id'), $viewer->id);
+        });
+    }
+
+    public function isVisibleTo(User $viewer): bool
+    {
+        return $this->approved_at !== null
+            || (int) $this->user_id === (int) $viewer->id
+            || $viewer->hasAnyRole(User::LOST_FOUND_HANDLER_ROLES);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -79,6 +107,6 @@ class LostItem extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        return $this->image_path ? asset('storage/' . $this->image_path) : null;
+        return \App\Support\PrivateMedia::url($this->image_path);
     }
 }

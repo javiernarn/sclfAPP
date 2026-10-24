@@ -170,7 +170,10 @@ export default function LostItemsList() {
                                             </td>
                                             <td className="ds-table-nowrap">{item.category || 'Uncategorized'}</td>
                                             <td className="ds-table-nowrap">{item.reporter}</td>
-                                            <td><span className={badgeClass(item.status)}>{item.status || 'pending'}</span></td>
+                                            <td>
+                                                <span className={badgeClass(item.status)}>{item.status || 'pending'}</span>
+                                                {!item.approved_at && <span className="ds-badge ds-badge-default" style={{ marginLeft: 6 }} title="Only you and Security can see this report until it is approved.">Awaiting review</span>}
+                                            </td>
                                             <td>
                                                 {closed ? (
                                                     <span className="ds-btn ds-btn-sm" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
@@ -209,6 +212,7 @@ export default function LostItemsList() {
                                     </div>
                                     <div className="ds-list-item-side">
                                         <span className={badgeClass(item.status)}>{item.status || 'pending'}</span>
+                                        {!item.approved_at && <span className="ds-badge ds-badge-default" title="Only you and Security can see this report until it is approved.">Awaiting review</span>}
                                         {closed ? (
                                             <span className="ds-btn ds-btn-sm" style={{ opacity: 0.6, cursor: 'not-allowed' }}>
                                                 <Lock size={13} /> Closed

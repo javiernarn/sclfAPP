@@ -41,6 +41,14 @@ class ScanAttachmentJob implements ShouldQueue
             return;
         }
 
+        // The key was removed after this job was queued: leave the file
+        // visible and unscanned instead of failing and retrying forever.
+        if (! ImageModerator::hasKey()) {
+            $a->update(['scan_status' => 'skipped', 'scanned_at' => now()]);
+
+            return;
+        }
+
         $disk = Storage::disk(ReportAttachmentService::DISK);
 
         if (

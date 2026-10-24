@@ -131,7 +131,8 @@ class BroadcastLostItemJob implements ShouldQueue
             'date_lost' => optional($item->date_lost)->format('F j, Y'),
             'time_lost' => $item->time_lost,
             'campus' => $item->campus?->name,
-            'image_url' => $item->image_url,
+            // Emails need a full link that outlives the 1-2 day in-app one.
+            'image_url' => \App\Support\PrivateMedia::emailUrl($item->image_path),
             'owner_label' => $ownerLabel,
             'approved_at' => optional($item->approved_at)->format('F j, Y g:i A'),
             'approver_name' => $approver?->name ?? 'SCLF Desk',

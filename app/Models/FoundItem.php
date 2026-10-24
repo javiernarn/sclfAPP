@@ -213,6 +213,6 @@ class FoundItem extends Model
 
     public function getImageUrlAttribute(): ?string
     {
-        return $this->image_path ? asset('storage/' . $this->image_path) : null;
+        return \App\Support\PrivateMedia::url($this->image_path);
     }
 }

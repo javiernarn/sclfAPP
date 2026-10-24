@@ -12,17 +12,17 @@ class AdminSeeder extends Seeder
 {
     /**
      * Default avatar, without extension. Put the file in
-     * storage/app/public/profile-pictures/ as avatar-admin.jpeg, .jpg or .png.
+     * storage/app/private/profile-pictures/ as avatar-admin.jpeg, .jpg or .png.
      */
     private const AVATAR_BASENAME = 'profile-pictures/avatar-admin';
 
-    /** Returns the first default avatar that actually exists on the public disk. */
+    /** Returns the first default avatar that actually exists on the private disk. */
     private function resolveAvatar(): ?string
     {
         foreach (['jpeg', 'jpg', 'png'] as $ext) {
             $path = self::AVATAR_BASENAME . '.' . $ext;
 
-            if (Storage::disk('public')->exists($path)) {
+            if (Storage::disk(\App\Support\PrivateMedia::DISK)->exists($path)) {
                 return $path;
             }
         }
@@ -51,7 +51,7 @@ class AdminSeeder extends Seeder
 
         if (!$avatar) {
             $this->command?->warn(
-                'No default avatar found in storage/app/public/profile-pictures/ '
+                'No default avatar found in storage/app/private/profile-pictures/ '
                 . '(expected avatar-admin.jpeg, .jpg or .png). Admin will have no profile picture.'
             );
         }

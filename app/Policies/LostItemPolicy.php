@@ -14,7 +14,8 @@ class LostItemPolicy
 
     public function view(User $user, LostItem $lostItem): bool
     {
-        return true;
+        // Pending (unapproved) reports: reporter + handlers only.
+        return $lostItem->isVisibleTo($user);
     }
 
     public function create(User $user): bool

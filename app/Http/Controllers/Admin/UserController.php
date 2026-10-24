@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Support\PrivateMedia;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdminCreateUserRequest;
 use App\Mail\AccountCreatedMail;
@@ -125,7 +126,7 @@ class UserController extends Controller
 
         $profilePicturePath = null;
         if ($request->hasFile('profile_picture')) {
-            $profilePicturePath = $request->file('profile_picture')->store('profile-pictures', 'public');
+            $profilePicturePath = $request->file('profile_picture')->store('profile-pictures', PrivateMedia::DISK);
         }
 
         // Staff accounts are the admin's to create — a Staff member can
@@ -410,9 +411,9 @@ class UserController extends Controller
         // account without a picture.
         if ($request->hasFile('profile_picture')) {
             $oldPicture = $user->profile_picture;
-            $attributes['profile_picture'] = $request->file('profile_picture')->store('profile-pictures', 'public');
+            $attributes['profile_picture'] = $request->file('profile_picture')->store('profile-pictures', PrivateMedia::DISK);
             if ($oldPicture) {
-                \Illuminate\Support\Facades\Storage::disk('public')->delete($oldPicture);
+                \Illuminate\Support\Facades\Storage::disk(PrivateMedia::DISK)->delete($oldPicture);
             }
         }
 

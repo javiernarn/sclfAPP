@@ -218,11 +218,13 @@ class FoundLostItemTest extends TestCase
         $this->assertGreaterThanOrEqual(0, $response->json('matches_found'));
     }
 
-    public function test_any_authenticated_user_can_view_a_single_lost_item(): void
+    public function test_any_authenticated_user_can_view_a_single_approved_lost_item(): void
     {
         $owner = $this->makeUser('student');
         $viewer = $this->makeUser('instructor');
-        $lostItem = LostItem::factory()->create(['user_id' => $owner->id]);
+        // Only APPROVED reports are community-visible; see LostItemVisibilityTest
+        // for the pending-report rules.
+        $lostItem = LostItem::factory()->create(['user_id' => $owner->id, 'approved_at' => now()]);
 
         $response = $this->actingAs($viewer)->getJson("/api/lost-items/{$lostItem->id}");
 

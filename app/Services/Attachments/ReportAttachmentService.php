@@ -4,6 +4,7 @@ namespace App\Services\Attachments;
 
 use App\Models\ReportAttachment;
 use App\Jobs\ScanAttachmentJob;
+use App\Services\Violations\ImageModerator;
 use App\Models\User;
 use App\Services\Audit\AuditLogService;
 use Illuminate\Database\Eloquent\Model;
@@ -67,7 +68,7 @@ class ReportAttachmentService
 
         // Optional automatic scan (SCLF_MODERATION_ENABLED). Queued, so the
         // upload itself stays fast; a hit only holds the file for review.
-        if (config('sclf.moderation.enabled')) {
+        if (ImageModerator::isActive()) {
             $records->each(function (ReportAttachment $record) {
                 $record->update(['scan_status' => 'pending']);
                 ScanAttachmentJob::dispatch($record)->afterCommit();

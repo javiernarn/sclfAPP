@@ -24,6 +24,36 @@ class ImageModerator
     /** Formats Vision can read. */
     public const SUPPORTED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
+    /** True when a Vision API key is present. */
+    public static function hasKey(): bool
+    {
+        return trim((string) config('sclf.moderation.api_key')) !== '';
+    }
+
+    /**
+     * Scanning is only really "on" when it is switched on AND a key exists.
+     * Enabled-without-a-key used to leave every upload stuck on `pending`
+     * and fill the log with retries, so it now counts as off (and warns once).
+     */
+    public static function isActive(): bool
+    {
+        if (! config('sclf.moderation.enabled')) {
+            return false;
+        }
+
+        if (! self::hasKey()) {
+            static $warned = false;
+            if (! $warned) {
+                $warned = true;
+                logger()->warning('SCLF_MODERATION_ENABLED is true but SCLF_MODERATION_API_KEY is empty; photo scanning is skipped. Set a key or set SCLF_MODERATION_ENABLED=false.');
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * @return array{flagged:bool, labels:array<int,string>, reason:?string}
      * @throws \RuntimeException when the API call fails (the job retries)

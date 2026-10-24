@@ -56,7 +56,7 @@ class AccountSetupTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Storage::fake('public');
+        Storage::fake('local');
     }
 
     public function test_a_security_officer_enters_their_own_id_number_at_first_login(): void

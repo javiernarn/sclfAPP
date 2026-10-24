@@ -46,7 +46,7 @@ class SearchService
 
         $results = [
             'found_items' => $this->searchFoundItems($viewer, $q, $isStaff, $limit),
-            'lost_items' => $this->searchLostItems($q, $limit),
+            'lost_items' => $this->searchLostItems($viewer, $q, $limit),
             'claims' => $this->searchClaims($viewer, $q, $isStaff, $limit),
             'security_incidents' => $this->searchIncidents($viewer, $q, $isStaff, $isAdmin, $limit),
             'service_requests' => $this->searchServiceRequests($viewer, $q, $isStaff, $isAdmin, $limit),
@@ -165,7 +165,7 @@ class SearchService
         foreach ($this->visibleFoundItems($isStaff)->where('item_name', 'like', $like)->latest()->limit(12)->pluck('item_name') as $name) {
             $out[] = ['label' => $name, 'query' => $name, 'hint' => 'Found item'];
         }
-        foreach (LostItem::query()->where('item_name', 'like', $like)->latest()->limit(12)->pluck('item_name') as $name) {
+        foreach (LostItem::query()->visibleTo($viewer)->where('item_name', 'like', $like)->latest()->limit(12)->pluck('item_name') as $name) {
             $out[] = ['label' => $name, 'query' => $name, 'hint' => 'Lost item'];
         }
 
@@ -249,13 +249,12 @@ class SearchService
             ->all();
     }
 
-    private function searchLostItems(string $q, int $limit): array
+    private function searchLostItems(User $viewer, string $q, int $limit): array
     {
-        // LostItemController::index() doesn't restrict visibility to the
-        // owner by default (only ?mine=1 does), so search mirrors that —
-        // any authenticated user can already browse the full lost-items
-        // list.
+        // Same rule as LostItemController::index(): approved reports plus
+        // your own; handlers see everything (LostItem::scopeVisibleTo).
         return LostItem::query()
+            ->visibleTo($viewer)
             ->where('item_name', 'like', \App\Support\Like::contains($q))
             ->latest()
             ->limit($limit)

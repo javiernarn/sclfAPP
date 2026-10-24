@@ -117,11 +117,11 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Full public URL for the stored profile picture, or null.
+     * Signed, time-limited URL for the stored profile picture, or null.
      */
     public function getProfilePictureUrlAttribute(): ?string
     {
-        return $this->profile_picture ? asset('storage/' . $this->profile_picture) : null;
+        return \App\Support\PrivateMedia::url($this->profile_picture);
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\PrivateMedia;
 use App\Models\LostItem;
 use App\Services\Audit\AuditLogService;
 use App\Services\Matching\ItemMatchingService;
@@ -18,12 +19,18 @@ class LostItemController extends Controller
 
     public function index(Request $request)
     {
+        $viewer = $request->user();
+        // Review-queue filters (?approval=) are for handlers only. Everyone else
+        // gets approved reports plus their own, enforced here on the server.
+        $isHandler = $viewer->hasAnyRole(\App\Models\User::LOST_FOUND_HANDLER_ROLES);
+
         $lostItems = LostItem::with('user:id,name')
-            ->when($request->boolean('mine'), fn ($q) => $q->where('user_id', auth()->id()))
+            ->visibleTo($viewer)
+            ->when($request->boolean('mine'), fn ($q) => $q->where('user_id', $viewer->id))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             // Review queue for security / admin / staff: ?approval=pending | approved
-            ->when($request->approval === 'pending', fn ($q) => $q->whereNull('approved_at'))
-            ->when($request->approval === 'approved', fn ($q) => $q->whereNotNull('approved_at'))
+            ->when($isHandler && $request->approval === 'pending', fn ($q) => $q->whereNull('approved_at'))
+            ->when($isHandler && $request->approval === 'approved', fn ($q) => $q->whereNotNull('approved_at'))
             ->when($request->q, fn ($q) => $q->where('item_name', 'like', \App\Support\Like::contains($request->q)))
             ->latest()
             ->paginate(10)
@@ -68,7 +75,7 @@ class LostItemController extends Controller
 
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('lost-items', 'public');
+            $imagePath = $request->file('image')->store('lost-items', PrivateMedia::DISK);
         }
 
         $lostItem = LostItem::create([

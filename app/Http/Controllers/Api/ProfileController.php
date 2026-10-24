@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Support\PrivateMedia;
 use App\Http\Controllers\Controller;
 use App\Services\Audit\AuditLogService;
 use Illuminate\Http\Request;
@@ -116,7 +117,7 @@ class ProfileController extends Controller
 
         $oldPicture = $user->profile_picture;
         $profilePicturePath = $request->hasFile('profile_picture')
-            ? $request->file('profile_picture')->store('profile-pictures', 'public')
+            ? $request->file('profile_picture')->store('profile-pictures', PrivateMedia::DISK)
             : $oldPicture;
 
         $user->fill([
@@ -143,7 +144,7 @@ class ProfileController extends Controller
         // shared default avatar the AdminSeeder points at.
         if ($oldPicture && $oldPicture !== $profilePicturePath
             && !str_starts_with($oldPicture, 'profile-pictures/avatar-admin.')) {
-            Storage::disk('public')->delete($oldPicture);
+            Storage::disk(PrivateMedia::DISK)->delete($oldPicture);
         }
 
         // The admin-set password is now gone — sign out every other

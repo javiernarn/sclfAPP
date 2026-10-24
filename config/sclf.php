@@ -187,6 +187,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Private photos (profile pictures, found/lost item photos)
+    |--------------------------------------------------------------------------
+    |
+    | These live on the private disk and are shown through signed /media links.
+    | A link stays valid for between 1x and 2x this many hours; the same photo
+    | keeps the same link inside that window so browsers can cache it. Shorter
+    | = a leaked link dies sooner; longer = fewer refreshes for people who keep
+    | a tab open all day.
+    |
+    */
+    'media' => [
+        'url_ttl_hours' => (int) env('SCLF_MEDIA_URL_TTL_HOURS', 24),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Violations / sensitive-upload scanner
     |--------------------------------------------------------------------------
     |
@@ -195,6 +211,9 @@ return [
     | by App\Jobs\ScanAttachmentJob (queue worker / Hostinger cron). A hit
     | holds the file for review; it never counts against anyone until a
     | reviewer confirms it. Provider: Google Vision SafeSearch.
+    |
+    | Scanning only runs when `enabled` is true AND `api_key` is non-empty
+    | (see ImageModerator::isActive()); enabled-without-a-key is treated as off.
     |
     */
     'moderation' => [

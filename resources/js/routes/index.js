@@ -1,47 +1,49 @@
 import React from 'react';
-import LoginPage from '../Pages/Auth/LoginPage';
-import RegisterPage from '../Pages/Auth/RegisterPage';
-import ForgotPassword from '../Pages/Auth/ForgotPassword';
-import ResetPassword from '../Pages/Auth/ResetPassword';
-import AdminDashboard from '../Pages/admin/AdminDashboard';
-import AdminUsers from '../Pages/admin/AdminUsers';
-import AdminUserDetail from '../Pages/admin/AdminUserDetail';
-import AdminAuditLog from '../Pages/admin/AdminAuditLog';
-import AdminUserActivity from '../Pages/admin/AdminUserActivity';
-import AdminActionRequests from '../Pages/admin/AdminActionRequests';
-import StudentDashboard from '../Pages/student/StudentDashboard';
-import LostItemsList from '../Pages/student/LostItemsList';
-import LostItemCreate from '../Pages/student/LostItemCreate';
-import LostItemMatches from '../Pages/student/LostItemMatches';
-import FoundItemsList from '../Pages/shared/FoundItemsList';
-import FoundItemCreate from '../Pages/shared/FoundItemCreate';
-import FoundItemDetail from '../Pages/shared/FoundItemDetail';
-import ClaimDetail from '../Pages/shared/ClaimDetail';
-import MyClaimsList from '../Pages/shared/MyClaimsList';
-import NotificationsPage from '../Pages/shared/NotificationsPage';
-import ProfilePage from '../Pages/Profile/ProfilePage';
-import SecurityDashboard from '../Pages/security/SecurityDashboard';
-import PrintReport from '../Pages/shared/PrintReport';
-import StudentPrintReport from '../Pages/shared/StudentPrintReport';
 import { Navigate } from 'react-router-dom';
-import SecurityMatches from '../Pages/security/SecurityMatches';
-import SecurityInventory from '../Pages/security/SecurityInventory';
-import SecurityCounter from '../Pages/security/SecurityCounter';
-import SecurityCounterDashboard from '../Pages/security/SecurityCounterDashboard';
-import SecurityUnclaimedItems from '../Pages/security/SecurityUnclaimedItems';
-import SecurityVisitors from '../Pages/security/SecurityVisitors';
-import SecurityHistory from '../Pages/security/SecurityHistory';
-import IncidentsList from '../Pages/shared/IncidentsList';
-import IncidentCreate from '../Pages/shared/IncidentCreate';
-import IncidentDetail from '../Pages/shared/IncidentDetail';
-import ServiceRequestsList from '../Pages/shared/ServiceRequestsList';
-import ServiceRequestCreate from '../Pages/shared/ServiceRequestCreate';
-import ServiceRequestDetail from '../Pages/shared/ServiceRequestDetail';
-
-// Lazy-loaded: pulls in the qr-scanner camera/worker bundle only when a
-// security officer actually opens this page, instead of shipping it in
-// everyone's main chunk (students, admins, etc. never touch this page).
-const SecurityQrScanner = React.lazy(() => import('../Pages/security/SecurityQrScanner'));
+import lazyWithRetry from '../utils/lazyWithRetry';
+import LoginPage from '../Pages/Auth/LoginPage';
+// Every page except the login screen is loaded on demand (one JS file each),
+// so a student never downloads the admin or security code, and the QR
+// scanner's camera/worker bundle still only loads on its own page. RootApp
+// wraps the routes in <Suspense>, and lazyWithRetry recovers from stale chunk
+// names after a deploy. Pages that appear in several routes share one chunk.
+const RegisterPage = lazyWithRetry(() => import('../Pages/Auth/RegisterPage'));
+const ForgotPassword = lazyWithRetry(() => import('../Pages/Auth/ForgotPassword'));
+const ResetPassword = lazyWithRetry(() => import('../Pages/Auth/ResetPassword'));
+const AdminDashboard = lazyWithRetry(() => import('../Pages/admin/AdminDashboard'));
+const AdminUsers = lazyWithRetry(() => import('../Pages/admin/AdminUsers'));
+const AdminUserDetail = lazyWithRetry(() => import('../Pages/admin/AdminUserDetail'));
+const AdminAuditLog = lazyWithRetry(() => import('../Pages/admin/AdminAuditLog'));
+const AdminUserActivity = lazyWithRetry(() => import('../Pages/admin/AdminUserActivity'));
+const AdminActionRequests = lazyWithRetry(() => import('../Pages/admin/AdminActionRequests'));
+const StudentDashboard = lazyWithRetry(() => import('../Pages/student/StudentDashboard'));
+const LostItemsList = lazyWithRetry(() => import('../Pages/student/LostItemsList'));
+const LostItemCreate = lazyWithRetry(() => import('../Pages/student/LostItemCreate'));
+const LostItemMatches = lazyWithRetry(() => import('../Pages/student/LostItemMatches'));
+const FoundItemsList = lazyWithRetry(() => import('../Pages/shared/FoundItemsList'));
+const FoundItemCreate = lazyWithRetry(() => import('../Pages/shared/FoundItemCreate'));
+const FoundItemDetail = lazyWithRetry(() => import('../Pages/shared/FoundItemDetail'));
+const ClaimDetail = lazyWithRetry(() => import('../Pages/shared/ClaimDetail'));
+const MyClaimsList = lazyWithRetry(() => import('../Pages/shared/MyClaimsList'));
+const NotificationsPage = lazyWithRetry(() => import('../Pages/shared/NotificationsPage'));
+const ProfilePage = lazyWithRetry(() => import('../Pages/Profile/ProfilePage'));
+const SecurityDashboard = lazyWithRetry(() => import('../Pages/security/SecurityDashboard'));
+const PrintReport = lazyWithRetry(() => import('../Pages/shared/PrintReport'));
+const StudentPrintReport = lazyWithRetry(() => import('../Pages/shared/StudentPrintReport'));
+const SecurityQrScanner = lazyWithRetry(() => import('../Pages/security/SecurityQrScanner'));
+const SecurityMatches = lazyWithRetry(() => import('../Pages/security/SecurityMatches'));
+const SecurityInventory = lazyWithRetry(() => import('../Pages/security/SecurityInventory'));
+const SecurityCounter = lazyWithRetry(() => import('../Pages/security/SecurityCounter'));
+const SecurityCounterDashboard = lazyWithRetry(() => import('../Pages/security/SecurityCounterDashboard'));
+const SecurityUnclaimedItems = lazyWithRetry(() => import('../Pages/security/SecurityUnclaimedItems'));
+const SecurityVisitors = lazyWithRetry(() => import('../Pages/security/SecurityVisitors'));
+const SecurityHistory = lazyWithRetry(() => import('../Pages/security/SecurityHistory'));
+const IncidentsList = lazyWithRetry(() => import('../Pages/shared/IncidentsList'));
+const IncidentCreate = lazyWithRetry(() => import('../Pages/shared/IncidentCreate'));
+const IncidentDetail = lazyWithRetry(() => import('../Pages/shared/IncidentDetail'));
+const ServiceRequestsList = lazyWithRetry(() => import('../Pages/shared/ServiceRequestsList'));
+const ServiceRequestCreate = lazyWithRetry(() => import('../Pages/shared/ServiceRequestCreate'));
+const ServiceRequestDetail = lazyWithRetry(() => import('../Pages/shared/ServiceRequestDetail'));
 
 const publicRoutes = [
     { path: '/login', component: LoginPage },

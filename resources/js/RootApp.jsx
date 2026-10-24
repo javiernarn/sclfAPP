@@ -3,12 +3,15 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { publicRoutes, adminRoutes, securityRoutes, studentRoutes } from './routes';
 import MainPage from './Pages/Main/MainPage';
-import SetupAccountPage from './Pages/Profile/SetupAccountPage';
-import VerifyEmailNotice from './Pages/Auth/VerifyEmailNotice';
+import lazyWithRetry from './utils/lazyWithRetry';
 import ApprovalRequestModal from './Components/shared/ApprovalRequestModal';
 import DeviceSignedOutModal from './Components/shared/DeviceSignedOutModal';
 import useServiceWorkerNavigation from './hooks/useServiceWorkerNavigation';
 import { ConnectionBoundary } from './Components/shared/OfflineNotice';
+
+// Loaded on demand like the other pages (see routes/index.js).
+const SetupAccountPage = lazyWithRetry(() => import('./Pages/Profile/SetupAccountPage'));
+const VerifyEmailNotice = lazyWithRetry(() => import('./Pages/Auth/VerifyEmailNotice'));
 
 const SETUP_PATH = '/app/setup-account';
 const VERIFY_PATH = '/app/verify-email';
@@ -84,8 +87,8 @@ export default function RootApp() {
     useServiceWorkerNavigation();
 
     return (
-        // Suspense fallback covers the lazy-loaded SecurityQrScanner chunk
-        // (see routes/index.js) — MainPage doubles as the loading screen
+        // Suspense fallback covers every lazy-loaded page chunk (see
+        // routes/index.js) — MainPage doubles as the loading screen
         // elsewhere in the app, so reuse it here for a consistent feel.
         <ConnectionBoundary>
         <Suspense fallback={<MainPage routing={false} />}>

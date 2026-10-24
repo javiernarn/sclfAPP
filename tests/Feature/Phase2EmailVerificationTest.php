@@ -41,7 +41,7 @@ class Phase2EmailVerificationTest extends TestCase
     public function test_registration_creates_an_unverified_account_and_sends_the_email(): void
     {
         Notification::fake();
-        Storage::fake('public');
+        Storage::fake('local');
         $this->seed(RoleSeeder::class);
 
         $response = $this->post('/api/register', [

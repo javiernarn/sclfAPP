@@ -301,9 +301,27 @@ class ViolationTest extends TestCase
         $service->attach($incident, $student, [UploadedFile::fake()->image('a.jpg')]);
         Bus::assertNotDispatched(ScanAttachmentJob::class);
 
-        config(['sclf.moderation.enabled' => true]);
+        // Switched on but no API key: treated as off, nothing is queued and
+        // the upload is not left stuck on `pending`.
+        config(['sclf.moderation.enabled' => true, 'sclf.moderation.api_key' => '']);
+        $noKey = $service->attach($incident, $student, [UploadedFile::fake()->image('nokey.jpg')]);
+        Bus::assertNotDispatched(ScanAttachmentJob::class);
+        $this->assertNotSame('pending', $noKey->first()->fresh()->scan_status);
+
+        config(['sclf.moderation.enabled' => true, 'sclf.moderation.api_key' => 'test-key']);
         $service->attach($incident, $student, [UploadedFile::fake()->image('b.jpg')]);
         Bus::assertDispatched(ScanAttachmentJob::class);
+    }
+
+    public function test_scan_job_skips_instead_of_failing_when_the_key_is_missing(): void
+    {
+        config(['sclf.moderation.api_key' => '']);
+        $att = $this->attachmentBy($this->user('student'));
+
+        (new ScanAttachmentJob($att))->handle(app(ImageModerator::class), app(\App\Services\Violations\ViolationService::class));
+
+        $this->assertSame('skipped', $att->fresh()->scan_status);
+        $this->assertDatabaseCount('violations', 0);
     }
 
     public function test_marking_needs_a_reason_from_the_fixed_list(): void
