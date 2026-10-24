@@ -42,8 +42,15 @@ export function welcomeHeading(name) {
 }
 
 // Content for the toast shown once the person lands on their dashboard.
-export function loginToast() {
+// `t` (optional) translates it; the shell passes its role-aware translator.
+export function loginToast(t) {
+    const tr = t || ((key) => ({
+        'common.welcomeTitle': 'Welcome',
+        'common.welcomeFirst': 'You have signed in for the first time. Glad to have you at SCLF!',
+        'common.welcomeBackTitle': 'Welcome back',
+        'common.welcomeBackMsg': 'You have successfully signed in.',
+    }[key]));
     return isFirstLogin()
-        ? { title: 'Welcome', message: 'You have signed in for the first time. Glad to have you at SCLF!' }
-        : { title: 'Welcome back', message: 'You have successfully signed in.' };
+        ? { title: tr('common.welcomeTitle'), message: tr('common.welcomeFirst') }
+        : { title: tr('common.welcomeBackTitle'), message: tr('common.welcomeBackMsg') };
 }

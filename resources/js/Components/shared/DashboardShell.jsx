@@ -3,6 +3,8 @@ import RefreshButton from "./RefreshButton";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useAppTheme, isDarkTheme } from "../../hooks/useAppTheme";
+import { useTranslation } from "../../i18n";
+import { LanguagePicker } from "./LanguagePicker";
 import { useToast } from "../../context/ToastContext";
 import { loginToast } from "../../utils/welcome";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
@@ -15,6 +17,7 @@ import HelpHints from "./HelpHints";
 import DashboardGreeting from "./DashboardGreeting";
 import NotificationBell from "./NotificationBell";
 import useIsPhone from "../../hooks/useIsPhone";
+import usePhoneTableLabels from "../../hooks/usePhoneTableLabels";
 import "./DashboardShell.css";
 // Per-theme tokens (search box, menus, theme flyout, Cards/Table toggle...).
 // Must come right after DashboardShell.css so it wins the cascade.
@@ -22,7 +25,7 @@ import "./themes.css";
 // Imported AFTER DashboardShell.css on purpose: its phone-only overrides
 // rely on coming later in the cascade.
 import MobileBottomNav from "./MobileBottomNav";
-import MobileQuickActions, { QuickActionsContext } from "./MobileQuickActions";
+import MobileQuickActions, { QuickActionsContext, QUICK_ACTIONS_BY_ROLE } from "./MobileQuickActions";
 import { useNotifications } from "../../context/NotificationContext";
 import DotLogo from "./DotLogo";
 // One compact, consistent phone layout for every page (no dead space).
@@ -33,6 +36,8 @@ import "./MobileLayout.css";
 import "./MobileApp.css";
 // Student/instructor "real app" look — loaded last so it out-ranks the shared phone layers above.
 import "./MobileUserApp.css";
+// Admin / Staff / Security phone app: same app look, card-style tables, staff quick actions.
+import "./MobileStaffApp.css";
 import {
     LayoutDashboard,
     PackageSearch,
@@ -69,26 +74,27 @@ import {
 // BEED/BSED, yellow for BSBA) — students aren't locked to their program's
 // color, it's just offered as an option alongside the two plain modes.
 const THEME_OPTIONS = [
-    { key: "white", label: "Default" },
-    { key: "black", label: "Dark" },
-    { key: "blue", label: "Blue" },
-    { key: "yellow", label: "Yellow" },
-    { key: "maroon", label: "Maroon" },
+    { key: "white", label: "Default", labelKey: "shell.themeDefault" },
+    { key: "black", label: "Dark", labelKey: "shell.themeDark" },
+    { key: "blue", label: "Blue", labelKey: "shell.themeBlue" },
+    { key: "yellow", label: "Yellow", labelKey: "shell.themeYellow" },
+    { key: "maroon", label: "Maroon", labelKey: "shell.themeMaroon" },
 ];
 // Black list — shown after tapping the "Black" button beside "Choose Theme"
 // (that button then reads "White" and takes you back to the regular list).
 // Every entry is a black (dark) shell; the second half of the badge is the
 // accent color. Pure black (#000) base, unlike the slate-toned Dark theme.
 const CUSTOM_THEME_OPTIONS = [
-    { key: "dark-white", label: "Black / White", swatch: "black-white" },
-    { key: "dark-blue", label: "Black / Blue", swatch: "black-blue" },
-    { key: "dark-yellow", label: "Black / Yellow", swatch: "black-yellow" },
-    { key: "dark-maroon", label: "Black / Maroon", swatch: "black-maroon" },
+    { key: "dark-white", label: "Black / White", labelKey: "shell.themeBlackWhite", swatch: "black-white" },
+    { key: "dark-blue", label: "Black / Blue", labelKey: "shell.themeBlackBlue", swatch: "black-blue" },
+    { key: "dark-yellow", label: "Black / Yellow", labelKey: "shell.themeBlackYellow", swatch: "black-yellow" },
+    { key: "dark-maroon", label: "Black / Maroon", labelKey: "shell.themeBlackMaroon", swatch: "black-maroon" },
 ];
-const themeLabel = (key) =>
-    THEME_OPTIONS.find((t) => t.key === key)?.label
-        || CUSTOM_THEME_OPTIONS.find((t) => t.key === key)?.label
-        || "Default";
+const themeLabel = (key, t) => {
+    const opt = THEME_OPTIONS.find((o) => o.key === key) || CUSTOM_THEME_OPTIONS.find((o) => o.key === key);
+    if (!opt) return t("shell.themeDefault");
+    return t(opt.labelKey);
+};
 
 // Shared "Theme" row + its "Choose Theme" flyout, used inside both the
 // header and sidebar account menus. Picking an option no longer closes
@@ -104,7 +110,7 @@ const themeLabel = (key) =>
 //     way that particular account menu itself grows (sidebar menu grows
 //     upward off the trigger, so its flyout is bottom-aligned; header
 //     menu drops down, so its flyout is top-aligned).
-const ThemePicker = ({ open, onToggle, current, onPick, side = "right", align = "top" }) => {
+const ThemePicker = ({ open, onToggle, current, onPick, t, side = "right", align = "top" }) => {
     // Custom list (black + accent badges) vs. the regular list. Starts on
     // Custom when the active theme is one of the dark-* accent themes so the
     // checkmark is visible right away.
@@ -121,8 +127,8 @@ const ThemePicker = ({ open, onToggle, current, onPick, side = "right", align = 
                 aria-expanded={open}
             >
                 <Palette size={16} />
-                Theme
-                <span className="ds-theme-pill">{themeLabel(current)}</span>
+                {t("shell.theme")}
+                <span className="ds-theme-pill">{themeLabel(current, t)}</span>
             </button>
             {open && (
                 <div
@@ -130,30 +136,30 @@ const ThemePicker = ({ open, onToggle, current, onPick, side = "right", align = 
                     role="menu"
                 >
                     <div className="ds-theme-popover-head">
-                        <div className="ds-theme-popover-title">Choose Theme</div>
+                        <div className="ds-theme-popover-title">{t("shell.chooseTheme")}</div>
                         <button
                             type="button"
                             className={`ds-theme-custom-btn ${custom ? "is-on" : ""}`}
                             onClick={() => setCustom((v) => !v)}
-                            aria-label={custom ? "Switch to the white themes" : "Switch to the black themes"}
-                            title={custom ? "Back to the white themes" : "Show the black themes"}
+                            aria-label={custom ? t("shell.themeSwitchWhite") : t("shell.themeSwitchBlack")}
+                            title={custom ? t("shell.themeBackToWhite") : t("shell.themeShowBlack")}
                         >
                             {/* Shows where the tap takes you: Black -> black themes, then White -> back. */}
-                            {custom ? "White" : "Black"}
+                            {custom ? t("shell.themeWhite") : t("shell.themeBlack")}
                         </button>
                     </div>
-                    {options.map((t) => (
+                    {options.map((o) => (
                         <button
-                            key={t.key}
+                            key={o.key}
                             type="button"
                             className="ds-theme-option"
-                            onClick={() => onPick(t.key)}
+                            onClick={() => onPick(o.key)}
                             role="menuitemradio"
-                            aria-checked={current === t.key}
+                            aria-checked={current === o.key}
                         >
-                            <span className={`ds-theme-swatch ds-theme-swatch-${t.swatch || t.key}`} />
-                            {t.label}
-                            {current === t.key && <Check size={15} className="ds-theme-check" />}
+                            <span className={`ds-theme-swatch ds-theme-swatch-${o.swatch || o.key}`} />
+                            {t(o.labelKey)}
+                            {current === o.key && <Check size={15} className="ds-theme-check" />}
                         </button>
                     ))}
                 </div>
@@ -166,13 +172,13 @@ const ThemePicker = ({ open, onToggle, current, onPick, side = "right", align = 
 // instead of an emoji, so the sidebar reads as a real product UI.
 const NAV_BY_ROLE = {
     student: [
-        { to: "/app/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
-        { to: "/app/found-items", label: "Found Items", icon: PackageSearch },
-        { to: "/app/claims", label: "My Claims", icon: ClipboardCheck },
-        { to: "/app/incidents", label: "Security Incidents", icon: AlertTriangle },
-        { to: "/app/service-requests", label: "Service Requests", icon: Wrench },
-        { to: "/app/notifications", label: "Notifications", icon: Bell },
+        { to: "/app/dashboard", label: "Dashboard", labelKey: "shell.navDashboard", icon: LayoutDashboard },
+        { to: "/app/lost-items", label: "Lost Items", labelKey: "shell.navLostItems", icon: PackageSearch },
+        { to: "/app/found-items", label: "Found Items", labelKey: "shell.navFoundItems", icon: PackageSearch },
+        { to: "/app/claims", label: "My Claims", labelKey: "shell.navClaims", icon: ClipboardCheck },
+        { to: "/app/incidents", label: "Security Incidents", labelKey: "shell.navIncidents", icon: AlertTriangle },
+        { to: "/app/service-requests", label: "Service Requests", labelKey: "shell.navServiceRequests", icon: Wrench },
+        { to: "/app/notifications", label: "Notifications", labelKey: "shell.navNotifications", icon: Bell },
     ],
     security_officer: [
         { to: "/app/security/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -243,24 +249,25 @@ const NAV_BY_ROLE = {
 // To change what a role gets, just edit its four entries here.
 const MOBILE_TABS_BY_ROLE = {
     student: [
-        { to: "/app/dashboard", label: "Home", fullLabel: "Dashboard", icon: LayoutDashboard },
-        { to: "/app/lost-items", label: "Lost", fullLabel: "Lost Items", icon: PackageSearch },
-        { to: "/app/found-items", label: "Found", fullLabel: "Found Items", icon: PackageCheck },
-        { to: "/app/claims", label: "Claims", fullLabel: "My Claims", icon: ClipboardCheck },
+        { to: "/app/dashboard", label: "Home", labelKey: "shell.tabHome", fullLabel: "Dashboard", fullLabelKey: "shell.navDashboard", icon: LayoutDashboard },
+        { to: "/app/lost-items", label: "Lost", labelKey: "shell.tabLost", fullLabel: "Lost Items", fullLabelKey: "shell.navLostItems", icon: PackageSearch },
+        { to: "/app/found-items", label: "Found", labelKey: "shell.tabFound", fullLabel: "Found Items", fullLabelKey: "shell.navFoundItems", icon: PackageCheck },
+        { to: "/app/claims", label: "Claims", labelKey: "shell.tabClaims", fullLabel: "My Claims", fullLabelKey: "shell.navClaims", icon: ClipboardCheck },
     ],
     // Follows the intake → claim → release pipeline an officer works
-    // through. Counter, Inventory, Visitors etc. live under Menu.
+    // through. Counter, Inventory, Visitors etc. are in the raised "+" sheet / Menu.
     security_officer: [
-        { to: "/app/security/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
+        { to: "/app/security/dashboard", label: "Home", fullLabel: "Dashboard", icon: LayoutDashboard, end: true },
         { to: "/app/found-items", label: "Found", fullLabel: "Found Items", icon: PackageCheck },
         { to: "/app/security/claims", label: "Claims", icon: ClipboardCheck },
         { to: "/app/security/qr-scanner", label: "Scan", fullLabel: "QR Release Scanner", icon: QrCode },
     ],
+    // Admin and Staff share this set (staff just see fewer Menu items).
     admin: [
-        { to: "/app/admin/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
-        { to: "/app/security/counter-dashboard", label: "Counter", fullLabel: "Counter Dashboard", icon: ListOrdered },
-        { to: "/app/lost-items", label: "Lost Items", icon: PackageSearch },
-        { to: "/app/found-items", label: "Found Items", icon: PackageCheck },
+        { to: "/app/admin/dashboard", label: "Home", fullLabel: "Dashboard", icon: LayoutDashboard, end: true },
+        { to: "/app/lost-items", label: "Lost", fullLabel: "Lost Items", icon: PackageSearch },
+        { to: "/app/found-items", label: "Found", fullLabel: "Found Items", icon: PackageCheck },
+        { to: "/app/claims", label: "Claims", icon: ClipboardCheck },
     ],
 };
 
@@ -284,6 +291,11 @@ const DESKTOP_QUERY = "(min-width: 960px)";
 const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshing = false, greeting, children }) => {
     const { user, roles, logout } = useAuth();
     const { theme, setTheme } = useAppTheme();
+    // Translation is for students and instructors only. Admin / staff /
+    // security accounts always get the English interface, even on a browser
+    // where a student previously picked another language.
+    const studentUi = !(Array.isArray(roles) && (roles.includes("admin") || roles.includes("staff") || roles.includes("security_officer")));
+    const { t, lang, setLanguage } = useTranslation(studentUi);
     const toast = useToast();
     // Right-click / DevTools / browser-zoom guard — same behavior as the
     // public auth pages. See usePreventInspect.jsx to toggle site-wide.
@@ -308,6 +320,8 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     const [sidebarMenuOpen, setSidebarMenuOpen] = useState(false);
     const [themePickerOpen, setThemePickerOpen] = useState(false);
     const [sidebarThemePickerOpen, setSidebarThemePickerOpen] = useState(false);
+    const [langPickerOpen, setLangPickerOpen] = useState(false);
+    const [sidebarLangPickerOpen, setSidebarLangPickerOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
     const [collapsed, setCollapsed] = useState(() => {
         if (typeof window === "undefined") return false;
@@ -373,7 +387,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                 window.sessionStorage.removeItem('sclf-login-toast');
                 // "Welcome" on the account's first ever sign-in, "Welcome back"
                 // after that (see utils/welcome.js).
-                const { title, message } = loginToast();
+                const { title, message } = loginToast(t);
                 toast.success(message, { title });
             }
             // Same handoff, but for a brand-new account — RegisterPage sets
@@ -382,7 +396,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
             // of mid-transition.
             if (window.sessionStorage.getItem('sclf-register-toast') === '1') {
                 window.sessionStorage.removeItem('sclf-register-toast');
-                toast.success('Welcome to SCLF! Your account has been created.', { title: 'Account created' });
+                toast.success(t('shell.welcomeAccountCreated'), { title: t('shell.accountCreatedTitle') });
             }
         } catch (e) {
             // ignore storage errors (private mode etc.)
@@ -421,16 +435,21 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
             ? items.map((item) => (item.to === "/app/dashboard" ? { ...item, to: `/app/dashboard/${ownToken}` } : item))
             : items;
     const navItems = useMemo(
-        () => withOwnDashboard(NAV_BY_ROLE[navRole].filter((item) => !(item.adminOnly && isStaffOnly))),
+        () => withOwnDashboard(NAV_BY_ROLE[navRole].filter((item) => !(item.adminOnly && isStaffOnly)))
+            // Student/instructor entries carry a labelKey; resolve it in the chosen language.
+            .map((item) => (item.labelKey ? { ...item, label: t(item.labelKey) } : item)),
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [navRole, isStaffOnly, ownToken]
+        [navRole, isStaffOnly, ownToken, t]
     );
     const homePath = isAdmin ? "/app/admin/dashboard" : isSecurity ? "/app/security/dashboard" : "/app/dashboard";
     // Admin/Staff and Security get a print report behind the logo; students keep a plain link.
     const canPrint = isAdmin || isSecurity;
     const printPath = isAdmin ? "/app/admin/print-report" : "/app/security/print-report";
-    const navLabel = isAdmin ? (roles.includes("admin") ? "Admin" : "Staff") : isSecurity ? "Security Officer" : roles.includes("instructor") ? "Instructor" : "Student";
-    const mobileTabs = withOwnDashboard(MOBILE_TABS_BY_ROLE[navRole]);
+    // Admin/Staff/Security phones show data tables as stacked cards.
+    usePhoneTableLabels(isPhone && navRole !== "student");
+    const navLabel = isAdmin ? (roles.includes("admin") ? "Admin" : "Staff") : isSecurity ? "Security Officer" : roles.includes("instructor") ? t("shell.roleInstructor") : t("shell.roleStudent");
+    const mobileTabs = withOwnDashboard(MOBILE_TABS_BY_ROLE[navRole])
+        .map((tab) => (tab.labelKey ? { ...tab, label: t(tab.labelKey), fullLabel: t(tab.fullLabelKey) } : tab));
 
     const handleLogout = async () => {
         try {
@@ -552,6 +571,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     useEffect(() => {
         if (!menuOpen) {
             setThemePickerOpen(false);
+            setLangPickerOpen(false);
             return;
         }
         const onClick = (e) => {
@@ -574,6 +594,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     useEffect(() => {
         if (!sidebarMenuOpen) {
             setSidebarThemePickerOpen(false);
+            setSidebarLangPickerOpen(false);
             return;
         }
         const onClick = (e) => {
@@ -606,9 +627,14 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
 
     return (
         <>
-        <div className={`ds-shell ds-layout ${theme} ${isDark ? "dark" : "light"} ${theme.startsWith("dark-") ? `dk-${theme.slice(5)}` : ""} ${isPhone ? "ds-phone" : ""} ${isPhone && navRole === "student" ? "ds-user-app" : ""}`}>
-                {isPhone && navRole === "student" && (
-                    <MobileQuickActions open={quickOpen} onClose={() => setQuickOpen(false)} />
+        <div className={`ds-shell ds-layout ${theme} ${isDark ? "dark" : "light"} ${theme.startsWith("dark-") ? `dk-${theme.slice(5)}` : ""} ${isPhone ? "ds-phone" : ""} ${isPhone ? "ds-user-app" : ""} ${isPhone && navRole !== "student" ? "ds-staff-app" : ""}`}>
+                {isPhone && (
+                    <MobileQuickActions
+                        open={quickOpen}
+                        onClose={() => setQuickOpen(false)}
+                        actions={QUICK_ACTIONS_BY_ROLE[navRole]}
+                        title={navRole === "student" ? t("shell.whatDoYouNeed") : "Quick actions"}
+                    />
                 )}
                 <div
                     className={`ds-sidebar-backdrop ${sidebarOpen ? "open" : ""}`}
@@ -623,7 +649,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                         type="button"
                         className="ds-icon-btn ds-sidebar-close"
                         onClick={() => setSidebarOpen(false)}
-                        aria-label="Close menu"
+                        aria-label={t("shell.closeMenu")}
                     >
                         <X size={18} />
                     </button>
@@ -700,7 +726,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                     {isPhone && (
                         <div className="ds-sidebar-credit">
                             <span className="ds-footer-credit">
-                                {"</> "}Developed by{" "}
+                                {"</> "}{t("shell.developedBy")}{" "}
                                 <a
                                     href="https://antiquina-folio.vercel.app/"
                                     target="_blank"
@@ -741,10 +767,10 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                 offset={12}
                                 width={260}
                                 theme={menuTheme}
-                                flyoutOpen={sidebarThemePickerOpen}
+                                flyoutOpen={sidebarThemePickerOpen || sidebarLangPickerOpen}
                                 className="ds-menu ds-sidebar-menu"
                             >
-                                <div className="ds-menu-name">{user?.name || "Account"}</div>
+                                <div className="ds-menu-name">{user?.name || t("shell.account")}</div>
                                 <div className="ds-menu-email">{user?.email || ""}</div>
                                 <div className="ds-menu-divider" />
                                 <Link
@@ -753,16 +779,28 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     onClick={() => setSidebarMenuOpen(false)}
                                     role="menuitem"
                                 >
-                                    <UserCircle size={16} /> Profile
+                                    <UserCircle size={16} /> {t("shell.profile")}
                                 </Link>
                                 <ThemePicker
                                     open={sidebarThemePickerOpen}
-                                    onToggle={() => setSidebarThemePickerOpen((v) => !v)}
+                                    onToggle={() => { setSidebarLangPickerOpen(false); setSidebarThemePickerOpen((v) => !v); }}
                                     current={theme}
                                     onPick={(key) => setTheme(key)}
+                                    t={t}
                                     side="right"
                                     align="bottom"
                                 />
+                                {(
+                                    <LanguagePicker
+                                        open={sidebarLangPickerOpen}
+                                        onToggle={() => { setSidebarThemePickerOpen(false); setSidebarLangPickerOpen((v) => !v); }}
+                                        t={t}
+                                        lang={lang}
+                                        onPick={(code) => setLanguage(code)}
+                                        side="right"
+                                        align="bottom"
+                                    />
+                                )}
                                 <div className="ds-menu-divider" />
                                 <button
                                     type="button"
@@ -770,7 +808,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     onClick={handleLogout}
                                     role="menuitem"
                                 >
-                                    <LogOut size={16} /> Log out
+                                    <LogOut size={16} /> {t("shell.logout")}
                                 </button>
                             </AccountMenu>
 
@@ -779,14 +817,14 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                 ref={sidebarMenuTriggerRef}
                                 className="ds-user-row ds-user-row-btn"
                                 onClick={() => setSidebarMenuOpen((v) => !v)}
-                                aria-label="Account menu"
+                                aria-label={t("shell.accountMenu")}
                                 aria-expanded={sidebarMenuOpen}
                                 aria-haspopup="true"
-                                title={railCollapsed ? user?.name || "Account" : undefined}
+                                title={railCollapsed ? user?.name || t("shell.account") : undefined}
                             >
                                 <span className="ds-avatar" style={avatarStyle}>{avatarContent}</span>
                                 <div className="ds-user-text" style={{ minWidth: 0 }}>
-                                    <div className="ds-user-name">{user?.name || "Account"}</div>
+                                    <div className="ds-user-name">{user?.name || t("shell.account")}</div>
                                     <div className="ds-user-email">{user?.email || ""}</div>
                                 </div>
                                 {!railCollapsed && <ChevronUp size={15} className="ds-user-row-chevron" />}
@@ -802,12 +840,12 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                             aria-hidden="true"
                         />
                         <div className="ds-topbar-left">
-                            <Tooltip label={isPhone ? "Menu" : railCollapsed ? "Expand sidebar" : "Collapse sidebar"}>
+                            <Tooltip label={isPhone ? t("shell.menu") : railCollapsed ? t("shell.expandSidebar") : t("shell.collapseSidebar")}>
                                 <button
                                     type="button"
                                     className="ds-icon-btn ds-hamburger"
                                     onClick={handleBurgerClick}
-                                    aria-label={isPhone ? "Open menu" : railCollapsed ? "Expand sidebar" : "Toggle sidebar"}
+                                    aria-label={isPhone ? t("shell.openMenu") : railCollapsed ? t("shell.expandSidebar") : t("shell.toggleSidebar")}
                                 >
                                     {sidebarOpen ? (
                                         <span className="ds-hamburger-icon" key="x"><X size={18} /></span>
@@ -847,12 +885,12 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     ref={menuTriggerRef}
                                     className="ds-profile-btn"
                                     onClick={() => setMenuOpen((v) => !v)}
-                                    aria-label="Account menu"
+                                    aria-label={t("shell.accountMenu")}
                                     aria-expanded={menuOpen}
                                     aria-haspopup="true"
                                 >
                                     <span className="ds-avatar" style={avatarStyle}>{avatarContent}</span>
-                                    <span className="ds-profile-btn-name">{user?.name || "Account"}</span>
+                                    <span className="ds-profile-btn-name">{user?.name || t("shell.account")}</span>
                                     <ChevronDown size={16} className="ds-profile-chevron" />
                                 </button>
 
@@ -864,10 +902,10 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     placement="bottom-end"
                                     width={220}
                                     theme={menuTheme}
-                                    flyoutOpen={themePickerOpen}
+                                    flyoutOpen={themePickerOpen || langPickerOpen}
                                     className="ds-menu"
                                 >
-                                    <div className="ds-menu-name">{user?.name || "Account"}</div>
+                                    <div className="ds-menu-name">{user?.name || t("shell.account")}</div>
                                     <div className="ds-menu-email">{user?.email || ""}</div>
                                     <div className="ds-menu-divider" />
                                     <Link
@@ -876,16 +914,28 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                         onClick={() => setMenuOpen(false)}
                                         role="menuitem"
                                     >
-                                        <UserCircle size={16} /> Profile
+                                        <UserCircle size={16} /> {t("shell.profile")}
                                     </Link>
                                     <ThemePicker
                                         open={themePickerOpen}
-                                        onToggle={() => setThemePickerOpen((v) => !v)}
+                                        onToggle={() => { setLangPickerOpen(false); setThemePickerOpen((v) => !v); }}
                                         current={theme}
                                         onPick={(key) => setTheme(key)}
+                                        t={t}
                                         side="left"
                                         align="top"
                                     />
+                                    {(
+                                        <LanguagePicker
+                                            open={langPickerOpen}
+                                            onToggle={() => { setThemePickerOpen(false); setLangPickerOpen((v) => !v); }}
+                                            t={t}
+                                            lang={lang}
+                                            onPick={(code) => setLanguage(code)}
+                                            side="left"
+                                            align="top"
+                                        />
+                                    )}
                                     <div className="ds-menu-divider" />
                                     <button
                                         type="button"
@@ -893,7 +943,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                         onClick={handleLogout}
                                         role="menuitem"
                                     >
-                                        <LogOut size={16} /> Log out
+                                        <LogOut size={16} /> {t("shell.logout")}
                                     </button>
                                 </AccountMenu>
                             </div>
@@ -940,14 +990,16 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                             menuOpen={sidebarOpen}
                             onMenu={() => setSidebarOpen(true)}
                             sidebarId="ds-sidebar"
-                            fab={navRole === "student" ? { label: "Create a report", short: "Report", onClick: () => setQuickOpen(true) } : undefined}
-                            menuBadge={navRole === "student" ? unreadCount : 0}
+                            fab={navRole === "student"
+                                ? { label: t("shell.createReport"), short: t("shell.reportShort"), onClick: () => setQuickOpen(true) }
+                                : { label: "Quick actions", short: navRole === "admin" ? "Actions" : "Start", onClick: () => setQuickOpen(true) }}
+                            menuBadge={unreadCount}
                         />
                     ) : (
                     <footer className="ds-footer">
                         <div className="ds-footer-inner">
                             <span className="ds-footer-credit">
-                                {"</> "}Developed by{" "}
+                                {"</> "}{t("shell.developedBy")}{" "}
                                 <a
                                     href="https://antiquina-folio.vercel.app/"
                                     target="_blank"
@@ -962,22 +1014,22 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
 
                             <div className="ds-footer-links ds-footer-extra">
                                 <span className="ds-footer-badge">
-                                    <ShieldCheck size={12} /> Secure
+                                    <ShieldCheck size={12} /> {t("shell.secure")}
                                 </span>
                                 <span className="ds-footer-dot">•</span>
                                 <span className="ds-footer-badge">
-                                    <PackageSearch size={12} /> Lost &amp; Found
+                                    <PackageSearch size={12} /> {t("shell.lostAndFound")}
                                 </span>
                                 <span className="ds-footer-dot">•</span>
                                 <span className="ds-footer-badge">
-                                    <Boxes size={12} /> Opol Community College
+                                    <Boxes size={12} /> {t("shell.college")}
                                 </span>
                             </div>
 
                             <span className="ds-footer-sep ds-footer-extra" aria-hidden="true">|</span>
 
                             <span className="ds-footer-copy ds-footer-extra">
-                                © {new Date().getFullYear()} SCLF • Built with ❤️
+                                {t("shell.copyright", { year: new Date().getFullYear() })}
                             </span>
                         </div>
                     </footer>

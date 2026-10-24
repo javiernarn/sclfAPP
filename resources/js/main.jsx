@@ -11,6 +11,8 @@ import RootApp from './RootApp';
 import { registerServiceWorker } from './utils/push';
 import './utils/pwaInstall'; // start listening for the browser's install event before React mounts
 import InstallPrompt from './Components/shared/InstallPrompt';
+import OfflineNotice from './Components/shared/OfflineNotice';
+import './i18n'; // applies the saved language to <html lang> before first paint
 
 // Registering here (rather than only when the user flips the settings
 // toggle on) means the worker is already installed and ready by the time
@@ -33,6 +35,7 @@ ReactDOM.createRoot(document.getElementById('app')).render(
                         {/* Needs AuthProvider above it — it only polls
                             /notifications while a user session exists. */}
                         <NotificationProvider>
+                            <OfflineNotice />
                             <RootApp />
                             <InstallPrompt />
                         </NotificationProvider>

@@ -19,6 +19,7 @@ import AuthShell, {
 import { Mail, Lock } from '../../Components/icons';
 import { rememberLogin } from '../../utils/welcome';
 import { canOpenPath } from '../../utils/redirectGuard';
+import { useTranslation } from '../../i18n';
 import occBg from '../../assets/images/occ.webp';
 
 export default function LoginPage() {
@@ -37,6 +38,7 @@ export default function LoginPage() {
     const [code, setCode] = useState('');
     const { login, verifyTwoFactor, user: currentUser, roles, loading: authLoading } = useAuth();
     const toast = useToast();
+    const { t } = useTranslation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const sessionDisplaced = searchParams.get('type') === 'session-displaced';
@@ -73,8 +75,8 @@ export default function LoginPage() {
     }, [authLoading, currentUser, roles, redirectParam, uidParam, navigate]);
 
     useEffect(() => {
-        document.title = 'Login | SCLF - Opol Community College';
-    }, []);
+        document.title = t('login.pageTitle');
+    }, [t]);
 
     // Prefill from anything previously remembered — only ever written when
     // the person checked "Keep this session open" on a prior visit.
@@ -163,9 +165,9 @@ export default function LoginPage() {
             // invalid." wrapper.
             const message = err.response?.data?.errors?.email?.[0]
                 || err.response?.data?.message
-                || 'Invalid credentials.';
+                || t('login.invalidCredentials');
             setError(message);
-            toast.error(message, { title: 'Sign-in failed' });
+            toast.error(message, { title: t('login.signInFailed') });
         } finally {
             setLoading(false);
         }
@@ -184,9 +186,9 @@ export default function LoginPage() {
             signingIn.current = false;
             const message = err.response?.data?.errors?.code?.[0]
                 || err.response?.data?.message
-                || 'That code is invalid or has expired.';
+                || t('login.invalidCode');
             setError(message);
-            toast.error(message, { title: 'Verification failed' });
+            toast.error(message, { title: t('login.verificationFailed') });
         } finally {
             setLoading(false);
         }
@@ -194,39 +196,39 @@ export default function LoginPage() {
 
     return (
         <AuthShell
-            docType="ACCESS LOG"
+            docType={t('login.docType')}
             caseSeed="LOG"
-            title={<>Open your <span className="accent">session</span></>}
-            subtitle="Sign in to check on lost items and everything the campus has found."
-            railHeadline="Welcome back to the SCLF office."
-            railNote="One record, one login — everything you've reported or claimed lives under a single account."
+            title={<>{t('login.titleA')}<span className="accent">{t('login.titleB')}</span></>}
+            subtitle={t('login.subtitle')}
+            railHeadline={t('login.railHeadline')}
+            railNote={t('login.railNote')}
             bgImage={occBg}
             gate
             gateName="Opol Community College"
-            gateLabel="Login"
+            gateLabel={t('login.gateLabel')}
             gateDefaultOpen={sessionExpired || sessionDisplaced || !!redirectParam || !!verifyStatus}
-            footer={<>No record on file? <Link to="/register">Open a new case file</Link></>}
+            footer={<>{t('login.noRecord')} <Link to="/register">{t('login.openCase')}</Link></>}
         >
             {sessionDisplaced && (
-                <LedgerBanner tone="notice">You were signed out because your account was signed in on another device.</LedgerBanner>
+                <LedgerBanner tone="notice">{t('login.sessionDisplaced')}</LedgerBanner>
             )}
             {sessionExpired && (
-                <LedgerBanner tone="error">Your session expired. Please sign in again.</LedgerBanner>
+                <LedgerBanner tone="error">{t('login.sessionExpired')}</LedgerBanner>
             )}
             {verifyStatus === 'ok' && (
-                <LedgerBanner tone="notice">Email verified. You can close this tab and go back to the SCLF app. If you are signing in here instead, you can sign in now.</LedgerBanner>
+                <LedgerBanner tone="notice">{t('login.verifyOk')}</LedgerBanner>
             )}
             {verifyStatus === 'invalid' && (
-                <LedgerBanner tone="error">That verification link is invalid or has expired. Sign in and press “Resend email” to get a new one.</LedgerBanner>
+                <LedgerBanner tone="error">{t('login.verifyInvalid')}</LedgerBanner>
             )}
 
             {twoFactorChallenge ? (
                 <form onSubmit={handleVerifyCode} noValidate>
                     <LedgerBanner tone="notice">
-                        Enter the 6-digit code from your authenticator app, or one of your recovery codes.
+                        {t('login.enterCode')}
                     </LedgerBanner>
 
-                    <LedgerRow index={1} label={<>Verification code <span className="lg-required">*</span></>} icon={Lock}>
+                    <LedgerRow index={1} label={<>{t('login.verificationCode')} <span className="lg-required">*</span></>} icon={Lock}>
                         <LedgerInput
                             id="code"
                             type="text"
@@ -242,7 +244,7 @@ export default function LoginPage() {
                     </LedgerRow>
 
                     <LedgerButton disabled={loading || !code}>
-                        {loading ? 'Verifying…' : 'Verify & Sign In'}
+                        {loading ? t('login.verifying') : t('login.verifyAndSignIn')}
                     </LedgerButton>
 
                     <button
@@ -251,12 +253,12 @@ export default function LoginPage() {
                         style={{ display: 'block', marginTop: 14, background: 'none', border: 'none', cursor: 'pointer' }}
                         onClick={() => { setTwoFactorChallenge(null); setCode(''); setError(''); }}
                     >
-                        &larr; Back to sign in
+                        &larr; {t('login.backToSignIn')}
                     </button>
                 </form>
             ) : (
             <form onSubmit={handleSubmit} noValidate>
-                <LedgerRow index={1} label={<>Email on file <span className="lg-required">*</span></>} icon={Mail} hint="Format: occ.lastname.firstname@gmail.com">
+                <LedgerRow index={1} label={<>{t('login.emailOnFile')} <span className="lg-required">*</span></>} icon={Mail} hint={t('login.emailHint')}>
                     <LedgerInput
                         id="email"
                         type="email"
@@ -270,7 +272,7 @@ export default function LoginPage() {
                     />
                 </LedgerRow>
 
-                <LedgerRow index={2} label={<>Password <span className="lg-required">*</span></>} icon={Lock}>
+                <LedgerRow index={2} label={<>{t('login.password')} <span className="lg-required">*</span></>} icon={Lock}>
                     <LedgerPasswordInput
                         id="password"
                         value={password}
@@ -284,7 +286,7 @@ export default function LoginPage() {
                 </LedgerRow>
 
                 <div className="lg-row-checkbox" style={{ margin: '14px 0 18px' }}>
-                    <Tooltip label="Stay signed in on this device. This form also remembers your email/password until you close this tab. Uncheck on shared or public computers.">
+                    <Tooltip label={t('login.keepOpenTip')}>
                         <label className="lg-remember" htmlFor="remember">
                             <input
                                 id="remember"
@@ -292,14 +294,14 @@ export default function LoginPage() {
                                 checked={remember}
                                 onChange={(e) => setRemember(e.target.checked)}
                             />
-                            Keep this session open
+                            {t('login.keepOpen')}
                         </label>
                     </Tooltip>
-                    <Link to="/forgot-password" className="lg-forgot">Forgot password?</Link>
+                    <Link to="/forgot-password" className="lg-forgot">{t('login.forgot')}</Link>
                 </div>
 
                 <LedgerButton disabled={loading}>
-                    {loading ? 'Verifying…' : 'Sign In'}
+                    {loading ? t('login.verifying') : t('login.signIn')}
                 </LedgerButton>
             </form>
             )}

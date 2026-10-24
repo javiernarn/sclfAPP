@@ -1,0 +1,16 @@
+export default {
+    railFact1: 'Bawat ulat ay may tatak ng oras sa sandaling isinumite ito.',
+    railFact2: 'Awtomatikong lumalabas ang mga tugma sa lahat ng tanggapan ng kampus.',
+    railFact3: 'Mananatiling pribado ang iyong mga talaan hanggang piliin mong ilabas ang mga ito.',
+    verifiedSystem: 'Beripikadong Sistema ng Kampus',
+    brandOffice: 'Tanggapan ng SCLF',
+    toggleTheme: 'Palitan ang tema',
+    welcome: 'Maligayang pagdating,',
+    welcomeTo: 'sa',
+    liveSession: 'Aktibong Sesyon',
+    ref: 'REF.',
+    legal: 'Naka-encrypt ang mga tala sa ledger na ito habang ipinapadala, at sinusuri lamang ng awtorisadong Staff at Admin.',
+    hidePassword: 'Itago ang password',
+    showPassword: 'Ipakita ang password',
+    language: 'Wika',
+};

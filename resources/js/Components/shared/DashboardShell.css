@@ -1970,3 +1970,14 @@ body { overflow: hidden; }
        Items: the shared .ds-table-wrap scrolls sideways, and the columns
        keep their normal table layout. (Cards view above still stacks.) */
 }
+
+/* ── Language picker (student / instructor account menus) ───────────────── */
+.ds-lang-popover { width: 236px; }
+.ds-lang-chip {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 30px; height: 20px; padding: 0 5px; border-radius: 6px; flex-shrink: 0;
+    font-size: 10px; font-weight: 800; letter-spacing: 0.04em;
+    border: 1px solid rgba(120,120,120,0.35);
+}
+.ds-menu.light .ds-lang-chip { background: #f4f7fb; color: #334155; }
+.ds-menu.dark .ds-lang-chip { background: #1a2029; color: #cbd5e1; }

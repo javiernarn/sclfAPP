@@ -35,15 +35,18 @@ export function smoothPath(pts) {
     return d;
 }
 
-export function timeAgo(date, now = Date.now()) {
+// `t` (optional) is a translator; without it the text stays English, which is
+// what the staff screens that share this helper expect.
+export function timeAgo(date, now = Date.now(), t) {
     const s = Math.max(0, Math.round((now - new Date(date).getTime()) / 1000));
-    if (s < 10) return 'just now';
-    if (s < 60) return `${s}s ago`;
+    if (s < 10) return t ? t('common.agoNow') : 'just now';
+    if (s < 60) return t ? t('common.agoSeconds', { n: s }) : `${s}s ago`;
     const m = Math.floor(s / 60);
-    if (m < 60) return `${m}m ago`;
+    if (m < 60) return t ? t('common.agoMinutes', { n: m }) : `${m}m ago`;
     const h = Math.floor(m / 60);
-    if (h < 24) return `${h}h ago`;
-    return `${Math.floor(h / 24)}d ago`;
+    if (h < 24) return t ? t('common.agoHours', { n: h }) : `${h}h ago`;
+    const d = Math.floor(h / 24);
+    return t ? t('common.agoDays', { n: d }) : `${d}d ago`;
 }
 
 export const humanize = (s) => String(s || '').replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());

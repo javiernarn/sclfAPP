@@ -1,0 +1,16 @@
+export default {
+    railFact1: 'Ang matag report adunay timestamp sa gutlo nga kini gipasaka.',
+    railFact2: 'Awtomatikong makita ang mga pagkaparehas sa tanang opisina sa kampus.',
+    railFact3: 'Pribado ang imong mga rekord hangtod imong pilion nga ipagawas kini.',
+    verifiedSystem: 'Napamatud-an nga Sistema sa Kampus',
+    brandOffice: 'Opisina sa SCLF',
+    toggleTheme: 'Usba ang tema',
+    welcome: 'Maayong pag-abot,',
+    welcomeTo: 'sa',
+    liveSession: 'Aktibong Sesyon',
+    ref: 'REF.',
+    legal: 'Ang mga entry niining ledger naka-encrypt samtang gipadala, ug gisusi lamang sa gitugotan nga Staff ug Admin.',
+    hidePassword: 'Itago ang password',
+    showPassword: 'Ipakita ang password',
+    language: 'Pinulongan',
+};

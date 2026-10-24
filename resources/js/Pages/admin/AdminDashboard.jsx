@@ -8,6 +8,8 @@ import {
 import DashboardShell from '../../Components/shared/DashboardShell';
 import RefreshButton from '../../Components/shared/RefreshButton';
 import DashboardSkeleton from '../../Components/shared/DashboardSkeleton';
+import MobileStaffHome from '../../Components/shared/MobileStaffHome';
+import useIsPhone from '../../hooks/useIsPhone';
 import {
     KpiCard, ChartCard, AreaChart, DonutChart, BarChart, RankedBars, ActivityFeed,
     LiveBadge, Segmented, usePolling, humanize, PALETTE,
@@ -22,6 +24,7 @@ const RANGE_OPTIONS = [
 export default function AdminDashboard() {
     const { user } = useAuth();
     const { label: roleLabel } = useRoleLabel();
+    const isPhone = useIsPhone();
     const [days, setDays] = useState(14);
     const { data, loading, error, updatedAt, refresh } = usePolling('/analytics/dashboard', { interval: 15000, params: { days } });
 
@@ -29,9 +32,19 @@ export default function AdminDashboard() {
         document.title = "Admin Dashboard | SCLF - Opol Community College";
     }, []);
 
+    // On phones MobileStaffHome is the one greeting; the desktop greeting block is dropped.
+    const shellProps = isPhone
+        ? {}
+        : {
+            eyebrow: `${roleLabel || 'Admin'} Portal`,
+            greeting: { name: user?.name || roleLabel },
+            subtitle: 'Oversee lost & found reports across Opol Community College.',
+        };
+
     if (loading && !data) {
         return (
-            <DashboardShell eyebrow={`${roleLabel || 'Admin'} Portal`} greeting={{ name: user?.name || roleLabel }} subtitle="Oversee lost & found reports across Opol Community College.">
+            <DashboardShell {...shellProps}>
+                {isPhone && <MobileStaffHome name={user?.name || roleLabel} role={roleLabel || 'Admin'} />}
                 <DashboardSkeleton statCount={4} cardCount={2} />
             </DashboardShell>
         );
@@ -43,11 +56,22 @@ export default function AdminDashboard() {
     const q = data?.queue || {};
 
     return (
-        <DashboardShell
-            eyebrow={`${roleLabel || 'Admin'} Portal`}
-            greeting={{ name: user?.name || roleLabel }}
-            subtitle="Oversee lost & found reports across Opol Community College."
-        >
+        <DashboardShell {...shellProps}>
+            {isPhone && (
+                <MobileStaffHome
+                    name={user?.name || roleLabel}
+                    role={roleLabel || 'Admin'}
+                    statsTitle={`Last ${days} days`}
+                    actionSub="Log an item, manage users, check the counter."
+                    alerts={[{ n: q.waiting, label: 'people waiting at the counter', cta: 'Open Counter Dashboard', to: '/app/security/counter-dashboard' }]}
+                    stats={[
+                        { label: 'Lost reports', value: kpi.lost?.value, icon: ClipboardList },
+                        { label: 'Found reports', value: kpi.found?.value, icon: PackageSearch },
+                        { label: 'Claims filed', value: kpi.claims?.value, icon: Handshake },
+                        { label: 'Recovered', value: kpi.recovered?.value, icon: CircleCheck },
+                    ]}
+                />
+            )}
             <div className="ch-toolbar">
                 <LiveBadge updatedAt={updatedAt} error={error} />
                 <div className="ch-toolbar-actions">
@@ -57,12 +81,14 @@ export default function AdminDashboard() {
             </div>
 
             {/* ---- Headline KPIs ---- */}
+            {!isPhone && (
             <div className="ch-kpi-grid">
                 <KpiCard icon={ClipboardList} label="Lost Reports" value={kpi.lost?.value} prev={kpi.lost?.prev} series={kpi.lost?.series} color="var(--ch-1)" hint={`last ${days} days`} />
                 <KpiCard icon={PackageSearch} label="Found Reports" value={kpi.found?.value} prev={kpi.found?.prev} series={kpi.found?.series} color="var(--ch-2)" hint={`online, last ${days} days`} />
                 <KpiCard icon={Handshake} label="Claims Filed" value={kpi.claims?.value} prev={kpi.claims?.prev} series={kpi.claims?.series} color="var(--ch-3)" hint={`last ${days} days`} />
                 <KpiCard icon={CircleCheck} label="Items Recovered" value={kpi.recovered?.value} prev={kpi.recovered?.prev} series={kpi.recovered?.series} color="var(--ch-good)" hint={`last ${days} days`} />
             </div>
+            )}
 
             {/* ---- Trend + status split ---- */}
             <div className="ch-row cols-2-1">

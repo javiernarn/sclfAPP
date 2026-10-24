@@ -59,7 +59,7 @@ export default function IncidentCreate() {
     const navigate = useNavigate();
     const toast = useToast();
     const confirm = useConfirm();
-    const { user } = useAuth();
+    const { user, roles } = useAuth();
     const [unlocked, setUnlocked] = useState(false);
 
     const isDirty = files.length > 0 || Object.entries(form).some(([key, value]) => value !== EMPTY_FORM[key]);
@@ -89,6 +89,8 @@ export default function IncidentCreate() {
         const agreed = await confirm(reportNotice({
             kind: 'incident',
             printHref: user?.public_token ? `/app/print/${user.public_token}` : null,
+            // Only students have a clearance that violations can block.
+            clearance: Array.isArray(roles) && roles.includes('student'),
         }));
         if (agreed) setUnlocked(true);
     };

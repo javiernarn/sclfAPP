@@ -4,6 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import RefreshButton from '../../Components/shared/RefreshButton';
 import WorkflowGuide from '../../Components/shared/WorkflowGuide';
+import MobileStaffHome from '../../Components/shared/MobileStaffHome';
+import useIsPhone from '../../hooks/useIsPhone';
 import {
     PackageSearch, PackageCheck, Hourglass, ShieldAlert, Boxes, ListOrdered,
     Activity, Users,
@@ -163,13 +165,31 @@ export default function SecurityDashboard() {
     const kpi = data?.kpis || {};
     const q = data?.queue || {};
     const incidentsBySeverity = data?.incidents_by_severity || {};
+    const isPhone = useIsPhone();
+    // On phones MobileStaffHome is the one greeting; the desktop greeting block is dropped.
+    const shellProps = isPhone
+        ? {}
+        : {
+            eyebrow: 'Security',
+            greeting: { name: user?.name },
+            subtitle: "Found item reports and counter activity, kept separate so it's clear which is which.",
+        };
 
     return (
-        <DashboardShell
-            eyebrow="Security"
-            greeting={{ name: user?.name }}
-            subtitle="Found item reports and counter activity, kept separate so it's clear which is which."
-        >
+        <DashboardShell {...shellProps}>
+            {isPhone && (
+                <MobileStaffHome
+                    name={user?.name}
+                    role="Security"
+                    actionSub="Counter check-in, scan a QR, log a found item."
+                    stats={data ? [
+                        { label: 'Waiting', value: q.waiting, icon: ListOrdered },
+                        { label: 'To verify', value: summary?.summary?.found_reports?.pending_verification, icon: Hourglass },
+                        { label: 'Ready to hand over', value: summary?.summary?.release_ready, icon: PackageCheck },
+                        { label: 'Visitors on site', value: data.visitors_on_site, icon: Users },
+                    ] : null}
+                />
+            )}
             <div className="ch-toolbar">
                 <LiveBadge updatedAt={updatedAt} error={error} />
                 <div className="ch-toolbar-actions">

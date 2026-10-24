@@ -41,7 +41,7 @@ const NOTICE_ICONS = { shield: ShieldAlert, check: ShieldCheck, camera: Camera, 
  * visible countdown bar so people actually read it, and an optional link):
  *   const ok = await confirm({
  *       title: 'Before you continue',
- *       points: [{ icon: 'shield', tone: 'danger', lead: 'Violations block clearance', text: '...' }],
+ *       points: [{ icon: 'shield', tone: 'danger', lead: 'Violations are recorded', text: '...' }],
  *       details: 'Full policy text, folded away until "Read the full notice" is opened.',
  *       link: { href: '/app/print/abc', label: 'Check my violations', hint: 'Opens here — you come back to this notice' },
  *       delaySeconds: 8,

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuickActions } from "./MobileQuickActions";
 import { ChevronRight, Plus, CircleCheck, Hourglass, ClipboardList, Handshake } from "../icons";
 import { useAuth } from "../../context/AuthContext";
+import useRoleTranslation from "../../hooks/useRoleTranslation";
 import { greetingFor, firstNameOf, useOpolWeather, describeWeather } from "./DashboardGreeting";
 import logo from "../../assets/images/site-logo.png";
 import "./MobileHome.css";
@@ -17,32 +18,34 @@ import "./MobileHome.css";
 //
 // Navigation is not repeated beyond that — the tab bar and Menu cover the rest.
 
-const dateFmt = new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", weekday: "long", month: "long", day: "numeric" });
+const makeDateFmt = (locale) => new Intl.DateTimeFormat(locale, { timeZone: "Asia/Manila", weekday: "long", month: "long", day: "numeric" });
 
 const initialsOf = (name) =>
     String(name || "?").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase() || "U";
 
 export default function MobileHome({ name, role = "Student", kpis, campus }) {
     const { user } = useAuth();
+    const { t, locale } = useRoleTranslation();
     const quick = useQuickActions();
     const { weather } = useOpolWeather();
-    const [wText, wIcon] = weather ? describeWeather(weather.code, weather.isDay) : [];
+    const [wText, wIcon] = weather ? describeWeather(weather.code, weather.isDay, t) : [];
     const now = new Date();
-    const first = firstNameOf(name) || "there";
+    const dateFmt = makeDateFmt(locale);
+    const first = firstNameOf(name) || t("common.there");
 
     const stats = kpis
         ? [
-            { label: "Reports", value: kpis.reports ?? 0, icon: ClipboardList },
-            { label: "Pending", value: kpis.pending ?? 0, icon: Hourglass },
-            { label: "Recovered", value: kpis.recovered ?? 0, icon: CircleCheck },
-            { label: "Active claims", value: kpis.active_claims ?? 0, icon: Handshake },
+            { label: t("dash.homeReports"), value: kpis.reports ?? 0, icon: ClipboardList },
+            { label: t("dash.homePending"), value: kpis.pending ?? 0, icon: Hourglass },
+            { label: t("dash.homeRecovered"), value: kpis.recovered ?? 0, icon: CircleCheck },
+            { label: t("dash.homeActive"), value: kpis.active_claims ?? 0, icon: Handshake },
         ]
         : null;
 
     const rate = Math.max(0, Math.min(100, Number(campus?.recovery_rate ?? 0)));
 
     return (
-        <section className="mh" aria-label="Home">
+        <section className="mh" aria-label={t("dash.homeLabel")}>
             <header className="mh-hero" style={{ "--mh-logo": `url("${logo}")` }}>
                 <div className="mh-hero-top">
                     <span
@@ -53,7 +56,7 @@ export default function MobileHome({ name, role = "Student", kpis, campus }) {
                         {!user?.profile_picture_url && initialsOf(name)}
                     </span>
                     <div className="mh-who">
-                        <small>{greetingFor(now)}</small>
+                        <small>{greetingFor(now, t)}</small>
                         <b>{first}</b>
                     </div>
                 </div>
@@ -63,7 +66,7 @@ export default function MobileHome({ name, role = "Student", kpis, campus }) {
                 </p>
                 <div className="mh-school">
                     <b>Opol Community College</b>
-                    <span>{role} · Smart Campus Lost &amp; Found</span>
+                    <span>{t("dash.homeSchoolLine", { role })}</span>
                 </div>
             </header>
 
@@ -74,8 +77,8 @@ export default function MobileHome({ name, role = "Student", kpis, campus }) {
                 <button type="button" className="mh-cta" onClick={() => quick.open()} aria-haspopup="dialog">
                 <span className="mh-cta-icon"><Plus size={24} strokeWidth={1.8} /></span>
                 <span className="mh-cta-text">
-                    <b>Lost something?</b>
-                    <small>Report it in under a minute.</small>
+                    <b>{t("dash.ctaTitle")}</b>
+                    <small>{t("dash.ctaSub")}</small>
                 </span>
                 <ChevronRight size={20} />
                 </button>
@@ -83,8 +86,8 @@ export default function MobileHome({ name, role = "Student", kpis, campus }) {
                 <Link to="/app/lost-items/create" className="mh-cta">
                 <span className="mh-cta-icon"><Plus size={24} strokeWidth={1.8} /></span>
                 <span className="mh-cta-text">
-                    <b>Lost something?</b>
-                    <small>Report it in under a minute.</small>
+                    <b>{t("dash.ctaTitle")}</b>
+                    <small>{t("dash.ctaSub")}</small>
                 </span>
                 <ChevronRight size={20} />
                 </Link>
@@ -92,7 +95,7 @@ export default function MobileHome({ name, role = "Student", kpis, campus }) {
 
             {stats && (
                 <>
-                    <h3 className="mh-h">Your activity</h3>
+                    <h3 className="mh-h">{t("dash.yourActivity")}</h3>
                     <div className="mh-stats" role="list">
                         {stats.map((s) => {
                             const Icon = s.icon;
@@ -114,15 +117,14 @@ export default function MobileHome({ name, role = "Student", kpis, campus }) {
                         className="mh-ring"
                         style={{ "--p": `${rate}%` }}
                         role="img"
-                        aria-label={`${rate}% of lost items recovered`}
+                        aria-label={t("dash.recoveryAria", { rate })}
                     >
                         <span>{rate}%</span>
                     </div>
                     <div className="mh-pulse-text">
-                        <b>Campus recovery rate</b>
+                        <b>{t("dash.recoveryShort")}</b>
                         <small>
-                            {campus.items_on_shelf ?? 0} unclaimed {Number(campus.items_on_shelf) === 1 ? "item is" : "items are"} waiting on the shelf.
-                            Check Found before you report.
+                            {t(Number(campus.items_on_shelf) === 1 ? "dash.shelfOne" : "dash.shelfMany", { count: campus.items_on_shelf ?? 0 })}
                         </small>
                     </div>
                 </div>

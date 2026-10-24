@@ -8,6 +8,7 @@ import VerifyEmailNotice from './Pages/Auth/VerifyEmailNotice';
 import ApprovalRequestModal from './Components/shared/ApprovalRequestModal';
 import DeviceSignedOutModal from './Components/shared/DeviceSignedOutModal';
 import useServiceWorkerNavigation from './hooks/useServiceWorkerNavigation';
+import { ConnectionBoundary } from './Components/shared/OfflineNotice';
 
 const SETUP_PATH = '/app/setup-account';
 const VERIFY_PATH = '/app/verify-email';
@@ -86,6 +87,7 @@ export default function RootApp() {
         // Suspense fallback covers the lazy-loaded SecurityQrScanner chunk
         // (see routes/index.js) — MainPage doubles as the loading screen
         // elsewhere in the app, so reuse it here for a consistent feel.
+        <ConnectionBoundary>
         <Suspense fallback={<MainPage routing={false} />}>
             <ApprovalRequestModal />
             <DeviceSignedOutModal />
@@ -127,5 +129,6 @@ export default function RootApp() {
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </Suspense>
+        </ConnectionBoundary>
     );
 }

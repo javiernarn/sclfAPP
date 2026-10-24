@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Sun, Moon, ShieldCheck, Eye, EyeOff, CheckCircle2, XCircle } from "../icons";
 import { useAppTheme, isDarkTheme } from "../../hooks/useAppTheme";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
+import { useTranslation } from "../../i18n";
 import logo from "../../assets/images/site-logo.png";
 import occBg from "../../assets/images/occ.webp";
 
@@ -56,11 +57,7 @@ const buildCaseNumber = (prefix) => {
 // module memory, so a fresh page load still starts closed.
 let gateOpenMemory = false;
 
-const RAIL_FACTS = [
-    "Every report is timestamped the moment it's filed.",
-    "Matches are surfaced automatically across campus desks.",
-    "Records stay private until you choose to release them.",
-];
+const RAIL_FACT_KEYS = ["auth.railFact1", "auth.railFact2", "auth.railFact3"];
 
 /**
  * AuthShell — the outer two-zone frame (Ledger Rail + Record Card).
@@ -89,6 +86,7 @@ export default function AuthShell({
     gateLabel = "Login",
     gateDefaultOpen = false,
 }) {
+    const { t } = useTranslation();
     const [gateOpen, setGateOpen] = useState(gateDefaultOpen || gateOpenMemory);
     const { theme, toggleTheme } = useAppTheme();
     const isDark = isDarkTheme(theme);
@@ -123,7 +121,7 @@ export default function AuthShell({
                         <Link to="/" className="lg-brand">
                             <span className="lg-brand-mark"><img src={logo} alt="SCLF" {...guardImageEvents} /></span>
                             <span className="lg-brand-text">
-                                SCLF Office
+                                {t("auth.brandOffice")}
                                 <span>Opol Community College</span>
                             </span>
                         </Link>
@@ -140,10 +138,10 @@ export default function AuthShell({
                         <p className="lg-rail-note">{railNote}</p>
 
                         <ol className="lg-rail-facts">
-                            {RAIL_FACTS.map((f, i) => (
-                                <li key={f}>
+                            {RAIL_FACT_KEYS.map((key, i) => (
+                                <li key={key}>
                                     <span className="lg-rail-facts-num">{String(i + 1).padStart(2, "0")}</span>
-                                    {f}
+                                    {t(key)}
                                 </li>
                             ))}
                         </ol>
@@ -151,7 +149,7 @@ export default function AuthShell({
 
                     <div className="lg-rail-seal" aria-hidden="true">
                         <ShieldCheck size={15} strokeWidth={2.25} />
-                        <span>Verified Campus System</span>
+                        <span>{t("auth.verifiedSystem")}</span>
                     </div>
                 </aside>
 
@@ -166,9 +164,9 @@ export default function AuthShell({
                     <header className="lg-appbar">
                         <Link to="/" className="lg-mobile-brand">
                             <img src={logo} alt="SCLF" {...guardImageEvents} />
-                            <span>SCLF Office<span>Opol Community College</span></span>
+                            <span>{t("auth.brandOffice")}<span>Opol Community College</span></span>
                         </Link>
-                        <button type="button" className="lg-theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
+                        <button type="button" className="lg-theme-toggle" onClick={toggleTheme} aria-label={t("auth.toggleTheme")}>
                             {isDark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
                         </button>
                     </header>
@@ -177,8 +175,8 @@ export default function AuthShell({
                         <div className="lg-stage-inner lg-gate">
                             <div className="lg-gate-bar">
                                 <span className="lg-gate-welcome">
-                                    <span className="lg-gw lg-gw-white">Welcome,</span>{" "}
-                                    <span className="lg-gw lg-gw-white">to</span>{" "}
+                                    <span className="lg-gw lg-gw-white">{t("auth.welcome")}</span>{" "}
+                                    <span className="lg-gw lg-gw-white">{t("auth.welcomeTo")}</span>{" "}
                                     <strong className="lg-gate-name">{gateName}</strong>
                                 </span>
                                 <button
@@ -199,9 +197,9 @@ export default function AuthShell({
                                 <div className="lg-gate-panel-inner">
                                     <div className={`lg-card${wide ? " is-wide" : ""}`}>
                                         <div className="lg-card-tab-strip">
-                                            <span className="lg-card-ref">REF. {caseNumber}</span>
+                                            <span className="lg-card-ref">{t("auth.ref")} {caseNumber}</span>
                                             <span className="lg-card-status">
-                                                <span className="lg-dot" /> Live Session
+                                                <span className="lg-dot" /> {t("auth.liveSession")}
                                             </span>
                                         </div>
 
@@ -211,7 +209,7 @@ export default function AuthShell({
                                             <div className="lg-title-row">
                                                 <h1 className="lg-title">{title}</h1>
                                                 <span className="lg-live-pill">
-                                                    <span className="lg-dot" /> Live Session
+                                                    <span className="lg-dot" /> {t("auth.liveSession")}
                                                 </span>
                                             </div>
                                             {subtitle && <p className="lg-subtitle">{subtitle}</p>}
@@ -224,7 +222,7 @@ export default function AuthShell({
 
 
                                     <p className="lg-stage-legal">
-                                        Entries in this ledger are encrypted in transit and reviewed only by authorized Staff and Admin.
+                                        {t("auth.legal")}
                                     </p>
                                 </div>
                             </div>
@@ -233,9 +231,9 @@ export default function AuthShell({
                     <div className="lg-stage-inner">
                         <div className={`lg-card${wide ? " is-wide" : ""}`}>
                             <div className="lg-card-tab-strip">
-                                <span className="lg-card-ref">REF. {caseNumber}</span>
+                                <span className="lg-card-ref">{t("auth.ref")} {caseNumber}</span>
                                 <span className="lg-card-status">
-                                    <span className="lg-dot" /> Live Session
+                                    <span className="lg-dot" /> {t("auth.liveSession")}
                                 </span>
                             </div>
 
@@ -252,7 +250,7 @@ export default function AuthShell({
                         </div>
 
                         <p className="lg-stage-legal">
-                            Entries in this ledger are encrypted in transit and reviewed only by authorized Staff and Admin.
+                            {t("auth.legal")}
                         </p>
                     </div>
                     )}
@@ -314,6 +312,7 @@ export function LedgerInput(props) {
 
 /** Password input with built-in show/hide toggle. */
 export function LedgerPasswordInput({ show, onToggle, ...props }) {
+    const { t } = useTranslation();
     return (
         <div className="lg-password-wrap">
             <input className="lg-input" type={show ? "text" : "password"} {...props} />
@@ -321,7 +320,7 @@ export function LedgerPasswordInput({ show, onToggle, ...props }) {
                 type="button"
                 className="lg-eye"
                 onClick={onToggle}
-                aria-label={show ? "Hide password" : "Show password"}
+                aria-label={show ? t("auth.hidePassword") : t("auth.showPassword")}
                 tabIndex={-1}
             >
                 {show ? <EyeOff size={15} /> : <Eye size={15} />}

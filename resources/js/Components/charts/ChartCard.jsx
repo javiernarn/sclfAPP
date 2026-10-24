@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { timeAgo } from './utils';
+import useRoleTranslation from '../../hooks/useRoleTranslation';
 
 // "● Live · updated 4s ago" — flips amber + "Reconnecting…" if a poll fails.
 export function LiveBadge({ updatedAt, error }) {
+    const { t } = useRoleTranslation();
     const [, tick] = useState(0);
     useEffect(() => {
         const t = setInterval(() => tick((n) => n + 1), 1000);
@@ -11,8 +13,8 @@ export function LiveBadge({ updatedAt, error }) {
     return (
         <span className={`ch-live ${error ? 'is-error' : ''}`} role="status">
             <span className="ch-live-dot" />
-            {error ? 'Reconnecting…' : 'Live'}
-            {updatedAt && !error && <span className="ch-live-time">· {timeAgo(updatedAt)}</span>}
+            {error ? t('common.reconnecting') : t('common.live')}
+            {updatedAt && !error && <span className="ch-live-time">· {timeAgo(updatedAt, Date.now(), t)}</span>}
         </span>
     );
 }

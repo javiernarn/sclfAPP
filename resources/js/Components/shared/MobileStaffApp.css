@@ -1,0 +1,211 @@
+/*
+ * MobileStaffApp.css
+ * ------------------
+ * The "real mobile app" look for ADMIN, STAFF and SECURITY on phones.
+ *
+ * Scope: DashboardShell adds `ds-user-app` (shared app look from
+ * MobileUserApp.css: raised centre button, frosted app bar, card lists,
+ * pill search, sticky submit buttons) to every phone, and `ds-staff-app`
+ * to admin / staff / security only. Everything here is under
+ * `.ds-shell.ds-staff-app`, so students, tablets and desktop are untouched.
+ *
+ *   1. Quick-action sheet tones (scan / people)
+ *   2. Data tables  -> stacked cards (labels come from usePhoneTableLabels)
+ *   3. Home screen extras (needs-you-now rows)
+ *   4. Dense admin bits: toolbars, segmented control, modals, action rows
+ */
+
+/* ---------- 1. quick-action sheet tones ---------- */
+.qa-scan   { color: #0ea5e9; }
+.qa-people { color: #8b5cf6; }
+
+@media (max-width: 600px) {
+
+    /* ---------- 2. tables become cards ---------- */
+    .ds-shell.ds-staff-app.ds-phone .ds-table-wrap {
+        overflow: visible; border: 0 !important; background: transparent; border-radius: 0;
+    }
+    .ds-shell.ds-staff-app.ds-phone .ds-table { display: block; min-width: 0; width: 100%; font-size: 13.5px; }
+    .ds-shell.ds-staff-app.ds-phone .ds-table thead { display: none; }
+    .ds-shell.ds-staff-app.ds-phone .ds-table tbody { display: grid; gap: 10px; }
+    .ds-shell.ds-staff-app.ds-phone .ds-table tbody tr {
+        display: block; padding: 12px 14px;
+        border: 1.5px solid var(--tk-edge, #c3ccdb) !important;
+        border-radius: 20px;
+        background: var(--tk-surface, #fff);
+        box-shadow: 0 8px 22px -18px var(--tk-shadow, rgba(2, 6, 23, .5));
+        transition: transform .12s ease;
+    }
+    .ds-shell.ds-staff-app.ds-phone .ds-table tbody tr.is-clickable:active { transform: scale(.985); }
+    .ds-shell.ds-staff-app.ds-phone .ds-table tbody tr.is-unread td { background: transparent; }
+    .ds-shell.ds-staff-app.ds-phone .ds-table td {
+        display: flex; align-items: center; justify-content: space-between; gap: 14px;
+        padding: 7px 0; text-align: right; min-width: 0;
+        overflow-wrap: anywhere; word-break: break-word;
+        border-bottom: 1px dashed rgba(148, 163, 184, .28);
+    }
+    .ds-shell.ds-staff-app.ds-phone .ds-table td:last-child { border-bottom: 0; padding-bottom: 0; }
+    .ds-shell.ds-staff-app.ds-phone .ds-table td::before {
+        content: attr(data-label); flex: none; max-width: 42%;
+        font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase;
+        text-align: left; opacity: .55;
+    }
+    .ds-shell.ds-staff-app.ds-phone .ds-table td[data-label=""]::before { display: none; }
+    /* First cell = the card's title: full width, no label. */
+    .ds-shell.ds-staff-app.ds-phone .ds-table td:first-child {
+        justify-content: flex-start; text-align: left; padding-top: 0; font-weight: 700; font-size: 14.5px;
+    }
+    .ds-shell.ds-staff-app.ds-phone .ds-table td:first-child::before { display: none; }
+    /* …but keep the little unread dot the desktop table shows there. */
+    .ds-shell.ds-staff-app.ds-phone .ds-table tbody tr.is-unread td:first-child::before {
+        display: inline-block; content: ""; flex: none; max-width: none; width: 8px; height: 8px;
+        border-radius: 50%; background: var(--tk-accent-text, #4f46e5); opacity: 1; margin-right: 2px;
+    }
+    .ds-shell.ds-staff-app.ds-phone .ds-table-title { max-width: none; white-space: normal; }
+    .ds-shell.ds-staff-app.ds-phone .ds-table-cell-main { flex: 1; min-width: 0; }
+    /* Action cells: buttons share the row, thumb-sized. */
+    .ds-shell.ds-staff-app.ds-phone .ds-table td[data-label=""] { flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+    .ds-shell.ds-staff-app.ds-phone .ds-table td .ds-btn,
+    .ds-shell.ds-staff-app.ds-phone .ds-table td .ds-btn-sm { min-height: 38px; }
+    /* Empty-state / colspan rows keep centred text. */
+    .ds-shell.ds-staff-app.ds-phone .ds-table td[colspan] { justify-content: center; text-align: center; }
+
+    /* ---------- 3. home extras ---------- */
+    .mh-alerts { display: grid; gap: 10px; }
+    .mh-alert { margin-top: 0; }
+    .mh-alert-n {
+        flex: none; min-width: 48px; height: 48px; padding: 0 10px; border-radius: 16px;
+        display: inline-flex; align-items: center; justify-content: center;
+        font-size: 20px; font-weight: 800; letter-spacing: -.02em;
+        color: var(--tk-accent-on, #fff);
+        background: var(--tk-accent, linear-gradient(135deg, #4338ca, #4f46e5 50%, #6366f1));
+    }
+
+    /* ---------- 4. dense admin bits ---------- */
+    /* Toolbar (live badge + range pills + refresh) stays one tidy row. */
+    .ds-shell.ds-staff-app .ch-toolbar { gap: 8px; }
+    .ds-shell.ds-staff-app .ch-toolbar-actions { flex-wrap: wrap; justify-content: flex-end; }
+    /* Segmented range control and view toggle: big enough to tap. */
+    .ds-shell.ds-staff-app .ch-seg button { min-height: 34px; padding: 0 12px; }
+    /* Page actions (e.g. "Add user") go full width under the title. */
+    .ds-shell.ds-staff-app .ds-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; }
+    .ds-shell.ds-staff-app .ds-actions > .ds-btn { flex: 1 1 auto; }
+    /* "Next action" rows (Security): headline left, compact button right. */
+    .ds-shell.ds-staff-app .ds-list-item:has(> .ds-btn-primary:last-child) {
+        display: flex; flex-direction: row; align-items: center; gap: 12px;
+    }
+    .ds-shell.ds-staff-app .ds-list-item:has(> .ds-btn-primary:last-child) > :not(.ds-btn) { flex: 1; min-width: 0; }
+    .ds-shell.ds-staff-app .ds-list-item > .ds-btn-primary:last-child {
+        flex: none; width: auto; min-height: 40px; padding: 0 14px; font-size: 13px; white-space: nowrap;
+    }
+    /* Info grids and two-column forms collapse cleanly. */
+    .ds-shell.ds-staff-app .ds-info-grid { grid-template-columns: 1fr; }
+    .ds-shell.ds-staff-app .ds-form-row-2,
+    .ds-shell.ds-staff-app .ds-form-row-3 { grid-template-columns: 1fr; }
+    /* Long names / emails / ids never push the screen sideways. */
+    .ds-shell.ds-staff-app .ds-main { overflow-x: hidden; }
+    .ds-shell.ds-staff-app .ds-list-item-title,
+    .ds-shell.ds-staff-app .ds-list-item-meta { overflow-wrap: anywhere; }
+}
+
+@media (max-width: 600px) {
+
+    /* ---------- 5. app chrome (all roles on phones) ---------- */
+    /* The off-screen drawer's shadow used to leak a dark strip onto the left edge. */
+    .ds-shell.ds-user-app .ds-sidebar:not(.open) { box-shadow: none; }
+    /* Top bar: four controls + a title must all fit a 360px screen. */
+    .ds-shell.ds-user-app .ds-topbar { padding-left: 10px; padding-right: 10px; }
+    .ds-shell.ds-user-app .ds-topbar-left { gap: 8px; }
+    .ds-shell.ds-user-app .ds-topbar-actions { gap: 4px; }
+    .ds-shell.ds-user-app .ds-icon-btn { width: 38px; height: 38px; border-radius: 12px; }
+    .ds-shell.ds-user-app .ds-topbar-brand span { font-size: 17px; }
+    .ds-shell.ds-user-app .ds-profile-chevron { display: none; }
+    .ds-shell.ds-user-app .ds-profile-btn { padding: 2px; }
+
+    /* ---------- 6. page header: compact, actions in one row ---------- */
+    .ds-shell.ds-staff-app .ds-header { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+    .ds-shell.ds-staff-app .ds-title { font-size: 22px; margin: 0; }
+    .ds-shell.ds-staff-app .ds-subtitle {
+        font-size: 13px; margin: 2px 0 0; opacity: .68; line-height: 1.4;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .ds-shell.ds-staff-app .ds-actions { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 8px; width: 100%; }
+    .ds-shell.ds-staff-app .ds-actions > .ds-btn { flex: 1 1 0; min-width: 0; min-height: 46px; padding: 0 14px; white-space: nowrap; }
+    /* Refresh becomes a square icon button; the real action keeps the width. */
+    .ds-shell.ds-staff-app .ds-actions > button[aria-label="Refresh data"] {
+        flex: none; width: 46px; padding: 0; font-size: 0; gap: 0; justify-content: center;
+    }
+    .ds-shell.ds-staff-app .ds-actions > button[aria-label="Refresh data"] svg { width: 20px; height: 20px; }
+    .ds-shell.ds-staff-app .ds-actions > button[aria-label="Refresh data"] > div { display: inline-flex; font-size: 0; }
+
+    /* ---------- 7. lists: flat sections of cards (no card inside a card) ---------- */
+    .ds-shell.ds-staff-app .ds-main > .ds-card:has(> ul.ds-list),
+    .ds-shell.ds-staff-app .ds-main > .ds-card:has(> .ds-list-head-row),
+    .ds-shell.ds-staff-app .ds-main > .ds-card:has(> .ds-list-item-headrow) {
+        background: transparent; border: 0; box-shadow: none; padding: 0; border-radius: 0;
+    }
+    /* Cards/Table toggle: tables already render as cards here, so one view is enough. */
+    .ds-shell.ds-staff-app .ds-view-toggle { display: none; }
+    .ds-shell.ds-staff-app .ds-list-item-headrow { margin-bottom: 10px; gap: 10px; }
+    .ds-shell.ds-staff-app .ds-list-item-headrow h3 { font-size: 16px; margin: 0; }
+    .ds-shell.ds-staff-app .ds-list-head-row { display: flex; flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 10px; }
+
+    /* Title + meta sit close together, avatar/thumb centred beside them. */
+    .ds-shell.ds-staff-app .ds-list-item-main { align-items: center; }
+    .ds-shell.ds-staff-app .ds-list-item-title { margin: 0 0 2px; }
+    .ds-shell.ds-staff-app .ds-list-item-meta { margin: 0; }
+    .ds-shell.ds-staff-app .ds-list-item .ds-avatar { flex: none; width: 46px; height: 46px; border-radius: 16px; }
+
+    /* Status row: chips wrap on the left, "View" stays a quiet trailing link — never overlaps. */
+    .ds-shell.ds-staff-app .ds-list-item-side { flex-wrap: wrap; justify-content: flex-start; gap: 6px 8px; }
+    .ds-shell.ds-staff-app .ds-list-item-side .ds-badge { flex: none; max-width: 100%; }
+    .ds-shell.ds-staff-app .ds-list-item-side .ds-btn-view {
+        flex: 0 0 auto; margin-left: auto; min-height: 30px; padding: 0 2px;
+        background: transparent; border: 0; box-shadow: none;
+        color: var(--tk-accent-text, #4f46e5); font-weight: 750;
+    }
+
+    /* Per-row action buttons: one tidy row, thumb-sized. */
+    .ds-shell.ds-staff-app .ds-list-item-actions {
+        display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 8px; width: 100%;
+        padding-top: 10px; margin-top: 4px; border-top: 1px dashed rgba(148, 163, 184, .4);
+    }
+    .ds-shell.ds-staff-app .ds-list-item-actions .ds-btn {
+        min-width: 0; min-height: 42px; padding: 0 8px; font-size: 13px; white-space: nowrap; justify-content: center;
+    }
+    /* Destructive actions are present but never the loudest thing on the card. */
+    .ds-shell.ds-staff-app .ds-list-item > .ds-btn-danger,
+    .ds-shell.ds-staff-app .ds-claim-delete-btn {
+        width: auto; align-self: flex-end; min-height: 38px; padding: 0 14px; font-size: 13px;
+        background: transparent; border: 1.5px solid rgba(239, 68, 68, .35); color: #ef4444;
+    }
+
+    /* ---------- 8. staff home ---------- */
+    .mh .mh-alerts .mh-alert { margin-top: 0; }
+    /* Chip row can never widen the page; it scrolls inside itself. */
+    .ds-shell.ds-staff-app .ds-main > .ds-card,
+    .ds-shell.ds-staff-app .ds-list-head-row { min-width: 0; max-width: 100%; }
+    .ds-shell.ds-staff-app .ds-list-head-row .ds-filter-row { min-width: 0; max-width: calc(100% + 24px); scroll-padding-inline: 12px; }
+
+    /* A header whose only action is Refresh: put it beside the title, not on its own row. */
+    .ds-shell.ds-staff-app .ds-header:has(.ds-actions > :only-child) {
+        flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 12px;
+    }
+    .ds-shell.ds-staff-app .ds-header:has(.ds-actions > :only-child) .ds-header-text { flex: 1; min-width: 0; }
+    .ds-shell.ds-staff-app .ds-header:has(.ds-actions > :only-child) .ds-actions { width: auto; flex: none; }
+    .ds-shell.ds-staff-app .ds-actions { flex-direction: row; }
+
+    /* Claim delete: a small trash icon in the card corner instead of a full-width button. */
+    .ds-shell.ds-staff-app .ds-list-item:has(> .ds-claim-delete-btn) { position: relative; }
+    .ds-shell.ds-staff-app .ds-list-item > .ds-claim-delete-btn {
+        position: absolute; top: 10px; right: 10px; width: 36px; height: 36px; min-height: 0; padding: 0;
+        font-size: 0; gap: 0; justify-content: center; align-self: auto; border-radius: 12px;
+    }
+    .ds-shell.ds-staff-app .ds-list-item > .ds-claim-delete-btn * { font-size: 0; gap: 0; }
+    .ds-shell.ds-staff-app .ds-list-item > .ds-claim-delete-btn svg { width: 17px; height: 17px; }
+    .ds-shell.ds-staff-app .ds-list-item:has(> .ds-claim-delete-btn) .ds-list-item-main { padding-right: 42px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ds-shell.ds-staff-app.ds-phone .ds-table tbody tr { transition: none; }
+}

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { MapPin } from "../icons";
+import useRoleTranslation from "../../hooks/useRoleTranslation";
 import "./DashboardGreeting.css";
 
 // Campus is in Opol, Misamis Oriental — clock and greeting use Philippine
@@ -19,27 +20,30 @@ const manilaHour = (d) =>
 
 // Good Morning 12:00 AM-11:59 AM, Good Noon 12:00-12:59 PM,
 // Good Afternoon 1:00-5:59 PM, Good Evening 6:00 PM-11:59 PM.
-export function greetingFor(date = new Date()) {
+// `t` (optional) translates the greeting; staff screens call it without one.
+export function greetingFor(date = new Date(), t) {
     const h = manilaHour(date);
-    if (h < 12) return "Good Morning";
-    if (h === 12) return "Good Noon";
-    if (h < 18) return "Good Afternoon";
-    return "Good Evening";
+    const word = (key, en) => (t ? t(key) : en);
+    if (h < 12) return word("common.greetMorning", "Good Morning");
+    if (h === 12) return word("common.greetNoon", "Good Noon");
+    if (h < 18) return word("common.greetAfternoon", "Good Afternoon");
+    return word("common.greetEvening", "Good Evening");
 }
 
 // Open-Meteo WMO weather codes -> short text + emoji.
-export function describeWeather(code, isDay) {
-    if (code === 0) return isDay ? ["Clear sky", "☀️"] : ["Clear night", "🌙"];
-    if (code === 1) return isDay ? ["Mostly clear", "🌤️"] : ["Mostly clear", "🌙"];
-    if (code === 2) return ["Partly cloudy", "⛅"];
-    if (code === 3) return ["Overcast", "☁️"];
-    if (code === 45 || code === 48) return ["Foggy", "🌫️"];
-    if (code >= 51 && code <= 57) return ["Drizzle", "🌦️"];
-    if (code >= 61 && code <= 67) return ["Rain", "🌧️"];
-    if (code >= 71 && code <= 77) return ["Cold snap", "🌨️"];
-    if (code >= 80 && code <= 82) return ["Rain showers", "🌦️"];
-    if (code >= 95) return ["Thunderstorm", "⛈️"];
-    return ["Cloudy", "☁️"];
+export function describeWeather(code, isDay, t) {
+    const w = (key, en) => (t ? t(`common.${key}`) : en);
+    if (code === 0) return isDay ? [w("wClear", "Clear sky"), "☀️"] : [w("wClearNight", "Clear night"), "🌙"];
+    if (code === 1) return isDay ? [w("wMostlyClear", "Mostly clear"), "🌤️"] : [w("wMostlyClear", "Mostly clear"), "🌙"];
+    if (code === 2) return [w("wPartly", "Partly cloudy"), "⛅"];
+    if (code === 3) return [w("wOvercast", "Overcast"), "☁️"];
+    if (code === 45 || code === 48) return [w("wFog", "Foggy"), "🌫️"];
+    if (code >= 51 && code <= 57) return [w("wDrizzle", "Drizzle"), "🌦️"];
+    if (code >= 61 && code <= 67) return [w("wRain", "Rain"), "🌧️"];
+    if (code >= 71 && code <= 77) return [w("wCold", "Cold snap"), "🌨️"];
+    if (code >= 80 && code <= 82) return [w("wShowers", "Rain showers"), "🌦️"];
+    if (code >= 95) return [w("wStorm", "Thunderstorm"), "⛈️"];
+    return [w("wCloudy", "Cloudy"), "☁️"];
 }
 
 // Shared across dashboard mounts so navigating back doesn't refetch each time.
@@ -90,8 +94,8 @@ export function useOpolWeather() {
     return { weather, failed };
 }
 
-const dateFmt = new Intl.DateTimeFormat("en-PH", { timeZone: TZ, weekday: "long", month: "long", day: "numeric", year: "numeric" });
-const timeFmt = new Intl.DateTimeFormat("en-PH", { timeZone: TZ, hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true });
+const makeDateFmt = (locale) => new Intl.DateTimeFormat(locale, { timeZone: TZ, weekday: "long", month: "long", day: "numeric", year: "numeric" });
+const makeTimeFmt = (locale) => new Intl.DateTimeFormat(locale, { timeZone: TZ, hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true });
 
 // First name only ("Jonee John Antiquina" -> "Jonee").
 export const firstNameOf = (full) => String(full || "").trim().split(/\s+/)[0] || "";
@@ -102,25 +106,28 @@ export const firstNameOf = (full) => String(full || "").trim().split(/\s+/)[0] |
 export default function DashboardGreeting({ eyebrow, name, subtitle }) {
     const [now, setNow] = useState(() => new Date());
     const { weather, failed } = useOpolWeather();
+    const { t, locale } = useRoleTranslation();
+    const dateFmt = useMemo(() => makeDateFmt(locale), [locale]);
+    const timeFmt = useMemo(() => makeTimeFmt(locale), [locale]);
 
     useEffect(() => {
         const id = setInterval(() => setNow(new Date()), 1000);
         return () => clearInterval(id);
     }, []);
 
-    const [wText, wIcon] = weather ? describeWeather(weather.code, weather.isDay) : [];
+    const [wText, wIcon] = weather ? describeWeather(weather.code, weather.isDay, t) : [];
 
     return (
         <>
             <div className="ds-header-text ds-greeting">
                 {eyebrow && <span className="ds-eyebrow">{eyebrow}</span>}
                 <h1 className="ds-title ds-greeting-title">
-                    {greetingFor(now)}{firstNameOf(name) ? `, ${firstNameOf(name)}` : ""} 👋
+                    {greetingFor(now, t)}{firstNameOf(name) ? `, ${firstNameOf(name)}` : ""} 👋
                 </h1>
                 {subtitle && <p className="ds-greeting-sub">{subtitle}</p>}
             </div>
 
-            <div className="ds-greeting-widget" aria-label="Date, time and weather in Opol">
+            <div className="ds-greeting-widget" aria-label={t("common.greetingWidget")}>
                 <div className="ds-gw-clock">
                     <span className="ds-gw-time">{timeFmt.format(now)}</span>
                     <span className="ds-gw-date">{dateFmt.format(now)}</span>
@@ -135,7 +142,7 @@ export default function DashboardGreeting({ eyebrow, name, subtitle }) {
                                     <b>{weather.temp}°C</b> <span>{wText}</span>
                                 </span>
                                 <span className="ds-gw-detail">
-                                    Feels {weather.feels}° · {weather.humidity}% humidity · {weather.wind} km/h
+                                    {t("common.weatherFeels", { feels: weather.feels, humidity: weather.humidity, wind: weather.wind })}
                                 </span>
                                 <span className="ds-gw-loc">
                                     <i className="ds-gw-live" aria-hidden="true" />
@@ -145,7 +152,7 @@ export default function DashboardGreeting({ eyebrow, name, subtitle }) {
                         </>
                     ) : (
                         <div className="ds-gw-wtext">
-                            <span className="ds-gw-temp"><span>{failed ? "Weather unavailable" : "Loading weather…"}</span></span>
+                            <span className="ds-gw-temp"><span>{failed ? t("common.weatherUnavailable") : t("common.weatherLoading")}</span></span>
                             <span className="ds-gw-loc"><MapPin size={12} strokeWidth={2} /> {OPOL.label}</span>
                         </div>
                     )}

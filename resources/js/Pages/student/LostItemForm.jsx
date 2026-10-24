@@ -22,7 +22,7 @@ export default function LostItemForm({ onCancel, onCreated }) {
     const [unlocked, setUnlocked] = useState(false);
     const toast = useToast();
     const confirm = useConfirm();
-    const { user } = useAuth();
+    const { user, roles } = useAuth();
 
     const isDirty = Object.entries(form).some(([key, value]) => (key === 'details' ? Object.values(value || {}).some(Boolean) : value !== EMPTY_FORM[key]));
     const { guardedAction } = useUnsavedChangesGuard(isDirty, {
@@ -49,6 +49,8 @@ export default function LostItemForm({ onCancel, onCreated }) {
         const agreed = await confirm(reportNotice({
             kind: 'lost',
             printHref: user?.public_token ? `/app/print/${user.public_token}` : null,
+            // Only students have a clearance that violations can block.
+            clearance: Array.isArray(roles) && roles.includes('student'),
         }));
         if (agreed) setUnlocked(true);
     };
