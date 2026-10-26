@@ -304,21 +304,10 @@ body { overflow: hidden; }
    avatar sits in the middle of the rail instead of pinned to the left. */
 .ds-sidebar.collapsed .ds-user-row { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
 .ds-user-row-btn {
-    width: 100%; cursor: pointer;
-    color: inherit; font-family: inherit; text-align: left;
-    transition: background 0.15s ease, border-color 0.15s ease;
+    width: 100%; border: none; background: none; cursor: pointer;
+    border-radius: 11px; color: inherit; font-family: inherit; text-align: left;
+    transition: background 0.15s ease;
 }
-/* Sidebar account card = the header's .ds-profile-btn card: same pill shape,
-   same 1.5px border + fill per theme, same 5px padding around a 34px round
-   avatar, so the fixed height is identical (34 + 2*5 + 2*1.5 = 47px). */
-.ds-user-row.ds-user-row-btn {
-    height: 47px; padding: 5px 10px 5px 5px; gap: 8px;
-    border-radius: 999px; border: 1.5px solid #c3ccdb;
-}
-.ds-user-row-btn .ds-avatar { border-radius: 50%; }
-.ds-sidebar.collapsed .ds-user-row.ds-user-row-btn { padding-left: 0; padding-right: 0; }
-.ds-shell.light .ds-user-row-btn { background: rgba(255,255,255,0.7); border-color: #c3ccdb; }
-.ds-shell.dark .ds-user-row-btn { background: rgba(255,255,255,0.08); border-color: #3a4457; }
 .ds-shell.light .ds-user-row-btn:hover { background: #f4f7fb; }
 .ds-shell.dark .ds-user-row-btn:hover { background: #171c26; }
 /* Collapsed: same story as .ds-nav-link and .ds-brand above — the avatar
@@ -352,6 +341,14 @@ body { overflow: hidden; }
 .ds-sidebar-menu {
     width: 260px;
     animation: ds-fade-up 0.15s ease both;
+}
+/* Laptop/desktop only (>=960px): same card as the header's account dropdown
+   (.ds-menu: 220px wide, same fade-in). Phones/tablets keep the original. */
+@media (min-width: 960px) {
+    .ds-sidebar-menu {
+        width: 220px;
+        animation: ds-fade-in 0.15s ease both;
+    }
 }
 @keyframes ds-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 /* ---------- Right side ---------- */
