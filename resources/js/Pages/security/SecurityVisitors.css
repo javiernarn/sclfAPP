@@ -1,0 +1,90 @@
+/* ==========================================================================
+ * Visitor Management — "View only" notice + the Visitor Log card.
+ * Shared by Security, Admin and Staff (they all render SecurityVisitors).
+ * Everything is spaced with one rhythm (14px between blocks) and every
+ * control in the toolbar is the same height, so nothing floats or leaves
+ * dead space. Colors come from the theme accent variables where they exist.
+ * ========================================================================== */
+
+/* "View only" notice: one slim banner, icon beside the text. */
+.ds-vlog-note {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 16px; margin-bottom: 14px; border-radius: 14px;
+    background: rgba(var(--tk-accent-rgb, 79, 70, 229), 0.08);
+    border: 1.5px solid rgba(var(--tk-accent-rgb, 79, 70, 229), 0.26);
+}
+.ds-vlog-note-icon { flex-shrink: 0; margin-top: 2px; color: var(--tk-accent-text, #4f46e5); }
+.ds-vlog-note p { margin: 0; font-size: 14px; line-height: 1.5; opacity: 0.9; }
+.ds-vlog-note strong { font-weight: 800; }
+
+/* Log card */
+.ds-vlog { display: flex; flex-direction: column; gap: 14px; }
+
+.ds-vlog-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px 16px; flex-wrap: wrap;
+}
+.ds-vlog-heading { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.ds-vlog-heading h3 { margin: 0; }
+.ds-vlog-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; }
+.ds-vlog-count { font-size: 12.5px; font-weight: 600; opacity: 0.65; }
+.ds-vlog-head > .ds-view-toggle { align-self: center; }
+
+/* Summary rows: stat chips, purpose chips, badges to collect. */
+.ds-vlog-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.ds-vlog-summary .ds-chip,
+.ds-vlog-summary .ds-live-chip { margin: 0; }
+.ds-vlog-summary .ds-chip strong { font-size: 12.5px; }
+.ds-vlog-label {
+    font-size: 11px; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase;
+    opacity: 0.6; margin-right: 2px; white-space: nowrap;
+}
+
+/* Toolbar: search grows, status filter keeps its size, same height. */
+.ds-vlog-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.ds-vlog .ds-vlog-search { position: relative; flex: 1 1 280px; width: auto; min-width: 0; margin: 0; }
+.ds-vlog .ds-vlog-search input { height: 43px; padding: 0 14px 0 40px; }
+.ds-vlog-search-icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    opacity: 0.6; pointer-events: none;
+}
+.ds-vlog-filters { align-self: center; }
+.ds-vlog-pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 20px; height: 18px; padding: 0 6px; border-radius: 999px;
+    font-size: 11px; font-weight: 800; line-height: 1;
+    background: rgba(127, 127, 127, 0.22); color: inherit;
+}
+.ds-view-toggle-btn.is-active .ds-vlog-pill { background: rgba(255, 255, 255, 0.28); color: inherit; }
+
+/* Empty state: compact, left-aligned icon + text, no tall blank panel. */
+.ds-vlog-empty {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    padding: 22px 18px; border-radius: 14px; text-align: left;
+    border: 1.5px dashed rgba(127, 127, 127, 0.4);
+}
+.ds-vlog-empty-icon {
+    flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(var(--tk-accent-rgb, 79, 70, 229), 0.12);
+    color: var(--tk-accent-text, #4f46e5);
+}
+.ds-vlog-empty-title { margin: 0; font-size: 14.5px; font-weight: 800; }
+.ds-vlog-empty-hint { margin: 2px 0 0; font-size: 13px; opacity: 0.65; }
+
+/* Table: keep the Actions column flush right so it lines up under its header. */
+.ds-vlog .ds-table th:last-child,
+.ds-vlog .ds-table td:last-child { text-align: right; }
+.ds-vlog .ds-table .ds-table-actions { justify-content: flex-end; }
+.ds-vlog .ds-skeleton { margin: 0; }
+.ds-vlog .ds-list { margin: 0; }
+
+@media (max-width: 720px) {
+    .ds-vlog-head > .ds-view-toggle { width: 100%; }
+    .ds-vlog-head > .ds-view-toggle .ds-view-toggle-btn { flex: 1; justify-content: center; }
+    .ds-vlog-toolbar { flex-direction: column; align-items: stretch; }
+    .ds-vlog .ds-vlog-search { flex-basis: auto; width: 100%; }
+    .ds-vlog-filters { width: 100%; }
+    .ds-vlog-filters .ds-view-toggle-btn { flex: 1; justify-content: center; white-space: nowrap; }
+    .ds-vlog-empty { flex-direction: column; text-align: center; padding: 20px 14px; }
+}

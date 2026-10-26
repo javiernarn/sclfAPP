@@ -108,17 +108,26 @@
 /* an uploaded photo is set inline as background-image and still wins */
 
 /* ============ 4. sidebar account row ============ */
-.ds-shell.ds-layout .ds-user-row-btn { border: 1.5px solid transparent; }
-.ds-shell.ds-layout .ds-user-row-btn:hover { background: var(--tk-hover); }
+/* same fill + outline as the header profile pill (section 2) */
+.ds-shell.ds-layout .ds-user-row-btn {
+    background: var(--tk-field);
+    border: 1.5px solid var(--tk-edge);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+.ds-shell.ds-layout .ds-user-row-btn:hover,
 .ds-shell.ds-layout .ds-user-row-btn[aria-expanded="true"] {
     background: var(--tk-field);
-    border-color: var(--tk-edge);
+    border-color: var(--tk-accent-text);
 }
 .ds-shell.ds-layout .ds-user-row-chevron { color: var(--tk-accent-text); opacity: 0.8; }
 /* the Custom (dk-*) sidebars have a coloured gradient, keep the row legible there */
 .ds-shell.dk-blue .ds-user-row-btn:hover, .ds-shell.dk-yellow .ds-user-row-btn:hover, .ds-shell.dk-maroon .ds-user-row-btn:hover,
 .ds-shell.dk-blue .ds-user-row-btn[aria-expanded="true"], .ds-shell.dk-yellow .ds-user-row-btn[aria-expanded="true"], .ds-shell.dk-maroon .ds-user-row-btn[aria-expanded="true"] {
     background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.22);
+}
+.ds-shell.dk-blue .ds-user-row-btn, .ds-shell.dk-yellow .ds-user-row-btn, .ds-shell.dk-maroon .ds-user-row-btn {
+    background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.22);
 }
 .ds-shell.dk-blue .ds-user-row-chevron, .ds-shell.dk-yellow .ds-user-row-chevron, .ds-shell.dk-maroon .ds-user-row-chevron { color: #fff; }

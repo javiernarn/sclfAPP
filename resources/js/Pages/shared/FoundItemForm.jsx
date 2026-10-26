@@ -9,6 +9,8 @@ import { useAuth } from '../../context/AuthContext';
 import { reportNotice } from '../../Components/shared/reportNotice';
 import ItemReportFields from '../../Components/shared/ItemReportFields';
 import useReopenNotice from '../../hooks/useReopenNotice';
+import useAutoSaveDraft from '../../hooks/useAutoSaveDraft';
+import AutoSaveStatus from '../../Components/shared/AutoSaveStatus';
 
 const EMPTY_FORM = {
     item_name: '', description: '', category: '', brand: '', color: '', model: '',
@@ -28,8 +30,11 @@ export default function FoundItemForm({ onCancel, onCreated }) {
     const confirm = useConfirm();
     const { user, roles } = useAuth();
 
-    const isDirty = Object.entries(form).some(([key, value]) => (key === 'details' ? Object.values(value || {}).some(Boolean) : value !== EMPTY_FORM[key])) || !!image;
-    const { guardedAction } = useUnsavedChangesGuard(isDirty, {
+    const fieldsDirty = Object.entries(form).some(([key, value]) => (key === 'details' ? Object.values(value || {}).some(Boolean) : value !== EMPTY_FORM[key]));
+    const isDirty = fieldsDirty || !!image;
+    const draft = useAutoSaveDraft({ formKey: 'found-item', value: form, initial: EMPTY_FORM, isDirty: fieldsDirty, onRestore: setForm });
+    // With Auto Save on, leaving is safe (the draft is kept), so no "discard?" prompts.
+    const { guardedAction } = useUnsavedChangesGuard(isDirty && !draft.autoSave, {
         message: "You've started reporting this found item. If you leave now, what you've entered will be discarded.",
     });
 
@@ -45,7 +50,7 @@ export default function FoundItemForm({ onCancel, onCreated }) {
         });
     };
 
-    const handleCancel = () => guardedAction(() => onCancel && onCancel());
+    const handleCancel = () => guardedAction(() => { draft.clearDraft(); onCancel && onCancel(); });
 
     const handleUnlockRequest = async () => {
         const agreed = await confirm(reportNotice({
@@ -85,6 +90,7 @@ export default function FoundItemForm({ onCancel, onCreated }) {
             if (image) data.append('image', image);
 
             await axios.post('/found-items', data, { headers: { 'Content-Type': 'multipart/form-data' }, silent: true });
+            draft.clearDraft();
             toast.success('Thank you — your found item report has been submitted for verification.', { title: 'Report filed' });
             onCreated && onCreated();
         } catch (err) {
@@ -111,6 +117,7 @@ export default function FoundItemForm({ onCancel, onCreated }) {
                 <FormSkeleton />
             ) : (
             <div className="ds-card">
+                <AutoSaveStatus autoSave={draft.autoSave} savedAt={draft.savedAt} synced={draft.synced} note="the photo isn't saved, re-attach it after a reload" />
                 {error && <div className="ds-error">{error}</div>}
 
                 {!unlocked && (

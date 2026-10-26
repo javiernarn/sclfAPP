@@ -43,8 +43,11 @@ class PwaManifestController extends Controller
             'display_override' => ['standalone', 'minimal-ui'],
             'orientation' => 'any',
             'background_color' => $isBlack ? '#0a0c12' : '#ffffff',
-            'theme_color' => $isBlack ? '#0a0c12' : '#ffffff',
+            // Title-bar color of the installed app: navy in light themes,
+            // white in dark/black themes.
+            'theme_color' => $isBlack ? '#ffffff' : '#01215f',
             'lang' => 'en-PH',
+            'dir' => 'ltr',
             'categories' => ['education', 'productivity'],
             // Lets the browser answer "is this app already installed on this
             // device?" (navigator.getInstalledRelatedApps) so the install
@@ -54,30 +57,55 @@ class PwaManifestController extends Controller
             ],
             'prefer_related_applications' => false,
             'icons' => [
+                // "any": the shield on a transparent background (tabs, taskbar, install dialogs).
+                ['src' => asset('images/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => asset('images/icon-512.png'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+                // "maskable": full-bleed navy with the logo inside the safe zone, so Android
+                // can crop it to a circle / squircle without clipping the shield.
+                ['src' => asset('images/icon-maskable-512.png'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+            ],
+            // Long-press the home-screen icon (Android) or right-click the taskbar /
+            // dock icon (Windows, macOS, ChromeOS) for these. All inside the scope.
+            'shortcuts' => [
                 [
-                    'src' => asset('images/site-logo.png'),
-                    'sizes' => '192x192',
-                    'type' => 'image/png',
-                    'purpose' => 'any',
+                    'name' => 'Report a lost item',
+                    'short_name' => 'Lost item',
+                    'description' => 'Report something you lost on campus',
+                    'url' => '/app/lost-items/create',
+                    'icons' => [['src' => asset('images/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png']],
                 ],
                 [
-                    'src' => asset('images/site-logo.png'),
-                    'sizes' => '384x384',
-                    'type' => 'image/png',
-                    'purpose' => 'any',
+                    'name' => 'Report a found item',
+                    'short_name' => 'Found item',
+                    'description' => 'Report something you found on campus',
+                    'url' => '/app/found-items/create',
+                    'icons' => [['src' => asset('images/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png']],
                 ],
                 [
-                    'src' => asset('images/site-logo.png'),
-                    'sizes' => '512x512',
-                    'type' => 'image/png',
-                    'purpose' => 'any',
+                    'name' => 'My claims',
+                    'short_name' => 'Claims',
+                    'description' => 'Track your item claims',
+                    'url' => '/app/claims',
+                    'icons' => [['src' => asset('images/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png']],
+                ],
+                [
+                    'name' => 'Notifications',
+                    'short_name' => 'Alerts',
+                    'description' => 'See your latest notifications',
+                    'url' => '/app/notifications',
+                    'icons' => [['src' => asset('images/icon-192.png'), 'sizes' => '192x192', 'type' => 'image/png']],
                 ],
             ],
+            // Desktop: opening the app (or a shortcut) while it is already running
+            // focuses that window and navigates it, instead of opening a second one.
+            'launch_handler' => ['client_mode' => ['navigate-existing', 'auto']],
         ];
 
         return response()
             ->json($manifest)
             ->header('Content-Type', 'application/manifest+json')
+            // The body depends on the "sclf-theme" cookie.
+            ->header('Vary', 'Cookie')
             ->header('Cache-Control', 'private, max-age=300');
     }
 }

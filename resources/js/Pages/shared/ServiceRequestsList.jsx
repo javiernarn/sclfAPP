@@ -8,6 +8,7 @@ import useViewMode from '../../hooks/useViewMode';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { roleAndName } from '../../utils/roleLabel';
+import RoleText from '../../Components/shared/RoleText';
 
 const STATUS_OPTIONS = [
     { value: '', label: 'All statuses' },
@@ -119,7 +120,6 @@ export default function ServiceRequestsList() {
                 {loading && <div className="ds-skeleton" />}
                 {!loading && requests.length === 0 && (
                     <div className="ds-empty">
-                        <ClipboardList size={18} style={{ verticalAlign: -3, marginRight: 6 }} />
                         {isStaff ? 'No requests match these filters.' : "You haven't filed any service requests yet."}
                     </div>
                 )}
@@ -156,7 +156,7 @@ export default function ServiceRequestsList() {
                                             </div>
                                         </td>
                                         <td className="ds-table-nowrap">
-                                            {isStaff ? (r.requester?.name || '—') : roleAndName(r.assignee, 'Unassigned')}
+                                            {isStaff ? (r.requester?.name || '—') : <RoleText text={roleAndName(r.assignee, 'Unassigned')} />}
                                         </td>
                                         <td><span className={priorityBadgeClass(r.priority)}>{r.priority}</span></td>
                                         <td><span className={statusBadgeClass(r.status)}>{statusLabel(r.status)}</span></td>
@@ -191,7 +191,7 @@ export default function ServiceRequestsList() {
                                                 {r.department?.name ? ` · ${r.department.name}` : ''}
                                                 {r.campus?.code ? ` · ${r.campus.code}` : ''}
                                                 {isStaff && r.requester?.name ? ` · Filed by ${r.requester.name}` : ''}
-                                                {r.assignee?.name ? ` · Assigned to ${roleAndName(r.assignee)}` : ''}
+                                                {r.assignee?.name ? <> · Assigned to <RoleText text={roleAndName(r.assignee)} /></> : ''}
                                             </p>
                                             <p className="ds-list-item-meta">
                                                 <Wrench size={12} style={{ verticalAlign: -2, marginRight: 4 }} />

@@ -113,6 +113,7 @@ import {
     ListOrdered as ListOrderedGlyph,
     LogIn as LogInGlyph,
     Mail as MailGlyph,
+    Save as SaveGlyph,
     Megaphone as MegaphoneGlyph,
     Menu as MenuGlyph,
     Monitor as MonitorGlyph,
@@ -294,6 +295,7 @@ export const LayoutList = animatedStatic(LayoutListGlyph, 'LayoutList');
 export const ListOrdered = animatedStatic(ListOrderedGlyph, 'ListOrdered');
 export const LogIn = animatedStatic(LogInGlyph, 'LogIn');
 export const Mail = animatedStatic(MailGlyph, 'Mail');
+export const Save = animatedStatic(SaveGlyph, 'Save');
 export const Megaphone = animatedStatic(MegaphoneGlyph, 'Megaphone');
 export const Menu = animatedStatic(MenuGlyph, 'Menu');
 export const Package = animatedStatic(PackageGlyph, 'Package');

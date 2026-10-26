@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import RoleText, { RoleBadge } from '../../Components/shared/RoleText';
 import axios from '../../config/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import useRoleLabel from '../../hooks/useRoleLabel';
@@ -674,7 +675,7 @@ export default function AdminUsers() {
                                                 </div>
                                             </td>
                                             <td className="ds-table-nowrap">{u.email}</td>
-                                            <td className="ds-table-nowrap">{u.roles?.map(r => ROLE_META[r.name]?.label || r.name).join(', ') || 'no role'}</td>
+                                            <td className="ds-table-nowrap">{(u.roles || []).length ? u.roles.map((r, i) => <React.Fragment key={r.name}>{i > 0 && ' '}<RoleBadge role={r.name}>{ROLE_META[r.name]?.label || r.name}</RoleBadge></React.Fragment>) : 'no role'}</td>
                                             <td className="ds-table-nowrap">{u.display_id || '—'}</td>
                                             <td>
                                                 {!u.is_active
@@ -754,7 +755,7 @@ export default function AdminUsers() {
                                                 {u.deleted_at && <span className="ds-badge ds-badge-default" style={{ marginLeft: 8 }}>Archived</span>}
                                             </p>
                                             <p className="ds-list-item-meta">
-                                                {u.email} · {u.roles?.map(r => ROLE_META[r.name]?.label || r.name).join(', ') || 'no role'}
+                                                {u.email} · {(u.roles || []).length ? u.roles.map((r, i) => <React.Fragment key={r.name}>{i > 0 && ' '}<RoleBadge role={r.name}>{ROLE_META[r.name]?.label || r.name}</RoleBadge></React.Fragment>) : 'no role'}
                                                 {u.display_id && <> · ID: {u.display_id}</>}
                                             </p>
                                         </div>

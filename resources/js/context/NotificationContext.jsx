@@ -14,6 +14,13 @@ const POLL_MS = 30000;
 const POLL_MS_APPROVAL_ROLES = 20000;
 // Ignore focus/visibility catch-up checks that come right after a poll.
 const MIN_GAP_MS = 5000;
+// Nobody touching the page (no click / key / scroll / tap) for this long =
+// idle. While idle the badge is refreshed far less often, so a tab left open
+// all day stops costing the server a request every 20-30 seconds. The moment
+// the person interacts again (or the tab regains focus) polling is back to
+// normal; web push still covers anything urgent.
+const IDLE_AFTER_MS = 2 * 60 * 1000;
+const IDLE_POLL_MS = 90 * 1000;
 
 // Small preview list shown in the bell's dropdown — the full history
 // still lives at /app/notifications (NotificationsPage), which paginates
@@ -43,6 +50,7 @@ export function NotificationProvider({ children }) {
     const pollRef = useRef(null);
     const inFlightRef = useRef(false);
     const lastRunRef = useRef(0);
+    const lastActivityRef = useRef(Date.now());
 
     const refreshUnreadCount = useCallback(async () => {
         if (!user) return;
@@ -122,8 +130,15 @@ export function NotificationProvider({ children }) {
         // Skip the timer tick while the tab is hidden — nobody is looking at
         // the bell, and the focus/visibility catch-up below refreshes it
         // the moment they come back.
+        const markActive = () => { lastActivityRef.current = Date.now(); };
+        const activityEvents = ['pointerdown', 'keydown', 'wheel', 'touchstart'];
+        activityEvents.forEach((ev) => window.addEventListener(ev, markActive, { passive: true }));
+
         pollRef.current = setInterval(() => {
             if (document.hidden) return;
+            // Idle tab: only refresh once IDLE_POLL_MS has passed since the last check.
+            const idle = Date.now() - lastActivityRef.current > IDLE_AFTER_MS;
+            if (idle && Date.now() - lastRunRef.current < IDLE_POLL_MS) return;
             refreshUnreadCount();
         }, approvalRole ? POLL_MS_APPROVAL_ROLES : POLL_MS);
 
@@ -139,6 +154,7 @@ export function NotificationProvider({ children }) {
 
         return () => {
             clearInterval(pollRef.current);
+            activityEvents.forEach((ev) => window.removeEventListener(ev, markActive));
             window.removeEventListener('focus', catchUp);
             document.removeEventListener('visibilitychange', catchUp);
         };

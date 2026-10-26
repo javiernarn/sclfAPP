@@ -55,6 +55,19 @@ export function useAppTheme() {
         };
     }, []);
 
+    // Keep the PWA title bar color in sync live: navy for light themes,
+    // white for dark themes (the manifest covers the next launch).
+    useEffect(() => {
+        const color = isDarkTheme(theme) ? '#ffffff' : '#01215f';
+        let meta = document.querySelector('meta[name="theme-color"]');
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.setAttribute('name', 'theme-color');
+            document.head.appendChild(meta);
+        }
+        meta.setAttribute('content', color);
+    }, [theme]);
+
     const setTheme = useCallback((next) => {
         if (!THEMES.includes(next)) return;
         writeCookie(next);

@@ -54,7 +54,8 @@ class AuthController extends Controller
             'user' => array_merge($user->only(
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
                 'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course', 'teaching_course',
-                'profile_picture_url', 'two_factor_enabled', 'must_setup_profile', 'public_token'
+                'profile_picture_url', 'two_factor_enabled', 'must_setup_profile', 'public_token',
+                'email_notifications', 'auto_save'
             ), [
                 // The React app sends unverified accounts to /app/verify-email.
                 'email_verified' => $user->hasVerifiedEmail(),

@@ -15,6 +15,8 @@ import { filterPhoneInput, isValidPhone, FORMAT_ERRORS, FORMAT_HINTS } from '../
 import { PH_ID_GROUPS, PH_ID_OPTIONS, OTHER_ID_VALUE } from '../../config/philippineIds';
 import PurposeDetailsFields, { usePurposeDefs, defFor, missingDetails, detailRows, allowedMinutes } from '../../Components/shared/PurposeDetailsFields';
 import '../../Components/shared/PurposeDetailsFields.css';
+import './SecurityVisitors.css';
+import RoleText from '../../Components/shared/RoleText';
 
 const PURPOSE_OPTIONS = [
     { value: 'meeting', label: 'Meeting' },
@@ -35,9 +37,9 @@ const RELATIONSHIP_OPTIONS = [
 ];
 
 const STATUS_FILTERS = [
-    { value: 'inside', label: 'Inside campus (badge not returned)' },
-    { value: 'checked_out', label: 'Checked out' },
-    { value: 'all', label: 'All' },
+    { value: 'inside', label: 'On campus', hint: 'Visitors still inside — badge not returned' },
+    { value: 'checked_out', label: 'Checked out', hint: 'Visitors who have left and returned their badge' },
+    { value: 'all', label: 'All visitors', hint: 'The full visitor history' },
 ];
 
 const EMPTY_FORM = {
@@ -584,7 +586,7 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, canManage, view = 'cards
                 </td>
                 <td className="ds-table-nowrap">
                     <div>{formatDateTime(visitor.checked_in_at)}</div>
-                    <div className="ds-table-sub">by {roleAndName(visitor.checked_in_by)}</div>
+                    <div className="ds-table-sub">by <RoleText text={roleAndName(visitor.checked_in_by)} /></div>
                 </td>
                 <td className="ds-table-nowrap">
                     {visitor.status === 'checked_out'
@@ -672,7 +674,7 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, canManage, view = 'cards
                     <Clock size={13} />
                     <span className="ds-visitor-time-label">Checked in</span>
                     <span className="ds-visitor-time-value">{fmt(visitor.checked_in_at)}</span>
-                    <span className="ds-visitor-time-by">by {roleAndName(visitor.checked_in_by)}</span>
+                    <span className="ds-visitor-time-by">by <RoleText text={roleAndName(visitor.checked_in_by)} /></span>
                 </div>
                 {visitor.status === 'checked_out' && visitor.checked_out_at && (
                     <div className="ds-visitor-time">
@@ -873,11 +875,11 @@ export default function SecurityVisitors() {
             }
         >
             {!canManage && (
-                <div className="ds-card" role="note">
-                    <h3><Eye size={16} style={{ verticalAlign: -3, marginRight: 6 }} />View only</h3>
-                    <p style={{ margin: 0, opacity: 0.8 }}>
-                        Only a Security Officer can check visitors in or out and change their entries. You can search the full
-                        history below and open any visitor to see all of their details.
+                <div className="ds-vlog-note" role="note">
+                    <Eye size={18} className="ds-vlog-note-icon" aria-hidden="true" />
+                    <p>
+                        <strong>View only.</strong> Only a Security Officer can check visitors in or out and change their
+                        entries. You can search the full history below and open any visitor to see all of their details.
                     </p>
                 </div>
             )}
@@ -1017,76 +1019,97 @@ export default function SecurityVisitors() {
             </div>
             )}
 
-            <div className="ds-card">
-                <div className="ds-list-head-row">
-                    <h3>
-                        {statusFilter === 'inside' ? 'Currently On Campus — Badge Not Checked Out'
-                            : statusFilter === 'checked_out' ? 'Checked Out' : 'Full Visitor Log'}
-                    </h3>
-                    <div className="ds-visitor-head-controls">
-                        <ViewToggle mode={view} onChange={setView} />
-                    </div>
-                </div>
-
-                <div className="ds-live-board" aria-live="polite">
-                    <span className="ds-live-dot">Live{updatedAt ? ` · updated ${updatedAt.toLocaleTimeString()}` : ''}</span>
-                    {Object.entries(live.by_purpose || {}).map(([purpose, n]) => (
-                        <span key={purpose} className="ds-live-chip">{purposeLabel(purpose)}: <strong>{n}</strong></span>
-                    ))}
-                    {live.overdue > 0 && (
-                        <span className="ds-live-chip is-overdue"><AlertTriangle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />{live.overdue} past their expected stay</span>
-                    )}
-                </div>
-
-                <div className="ds-chip-row" style={{ marginTop: 0, marginBottom: 12 }}>
-                    <span className="ds-chip">Checked in today: <strong>{stats.checked_in_today}</strong></span>
-                    <span className="ds-chip">Checked out today: <strong>{stats.checked_out_today}</strong></span>
-                    <span className="ds-chip ds-chip-accent">Badges still out: <strong>{outstanding.length}</strong></span>
-                </div>
-
-                {outstanding.length > 0 && (
-                    <div style={{ marginBottom: 14 }}>
-                        <p className="ds-list-item-meta" style={{ marginBottom: 6 }}>
-                            <Tag size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
-                            Badges not yet returned (tap to find the visitor):
-                        </p>
-                        <div className="ds-chip-row" style={{ marginTop: 0 }}>
-                            {outstanding.map((b) => (
-                                <button key={b.id} type="button" className="ds-filter-chip"
-                                    title={`${b.full_name} — in since ${new Date(b.checked_in_at).toLocaleTimeString()}`}
-                                    onClick={() => { setStatusFilter('inside'); setSearchInput(b.badge_number); }}>
-                                    #{b.badge_number} · {b.full_name}
-                                </button>
-                            ))}
+            <section className="ds-card ds-vlog" aria-labelledby="ds-vlog-title">
+                <header className="ds-vlog-head">
+                    <div className="ds-vlog-heading">
+                        <h3 id="ds-vlog-title">
+                            {statusFilter === 'inside' ? 'Currently On Campus — Badge Not Returned'
+                                : statusFilter === 'checked_out' ? 'Checked-Out Visitors' : 'Full Visitor Log'}
+                        </h3>
+                        <div className="ds-vlog-meta" aria-live="polite">
+                            <span className="ds-live-dot">Live{updatedAt ? ` · updated ${updatedAt.toLocaleTimeString()}` : ''}</span>
+                            {!loading && (
+                                <span className="ds-vlog-count">
+                                    {visitors.length} {visitors.length === 1 ? 'visitor' : 'visitors'} shown
+                                </span>
+                            )}
                         </div>
+                    </div>
+                    <ViewToggle mode={view} onChange={setView} />
+                </header>
+
+                <div className="ds-vlog-summary" role="group" aria-label="Today's visitor totals">
+                    <span className="ds-chip">Checked in today <strong>{stats.checked_in_today}</strong></span>
+                    <span className="ds-chip">Checked out today <strong>{stats.checked_out_today}</strong></span>
+                    <span className="ds-chip ds-chip-accent">Badges not returned <strong>{outstanding.length}</strong></span>
+                </div>
+
+                {(Object.keys(live.by_purpose || {}).length > 0 || live.overdue > 0) && (
+                    <div className="ds-vlog-summary ds-vlog-purposes" role="group" aria-label="Visitors on campus by purpose">
+                        <span className="ds-vlog-label">On campus now</span>
+                        {Object.entries(live.by_purpose || {}).map(([purpose, n]) => (
+                            <span key={purpose} className="ds-live-chip">{purposeLabel(purpose)} <strong>{n}</strong></span>
+                        ))}
+                        {live.overdue > 0 && (
+                            <span className="ds-live-chip is-overdue"><AlertTriangle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />{live.overdue} past their expected stay</span>
+                        )}
                     </div>
                 )}
 
-                <div className="ds-filter-row">
-                    <div style={{ position: 'relative', flex: '1 1 260px' }}>
+                {outstanding.length > 0 && (
+                    <div className="ds-vlog-summary ds-vlog-outstanding" role="group" aria-label="Badges not yet returned">
+                        <span className="ds-vlog-label"><Tag size={12} style={{ verticalAlign: -2, marginRight: 4 }} />Badges to collect</span>
+                        {outstanding.map((b) => (
+                            <button key={b.id} type="button" className="ds-filter-chip"
+                                title={`${b.full_name} — in since ${new Date(b.checked_in_at).toLocaleTimeString()}`}
+                                onClick={() => { setStatusFilter('inside'); setSearchInput(b.badge_number); }}>
+                                #{b.badge_number} · {b.full_name}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                <div className="ds-vlog-toolbar">
+                    <div className="ds-field ds-vlog-search">
+                        <Search size={15} className="ds-vlog-search-icon" aria-hidden="true" />
                         <input
                             type="search"
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
                             placeholder="Search badge number, visitor name, or student…"
                             aria-label="Search visitors"
-                            style={{ width: '100%', paddingLeft: 34 }}
                         />
-                        <Search size={15} style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', opacity: 0.6, pointerEvents: 'none' }} />
                     </div>
-                    {STATUS_FILTERS.map((f) => (
-                        <button key={f.value} type="button"
-                            className={`ds-filter-chip${statusFilter === f.value ? ' is-active' : ''}`}
-                            onClick={() => setStatusFilter(f.value)}>
-                            {f.label}
-                        </button>
-                    ))}
+                    <div className="ds-view-toggle ds-vlog-filters" role="group" aria-label="Filter visitors by status">
+                        {STATUS_FILTERS.map((f) => (
+                            <button key={f.value} type="button" title={f.hint}
+                                className={`ds-view-toggle-btn${statusFilter === f.value ? ' is-active' : ''}`}
+                                aria-pressed={statusFilter === f.value}
+                                onClick={() => setStatusFilter(f.value)}>
+                                {f.label}
+                                {f.value === 'inside' && <span className="ds-vlog-pill">{onCampusCount}</span>}
+                            </button>
+                        ))}
+                    </div>
                 </div>
+
                 {loading && <div className="ds-skeleton" />}
                 {!loading && visitors.length === 0 && (
-                    <div className="ds-empty">
-                        <UserX size={18} style={{ verticalAlign: -3, marginRight: 6 }} />
-                        {search ? `No visitors match "${search}".` : statusFilter === 'inside' ? 'Nobody is currently checked in — all badges are returned.' : 'No visitors logged yet.'}
+                    <div className="ds-vlog-empty">
+                        <span className="ds-vlog-empty-icon" aria-hidden="true"><UserX size={20} /></span>
+                        <div>
+                            <p className="ds-vlog-empty-title">
+                                {search ? `No visitors match "${search}"`
+                                    : statusFilter === 'inside' ? 'Nobody is on campus right now'
+                                    : statusFilter === 'checked_out' ? 'No checked-out visitors yet'
+                                    : 'No visitors logged yet'}
+                            </p>
+                            <p className="ds-vlog-empty-hint">
+                                {search ? 'Check the spelling, or try a badge number or part of the name.'
+                                    : statusFilter === 'inside' ? 'All badges have been returned.'
+                                    : 'Visitors checked in by the Security Officer will appear here.'}
+                            </p>
+                        </div>
                     </div>
                 )}
                 {!loading && visitors.length > 0 && view === 'cards' && (
@@ -1118,7 +1141,7 @@ export default function SecurityVisitors() {
                         </table>
                     </div>
                 )}
-            </div>
+            </section>
         </DashboardShell>
     );
 }

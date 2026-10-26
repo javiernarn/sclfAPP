@@ -142,6 +142,9 @@ return [
             'api/change-password',
             'api/2fa/*',
             'api/profile/*',
+            // Auto Save drafts are the person's own scratch space, not a record.
+            'api/drafts',
+            'api/drafts/*',
             'api/notifications/*',
             'api/push/*',
             'api/action-requests',

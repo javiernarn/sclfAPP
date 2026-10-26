@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios, { storeTokenPair, getStoredToken, clearStoredToken, restoreSession } from '../config/axiosConfig';
 import { clearLoginMemory } from '../utils/welcome';
 import { getCurrentSubscription, disablePush } from '../utils/push';
+import { clearAllDrafts } from '../utils/autosave';
 
 const AuthContext = createContext(null);
 
@@ -155,6 +156,10 @@ export function AuthProvider({ children }) {
     };
 
     const logout = async () => {
+        // Auto Save drafts live in this browser — don't leave one behind for
+        // the next person on a shared campus PC.
+        clearAllDrafts(user?.id);
+
         // Fully revoke this device's push subscription on an explicit
         // logout (both the browser side and the server-side row) rather
         // than just reconciling it — someone deliberately signing out on

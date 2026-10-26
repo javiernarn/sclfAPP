@@ -19,6 +19,46 @@ class ProfileController extends Controller
     }
 
     /**
+     * Avatar-menu preference switches, saved on the account so they are the
+     * same on every device:
+     *  - email_notifications: the email copy of notifications. Only students
+     *    and instructors have it (nobody else is emailed — see
+     *    SclfNotification::EMAILED_ROLES).
+     *  - auto_save: keep report drafts while typing (see DraftController).
+     *    Open to every role; switching it off also deletes saved drafts.
+     * Push is per device and handled entirely in the browser.
+     */
+    public function updatePreferences(Request $request)
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'email_notifications' => ['sometimes', 'boolean'],
+            'auto_save' => ['sometimes', 'boolean'],
+        ]);
+
+        if (empty($validated)) {
+            return response()->json(['message' => 'Nothing to update.'], 422);
+        }
+
+        if (array_key_exists('email_notifications', $validated) && ! $user->hasAnyRole(['student', 'instructor'])) {
+            return response()->json(['message' => 'Email notifications can only be changed by students and instructors.'], 403);
+        }
+
+        $user->forceFill(array_map('boolval', $validated))->saveQuietly();
+
+        if (array_key_exists('auto_save', $validated) && ! $user->auto_save) {
+            $user->formDrafts()->delete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'email_notifications' => (bool) $user->email_notifications,
+            'auto_save' => (bool) $user->auto_save,
+        ]);
+    }
+
+    /**
      * One-time mandatory setup for an admin-created staff account
      * (instructor / security_officer / admin). Reached only while
      * must_setup_profile is true — EnsureProfileSetupComplete blocks

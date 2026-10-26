@@ -1,12 +1,16 @@
 @php
+    // Route passes $seo (see App\Support\Seo); fall back for any other caller of view('app').
+    $seo = $seo ?? \App\Support\Seo::forRequest(request());
     $sclfTheme = request()->cookie('sclf-theme', 'white');
     // 'dark-blue' / 'dark-yellow' / 'dark-maroon' (Custom themes) are dark shells.
     $sclfTheme = in_array($sclfTheme, ['black', 'dark-white', 'dark-blue', 'dark-yellow', 'dark-maroon']) ? 'black' : 'white';
     $sclfThemeColor = $sclfTheme === 'black' ? '#0a0c12' : '#ffffff';
+    // PWA title bar / browser toolbar color: navy on light themes, white on dark themes.
+    $sclfBarColor = $sclfTheme === 'black' ? '#ffffff' : '#01215f';
     $sclfStatusBarStyle = $sclfTheme === 'black' ? 'black' : 'default';
 @endphp
 <!DOCTYPE html>
-<html lang="en" data-theme="{{ $sclfTheme === 'black' ? 'black' : '' }}" style="background:{{ $sclfThemeColor }}; overscroll-behavior-y: none;">
+<html lang="en" data-theme="{{ $sclfTheme === 'black' ? 'black' : '' }}" style="background:{{ $sclfThemeColor }}; overscroll-behavior-y: none; touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adjust: 100%;">
 
 <head>
     <meta charset="UTF-8">
@@ -15,33 +19,70 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <!-- Title / SEO -->
-    <title>SCLF - Opol Community College</title>
-    <meta name="description" content="Smart Campus Lost & Found system for Opol Community College. Report, search, and claim lost or found items on campus.">
+    <title>{{ $seo['title'] }}</title>
+    <meta name="description" content="{{ $seo['description'] }}">
+    <meta name="robots" content="{{ $seo['robots'] }}">
     <meta name="application-name" content="SCLF - Opol Community College">
-    <meta name="keywords" content="SCLF, Opol Community College, Lost and Found, OCC Lost and Found, Campus Lost and Found">
-    <link rel="canonical" href="{{ url()->current() }}">
+    <meta name="author" content="Opol Community College">
+    <meta name="keywords" content="SCLF, Opol Community College, Lost and Found, OCC Lost and Found, Campus Lost and Found, report lost item, claim found item">
+    @if ($seo['canonical'])
+    <link rel="canonical" href="{{ $seo['canonical'] }}">
+    @endif
 
     <!-- Open Graph / social preview -->
     <meta property="og:type" content="website">
+    <meta property="og:locale" content="en_PH">
     <meta property="og:site_name" content="SCLF - Opol Community College">
-    <meta property="og:title" content="SCLF - Opol Community College">
-    <meta property="og:description" content="Smart Campus Lost & Found system for Opol Community College.">
-    <meta property="og:image" content="{{ asset('images/site-logo.png') }}">
-    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="{{ $seo['title'] }}">
+    <meta property="og:description" content="{{ $seo['description'] }}">
+    <meta property="og:url" content="{{ $seo['canonical'] ?? $seo['base'] . '/' }}">
+    <meta property="og:image" content="{{ $seo['image'] }}">
+    <meta property="og:image:type" content="image/png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="{{ $seo['imageAlt'] }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $seo['title'] }}">
+    <meta name="twitter:description" content="{{ $seo['description'] }}">
+    <meta name="twitter:image" content="{{ $seo['image'] }}">
+    <meta name="twitter:image:alt" content="{{ $seo['imageAlt'] }}">
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/site-logo.png') }}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/site-logo.png') }}">
-    <link rel="shortcut icon" href="{{ asset('images/site-logo.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('images/site-logo.png') }}">
+    @if ($seo['jsonLd'])
+    <!-- Structured data (public pages only) -->
+    <script type="application/ld+json">{!! json_encode($seo['jsonLd'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}</script>
+    @endif
 
-    <!-- PWA -->
-    <meta name="theme-color" content="{{ $sclfThemeColor }}">
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <!-- Favicons / home-screen icons -->
+    <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/favicon-16.png') }}">
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/icon-192.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
+
+    <!-- PWA (installable on Android / iOS / Windows / macOS / ChromeOS / Linux) -->
+    <meta name="theme-color" content="{{ $sclfBarColor }}">
+    <meta name="msapplication-TileColor" content="#01215f">
+    <meta name="msapplication-TileImage" content="{{ asset('images/icon-192.png') }}">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="SCLF">
     <meta name="apple-mobile-web-app-status-bar-style" content="{{ $sclfStatusBarStyle }}">
-    <link rel="manifest" href="{{ route('pwa.manifest') }}">
+    <meta name="format-detection" content="telephone=no">
+    <!-- use-credentials: the manifest varies with the "sclf-theme" cookie, and browsers
+         fetch manifests WITHOUT cookies unless this is set. -->
+    <link rel="manifest" href="{{ route('pwa.manifest') }}" crossorigin="use-credentials">
+
+    <!-- iOS zooms the page when a field with text smaller than 16px gets focus.
+         On touch screens keep every text field at 16px so tapping one never zooms. -->
+    <style>
+        @media (pointer: coarse) {
+            input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="button"]):not([type="submit"]),
+            select,
+            textarea {
+                font-size: 16px !important;
+            }
+        }
+    </style>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,7 +92,14 @@
     @viteReactRefresh
     @vite('resources/js/main.jsx')
 </head>
-<body style="margin:0; background:{{ $sclfThemeColor }}; overscroll-behavior-y: none; min-height: 100vh; min-height: 100dvh;">
+<body style="margin:0; background:{{ $sclfThemeColor }}; overscroll-behavior-y: none; touch-action: pan-x pan-y; min-height: 100vh; min-height: 100dvh;">
     <div id="app"></div>
+    <noscript>
+        <div style="font-family: Arial, Helvetica, sans-serif; padding: 24px; color: #111; background: #fff;">
+            <h1>SCLF - Opol Community College</h1>
+            <p>{{ $seo['description'] }}</p>
+            <p>JavaScript is required to use SCLF. Please enable JavaScript in your browser, then reload this page.</p>
+        </div>
+    </noscript>
 </body>
 </html>

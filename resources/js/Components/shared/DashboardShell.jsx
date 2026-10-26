@@ -10,6 +10,7 @@ import { loginToast } from "../../utils/welcome";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
 import logo from "../../assets/images/site-logo.png";
 import AccountMenu from "./AccountMenu";
+import MenuToggles from "./MenuToggles";
 import GlobalSearchBar from "./GlobalSearchBar";
 import MobileSearch from "./MobileSearch";
 import Tooltip from "./Tooltip";
@@ -38,6 +39,7 @@ import "./MobileApp.css";
 import "./MobileUserApp.css";
 // Admin / Staff / Security phone app: same app look, card-style tables, staff quick actions.
 import "./MobileStaffApp.css";
+import RoleText from "./RoleText";
 import {
     LayoutDashboard,
     PackageSearch,
@@ -446,6 +448,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     const printPath = isAdmin ? "/app/admin/print-report" : "/app/security/print-report";
     // Admin/Staff/Security phones show data tables as stacked cards.
     usePhoneTableLabels(isPhone && navRole !== "student");
+    const sidebarRole = roles?.includes("admin") ? "admin" : roles?.includes("staff") ? "staff" : isSecurity ? "security_officer" : roles?.includes("instructor") ? "instructor" : roles?.includes("student") ? "student" : "";
     const navLabel = isAdmin ? (roles.includes("admin") ? "Admin" : "Staff") : isSecurity ? "Security Officer" : roles.includes("instructor") ? t("shell.roleInstructor") : t("shell.roleStudent");
     const mobileTabs = withOwnDashboard(MOBILE_TABS_BY_ROLE[navRole])
         .map((tab) => (tab.labelKey ? { ...tab, label: t(tab.labelKey), fullLabel: t(tab.fullLabelKey) } : tab));
@@ -800,6 +803,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                         align="bottom"
                                     />
                                 )}
+                                <MenuToggles t={t} />
                                 <div className="ds-menu-divider" />
                                 <button
                                     type="button"
@@ -935,6 +939,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                             align="top"
                                         />
                                     )}
+                                    <MenuToggles t={t} />
                                     <div className="ds-menu-divider" />
                                     <button
                                         type="button"
@@ -956,7 +961,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     <DashboardGreeting eyebrow={eyebrow} name={greeting.name} subtitle={subtitle} />
                                 ) : (
                                 <div className="ds-header-text">
-                                    {eyebrow && <span className="ds-eyebrow">{eyebrow}</span>}
+                                    {eyebrow && <span className="ds-eyebrow"><RoleText text={eyebrow} /></span>}
                                     {title && <h1 className="ds-title">{title}</h1>}
                                     {subtitle && <p className="ds-subtitle">{subtitle}</p>}
                                 </div>

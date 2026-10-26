@@ -108,6 +108,11 @@ class User extends Authenticatable implements MustVerifyEmail
      * "Welcome back"). Uses forceFill so last_login_at stays out of
      * mass assignment, and saveQuietly so it doesn't touch anything else.
      */
+    public function formDrafts(): HasMany
+    {
+        return $this->hasMany(FormDraft::class);
+    }
+
     public function recordLogin(): bool
     {
         $isFirst = $this->last_login_at === null;
@@ -150,6 +155,11 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            // Student/instructor opt-out for emailed notifications (see
+            // SclfNotification::via and ProfileController::updatePreferences).
+            'email_notifications' => 'boolean',
+            // Auto Save switch (avatar menu) — account-wide, see form_drafts.
+            'auto_save' => 'boolean',
             // NULL until the account's first completed sign-in — see
             // recordLogin() and the "Welcome" vs "Welcome back" toast.
             'last_login_at' => 'datetime',

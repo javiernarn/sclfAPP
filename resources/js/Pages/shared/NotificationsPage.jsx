@@ -7,6 +7,7 @@ import useViewMode from '../../hooks/useViewMode';
 import { useNotifications } from '../../context/NotificationContext';
 import NotificationDetail from '../../Components/shared/NotificationDetail';
 import { destinationForNotification } from '../../utils/notificationRoutes';
+import RoleText, { RoleBadge } from '../../Components/shared/RoleText';
 
 export default function NotificationsPage() {
     const [notifications, setNotifications] = useState([]);
@@ -118,7 +119,7 @@ export default function NotificationsPage() {
                                         onClick={() => openNotification(n)}
                                     >
                                         <td className="ds-table-title ds-notif-c-title" style={{ maxWidth: 200 }}>{n.data.title}</td>
-                                        <td className="ds-table-sub ds-notif-c-msg" style={{ maxWidth: 360, whiteSpace: 'normal' }}>{n.data.message}</td>
+                                        <td className="ds-table-sub ds-notif-c-msg" style={{ maxWidth: 360, whiteSpace: 'normal' }}><RoleText keys text={n.data.message} /></td>
                                         <td className="ds-table-nowrap ds-notif-c-time">{new Date(n.created_at).toLocaleString()}</td>
                                         <td className="ds-notif-c-status">{!n.read_at ? <span className="ds-badge ds-badge-pending">New</span> : <span className="ds-badge ds-badge-default">Read</span>}</td>
                                         <td className="ds-notif-c-act"><button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={(e) => showDetails(e, n)}>Details</button></td>
@@ -136,7 +137,7 @@ export default function NotificationsPage() {
                                 onClick={() => openNotification(n)}>
                                 <div className="ds-notif-card-body">
                                     <p className="ds-list-item-title">{n.data.title}</p>
-                                    <p className="ds-list-item-meta ds-notif-card-msg">{n.data.message}</p>
+                                    <p className="ds-list-item-meta ds-notif-card-msg"><RoleText keys text={n.data.message} /></p>
                                     <p className="ds-list-item-meta ds-notif-card-time">{new Date(n.created_at).toLocaleString()}</p>
                                 </div>
                                 <div className="ds-notif-card-side">

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { MapPin } from "../icons";
 import useRoleTranslation from "../../hooks/useRoleTranslation";
 import "./DashboardGreeting.css";
+import RoleText, { RoleBadge } from './RoleText';
 
 // Campus is in Opol, Misamis Oriental — clock and greeting use Philippine
 // time so they always agree with the weather, wherever the device is.
@@ -120,7 +121,7 @@ export default function DashboardGreeting({ eyebrow, name, subtitle }) {
     return (
         <>
             <div className="ds-header-text ds-greeting">
-                {eyebrow && <span className="ds-eyebrow">{eyebrow}</span>}
+                {eyebrow && <span className="ds-eyebrow"><RoleText text={eyebrow} /></span>}
                 <h1 className="ds-title ds-greeting-title">
                     {greetingFor(now, t)}{firstNameOf(name) ? `, ${firstNameOf(name)}` : ""} 👋
                 </h1>

@@ -145,7 +145,6 @@ export default function AdminUserActivity() {
                 {loading && <div className="ds-skeleton" />}
                 {!loading && rows.length === 0 && (
                     <div className="ds-empty">
-                        <Activity size={18} style={{ verticalAlign: -3, marginRight: 6 }} />
                         No activity matches these filters.
                     </div>
                 )}

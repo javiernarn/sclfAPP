@@ -13,6 +13,7 @@ use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\PrintReportController;
 use App\Http\Controllers\ClaimController;
 use App\Http\Controllers\CounterController;
+use App\Http\Controllers\DraftController;
 use App\Http\Controllers\DispositionController;
 use App\Http\Controllers\FoundItemController;
 use App\Http\Controllers\HistoryController;
@@ -104,6 +105,17 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     // Mandatory first-login setup for an admin-created staff account —
     // see ProfileController::completeSetup() and SetupAccountPage.jsx.
     Route::middleware('throttle:10,1')->post('/profile/complete-setup', [ProfileController::class, 'completeSetup']);
+
+    // Avatar-menu switches (currently: email notifications on/off).
+    Route::middleware('throttle:30,1')->patch('/profile/preferences', [ProfileController::class, 'updatePreferences']);
+
+    // Auto Save drafts (one per form per account) — follow the person to another device.
+    Route::middleware('throttle:120,1')->group(function () {
+        Route::delete('/drafts', [DraftController::class, 'destroyAll']);
+        Route::get('/drafts/{form}', [DraftController::class, 'show']);
+        Route::put('/drafts/{form}', [DraftController::class, 'store']);
+        Route::delete('/drafts/{form}', [DraftController::class, 'destroy']);
+    });
 
     // Two-factor authentication management (Profile page's Security
     // card). Setup/confirm/disable all require a fully-authenticated

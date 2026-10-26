@@ -29,7 +29,7 @@ const MainPage = ({ routing = true }) => {
     const { zoomModalOpen, closeZoomModal } = usePreventInspect();
 
     useEffect(() => {
-        document.title = "Loading | SCLF - Opol Community College";
+        document.title = "SCLF - Opol Community College | Smart Campus Lost & Found";
     }, []);
 
     useEffect(() => {

@@ -1,4 +1,5 @@
 import React from "react";
+import RoleText from './RoleText';
 import { Link } from "react-router-dom";
 import { ChevronRight, Plus } from "../icons";
 import { useAuth } from "../../context/AuthContext";
@@ -54,7 +55,7 @@ export default function MobileStaffHome({ name, role = "Staff", stats, statsTitl
                 </p>
                 <div className="mh-school">
                     <b>Opol Community College</b>
-                    <span>{role} · Smart Campus Lost &amp; Found</span>
+                    <span><RoleText text={role} /> · Smart Campus Lost &amp; Found</span>
                 </div>
             </header>
 

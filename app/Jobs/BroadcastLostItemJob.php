@@ -72,6 +72,7 @@ class BroadcastLostItemJob implements ShouldQueue
             ->where('is_active', true)
             ->whereNotNull('email')
             ->whereNotNull('email_verified_at')
+            ->where('email_notifications', true) // respects the avatar-menu "Email notifications" switch
             ->where('id', '!=', $item->user_id) // skip the reporter
             ->role(self::AUDIENCE)
             ->when($item->campus_id, fn ($q) => $q->where(

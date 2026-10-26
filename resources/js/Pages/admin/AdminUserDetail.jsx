@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { RoleBadge } from '../../Components/shared/RoleText';
 import axios from '../../config/axiosConfig';
 import { useParams, Link } from 'react-router-dom';
 import {
@@ -171,7 +172,7 @@ export default function AdminUserDetail() {
             subtitle="Full profile details and sign-in history — visible to Admin and Staff only."
             actions={
                 <span className="ds-badge ds-badge-default">
-                    {ROLE_LABELS[roleName] || 'No role'}
+                    {roleName ? <RoleBadge role={roleName}>{ROLE_LABELS[roleName]}</RoleBadge> : 'No role'}
                 </span>
             }
         >
@@ -212,7 +213,7 @@ export default function AdminUserDetail() {
                     <InfoItem icon={Mail} label="Email" value={user.email} />
                     <InfoItem icon={Phone} label="Phone" value={user.phone_number} />
                     <InfoItem icon={IdCard} label="ID Number" value={user.display_id} />
-                    <InfoItem icon={ShieldCheck} label="Role" value={ROLE_LABELS[roleName] || 'No role'} />
+                    <InfoItem icon={ShieldCheck} label="Role" value={roleName ? <RoleBadge role={roleName}>{ROLE_LABELS[roleName]}</RoleBadge> : 'No role'} />
                     <InfoItem icon={VenetianMask} label="Gender" value={
                         user.gender ? user.gender.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase()) : null
                     } />

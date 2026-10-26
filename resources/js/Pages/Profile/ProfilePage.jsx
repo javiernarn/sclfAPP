@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { UserCircle, Mail, ShieldCheck, Phone, MapPin, VenetianMask, IdCard, GraduationCap, Bell, BellOff } from '../../Components/icons';
+import RoleText, { RoleBadge } from '../../Components/shared/RoleText';
+import { UserCircle, Mail, ShieldCheck, Phone, MapPin, VenetianMask, IdCard, GraduationCap } from '../../Components/icons';
 import { useAuth } from '../../context/AuthContext';
-import usePushNotifications from '../../hooks/usePushNotifications';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ProfileSkeleton from '../../Components/shared/ProfileSkeleton';
 import ChangePasswordForm from './Partials/ChangePasswordForm';
 import TwoFactorAuthForm from './Partials/TwoFactorAuthForm';
-import { useToast } from '../../context/ToastContext';
 
 // One compact "field" block used inside the account-details grid — icon,
 // small uppercase label, value. Several of these sit side by side per row
@@ -25,8 +24,6 @@ const InfoItem = ({ icon: Icon, label, value }) => (
 export default function ProfilePage() {
     const { user, roles } = useAuth();
     const [pageLoading, setPageLoading] = useState(true);
-    const toast = useToast();
-    const push = usePushNotifications();
 
     useEffect(() => {
         document.title = "Profile | SCLF - Opol Community College";
@@ -82,25 +79,6 @@ export default function ProfilePage() {
     const idLabel = ID_LABELS[primaryRole] || 'ID Number';
     const idValue = isStudent ? user?.student_id : user?.staff_id;
 
-    const handlePushToggle = async () => {
-        if (push.subscribed) {
-            await push.disable();
-            toast.info('Push notifications turned off for this device.');
-            return;
-        }
-
-        const result = await push.enable();
-        if (result.status === 'subscribed') {
-            toast.success('Push notifications are on for this device.');
-        } else if (result.status === 'denied') {
-            toast.warning('Notifications are blocked in your browser settings. Allow them for this site to turn this on.');
-        } else if (result.status === 'unconfigured') {
-            toast.error('Push notifications aren\'t set up on the server yet.');
-        } else if (result.status === 'unsupported') {
-            toast.error('This browser doesn\'t support push notifications.');
-        }
-    };
-
     return (
         <DashboardShell
             eyebrow="Account"
@@ -131,7 +109,7 @@ export default function ProfilePage() {
                     <div style={{ fontSize: 18, fontWeight: 800 }}>{user?.name || 'Account'}</div>
                     <div style={{ fontSize: 13, opacity: 0.6 }}>{user?.email || ''}</div>
                     <div className="ds-chip-row">
-                        <span className="ds-chip ds-chip-accent"><ShieldCheck size={12} /> {roleLabel}</span>
+                        <RoleBadge role={primaryRole}>{roleLabel}</RoleBadge>
                         {idValue && <span className="ds-chip">{idLabel}: {idValue}</span>}
                         {isStudent && user?.course && <span className="ds-chip">{user.course}</span>}
                         {isInstructor && user?.teaching_course && <span className="ds-chip">{user.teaching_course}</span>}
@@ -153,7 +131,7 @@ export default function ProfilePage() {
                     {isStudent && <InfoItem icon={GraduationCap} label="Course" value={user?.course} />}
                     {isInstructor && <InfoItem icon={GraduationCap} label="Teaching course" value={user?.teaching_course} />}
                     <InfoItem icon={MapPin} label="Address" value={user?.address} />
-                    <InfoItem icon={ShieldCheck} label="Role" value={roleLabel} />
+                    <InfoItem icon={ShieldCheck} label="Role" value={<RoleBadge role={primaryRole}>{roleLabel}</RoleBadge>} />
                 </div>
             </div>
 
@@ -164,40 +142,6 @@ export default function ProfilePage() {
                 <ChangePasswordForm />
                 <hr className="ds-divider" />
                 <TwoFactorAuthForm />
-            </div>
-
-            {/* ---------- Notifications ---------- */}
-            <div className="ds-card">
-                <div className="ds-card-title">Notifications</div>
-                <p className="ds-card-desc">
-                    Get an alert on this device the moment something changes — a claim update, a match, or an item
-                    ready for pickup — even when SCLF isn't open in a tab. This is separate from email notifications,
-                    which keep going either way.
-                </p>
-
-                {!push.supported && (
-                    <p style={{ fontSize: 13, opacity: 0.65, margin: 0 }}>
-                        This browser doesn't support push notifications.
-                    </p>
-                )}
-
-                {push.supported && push.loading && <div className="ds-skeleton" style={{ height: 40 }} />}
-
-                {push.supported && !push.loading && (
-                    <button
-                        type="button"
-                        className={push.subscribed ? 'ds-btn ds-btn-secondary' : 'ds-btn ds-btn-primary'}
-                        onClick={handlePushToggle}
-                        disabled={push.busy}
-                    >
-                        {push.subscribed ? <BellOff size={16} /> : <Bell size={16} />}
-                        {push.busy
-                            ? 'Please wait…'
-                            : push.subscribed
-                                ? 'Turn off notifications on this device'
-                                : 'Enable notifications on this device'}
-                    </button>
-                )}
             </div>
 
             </>

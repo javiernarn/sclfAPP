@@ -8,6 +8,7 @@ import useViewMode from '../../hooks/useViewMode';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { roleAndName } from '../../utils/roleLabel';
+import RoleText from '../../Components/shared/RoleText';
 
 const STATUS_OPTIONS = [
     { value: '', label: 'All statuses' },
@@ -115,7 +116,6 @@ export default function IncidentsList() {
                 {loading && <div className="ds-skeleton" />}
                 {!loading && incidents.length === 0 && (
                     <div className="ds-empty">
-                        <ShieldAlert size={18} style={{ verticalAlign: -3, marginRight: 6 }} />
                         {isStaff ? 'No incidents match these filters.' : "You haven't reported any incidents yet."}
                     </div>
                 )}
@@ -151,7 +151,7 @@ export default function IncidentsList() {
                                             </div>
                                         </td>
                                         <td className="ds-table-nowrap">
-                                            {isStaff ? (incident.reporter?.name || '—') : roleAndName(incident.assignee, 'Unassigned')}
+                                            {isStaff ? (incident.reporter?.name || '—') : <RoleText text={roleAndName(incident.assignee, 'Unassigned')} />}
                                         </td>
                                         <td><span className={severityBadgeClass(incident.severity)}>{incident.severity}</span></td>
                                         <td><span className={statusBadgeClass(incident.status)}>{statusLabel(incident.status)}</span></td>
@@ -185,7 +185,7 @@ export default function IncidentsList() {
                                                 {incident.category?.replace(/_/g, ' ')}
                                                 {incident.campus?.code ? ` · ${incident.campus.code}` : ''}
                                                 {isStaff && incident.reporter?.name ? ` · Reported by ${incident.reporter.name}` : ''}
-                                                {incident.assignee?.name ? ` · Assigned to ${roleAndName(incident.assignee)}` : ''}
+                                                {incident.assignee?.name ? <> · Assigned to <RoleText text={roleAndName(incident.assignee)} /></> : ''}
                                             </p>
                                             <p className="ds-list-item-meta">
                                                 <AlertTriangle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />

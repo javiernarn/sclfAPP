@@ -304,10 +304,21 @@ body { overflow: hidden; }
    avatar sits in the middle of the rail instead of pinned to the left. */
 .ds-sidebar.collapsed .ds-user-row { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
 .ds-user-row-btn {
-    width: 100%; border: none; background: none; cursor: pointer;
-    border-radius: 11px; color: inherit; font-family: inherit; text-align: left;
-    transition: background 0.15s ease;
+    width: 100%; cursor: pointer;
+    color: inherit; font-family: inherit; text-align: left;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
+/* Sidebar account card = the header's .ds-profile-btn card: same pill shape,
+   same 1.5px border + fill per theme, same 5px padding around a 34px round
+   avatar, so the fixed height is identical (34 + 2*5 + 2*1.5 = 47px). */
+.ds-user-row.ds-user-row-btn {
+    height: 47px; padding: 5px 10px 5px 5px; gap: 8px;
+    border-radius: 999px; border: 1.5px solid #c3ccdb;
+}
+.ds-user-row-btn .ds-avatar { border-radius: 50%; }
+.ds-sidebar.collapsed .ds-user-row.ds-user-row-btn { padding-left: 0; padding-right: 0; }
+.ds-shell.light .ds-user-row-btn { background: rgba(255,255,255,0.7); border-color: #c3ccdb; }
+.ds-shell.dark .ds-user-row-btn { background: rgba(255,255,255,0.08); border-color: #3a4457; }
 .ds-shell.light .ds-user-row-btn:hover { background: #f4f7fb; }
 .ds-shell.dark .ds-user-row-btn:hover { background: #171c26; }
 /* Collapsed: same story as .ds-nav-link and .ds-brand above — the avatar
@@ -494,6 +505,9 @@ body { overflow: hidden; }
 .ds-menu {
     min-width: 220px; border-radius: 14px; padding: 8px;
     animation: ds-fade-in 0.15s ease both;
+    /* Portaled to <body>, outside .ds-shell, so it never inherited the app
+       font and fell back to the browser's serif. */
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 /* The menu portals into <body>, outside .ds-shell, so it can't rely on
    `.ds-shell.light`/`.ds-shell.dark` ancestor selectors for its own
@@ -503,8 +517,16 @@ body { overflow: hidden; }
 .ds-menu.light { background: #fff; border: 1.5px solid #c3ccdb; box-shadow: 0 20px 40px rgba(2,6,23,0.16); color: #0b1220; }
 .ds-menu.dark { background: #12161f; border: 1.5px solid #323b4a; box-shadow: 0 20px 40px rgba(0,0,0,0.5); color: #e7ecf3; }
 @keyframes ds-fade-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-.ds-menu-name { padding: 8px 10px 2px; font-size: 13.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ds-menu-email { padding: 0 10px 8px; font-size: 12px; opacity: 0.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ds-menu-name,
+.ds-menu-email {
+    /* Name + email sit in one outlined box that spans the whole menu width
+       (no dead space beside them), with a line between the two. */
+    margin: 0 2px; padding: 8px 10px; box-sizing: border-box;
+    border: 1.5px solid rgba(127, 127, 127, 0.38);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ds-menu-name { margin-top: 2px; border-radius: 9px 9px 0 0; font-size: 13.5px; font-weight: 700; }
+.ds-menu-email { margin-bottom: 8px; border-top: 0; border-radius: 0 0 9px 9px; font-size: 12px; opacity: 0.75; }
 .ds-menu-divider { height: 1px; margin: 4px 0; }
 .ds-menu.light .ds-menu-divider { background: #c9d1de; }
 .ds-menu.dark .ds-menu-divider { background: #323b4a; }
@@ -972,7 +994,25 @@ body { overflow: hidden; }
 .ds-fieldset:disabled .ds-field textarea {
     opacity: 0.55; cursor: not-allowed; background: rgba(127,127,127,0.08);
 }
-.ds-empty { text-align: center; padding: 40px 16px; opacity: 0.6; font-size: 14px; }
+/* Empty card — one look everywhere, taken from the Visitors page: dashed
+   outline, accent icon circle, bold message. Every `.ds-empty` in the app
+   gets it, so Lost Items, Claims, Incidents, Notifications, Inventory… match. */
+.ds-empty {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    padding: 24px 18px; border-radius: 14px; text-align: left;
+    border: 1.5px dashed rgba(127, 127, 127, 0.4);
+    font-size: 14.5px; font-weight: 700; line-height: 1.4; opacity: 0.85;
+}
+.ds-empty::before {
+    content: ''; flex-shrink: 0; width: 42px; height: 42px;
+    /* accent-coloured circle + inbox icon from one mask (circle = 12% alpha, icon = solid) */
+    background-color: var(--tk-accent-text, #4f46e5);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Ccircle cx='21' cy='21' r='21' fill='black' fill-opacity='.12'/%3E%3Cg transform='translate(9 9)' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='22 12 16 12 14 15 10 15 8 12 2 12'/%3E%3Cpath d='M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 42 42'%3E%3Ccircle cx='21' cy='21' r='21' fill='black' fill-opacity='.12'/%3E%3Cg transform='translate(9 9)' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='22 12 16 12 14 15 10 15 8 12 2 12'/%3E%3Cpath d='M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+}
+@media (max-width: 640px) {
+    .ds-empty { flex-direction: column; text-align: center; padding: 22px 14px; }
+}
 .ds-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .ds-list-item {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -2148,3 +2188,34 @@ body { overflow: hidden; }
 }
 .ds-field .ds-purpose-check input { margin-top: 1px; }
 .ds-field .ds-purpose-check span { flex: 1 1 auto; min-width: 0; }
+
+/* ---- role highlighting (see roles.css) ---- */
+.ds-eyebrow:has(.sclf-role) { background: transparent !important; border-color: transparent !important; padding-left: 0; }
+.ds-user-role { margin-top: 2px; font-size: 11px; }
+.ds-user-role .sclf-role { padding: 0 8px; }
+.ds-info-value .sclf-role, .ds-table td .sclf-role { font-size: .88em; }
+
+/* ---------- Avatar-menu switches (Push / Email / Auto Save) ---------- */
+.ds-menu-switch-row { justify-content: flex-start; }
+.ds-menu-switch-row:disabled { cursor: progress; opacity: 0.7; }
+.ds-menu-switch-text { display: flex; flex-direction: column; min-width: 0; flex: 1; line-height: 1.25; }
+.ds-menu-switch-label { font-size: 13px; font-weight: 600; }
+.ds-menu-switch-hint { font-size: 11px; font-weight: 500; opacity: 0.6; }
+.ds-switch {
+    position: relative; flex: 0 0 auto; width: 34px; height: 20px; border-radius: 999px;
+    background: #9aa6b8; transition: background 0.18s ease;
+}
+.ds-menu.dark .ds-switch { background: #4a5568; }
+.ds-switch-knob {
+    position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform 0.18s ease;
+}
+.ds-switch.is-on { background: var(--tk-accent-text, #16a34a); }
+.ds-switch.is-on .ds-switch-knob { transform: translateX(14px); }
+.ds-switch.is-busy { opacity: 0.6; }
+
+/* Auto Save line above report forms */
+.ds-autosave-status {
+    display: flex; align-items: center; gap: 6px; margin: 0 0 12px;
+    font-size: 12.5px; font-weight: 600; opacity: 0.75;
+}

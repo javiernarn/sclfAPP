@@ -162,7 +162,6 @@ export default function SecurityUnclaimedItems() {
                 {loading && <div className="ds-skeleton" />}
                 {!loading && items.length === 0 && (
                     <div className="ds-empty">
-                        <Building2 size={18} style={{ verticalAlign: -3, marginRight: 6 }} />
                         Nothing flagged unclaimed right now.
                     </div>
                 )}

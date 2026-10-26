@@ -10,6 +10,7 @@ import AttachmentGallery from '../../Components/shared/AttachmentGallery';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { roleAndName } from '../../utils/roleLabel';
+import RoleText from '../../Components/shared/RoleText';
 
 const InfoItem = ({ icon: Icon, label, value }) => (
     <div className="ds-info-item">
@@ -169,7 +170,6 @@ export default function ServiceRequestDetail() {
             <DashboardShell eyebrow="Facilities" title="Service Request Details">
                 <div className="ds-card">
                     <div className="ds-empty">
-                        <Lock size={18} style={{ verticalAlign: -3, marginRight: 6 }} />
                         {loadError || "This request couldn't be found, or you don't have access to it."}
                     </div>
                 </div>
@@ -194,7 +194,7 @@ export default function ServiceRequestDetail() {
                     <InfoItem icon={AlertTriangle} label="Priority" value={request.priority} />
                     <InfoItem icon={MapPin} label="Location" value={request.location_text} />
                     <InfoItem icon={Building2} label="Department" value={request.department?.name} />
-                    <InfoItem icon={UserCircle} label="Assigned to" value={request.assignee ? roleAndName(request.assignee) : null} />
+                    <InfoItem icon={UserCircle} label="Assigned to" value={request.assignee ? <RoleText text={roleAndName(request.assignee)} /> : null} />
                     {request.campus?.name && <InfoItem icon={Wrench} label="Campus" value={request.campus.name} />}
                 </div>
                 <div className="ds-field" style={{ marginTop: 12 }}>

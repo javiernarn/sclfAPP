@@ -14,6 +14,10 @@ Artisan::command('inspire', function () {
 // won't run on its own just because it's registered here.
 Schedule::command('disposition:sweep')->dailyAt('02:00');
 
+// Auto Save drafts nobody came back to for a week.
+Schedule::call(fn () => \App\Models\FormDraft::where('updated_at', '<', now()->subDays(\App\Models\FormDraft::MAX_AGE_DAYS))->delete())
+    ->name('drafts:prune')->dailyAt('02:15');
+
 // See App\Console\Commands\PruneUserActivity / config/sclf.php's
 // activity.retention_days. Runs after the disposition sweep, same daily
 // cadence — this table gets one row per request, so unlike most nightly

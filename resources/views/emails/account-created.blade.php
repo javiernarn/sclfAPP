@@ -1,3 +1,26 @@
+@php
+    // Fixed, high-contrast role colours (white text on solid fill) so a role is
+    // recognisable at a glance in any mail client, light or dark.
+    $roleColors = ['admin'=>'#b91c1c','administrator'=>'#b91c1c','staff'=>'#6d28d9','security officer'=>'#b45309','security'=>'#b45309','instructor'=>'#0369a1','student'=>'#047857'];
+    $rolePill = function ($label) use ($roleColors) {
+        $bg = $roleColors[strtolower(trim((string) $label))] ?? '#475569';
+        return new \Illuminate\Support\HtmlString('<span style="display:inline-block;background-color:'.$bg.';color:#ffffff;font-weight:bold;padding:1px 10px;border-radius:999px;font-size:13px;">'.e($label).'</span>');
+    };
+    $highlight = function ($text) use ($roleColors) {
+        $safe = e((string) $text);
+        $words = ['security officers'=>'security officer','security officer'=>'security officer','administrators'=>'admin','administrator'=>'admin','instructors'=>'instructor','instructor'=>'instructor','students'=>'student','student'=>'student','admin'=>'admin','staff'=>'staff'];
+        $keys = ['approved'=>'#047857','claimed'=>'#047857','released'=>'#047857','resolved'=>'#047857','pending'=>'#b45309','unclaimed'=>'#b45309','rejected'=>'#b91c1c','denied'=>'#b91c1c','expired'=>'#b91c1c','verified'=>'#0369a1','matched'=>'#0369a1'];
+        $all = array_merge(array_keys($words), array_keys($keys));
+        usort($all, fn ($a, $b) => strlen($b) <=> strlen($a));
+        $alt = implode('|', array_map(fn ($w) => preg_quote($w, '/'), $all));
+        $out = preg_replace_callback('/\b('.$alt.')\b/i', function ($m) use ($words, $keys, $roleColors) {
+            $k = strtolower($m[1]);
+            $bg = isset($words[$k]) ? ($roleColors[$words[$k]] ?? '#475569') : $keys[$k];
+            return '<span style="display:inline-block;background-color:'.$bg.';color:#ffffff;font-weight:bold;padding:0 8px;border-radius:999px;font-size:13px;">'.$m[1].'</span>';
+        }, $safe);
+        return new \Illuminate\Support\HtmlString($out);
+    };
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,7 +40,7 @@
         <div style="margin-bottom: 30px;">
             <h2 style="color: #0f2a5c; font-size: 20px; margin-bottom: 15px;">Hello {{ $fullName }},</h2>
 
-            <p>An account has been created for you on the SCLF Lost &amp; Found system by <strong>{{ $createdBy }}</strong>. Your account details are below, together with a temporary password so you can sign in for the first time.</p>
+            <p>An account has been created for you on the SCLF Lost &amp; Found system by {{ $highlight($createdBy) }}. Your account details are below, together with a temporary password so you can sign in for the first time.</p>
 
             <!-- Account details -->
             <div style="background-color: #f5f9ff; border-radius: 8px; padding: 20px; margin: 20px 0;">
@@ -33,7 +56,7 @@
                     </tr>
                     <tr>
                         <td style="padding: 6px 0; color: #666; vertical-align: top;">Role</td>
-                        <td style="padding: 6px 0; font-weight: 600; color: #0f2a5c;">{{ $roleLabel }}</td>
+                        <td style="padding: 6px 0; ">{{ $rolePill($roleLabel) }}</td>
                     </tr>
                     @if($staffId)
                     <tr>
@@ -115,9 +138,9 @@
             <p>If you have any questions or need assistance, please don't hesitate to contact us.</p>
 
             <div style="background-color: #eff6ff; border-radius: 8px; padding: 15px; margin: 20px 0; text-align: center; font-size: 14px; color: #333;">
-                <strong>SCLF Desk Administrator</strong><br>
+                <strong>SCLF Desk</strong><br>
                 <span>Opol Community College </span><br>
-                <em>Administrator</em>
+                {{ $rolePill("Admin") }}
             </div>
         </div>
 

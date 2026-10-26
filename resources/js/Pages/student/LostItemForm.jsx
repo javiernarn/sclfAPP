@@ -9,6 +9,8 @@ import { useAuth } from '../../context/AuthContext';
 import { reportNotice } from '../../Components/shared/reportNotice';
 import ItemReportFields from '../../Components/shared/ItemReportFields';
 import useReopenNotice from '../../hooks/useReopenNotice';
+import useAutoSaveDraft from '../../hooks/useAutoSaveDraft';
+import AutoSaveStatus from '../../Components/shared/AutoSaveStatus';
 
 const EMPTY_FORM = { item_name: '', description: '', category: '', brand: '', color: '', model: '', unique_characteristics: '', location_lost: '', date_lost: '', details: {} };
 
@@ -25,7 +27,9 @@ export default function LostItemForm({ onCancel, onCreated }) {
     const { user, roles } = useAuth();
 
     const isDirty = Object.entries(form).some(([key, value]) => (key === 'details' ? Object.values(value || {}).some(Boolean) : value !== EMPTY_FORM[key]));
-    const { guardedAction } = useUnsavedChangesGuard(isDirty, {
+    const draft = useAutoSaveDraft({ formKey: 'lost-item', value: form, initial: EMPTY_FORM, isDirty, onRestore: setForm });
+    // With Auto Save on, leaving is safe (the draft is kept), so no "discard?" prompts.
+    const { guardedAction } = useUnsavedChangesGuard(isDirty && !draft.autoSave, {
         message: "You've started reporting this lost item. If you leave now, what you've entered will be discarded.",
     });
 
@@ -43,7 +47,7 @@ export default function LostItemForm({ onCancel, onCreated }) {
         });
     };
 
-    const handleCancel = () => guardedAction(() => onCancel && onCancel());
+    const handleCancel = () => guardedAction(() => { draft.clearDraft(); onCancel && onCancel(); });
 
     const handleUnlockRequest = async () => {
         const agreed = await confirm(reportNotice({
@@ -73,6 +77,7 @@ export default function LostItemForm({ onCancel, onCreated }) {
         setLoading(true);
         try {
             await axios.post('/lost-items', { ...form, details: Object.fromEntries(Object.entries(form.details || {}).filter(([, v]) => v)) }, { silent: true });
+            draft.clearDraft();
             toast.success('Your lost item report has been submitted.', { title: 'Report filed' });
             onCreated && onCreated();
         } catch (err) {
@@ -99,6 +104,7 @@ export default function LostItemForm({ onCancel, onCreated }) {
                 <FormSkeleton />
             ) : (
             <div className="ds-card">
+                <AutoSaveStatus autoSave={draft.autoSave} savedAt={draft.savedAt} synced={draft.synced} />
                 {error && <div className="ds-error">{error}</div>}
 
                 {!unlocked && (

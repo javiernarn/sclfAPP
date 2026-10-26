@@ -13,6 +13,7 @@ import { useToast } from '../../context/ToastContext';
 import { useConfirm, useDiscardConfirm } from '../../context/ConfirmContext';
 import { roleNameAndId } from '../../utils/roleLabel';
 import { initialsOf } from '../../utils/initials';
+import RoleText from '../../Components/shared/RoleText';
 
 const CATEGORY_OPTIONS = ['theft', 'vandalism', 'trespassing', 'altercation', 'suspicious_activity', 'safety_hazard', 'lost_item_dispute', 'other'];
 const SEVERITY_OPTIONS = ['low', 'medium', 'high', 'critical'];
@@ -226,7 +227,6 @@ export default function IncidentDetail() {
             <DashboardShell eyebrow="Security" title="Incident Details">
                 <div className="ds-card">
                     <div className="ds-empty">
-                        <Lock size={18} style={{ verticalAlign: -3, marginRight: 6 }} />
                         {loadError || "This incident couldn't be found, or you don't have access to it."}
                     </div>
                 </div>
@@ -268,7 +268,7 @@ export default function IncidentDetail() {
                             <InfoItem icon={AlertTriangle} label="Severity" value={incident.severity} />
                             <InfoItem icon={MapPin} label="Location" value={incident.location_text} />
                             <InfoItem icon={Calendar} label="Occurred" value={new Date(incident.occurred_at).toLocaleString()} />
-                            <InfoItem icon={UserCircle} label="Managed by" value={manager ? roleNameAndId(manager) : 'Not yet taken by anyone'} />
+                            <InfoItem icon={UserCircle} label="Managed by" value={manager ? <RoleText text={roleNameAndId(manager)} /> : 'Not yet taken by anyone'} />
                             {incident.campus?.name && <InfoItem icon={ShieldAlert} label="Campus" value={incident.campus.name} />}
                         </div>
                         <div className="ds-field" style={{ marginTop: 12 }}>
@@ -345,7 +345,7 @@ export default function IncidentDetail() {
                 <div className="ds-card">
                     <h3>Resolution</h3>
                     <div className="ds-info-grid">
-                        <InfoItem icon={UserCircle} label="Resolved by" value={incident.resolver ? roleNameAndId(incident.resolver) : null} />
+                        <InfoItem icon={UserCircle} label="Resolved by" value={incident.resolver ? <RoleText text={roleNameAndId(incident.resolver)} /> : null} />
                         <InfoItem icon={Calendar} label="Resolved at" value={incident.resolved_at ? new Date(incident.resolved_at).toLocaleString() : null} />
                         {incident.closed_at && <InfoItem icon={CheckCircle2} label="Closed at" value={new Date(incident.closed_at).toLocaleString()} />}
                     </div>

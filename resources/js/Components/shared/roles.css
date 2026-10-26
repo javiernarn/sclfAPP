@@ -1,0 +1,37 @@
+/*
+ * roles.css — fixed, theme-independent colours for people's roles.
+ * Each role is a SOLID pill with white text, so it stays readable on every
+ * theme (light, dark, maroon, blue, yellow and the black "Custom" themes).
+ * A thin light ring keeps the pill visible on dark backgrounds.
+ *
+ *   Admin     red       Staff       violet     Security   amber
+ *   Instructor sky blue  Student     green
+ */
+.sclf-role {
+    --role-bg: #475569;
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 1px 9px; border-radius: 999px;
+    background: var(--role-bg); color: #fff !important;
+    font-weight: 700; font-size: .92em; line-height: 1.5;
+    letter-spacing: .01em; white-space: nowrap; vertical-align: baseline;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.35), 0 1px 2px rgba(0,0,0,.25);
+    text-shadow: none; text-transform: none;
+}
+.sclf-role-admin      { --role-bg: #b91c1c; }
+.sclf-role-staff      { --role-bg: #6d28d9; }
+.sclf-role-security   { --role-bg: #b45309; }
+.sclf-role-instructor { --role-bg: #0369a1; }
+.sclf-role-student    { --role-bg: #047857; }
+
+/* other important words (statuses) — same idea, slightly smaller */
+.sclf-key {
+    --key-bg: #475569;
+    display: inline-block; padding: 0 7px; border-radius: 6px;
+    background: var(--key-bg); color: #fff !important; font-weight: 700;
+    font-size: .92em; line-height: 1.5;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.3);
+}
+.sclf-key-good    { --key-bg: #047857; }   /* approved, claimed, released, found, resolved */
+.sclf-key-warn    { --key-bg: #b45309; }   /* pending, unclaimed, overdue, urgent */
+.sclf-key-bad     { --key-bg: #b91c1c; }   /* rejected, denied, lost, expired */
+.sclf-key-info    { --key-bg: #0369a1; }   /* verified, matched, assigned */

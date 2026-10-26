@@ -121,7 +121,14 @@ class SclfNotification extends Notification
     {
         $channels = ['database'];
 
-        if ($notifiable instanceof User && $notifiable->hasAnyRole(self::EMAILED_ROLES)) {
+        // Students/instructors can switch their email copy off from the
+        // avatar menu (users.email_notifications, default on). The in-app
+        // bell and push are unaffected.
+        if (
+            $notifiable instanceof User
+            && $notifiable->hasAnyRole(self::EMAILED_ROLES)
+            && ($notifiable->email_notifications ?? true)
+        ) {
             $channels[] = 'mail';
         }
 

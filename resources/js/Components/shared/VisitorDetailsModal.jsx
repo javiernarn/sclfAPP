@@ -6,6 +6,7 @@ import VisitorBadgeFlip from './VisitorBadgeFlip';
 import { detailRows } from './PurposeDetailsFields';
 import './StaffRequestDetails.css'; // shared modal chrome (srd-*)
 import './VisitorDetailsModal.css';
+import RoleText from './RoleText';
 
 const fmt = (d) => (d ? new Date(d).toLocaleString() : '—');
 const val = (v) => (v === null || v === undefined || v === '' ? '—' : String(v));
@@ -101,9 +102,9 @@ export default function VisitorDetailsModal({ visitor: v, purposeDef = null, she
                                 <h4>Check-in / check-out</h4>
                                 <dl className="srd-dl">
                                     <Field label="Checked in">{fmt(v.checked_in_at)}</Field>
-                                    <Field label="Checked in by">{v.checked_in_by ? roleAndName(v.checked_in_by) : '—'}</Field>
+                                    <Field label="Checked in by">{v.checked_in_by ? <RoleText text={roleAndName(v.checked_in_by)} /> : '—'}</Field>
                                     <Field label="Checked out">{inside ? 'Not yet — badge not returned' : fmt(v.checked_out_at)}</Field>
-                                    <Field label="Checked out by">{v.checked_out_by ? roleAndName(v.checked_out_by) : '—'}</Field>
+                                    <Field label="Checked out by">{v.checked_out_by ? <RoleText text={roleAndName(v.checked_out_by)} /> : '—'}</Field>
                                     <Field label={inside ? 'Time inside so far' : 'Total time on campus'}>{duration(v.checked_in_at, inside ? null : v.checked_out_at)}</Field>
                                     <Field label="Badge cycle (round)">{val(v.badge_cycle)}</Field>
                                     <Field label="Visitor opened the welcome page">{v.welcomed_at ? fmt(v.welcomed_at) : 'Not yet'}</Field>

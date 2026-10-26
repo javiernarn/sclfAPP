@@ -11,6 +11,8 @@ import { useAuth } from '../../context/AuthContext';
 import { reportNotice } from '../../Components/shared/reportNotice';
 import { useUnsavedChangesGuard } from '../../hooks/useUnsavedChangesGuard';
 import useReopenNotice from '../../hooks/useReopenNotice';
+import useAutoSaveDraft from '../../hooks/useAutoSaveDraft';
+import AutoSaveStatus from '../../Components/shared/AutoSaveStatus';
 
 const CATEGORY_OPTIONS = [
     { value: 'maintenance', label: 'Maintenance' },
@@ -51,8 +53,11 @@ export default function ServiceRequestCreate() {
     const { user, roles } = useAuth();
     const [unlocked, setUnlocked] = useState(false);
 
-    const isDirty = files.length > 0 || Object.entries(form).some(([key, value]) => value !== EMPTY_FORM[key]);
-    const { guardedAction } = useUnsavedChangesGuard(isDirty, {
+    const fieldsDirty = Object.entries(form).some(([key, value]) => value !== EMPTY_FORM[key]);
+    const isDirty = files.length > 0 || fieldsDirty;
+    const draft = useAutoSaveDraft({ formKey: 'service-request', value: form, initial: EMPTY_FORM, isDirty: fieldsDirty, onRestore: setForm });
+    // With Auto Save on, leaving is safe (the draft is kept), so no "discard?" prompts.
+    const { guardedAction } = useUnsavedChangesGuard(isDirty && !draft.autoSave, {
         message: "You've started filling out this service request. If you leave now, what you've entered will be discarded.",
     });
 
@@ -74,7 +79,7 @@ export default function ServiceRequestCreate() {
         }
     };
 
-    const handleCancel = () => guardedAction(() => navigate('/app/service-requests'));
+    const handleCancel = () => guardedAction(() => { draft.clearDraft(); navigate('/app/service-requests'); });
 
     const handleUnlockRequest = async () => {
         const agreed = await confirm(reportNotice({
@@ -115,6 +120,7 @@ export default function ServiceRequestCreate() {
                 headers: { 'Content-Type': 'multipart/form-data' },
                 timeout: 300000, // videos can take a while on mobile data
             });
+            draft.clearDraft();
             if (res.data.attachment_error) {
                 toast.warning(res.data.attachment_error, { title: 'Request filed' });
             } else {
@@ -145,6 +151,7 @@ export default function ServiceRequestCreate() {
                 <FormSkeleton />
             ) : (
                 <form className="ds-card" onSubmit={handleSubmit}>
+                    <AutoSaveStatus autoSave={draft.autoSave} savedAt={draft.savedAt} synced={draft.synced} note="photos and videos aren't saved, re-attach them after a reload" />
                     {error && <div className="ds-error">{error}</div>}
 
                     {!unlocked && (

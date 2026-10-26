@@ -5,10 +5,12 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { PreferencesProvider } from './context/PreferencesContext';
 import { ToastProvider } from './context/ToastContext';
 import { ConfirmProvider } from './context/ConfirmContext';
 import RootApp from './RootApp';
 import { registerServiceWorker } from './utils/push';
+import './utils/disableZoom'; // no pinch / double-tap zoom on phones and tablets
 import './utils/pwaInstall'; // start listening for the browser's install event before React mounts
 import InstallPrompt from './Components/shared/InstallPrompt';
 import OfflineNotice from './Components/shared/OfflineNotice';
@@ -34,11 +36,13 @@ ReactDOM.createRoot(document.getElementById('app')).render(
                     <AuthProvider>
                         {/* Needs AuthProvider above it — it only polls
                             /notifications while a user session exists. */}
-                        <NotificationProvider>
-                            <OfflineNotice />
-                            <RootApp />
-                            <InstallPrompt />
-                        </NotificationProvider>
+                        <PreferencesProvider>
+                            <NotificationProvider>
+                                <OfflineNotice />
+                                <RootApp />
+                                <InstallPrompt />
+                            </NotificationProvider>
+                        </PreferencesProvider>
                     </AuthProvider>
                 </ConfirmProvider>
             </ToastProvider>

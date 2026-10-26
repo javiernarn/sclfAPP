@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X, ExternalLink, Bell } from '../icons';
 import { destinationForNotification, destinationLabel } from '../../utils/notificationRoutes';
 import './NotificationDetail.css';
+import RoleText, { RoleBadge } from './RoleText';
 
 const humanize = (t) => String(t || 'notification').replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
 
@@ -39,7 +40,7 @@ export default function NotificationDetail({ notification, onClose, onOpenRelate
                 </div>
 
                 <div className="ds-nd-body">
-                    <p className="ds-nd-message">{n.data?.message || 'No further details were included with this notification.'}</p>
+                    <p className="ds-nd-message"><RoleText keys text={n.data?.message || 'No further details were included with this notification.'} /></p>
 
                     <dl className="ds-nd-meta">
                         <div><dt>Received</dt><dd>{when}</dd></div>
