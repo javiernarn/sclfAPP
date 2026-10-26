@@ -69,11 +69,6 @@ class Violation extends Model
         return $this->belongsTo(ReportAttachment::class, 'report_attachment_id');
     }
 
-    public function flagger()
-    {
-        return $this->belongsTo(User::class, 'flagged_by');
-    }
-
     public function reviewer()
     {
         return $this->belongsTo(User::class, 'reviewed_by');
@@ -121,12 +116,6 @@ class Violation extends Model
             $reviewer->hasAnyRole(['staff']) => 'Staff',
             default => null,
         };
-    }
-
-    /** Hides the file from non-reviewers. */
-    public function scopeHidingFile($query)
-    {
-        return $query->whereIn('status', [self::STATUS_PENDING, self::STATUS_CONFIRMED]);
     }
 
     public function scopeConfirmed($query)

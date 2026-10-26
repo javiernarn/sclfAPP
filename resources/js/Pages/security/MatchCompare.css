@@ -67,3 +67,8 @@
 .ds-shell.dark .mc-ai { color: #a5b4fc; } .ds-shell.dark .mc-ai.is-off { color: #cbd5e1; }
 .mc-ml { padding: 10px 12px; border-radius: 10px; background: rgba(99,102,241,.08); font-size: 13.5px; display: grid; gap: 8px; }
 .mc-ml-factors { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* filters changed: keep the cards, just fade them until the new list arrives */
+.mc-list { transition: opacity .15s ease; }
+.mc-list.is-refreshing { opacity: .55; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .mc-list { transition: none; } }

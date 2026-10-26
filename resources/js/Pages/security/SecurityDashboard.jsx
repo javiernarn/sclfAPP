@@ -11,7 +11,7 @@ import {
     Activity, Users,
 } from '../../Components/icons';
 import {
-    KpiCard, ChartCard, AreaChart, DonutChart, BarChart, RankedBars, ActivityFeed,
+    KpiCard, ChartCard, AreaChart, DonutChart, RankedBars, ActivityFeed,
     LiveBadge, Segmented, usePolling, humanize, PALETTE,
 } from '../../Components/charts';
 

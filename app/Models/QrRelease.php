@@ -74,11 +74,6 @@ class QrRelease extends Model
         return ['public_code' => $parts[1], 'token' => $parts[2]];
     }
 
-    public function isValid(): bool
-    {
-        return $this->status === self::STATUS_PENDING && $this->expires_at->isFuture();
-    }
-
     public function foundItem()
     {
         return $this->belongsTo(FoundItem::class);

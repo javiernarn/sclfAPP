@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { UserCheck, UserX, Users, Clock, LogOut, Pencil, Trash2, Check, X, Search, GraduationCap, AlertTriangle, Tag, Eye } from '../../Components/icons';
+import { UserCheck, UserX, Users, Clock, LogOut, Pencil, Check, X, Search, GraduationCap, AlertTriangle, Tag, Eye } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ViewToggle from '../../Components/shared/ViewToggle';
 import useViewMode from '../../hooks/useViewMode';
@@ -13,7 +13,6 @@ import VisitorDetailsModal from '../../Components/shared/VisitorDetailsModal';
 import VisitorBadgeFlip, { dayColorFor } from '../../Components/shared/VisitorBadgeFlip';
 import { filterPhoneInput, isValidPhone, FORMAT_ERRORS, FORMAT_HINTS } from '../../utils/validators';
 import { PH_ID_GROUPS, PH_ID_OPTIONS, OTHER_ID_VALUE } from '../../config/philippineIds';
-import { initialsOf } from '../../utils/initials';
 import PurposeDetailsFields, { usePurposeDefs, defFor, missingDetails, detailRows, allowedMinutes } from '../../Components/shared/PurposeDetailsFields';
 import '../../Components/shared/PurposeDetailsFields.css';
 
@@ -40,9 +39,6 @@ const STATUS_FILTERS = [
     { value: 'checked_out', label: 'Checked out' },
     { value: 'all', label: 'All' },
 ];
-
-// Past this many hours inside, a visitor is flagged so security can follow up.
-const OVERDUE_HOURS = 4;
 
 const EMPTY_FORM = {
     first_name: '', last_name: '', id_presented: '', id_number: '', contact_number: '', purpose: 'meeting',
@@ -329,12 +325,11 @@ const purposeLabel = (value) => PURPOSE_OPTIONS.find((o) => o.value === value)?.
 // One visitor record, rendered either as a card row ("cards" view) or a
 // table row ("table" view). All the check-out / edit / delete logic is
 // shared; only the markup at the bottom differs.
-function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view = 'cards' }) {
+function VisitorRow({ visitor, onCheckedOut, onUpdated, canManage, view = 'cards' }) {
     const [busy, setBusy] = useState(false);
     const [editing, setEditing] = useState(false);
     const [form, setForm] = useState(null);
     const [saving, setSaving] = useState(false);
-    const [deleting, setDeleting] = useState(false);
     const [contactError, setContactError] = useState('');
     const purposeDefs = usePurposeDefs();
     const [editErrors, setEditErrors] = useState({});
@@ -438,28 +433,6 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
         }
     };
 
-    const remove = async () => {
-        const ok = await confirm({
-            title: 'Delete this visitor entry?',
-            message: `Remove the log entry for ${visitor.full_name} entirely? This cannot be undone.`,
-            confirmLabel: 'Delete entry',
-            tone: 'danger',
-            typeToConfirm: { phrase: initialsOf(visitor.full_name), label: `Type the visitor's initials (${visitor.full_name}) to confirm:` },
-        });
-        if (!ok) return;
-
-        setDeleting(true);
-        try {
-            await axios.delete(`/visitors/${visitor.id}`);
-            toast.success('Visitor entry deleted.', { title: 'Deleted' });
-            onDeleted(visitor.id);
-        } catch (err) {
-            toast.error(err?.response?.data?.message || 'Could not delete this entry.', { title: 'Delete failed' });
-        } finally {
-            setDeleting(false);
-        }
-    };
-
     const editForm = !editing || !form ? null : (
         <>
                 <div className="ds-form-row ds-form-row-2">
@@ -558,17 +531,14 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
             <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={openView} title="View all details" aria-label="View all details">
                 <Eye size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> View
             </button>
-            {visitor.status === 'checked_in' && (
+            {canManage && visitor.status === 'checked_in' && (
                 <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" disabled={busy} onClick={checkOut}>
                     <LogOut size={14} style={{ verticalAlign: -2, marginRight: 4 }} /> Check Out
                 </button>
             )}
-            <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={startEditing} title="Edit entry" aria-label="Edit entry">
-                <Pencil size={13} />
-            </button>
-            {isAdmin && (
-                <button type="button" className="ds-btn ds-btn-danger ds-btn-sm" disabled={deleting} onClick={remove} title="Delete entry" aria-label="Delete entry">
-                    <Trash2 size={13} />
+            {canManage && (
+                <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={startEditing} title="Edit entry" aria-label="Edit entry">
+                    <Pencil size={13} />
                 </button>
             )}
         </>
@@ -725,18 +695,15 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
                     <Eye size={13} /> View
                 </button>
                 {detailsModal}
-                {visitor.status === 'checked_in' && (
+                {canManage && visitor.status === 'checked_in' && (
                     <button type="button" className="ds-btn ds-btn-primary ds-btn-sm" disabled={busy} onClick={checkOut}>
                         <LogOut size={13} /> Check Out
                     </button>
                 )}
                 <span className="ds-visitor-actions-spacer" />
-                <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={startEditing} title="Edit entry">
-                    <Pencil size={13} /> Edit
-                </button>
-                {isAdmin && (
-                    <button type="button" className="ds-btn ds-btn-danger ds-btn-sm" disabled={deleting} onClick={remove} title="Delete entry">
-                        <Trash2 size={13} /> {deleting ? 'Deleting…' : 'Delete'}
+                {canManage && (
+                    <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={startEditing} title="Edit entry">
+                        <Pencil size={13} /> Edit
                     </button>
                 )}
             </div>
@@ -746,13 +713,15 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
 
 export default function SecurityVisitors() {
     const { roles } = useAuth();
-    const isAdmin = Array.isArray(roles) && (roles.includes('admin') || roles.includes('staff'));
+    // Only the Security Officer runs the visitor desk (check in / edit / check out). Admin and Staff
+    // get a read-only view of the full history - the server enforces the same rule (VisitorController).
+    const canManage = Array.isArray(roles) && roles.includes('security_officer');
     const [form, setForm] = useState(EMPTY_FORM);
     const [badgeRefresh, setBadgeRefresh] = useState(0); // bumped after check-in/out so the badge grid reloads
     const [formKey, setFormKey] = useState(0); // bumped on reset so the ID picker drops its "Other" state
     const [visitors, setVisitors] = useState([]);
     const [onCampusCount, setOnCampusCount] = useState(0);
-    const [statusFilter, setStatusFilter] = useState('inside');
+    const [statusFilter, setStatusFilter] = useState(canManage ? 'inside' : 'all'); // viewers start on the full history
     const [searchInput, setSearchInput] = useState('');
     const [search, setSearch] = useState('');
     const [outstanding, setOutstanding] = useState([]);
@@ -882,30 +851,18 @@ export default function SecurityVisitors() {
         setVisitors((prev) => prev.map((v) => (v.id === updated.id ? updated : v)));
     };
 
-    const removeAfterDelete = (visitorId) => {
-        setVisitors((prev) => {
-            const removed = prev.find((v) => v.id === visitorId);
-            if (removed?.status === 'checked_in') {
-                setOnCampusCount((c) => Math.max(0, c - 1));
-                setOutstanding((o) => o.filter((b) => b.id !== visitorId));
-            }
-            return prev.filter((v) => v.id !== visitorId);
-        });
-    };
-
     const rowProps = (visitor) => ({
         visitor,
         onCheckedOut: updateAfterCheckOut,
         onUpdated: updateAfterEdit,
-        onDeleted: removeAfterDelete,
-        isAdmin,
+        canManage,
     });
 
     return (
         <DashboardShell onRefresh={() => load()} refreshing={loading}
             eyebrow="Security"
             title="Visitor Management"
-            subtitle="Log visitors in and out at the counter, and see who's currently on campus."
+            subtitle={canManage ? "Log visitors in and out at the counter, and see who's currently on campus." : "The full visitor history — view only. Visitors are logged in and out by the Security Officer."}
             actions={
                 <button type="button" className="ds-badge ds-badge-found" style={{ cursor: 'pointer', border: 0 }}
                     onClick={() => { setStatusFilter('inside'); setSearchInput(''); }}
@@ -915,6 +872,17 @@ export default function SecurityVisitors() {
                 </button>
             }
         >
+            {!canManage && (
+                <div className="ds-card" role="note">
+                    <h3><Eye size={16} style={{ verticalAlign: -3, marginRight: 6 }} />View only</h3>
+                    <p style={{ margin: 0, opacity: 0.8 }}>
+                        Only a Security Officer can check visitors in or out and change their entries. You can search the full
+                        history below and open any visitor to see all of their details.
+                    </p>
+                </div>
+            )}
+
+            {canManage && (
             <div className="ds-card">
                 <h3>Check In a Visitor</h3>
                 <form onSubmit={handleCheckIn}>
@@ -1047,6 +1015,7 @@ export default function SecurityVisitors() {
                     </button>
                 </form>
             </div>
+            )}
 
             <div className="ds-card">
                 <div className="ds-list-head-row">

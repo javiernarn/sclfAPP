@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { useAuth } from '../../context/AuthContext';
 
@@ -20,7 +20,6 @@ const levelBadge = (level) => {
 
 export default function LostItemMatches() {
     const { id } = useParams();
-    const navigate = useNavigate();
     const { roles } = useAuth();
     // Security / admin / staff open this page from a "new lost report"
     // notification to review candidates — they are not the owner, so no

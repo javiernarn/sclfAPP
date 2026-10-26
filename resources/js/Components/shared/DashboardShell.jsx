@@ -41,7 +41,6 @@ import "./MobileStaffApp.css";
 import {
     LayoutDashboard,
     PackageSearch,
-    Megaphone,
     PanelLeftClose,
     PanelLeftOpen,
     X,

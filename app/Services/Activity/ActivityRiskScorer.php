@@ -3,7 +3,6 @@
 namespace App\Services\Activity;
 
 use App\Models\UserActivity;
-use Illuminate\Support\Facades\DB;
 
 /**
  * Decides whether a just-recorded request looks like abuse/spam rather than

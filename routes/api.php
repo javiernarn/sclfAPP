@@ -167,7 +167,6 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
 
     // Reference data for forms/dropdowns
     Route::get('/campuses', [\App\Http\Controllers\ReferenceDataController::class, 'campuses']);
-    Route::get('/buildings', [\App\Http\Controllers\ReferenceDataController::class, 'buildings']);
     Route::get('/locations', [\App\Http\Controllers\ReferenceDataController::class, 'locations']);
     Route::get('/departments', [\App\Http\Controllers\ReferenceDataController::class, 'departments']);
 
@@ -326,8 +325,10 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         // that regardless of this route sitting in the officer+admin group.
         Route::delete('/security-incidents/{securityIncident}', [SecurityIncidentController::class, 'destroy']);
 
-        // Visitor Management — front-desk check-in/out log, fully
-        // officer/admin-only (no student-facing side to this one).
+        // Visitor Management — front-desk check-in/out log (no student-facing side).
+        // READ (index, purpose-fields): Security Officer, Admin and Staff - the full history.
+        // WRITE (check-in, edit, check-out, badges, student search): Security Officer ONLY -
+        // enforced in VisitorController::ensureCanManage(). Delete: nobody (see destroy()).
         Route::get('/visitors', [VisitorController::class, 'index']);
         Route::get('/visitors/badges', [VisitorController::class, 'badges']);
         Route::get('/visitors/purpose-fields', [VisitorController::class, 'purposeFields']);
@@ -350,9 +351,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         Route::get('/analytics/dashboard', [AnalyticsController::class, 'dashboard']);
         Route::get('/analytics/overview', [AnalyticsController::class, 'overview']);
         Route::get('/analytics/categories', [AnalyticsController::class, 'categories']);
-        Route::get('/analytics/high-risk-locations', [AnalyticsController::class, 'highRiskLocations']);
         Route::get('/analytics/monthly', [AnalyticsController::class, 'monthly']);
-        Route::get('/analytics/peak-hours', [AnalyticsController::class, 'peakHours']);
     });
 
     // --- Approval requests (staff files them, admin reviews them) ---
@@ -368,10 +367,6 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
 
     // --- Admin + Staff (staff are read-only here unless a request was approved) ---
     Route::middleware('role:admin,staff')->group(function () {
-        Route::get('/admin-test', function () {
-            return response()->json(['message' => 'Welcome, Admin! This endpoint is protected.']);
-        });
-
         // Cleanup: hard-remove a claim record from the list (e.g.
         // redundant/cancelled claims). Separate from /claims/{claim}/cancel,
         // which only transitions status and keeps the record.

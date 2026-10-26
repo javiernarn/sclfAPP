@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import {
     ArrowLeft, UserCircle, Mail, Phone, IdCard, ShieldCheck, Calendar,
     VenetianMask, MapPin, GraduationCap, LogIn, LogOut, History,
@@ -43,7 +43,6 @@ const AUTH_ACTIONS = new Set(['auth.login', 'auth.logout']);
 
 export default function AdminUserDetail() {
     const { id } = useParams();
-    const navigate = useNavigate();
     const { user: currentUser, roles: myRoles } = useAuth();
     // The audit trail and activity feed are Admin-only on the server; staff see
     // the rest of this page without those two sections' data.

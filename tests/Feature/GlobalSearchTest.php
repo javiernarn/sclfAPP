@@ -129,7 +129,7 @@ class GlobalSearchTest extends TestCase
             'item_name' => 'Silver scientific calculator',
             'description' => 'Left in the library.',
             'category' => 'electronics',
-            'status' => 'open',
+            'status' => 'pending',
         ]);
 
         $response = $this->withHeaders($this->authHeaders($student))->getJson('/api/search/suggestions');

@@ -16,7 +16,6 @@
 // ============================================================================
 
 const range = (prefix, nums, suffix = '') => nums.map((n) => `${prefix}${n}${suffix}`);
-const withVariants = (base, variants) => [base, ...variants.map((v) => `${base} ${v}`)];
 
 // ---------------------------------------------------------------------------
 // Samsung

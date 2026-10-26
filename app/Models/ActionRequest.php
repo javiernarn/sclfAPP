@@ -44,11 +44,4 @@ class ActionRequest extends Model
     {
         return $this->belongsTo(User::class, 'reviewer_id');
     }
-
-    /** Approved and still inside its validity window. */
-    public function isUsable(): bool
-    {
-        return $this->status === self::STATUS_APPROVED
-            && ($this->expires_at === null || $this->expires_at->isFuture());
-    }
 }

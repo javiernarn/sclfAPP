@@ -56,7 +56,6 @@ export default function SecurityCounter() {
     const [campuses, setCampuses] = useState([]);
     const [loadingCounters, setLoadingCounters] = useState(true);
     const [newCounter, setNewCounter] = useState({ campus_id: '', label: '', code: '' });
-    const [addingCounter, setAddingCounter] = useState(false);
 
     // --- Step 3: item details + submit --------------------------------
     const [form, setForm] = useState({ item_name: '', description: '', category: '', storage_location_id: '' });

@@ -4,7 +4,6 @@ namespace App\Services\Audit;
 
 use App\Models\AuditLog;
 use App\Models\User;
-use Illuminate\Http\Request;
 
 class AuditLogService
 {

@@ -79,14 +79,6 @@ class StorageLocation extends Model
     }
 
     /**
-     * Every assignment record (past and present) for this location.
-     */
-    public function officerAssignments()
-    {
-        return $this->hasMany(StorageLocationOfficer::class);
-    }
-
-    /**
      * Officers currently staffing this location (unassigned_at IS NULL).
      * A belongsToMany "through" the assignment table rather than a direct
      * column, so multiple officers can be assigned at once and the

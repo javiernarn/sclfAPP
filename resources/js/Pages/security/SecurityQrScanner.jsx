@@ -5,7 +5,7 @@ import DashboardShell from '../../Components/shared/DashboardShell';
 import { useToast } from '../../context/ToastContext';
 import {
     Camera, Keyboard, Upload, CheckCircle2, XCircle, PackageCheck, User, IdCard,
-    Tag, Hash, RotateCcw, Loader2, MapPin, Package, Building2, Copy, AlertTriangle, Check,
+    Tag, Hash, RotateCcw, Loader2, MapPin, Package, Copy, AlertTriangle, Check,
     ShieldCheck, ClipboardList, Clock,
 } from '../../Components/icons';
 import './SecurityQrScanner.css';

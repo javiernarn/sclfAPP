@@ -49,13 +49,3 @@ export function parseUserAgent(userAgent) {
 
     return { deviceType, platform, browser, label };
 }
-
-export function deviceIconName(deviceType) {
-    switch (deviceType) {
-        case 'mobile': return 'Smartphone';
-        case 'tablet': return 'Tablet';
-        case 'bot': return 'Bot';
-        case 'desktop': return 'Monitor';
-        default: return 'Monitor';
-    }
-}

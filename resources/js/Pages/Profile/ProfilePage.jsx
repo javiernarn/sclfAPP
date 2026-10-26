@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { UserCircle, Mail, ShieldCheck, Moon, Sun, Phone, MapPin, VenetianMask, IdCard, GraduationCap, Bell, BellOff } from '../../Components/icons';
+import { UserCircle, Mail, ShieldCheck, Phone, MapPin, VenetianMask, IdCard, GraduationCap, Bell, BellOff } from '../../Components/icons';
 import { useAuth } from '../../context/AuthContext';
-import { useAppTheme, isDarkTheme } from '../../hooks/useAppTheme';
 import usePushNotifications from '../../hooks/usePushNotifications';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ProfileSkeleton from '../../Components/shared/ProfileSkeleton';
@@ -25,8 +24,6 @@ const InfoItem = ({ icon: Icon, label, value }) => (
 
 export default function ProfilePage() {
     const { user, roles } = useAuth();
-    const { theme, toggleTheme } = useAppTheme();
-    const isDark = isDarkTheme(theme);
     const [pageLoading, setPageLoading] = useState(true);
     const toast = useToast();
     const push = usePushNotifications();
@@ -203,15 +200,6 @@ export default function ProfilePage() {
                 )}
             </div>
 
-            {/* ---------- Appearance ---------- */}
-            {/* <div className="ds-card">
-                <div className="ds-card-title">Appearance</div>
-                <p className="ds-card-desc">Switch between light and dark mode, or pick a color theme from the account menu.</p>
-                <button type="button" className="ds-btn ds-btn-secondary" onClick={toggleTheme}>
-                    {isDark ? <Sun size={16} /> : <Moon size={16} />}
-                    {isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                </button>
-            </div> */}
             </>
             )}
         </DashboardShell>

@@ -45,7 +45,6 @@ import {
     ClipboardCheckIcon,
     ClockIcon,
     CopyIcon,
-    DollarSignIcon,
     DownloadIcon,
     ExpandIcon,
     EyeIcon,
@@ -192,7 +191,6 @@ export const CircleCheck = withAnimated(CircleCheckIcon);
 export const ClipboardCheck = withAnimated(ClipboardCheckIcon);
 export const Clock = withAnimated(ClockIcon);
 export const Copy = withAnimated(CopyIcon);
-export const DollarSign = withAnimated(DollarSignIcon);
 export const Download = withAnimated(DownloadIcon);
 export const Expand = withAnimated(ExpandIcon);
 export const Eye = withAnimated(EyeIcon);

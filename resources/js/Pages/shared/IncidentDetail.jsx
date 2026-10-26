@@ -3,7 +3,7 @@ import axios from '../../config/axiosConfig';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
     ShieldAlert, MapPin, Calendar, UserCircle, Tag, AlertTriangle,
-    CheckCircle2, RotateCcw, UserPlus, Lock, FileText, Pencil, Trash2,
+    CheckCircle2, RotateCcw, UserPlus, Lock, Pencil, Trash2,
     Check, X, ArrowLeft,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
@@ -53,8 +53,6 @@ export default function IncidentDetail() {
     // Why it couldn't be opened (e.g. "deleted on ... by an Administrator"), straight from the server.
     const [loadError, setLoadError] = useState('');
     const [busy, setBusy] = useState(false);
-    const [officerId, setOfficerId] = useState('');
-    const [officers, setOfficers] = useState([]);
     const [resolutionNotes, setResolutionNotes] = useState('');
 
     const [editing, setEditing] = useState(false);

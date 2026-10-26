@@ -576,4 +576,69 @@ class VisitorManagementTest extends TestCase
             ->assertJsonPath('data.last_name', 'Dela Cruz')
             ->assertJsonPath('data.first_name', 'Juan');
     }
+
+    // ---- who may manage visitors: Security Officer only; Admin and Staff just read the history ----
+
+    public static function readOnlyRoles(): array
+    {
+        return ['admin' => ['admin'], 'staff' => ['staff']];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('readOnlyRoles')]
+    public function test_admin_and_staff_can_read_the_full_visitor_history_across_campuses(string $role): void
+    {
+        $campusA = $this->campus('A');
+        $campusB = $this->campus('B');
+        $officerA = $this->user('security_officer', $campusA);
+        $officerB = $this->user('security_officer', $campusB);
+        $v1 = app(VisitorService::class)->checkIn($officerA, $this->baseCheckInData(['full_name' => 'Campus A Visitor']));
+        $v2 = app(VisitorService::class)->checkIn($officerB, $this->baseCheckInData(['full_name' => 'Campus B Visitor']));
+        app(VisitorService::class)->checkOut($v1, $officerA);
+
+        $viewer = $this->user($role);
+        $res = $this->withHeaders($this->authHeaders($viewer))->getJson('/api/visitors?status=all');
+
+        $res->assertStatus(200);
+        $names = collect($res->json('data.data'))->pluck('full_name');
+        $this->assertTrue($names->contains('Campus A Visitor'), 'checked-out history must be visible');
+        $this->assertTrue($names->contains('Campus B Visitor'), 'every campus must be visible');
+        $this->withHeaders($this->authHeaders($viewer))->getJson('/api/visitors/purpose-fields')->assertStatus(200);
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('readOnlyRoles')]
+    public function test_admin_and_staff_cannot_create_edit_check_out_or_delete_a_visitor(string $role): void
+    {
+        $officer = $this->user('security_officer', $this->campus());
+        $visitor = app(VisitorService::class)->checkIn($officer, $this->baseCheckInData(['full_name' => 'Original Name']));
+        $before = Visitor::count();
+
+        $h = $this->authHeaders($this->user($role));
+
+        $this->withHeaders($h)->postJson('/api/visitors', $this->baseCheckInData(['full_name' => 'Sneaky Visitor']))->assertStatus(403);
+        $this->withHeaders($h)->patchJson("/api/visitors/{$visitor->id}", ['full_name' => 'Changed Name'])->assertStatus(403);
+        $this->withHeaders($h)->postJson("/api/visitors/{$visitor->id}/check-out", [])->assertStatus(403);
+        $this->withHeaders($h)->deleteJson("/api/visitors/{$visitor->id}")->assertStatus(403);
+        $this->withHeaders($h)->getJson('/api/visitors/badges')->assertStatus(403);
+        $this->withHeaders($h)->getJson('/api/visitors/student-search?q=ab')->assertStatus(403);
+
+        $this->assertSame($before, Visitor::count(), 'nothing may be created');
+        $fresh = $visitor->fresh();
+        $this->assertSame('Original Name', $fresh->full_name);
+        $this->assertSame(Visitor::STATUS_CHECKED_IN, $fresh->status, 'nothing may be checked out');
+        $this->assertNull($fresh->deleted_at, 'nothing may be deleted');
+    }
+
+    public function test_security_officer_can_still_manage_visitors_but_cannot_delete_them(): void
+    {
+        $officer = $this->user('security_officer', $this->campus());
+        $h = $this->authHeaders($officer);
+
+        $this->withHeaders($h)->getJson('/api/visitors/badges')->assertStatus(200);
+        $created = $this->withHeaders($h)->postJson('/api/visitors', $this->baseCheckInData(['full_name' => 'Desk Visitor']));
+        $created->assertStatus(201);
+        $id = $created->json('data.id') ?? $created->json('id');
+        $this->withHeaders($h)->patchJson("/api/visitors/{$id}", ['notes' => 'edited'] + $this->baseCheckInData(['full_name' => 'Desk Visitor']))->assertStatus(200);
+        $this->withHeaders($h)->postJson("/api/visitors/{$id}/check-out", [])->assertStatus(200);
+        $this->withHeaders($h)->deleteJson("/api/visitors/{$id}")->assertStatus(403);
+    }
 }

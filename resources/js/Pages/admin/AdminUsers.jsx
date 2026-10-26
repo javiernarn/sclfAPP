@@ -103,7 +103,6 @@ export default function AdminUsers() {
     };
 
     const editRole = (editingUser?.roles || [])[0]?.name || 'student';
-    const isEditingSelf = currentUser?.id === editingUser?.id;
     const isEditDirty = editingUser
         ? !!editPhoto || Object.keys(emptyEditForm).some((k) => k === 'role' ? editForm.role !== editRole : editForm[k] !== (
             k === 'first_name' ? (editingUser.first_name || '')

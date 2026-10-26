@@ -73,22 +73,6 @@ class AnalyticsController extends Controller
         );
     }
 
-    public function highRiskLocations(Request $request)
-    {
-        if (!$request->user()->hasAnyRole(['admin', 'staff', 'security_officer'])) {
-            abort(403);
-        }
-
-        return response()->json(
-            LostItem::select('location_lost', DB::raw('count(*) as total'))
-                ->whereNotNull('location_lost')
-                ->groupBy('location_lost')
-                ->orderByDesc('total')
-                ->limit(10)
-                ->get()
-        );
-    }
-
     public function monthly(Request $request)
     {
         if (!$request->user()->hasAnyRole(['admin', 'staff', 'security_officer'])) {
@@ -114,20 +98,6 @@ class AnalyticsController extends Controller
         });
 
         return response()->json($data);
-    }
-
-    public function peakHours(Request $request)
-    {
-        if (!$request->user()->hasAnyRole(['admin', 'staff', 'security_officer'])) {
-            abort(403);
-        }
-
-        $rows = LostItem::select(DB::raw($this->hourExpression() . ' as hour'), DB::raw('count(*) as total'))
-            ->groupBy('hour')
-            ->orderBy('hour')
-            ->get();
-
-        return response()->json($rows);
     }
 
     protected function summary(): array

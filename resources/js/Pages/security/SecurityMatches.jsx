@@ -3,6 +3,7 @@ import axios from '../../config/axiosConfig';
 import { Link } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import WorkflowGuide from '../../Components/shared/WorkflowGuide';
+import { NumberStepper, ClearableSearch } from '../../Components/shared/FilterInputs';
 import { useToast } from '../../context/ToastContext';
 import './MatchCompare.css';
 
@@ -146,6 +147,17 @@ function Detail({ detail, loading, error }) {
     );
 }
 
+/** Follows `value`, but only after it has stopped changing for `ms` (emptying it applies at once). */
+function useDebounced(value, ms) {
+    const [debounced, setDebounced] = useState(value);
+    useEffect(() => {
+        if (value === debounced) return undefined;
+        const t = setTimeout(() => setDebounced(value), value === '' ? 0 : ms);
+        return () => clearTimeout(t);
+    }, [value, ms, debounced]);
+    return debounced;
+}
+
 export default function SecurityMatches() {
     const toast = useToast();
     const [tab, setTab] = useState('pending');
@@ -153,9 +165,14 @@ export default function SecurityMatches() {
     const [level, setLevel] = useState('');
     const [minScore, setMinScore] = useState('');
     const [page, setPage] = useState(1);
+    // The list follows these (after a short pause) so tapping the score arrows or typing does not reload on every keystroke / click.
+    const dQuery = useDebounced(query, 300);
+    const dMinScore = useDebounced(minScore, 350);
+    const lastTab = useRef(tab);
     const [rows, setRows] = useState([]);
     const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
     const [loading, setLoading] = useState(true);
+    const [manualRefresh, setManualRefresh] = useState(false); // the Refresh button spins only when it was pressed
     const [error, setError] = useState('');
     const [live, setLive] = useState({ ok: true, at: null });
     const [busyId, setBusyId] = useState(null);
@@ -173,8 +190,13 @@ export default function SecurityMatches() {
 
     const load = useCallback((background = false) => {
         const seq = ++listSeq.current;
-        if (!background) { setLoading(true); setError(''); }
-        return axios.get('/matches', { params: { status: tab, q: query || undefined, level: level || undefined, min_score: minScore || undefined, page }, silent: background })
+        if (!background) {
+            // Another tab = a different list, so start from the skeleton. A filter change keeps the
+            // current cards on screen (dimmed) until the new ones arrive - no flash of grey bars.
+            if (lastTab.current !== tab) { lastTab.current = tab; setRows([]); }
+            setLoading(true); setError('');
+        }
+        return axios.get('/matches', { params: { status: tab, q: dQuery || undefined, level: level || undefined, min_score: dMinScore || undefined, page }, silent: background })
             .then((res) => {
                 if (seq !== listSeq.current) return; // superseded by a newer request
                 const data = res.data.data || [];
@@ -193,7 +215,7 @@ export default function SecurityMatches() {
             })
             .catch(() => { if (seq !== listSeq.current) return; if (background) setLive((l) => ({ ...l, ok: false })); else setError('Could not load matches right now.'); })
             .finally(() => { if (!background && seq === listSeq.current) setLoading(false); });
-    }, [tab, query, level, minScore, page]);
+    }, [tab, dQuery, level, dMinScore, page]);
 
     useEffect(() => () => clearTimeout(flashTimer.current), []);
 
@@ -202,10 +224,7 @@ export default function SecurityMatches() {
         axios.get('/matches/model', { silent: true }).then((res) => setModel(res.data)).catch(() => setModel(null));
     }, []);
 
-    useEffect(() => {
-        const t = setTimeout(() => load(false), query ? 300 : 0);
-        return () => clearTimeout(t);
-    }, [load, query]);
+    useEffect(() => { load(false); }, [load]);
 
     // Real-time without websockets (works on any shared host such as Hostinger):
     // every few seconds we ask a tiny "pulse" endpoint for a version stamp of the matches table and
@@ -288,7 +307,7 @@ export default function SecurityMatches() {
     };
 
     return (
-        <DashboardShell onRefresh={() => load(false)} refreshing={loading}
+        <DashboardShell onRefresh={() => { setManualRefresh(true); load(false).finally(() => setManualRefresh(false)); }} refreshing={manualRefresh || (loading && rows.length === 0)}
             eyebrow="Lost & Found"
             title="Matches"
             subtitle="Live-scored pairings between lost reports and found items. Open “Compare details” to see every field side by side before you notify the owner — ownership is still verified through the claim."
@@ -323,21 +342,21 @@ export default function SecurityMatches() {
                         <option value="possible">Possible (60+)</option>
                         <option value="low">Low</option>
                     </select>
-                    <input type="number" min="0" max="100" placeholder="Min score" value={minScore} style={{ width: 110 }}
-                        onChange={(e) => resetTo(setMinScore)(e.target.value)} aria-label="Minimum score" />
-                    <input type="search" placeholder="Search name, brand or model…" value={query} style={{ marginLeft: 'auto', minWidth: 220 }}
-                        onChange={(e) => { setQuery(e.target.value); setPage(1); }} aria-label="Search matches" />
+                    <NumberStepper min={0} max={100} placeholder="Min score" value={minScore}
+                        onChange={resetTo(setMinScore)} aria-label="Minimum score" />
+                    <ClearableSearch placeholder="Search name, brand or model…" value={query} style={{ marginLeft: 'auto' }}
+                        onChange={(v) => { setQuery(v); setPage(1); }} aria-label="Search matches" />
                 </div>
 
                 {error && <div className="ds-error">{error}</div>}
-                {loading && (<><div className="ds-skeleton" /><div className="ds-skeleton" /></>)}
+                {loading && rows.length === 0 && (<><div className="ds-skeleton" /><div className="ds-skeleton" /></>)}
 
                 {!loading && !error && rows.length === 0 && (
                     <div className="ds-empty">{query || level || minScore ? 'No matches fit those filters.' : EMPTY_TEXT[tab]}</div>
                 )}
 
-                {!loading && rows.length > 0 && (
-                    <div style={{ display: 'grid', gap: 12 }}>
+                {rows.length > 0 && (
+                    <div className={`mc-list${loading ? ' is-refreshing' : ''}`} aria-busy={loading} style={{ display: 'grid', gap: 12 }}>
                         {rows.map((m) => {
                             const isOpen = openId === m.id;
                             const actionable = m.status === 'pending' || m.status === 'notified';

@@ -1,0 +1,32 @@
+/* Number stepper + clearable search (see FilterInputs.jsx) */
+.fi-num, .fi-search { position: relative; display: inline-flex; align-items: center; }
+.fi-num { width: 132px; }
+.fi-search { flex: 1 1 360px; max-width: 520px; min-width: 240px; }
+.fi-num input[type="number"], .fi-search input[type="search"] { width: 100%; box-sizing: border-box; }
+
+/* make room for the buttons on the right */
+.fi-num input[type="number"] { padding-right: 34px; -moz-appearance: textfield; appearance: textfield; }
+.fi-search input[type="search"] { padding-right: 38px; }
+
+/* a long placeholder shortens with ... instead of being chopped mid-word */
+.fi-search input[type="search"]::placeholder { text-overflow: ellipsis; }
+.fi-search input[type="search"] { text-overflow: ellipsis; }
+
+/* hide the browser's own spinner / cancel buttons - ours replace them */
+.fi-num input::-webkit-outer-spin-button, .fi-num input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.fi-search input::-webkit-search-cancel-button, .fi-search input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+.fi-search input::-ms-clear { display: none; }
+
+.fi-num-btns { position: absolute; top: 4px; bottom: 4px; right: 4px; width: 24px; display: flex; flex-direction: column; gap: 2px; }
+.fi-num-btns button, .fi-clear {
+    display: inline-flex; align-items: center; justify-content: center; padding: 0; margin: 0;
+    border: 0; background: transparent; color: inherit; cursor: pointer; opacity: .75;
+    transition: background-color .15s ease, opacity .15s ease;
+}
+.fi-num-btns button { flex: 1 1 0; min-height: 0; width: 100%; border-radius: 6px; }
+.fi-clear { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 22px; height: 22px; border-radius: 50%; }
+.fi-num-btns button:hover:not(:disabled), .fi-clear:hover { opacity: 1; background: rgba(var(--tk-accent-rgb, 79, 70, 229), .16); }
+.fi-num-btns button:active:not(:disabled), .fi-clear:active { background: rgba(var(--tk-accent-rgb, 79, 70, 229), .28); }
+.fi-num-btns button:disabled { opacity: .3; cursor: not-allowed; }
+.fi-num-btns button:focus-visible, .fi-clear:focus-visible { outline: 2px solid rgba(var(--tk-accent-rgb, 79, 70, 229), .7); outline-offset: 1px; opacity: 1; }
+@media (pointer: coarse) { .fi-num { width: 148px; } .fi-num-btns { width: 30px; } .fi-clear { width: 28px; height: 28px; } }

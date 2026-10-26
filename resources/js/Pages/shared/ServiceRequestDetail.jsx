@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
     Wrench, MapPin, Calendar, UserCircle, Tag, AlertTriangle,
     CheckCircle2, RotateCcw, UserPlus, Lock, PlayCircle, XCircle, Building2,

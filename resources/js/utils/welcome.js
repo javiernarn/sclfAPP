@@ -35,12 +35,6 @@ export function clearLoginMemory() {
 
 export const isFirstLogin = () => safe(() => window.sessionStorage.getItem(FIRST_LOGIN_KEY) === '1') === true;
 
-// "Welcome, John" for a first session, "Welcome back, John" afterwards.
-export function welcomeHeading(name) {
-    const who = name ? `, ${name}` : '';
-    return isFirstLogin() ? `Welcome${who}` : `Welcome back${who}`;
-}
-
 // Content for the toast shown once the person lands on their dashboard.
 // `t` (optional) translates it; the shell passes its role-aware translator.
 export function loginToast(t) {

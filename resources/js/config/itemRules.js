@@ -32,14 +32,12 @@ export const NO_BRAND = 'No brand / Unbranded';
 export const opt = (key, label, options, hint) => ({ key, label, options, hint });
 
 const NB = NO_BRAND;
-const SIZE_LMS = ['Small', 'Medium', 'Large'];
 const SHIRT_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'];
 
 // --- Shared brand lists -----------------------------------------------------
 const LOCK_BRANDS = ['Yale', 'Union', 'Solex', 'Master Lock', 'ABUS', 'Kwikset', 'Schlage', 'Mul-T-Lock', 'Hafele', NB];
 const MOTORCYCLE_BRANDS = ['Honda', 'Yamaha', 'Suzuki', 'Kawasaki', 'Kymco', 'SYM', 'Rusi', 'Skygo', 'Motorstar', 'TVS', 'Bajaj', 'KTM', 'Bristol', 'Royal Enfield', 'Vespa', 'Piaggio', 'Keeway', 'CFMoto', 'Benelli', 'Triumph', 'Ducati', 'Harley-Davidson', 'Other / local brand'];
 const CAR_BRANDS = ['Toyota', 'Mitsubishi', 'Honda', 'Nissan', 'Ford', 'Isuzu', 'Suzuki', 'Hyundai', 'Kia', 'Mazda', 'Chevrolet', 'Subaru', 'MG', 'Geely', 'Chery', 'BYD', 'Foton', 'Changan', 'GAC', 'Mercedes-Benz', 'BMW', 'Other / local brand'];
-const SPORTS_BRANDS = ['Nike', 'Adidas', 'Puma', 'Under Armour', 'Fila', 'Mizuno', 'Reebok', 'Decathlon', NB];
 const FASHION_BRANDS = ['Bench', 'Penshoppe', 'Uniqlo', 'Giordano', 'Oxgn', 'Human', 'Cotton On', 'H&M', 'Zara', 'Hanes', 'Nike', 'Adidas', 'Puma', 'Fila', 'Champion', 'Under Armour', NB];
 const BANKS = ['BDO', 'BPI', 'Landbank', 'Metrobank', 'UnionBank', 'Security Bank', 'PNB', 'RCBC', 'China Bank', 'EastWest', 'DBP', 'PSBank', 'CIMB', 'GoTyme', 'Maya', 'GCash Mastercard', 'Maybank', 'Cooperative / Rural bank'];
 const MOTO_HELMET_BRANDS = ['Spyder', 'MT', 'LS2', 'HJC', 'Shoei', 'KYT', 'Index', 'Zeus', 'Andes', 'Takachi', 'Givi', 'Arai', 'AGV', 'Scorpion', 'Nolan', 'SMK', 'Bell', NB];

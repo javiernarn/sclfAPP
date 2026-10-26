@@ -69,8 +69,6 @@ export const emailMatchesLastName = (email, lastName) => {
 };
 export const isValidStaffId = (value) => STAFF_ID_REGEX.test(String(value || '').trim());
 export const isValidEmail = (value) => GENERIC_EMAIL_REGEX.test(String(value || '').trim());
-export const isNameLike = (value) => /^[a-zA-Z\u00C0-\u017F\s'-]*$/.test(value ?? '');
-export const isDigitsOnly = (value) => /^[0-9]*$/.test(value ?? '');
 
 // ---------------------------------------------------------------------------
 // Live "as you type" input filters — strip out characters that could never
@@ -114,10 +112,6 @@ export const filterStaffIdInput = (value) => String(value || '').toUpperCase().r
 // normalizes so "Occ.Delacruz.Juan@Gmail.com " and the lowercase version
 // aren't treated as different accounts.
 export const normalizeEmailInput = (value) => String(value || '').replace(/\s/g, '').toLowerCase();
-
-// Digits-only filter for generic numeric fields (kept separate from phone
-// since it doesn't force a "09" prefix or length cap).
-export const filterDigitsInput = (value) => String(value || '').replace(/\D/g, '');
 
 // ---------------------------------------------------------------------------
 // Friendly duplicate-account messaging. Laravel validation errors come back

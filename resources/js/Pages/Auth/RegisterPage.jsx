@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { rememberLogin } from '../../utils/welcome';
-import Tooltip from '../../Components/shared/Tooltip';
 import {
     filterNameInput,
     filterPhoneInput,
@@ -25,7 +24,6 @@ import AuthShell, {
     LedgerInput,
     LedgerSelect,
     LedgerPasswordInput,
-    LedgerBanner,
     LedgerButton,
     LedgerGhostButton,
     StrengthTicks,
@@ -42,7 +40,6 @@ import {
     Lock,
     Camera,
     Check,
-    Info,
 } from '../../Components/icons';
 import { COURSE_GROUPS } from '../../config/courseGroups';
 

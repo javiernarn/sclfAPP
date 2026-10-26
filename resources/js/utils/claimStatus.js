@@ -25,4 +25,3 @@ export const CLAIM_STATUS = {
 
 export const claimStatusLabel = (status) => CLAIM_STATUS[status]?.label || status;
 export const claimStatusBadgeClass = (status) => `ds-badge ${CLAIM_STATUS[status]?.badge || 'ds-badge-default'}`;
-export const claimStatusIcon = (status) => CLAIM_STATUS[status]?.icon || Clock;

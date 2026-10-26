@@ -43,6 +43,14 @@ class VisitorController extends Controller
      * Defaults to who's currently on campus; pass ?history=1 for the
      * full checked-in + checked-out log instead.
      */
+    /** Only the Security Officer may create or change visitors; Admin and Staff are read-only. */
+    private function ensureCanManage(Request $request): void
+    {
+        if (! $request->user()->canManageVisitors()) {
+            abort(403, 'Only a Security Officer can log or change visitors. You can view the visitor history.');
+        }
+    }
+
     public function index(Request $request)
     {
         if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
@@ -120,9 +128,7 @@ class VisitorController extends Controller
      */
     public function badges(Request $request, BadgePoolService $pool)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
-            abort(403);
-        }
+        $this->ensureCanManage($request);
 
         return response()->json([
             'data' => $pool->snapshot(
@@ -152,9 +158,7 @@ class VisitorController extends Controller
      */
     public function searchStudents(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
-            abort(403);
-        }
+        $this->ensureCanManage($request);
 
         $viewer = $request->user();
         $q = trim($request->string('q')->toString());
@@ -183,9 +187,7 @@ class VisitorController extends Controller
 
     public function store(Request $request)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
-            abort(403);
-        }
+        $this->ensureCanManage($request);
 
         $validated = $request->validate([
             'first_name' => 'required_with:last_name|nullable|string|max:100',
@@ -230,9 +232,7 @@ class VisitorController extends Controller
      */
     public function update(Request $request, Visitor $visitor)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
-            abort(403);
-        }
+        $this->ensureCanManage($request);
 
         if (!$request->user()->canOperateInCampus($visitor->campus_id)) {
             abort(403, 'That visitor was checked in at a different campus than your account.');
@@ -275,26 +275,20 @@ class VisitorController extends Controller
     }
 
     /**
-     * Remove a mistaken log entry outright. Admin-only — unlike editing a
-     * typo, deleting a front-desk record entirely is a step up in
-     * sensitivity, same reasoning as SecurityIncidentPolicy::delete().
+     * Visitor entries are not deletable from the app: the log is an audit record.
+     * Admin and Staff are read-only on visitors, and officers never had delete.
+     * (VisitorService::delete() is kept for a future, deliberate "remove entry" flow.)
      */
     public function destroy(Request $request, Visitor $visitor)
     {
-        if (!$request->user()->hasAdminAccess()) {
-            abort(403);
-        }
-
-        $this->visitors->delete($visitor, $request->user());
-
-        return response()->json(['success' => true, 'message' => 'Visitor entry deleted.']);
+        // Admin and Staff only read the history, and officers have never been allowed to delete
+        // entries (the log is an audit record), so no role can delete a visitor from here.
+        abort(403, 'Visitor entries cannot be deleted. Admin and Staff can only view the history.');
     }
 
     public function checkOut(Request $request, Visitor $visitor)
     {
-        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
-            abort(403);
-        }
+        $this->ensureCanManage($request);
 
         if (!$request->user()->canOperateInCampus($visitor->campus_id)) {
             abort(403, 'That visitor was checked in at a different campus than your account.');

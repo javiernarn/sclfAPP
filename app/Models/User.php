@@ -335,6 +335,16 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasAnyRole(['admin', 'staff']);
     }
 
+    /**
+     * Who runs the visitor desk: logs visitors in/out, edits entries, hands out badges.
+     * Only the Security Officer. Admin and Staff can only READ the visitor history
+     * (VisitorController::index) - they never create or change a visitor.
+     */
+    public function canManageVisitors(): bool
+    {
+        return $this->hasRole('security_officer');
+    }
+
     /** Only the real administrator — the sole account that approves staff requests. */
     public function isAdmin(): bool
     {
@@ -366,11 +376,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function claims()
     {
         return $this->hasMany(Claim::class, 'claimant_id');
-    }
-
-    public function reviewedClaims()
-    {
-        return $this->hasMany(Claim::class, 'reviewed_by');
     }
 
     /**
@@ -409,11 +414,6 @@ class User extends Authenticatable implements MustVerifyEmail
     public function pushSubscriptions(): HasMany
     {
         return $this->hasMany(PushSubscription::class);
-    }
-
-    public function refreshTokens(): HasMany
-    {
-        return $this->hasMany(RefreshToken::class);
     }
 
     /**

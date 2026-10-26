@@ -139,13 +139,11 @@ export function ClaimNextSteps({ claim, onGoToEvidence }) {
     // The counter check-in writes an automatic system note; it isn't a message to the claimant.
     const note = /^Owner identified in person at counter check-in/i.test(claim.review_notes || '') ? null : claim.review_notes;
 
-    let tone = 'info';
     let title = '';
     let body = null;
     let showEvidenceBtn = false;
 
     if (status === 'more_evidence_required') {
-        tone = 'warning';
         title = 'Security needs more proof from you';
         body = <>Security could not finish checking your claim yet. Read their message below, then scroll to <strong>Evidence</strong>, pick the type of proof you have and press <strong>Submit Evidence</strong>. Your claim goes back to review as soon as you do.</>;
         showEvidenceBtn = true;
@@ -166,11 +164,9 @@ export function ClaimNextSteps({ claim, onGoToEvidence }) {
             : <>Security approved your claim. Please wait while they prepare your release pass — you will be notified when it is ready. Bring a valid ID when you pick it up. If it takes long, add proof under <strong>Evidence</strong> and press <strong>Submit Evidence</strong>.</>;
         showEvidenceBtn = slow;
     } else if (status === 'rejected') {
-        tone = 'danger';
         title = 'Your claim was not approved';
         body = <>Security could not verify this claim. {note ? 'See their reason below.' : 'Visit the Lost & Found counter if you think this is a mistake.'} If you find new proof, you can file a new claim for the item.</>;
     } else if (status === 'released') {
-        tone = 'success';
         title = 'Item released — case closed';
         body = <>Your item was handed over. Nothing more to do.</>;
     } else {

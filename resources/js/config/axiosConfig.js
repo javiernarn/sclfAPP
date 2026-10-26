@@ -110,14 +110,6 @@ export const restoreSession = async () => {
     }
 };
 
-// Kept for any other call sites expecting the old single-token helper
-// name; now just updates the access token half of whichever pair is
-// already stored, preserving "remember me" placement.
-export const refreshAuthToken = (accessToken, remember = true) => {
-    const existing = getStoredPair() || {};
-    storeTokenPair({ ...existing, access_token: accessToken }, remember);
-};
-
 // Always read the current token fresh per-request (rather than setting
 // instance.defaults.headers.common once) so a token swapped in mid-session
 // by the refresh flow below applies immediately, including to requests
