@@ -44,10 +44,13 @@ class Visitor extends Model
     protected $fillable = [
         'campus_id',
         'full_name',
+        'first_name',
+        'last_name',
         'id_presented',
         'id_number',
         'contact_number',
         'purpose',
+        'purpose_details',
         'host_name',
         'host_department',
         'student_user_id',
@@ -64,12 +67,36 @@ class Visitor extends Model
         'checked_out_at',
         'status',
         'notes',
+        'welcomed_at',
+        'badge_scan_count',
+        'badge_found_reported_at',
     ];
 
+    // The link in the QR code on the physical badge (see App\Support\VisitorBadgeLink).
+    protected $appends = ['badge_url'];
+
     protected $casts = [
+        'purpose_details' => 'array',
+        'welcomed_at' => 'datetime',
+        'badge_found_reported_at' => 'datetime',
         'checked_in_at' => 'datetime',
         'checked_out_at' => 'datetime',
     ];
+
+    public function getBadgeUrlAttribute(): ?string
+    {
+        return \App\Support\VisitorBadgeLink::url($this->campus_id, $this->badge_number);
+    }
+
+    /** [first, last] — stored parts, or the full name split for older entries. */
+    public function nameParts(): array
+    {
+        if ($this->first_name || $this->last_name) {
+            return [$this->first_name, $this->last_name];
+        }
+
+        return \App\Services\Visitors\VisitorService::splitName((string) $this->full_name);
+    }
 
     public function campus()
     {

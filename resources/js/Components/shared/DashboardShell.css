@@ -993,10 +993,9 @@ body { overflow: hidden; }
     display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 12px; align-items: stretch;
 }
-.ds-location-card { padding: 14px 16px; border-radius: 14px; display: flex; flex-direction: column; min-width: 0; }
+.ds-location-card { padding: 18px 20px; border-radius: 14px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .ds-shell.light .ds-location-card { background: rgba(255,255,255,0.6); border: 1.5px solid #c9d1de; }
 .ds-shell.dark .ds-location-card { background: rgba(255,255,255,0.03); border: 1.5px solid #3a4457; }
-.ds-location-card .ds-chip-row { margin-top: auto; padding-top: 8px; }
 .ds-badge {
     display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px;
     font-size: 11px; font-weight: 700; text-transform: capitalize; flex-shrink: 0;
@@ -2035,3 +2034,117 @@ body { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
     .ds-shell.ds-layout .ds-stat-card, .ds-shell.ds-layout .ds-stat-card .ds-stat-icon { transition: none !important; }
 }
+
+
+/* ── Inventory storage cards: head / status / capacity / actions ── */
+.ds-location-card .ds-list-item-title { margin: 0; font-size: 16px; }
+.ds-loc-head { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ds-loc-path { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; opacity: .65; overflow-wrap: anywhere; }
+.ds-loc-creator { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 12.5px; opacity: .75; }
+.ds-loc-creator svg { flex-shrink: 0; }
+.ds-loc-section { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.ds-loc-section .ds-chip-row { margin-top: 0; }
+.ds-loc-section-label, .ds-loc-capacity-label { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .6; }
+.ds-loc-capacity { display: flex; flex-direction: column; gap: 6px; }
+.ds-loc-capacity-row { display: flex; align-items: stretch; gap: 8px; }
+.ds-loc-capacity-row input { flex: 0 0 96px; width: 96px; min-width: 0; height: 36px; box-sizing: border-box; padding: 0 10px; border-radius: 10px; }
+.ds-loc-capacity-row .ds-btn { height: 36px; flex: 1 1 auto; justify-content: center; white-space: nowrap; }
+.ds-loc-actions { display: flex; gap: 8px; margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(128,138,160,.25); }
+.ds-loc-actions .ds-btn { flex: 1 1 0; justify-content: center; gap: 6px; height: 36px; }
+.ds-loc-edit { display: flex; flex-direction: column; gap: 8px; margin-top: auto; padding-top: 14px; border-top: 1px solid rgba(128,138,160,.25); }
+.ds-location-card .ds-btn svg, .ds-visitor-actions .ds-btn svg { flex-shrink: 0; }
+
+/* ── Visitor cards: head / labeled info / timeline / actions ── */
+.ds-visitor-card { flex-direction: column; align-items: stretch; gap: 14px; padding: 18px 20px; }
+.ds-visitor-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.ds-visitor-card-title { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
+.ds-visitor-card-title .ds-list-item-title { margin: 0; font-size: 16px; }
+.ds-visitor-badge-no { background: rgba(99,102,241,.12); color: #6366f1; border: 1px solid rgba(99,102,241,.3); }
+.ds-visitor-info { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px 24px; }
+.ds-visitor-info-row { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ds-visitor-info dt { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; opacity: .55; }
+.ds-visitor-info dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.ds-visitor-times { display: flex; flex-direction: column; gap: 6px; padding-top: 12px; border-top: 1px solid rgba(128,138,160,.25); }
+.ds-visitor-time { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; font-size: 13px; opacity: .9; }
+.ds-visitor-time svg { flex-shrink: 0; }
+.ds-visitor-time-label { font-weight: 700; min-width: 86px; }
+.ds-visitor-time-by { opacity: .7; }
+.ds-visitor-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ds-visitor-actions-spacer { flex: 1 1 auto; }
+.ds-visitor-actions .ds-btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; }
+
+@media (max-width: 640px) {
+    .ds-location-card, .ds-visitor-card { padding: 16px; }
+    .ds-visitor-actions-spacer { display: none; }
+    .ds-visitor-actions .ds-btn { flex: 1 1 calc(50% - 8px); justify-content: center; }
+    .ds-visitor-time-label { min-width: 0; }
+}
+
+/* Inventory table view */
+.ds-loc-capacity.is-compact { gap: 0; }
+.ds-loc-capacity.is-compact .ds-loc-capacity-row input { flex: 0 0 84px; width: 84px; }
+.ds-loc-edit-table { border-top: 0; padding-top: 0; margin-top: 0; max-width: 900px; }
+.ds-table td .ds-chip-row { margin-top: 0; }
+.ds-loc-title-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+/* ==========================================================================
+ * Checkboxes & radio buttons (all dashboard forms)
+ *
+ * `.ds-field input` turns EVERY input into a full-width, padded, rounded text
+ * box with `appearance: none` - which also wiped the native tick, so a
+ * checkbox such as "The person to meet confirmed they will receive this
+ * visitor" showed as an empty oval and never looked checked. These rules put
+ * a real, small checkbox / radio back: visible border in every theme, the
+ * theme's accent colour when checked, a tick drawn with the theme's
+ * "on accent" colour (dark on the yellow / white themes), a focus ring, an
+ * error state (aria-invalid) and a disabled state.
+ * Tripled .ds-shell keeps these ahead of the per-theme and phone-layout input rules (min-height etc.).
+ * ========================================================================== */
+.ds-shell.ds-shell.ds-shell input[type="checkbox"],
+.ds-shell.ds-shell.ds-shell input[type="radio"] {
+    -webkit-appearance: none; appearance: none;
+    position: relative; display: inline-grid; place-content: center; vertical-align: middle;
+    flex: 0 0 auto; width: 20px; min-width: 20px; height: 20px; min-height: 0; margin: 0; padding: 0;
+    border: 2px solid rgba(var(--tk-accent-rgb, 79, 70, 229), 0.85); border-radius: 6px;
+    background: transparent; box-shadow: none; cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ds-shell.ds-shell.ds-shell input[type="radio"] { border-radius: 50%; }
+.ds-shell.ds-shell.ds-shell input[type="checkbox"]::before,
+.ds-shell.ds-shell.ds-shell input[type="radio"]::before {
+    content: ""; width: 12px; height: 12px; background: var(--tk-accent-on, #fff);
+    transform: scale(0); transition: transform 0.12s ease-in-out;
+}
+.ds-shell.ds-shell.ds-shell input[type="checkbox"]::before { clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); }
+.ds-shell.ds-shell.ds-shell input[type="radio"]::before { width: 8px; height: 8px; border-radius: 50%; }
+.ds-shell.ds-shell.ds-shell input[type="checkbox"]:checked,
+.ds-shell.ds-shell.ds-shell input[type="radio"]:checked {
+    background: var(--tk-accent, #4f46e5); border-color: rgba(var(--tk-accent-rgb, 79, 70, 229), 1);
+}
+.ds-shell.ds-shell.ds-shell input[type="checkbox"]:checked::before,
+.ds-shell.ds-shell.ds-shell input[type="radio"]:checked::before { transform: scale(1); }
+.ds-shell.ds-shell.ds-shell input[type="checkbox"]:hover:not(:disabled),
+.ds-shell.ds-shell.ds-shell input[type="radio"]:hover:not(:disabled) { box-shadow: 0 0 0 4px rgba(var(--tk-accent-rgb, 79, 70, 229), 0.16); }
+.ds-shell.ds-shell.ds-shell input[type="checkbox"]:focus-visible,
+.ds-shell.ds-shell.ds-shell input[type="radio"]:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(var(--tk-accent-rgb, 79, 70, 229), 0.35); }
+.ds-shell.ds-shell.ds-shell input[type="checkbox"][aria-invalid="true"],
+.ds-shell.ds-shell.ds-shell input[type="radio"][aria-invalid="true"] { border-color: #ef4444 !important; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.22); }
+.ds-shell.ds-shell.ds-shell input[type="checkbox"]:disabled,
+.ds-shell.ds-shell.ds-shell input[type="radio"]:disabled { opacity: 0.5; cursor: not-allowed; }
+@media (pointer: coarse) {
+    .ds-shell.ds-shell.ds-shell input[type="checkbox"], .ds-shell.ds-shell.ds-shell input[type="radio"] { width: 24px; min-width: 24px; height: 24px; min-height: 0; }
+    .ds-shell.ds-shell.ds-shell input[type="checkbox"]::before { width: 14px; height: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ds-shell.ds-shell.ds-shell input[type="checkbox"], .ds-shell.ds-shell.ds-shell input[type="radio"],
+    .ds-shell.ds-shell.ds-shell input[type="checkbox"]::before, .ds-shell.ds-shell.ds-shell input[type="radio"]::before { transition: none; }
+}
+
+/* "Tick this box" row inside a form field (e.g. the visitor check-in confirmations):
+   .ds-field label is display:block + muted, which broke the box/text alignment. */
+.ds-field .ds-purpose-check {
+    display: flex; align-items: flex-start; gap: 12px; margin: 2px 0 0; padding: 8px 0;
+    opacity: 1; line-height: 1.4; cursor: pointer;
+}
+.ds-field .ds-purpose-check input { margin-top: 1px; }
+.ds-field .ds-purpose-check span { flex: 1 1 auto; min-width: 0; }

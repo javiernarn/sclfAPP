@@ -4,6 +4,8 @@ import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmContext';
+import ViewToggle from '../../Components/shared/ViewToggle';
+import useViewMode from '../../hooks/useViewMode';
 import { UserCircle, PackageCheck, PackageOpen, QrCode, CheckCircle2, Archive, AlertTriangle, Pencil, Trash2, Check, X } from '../../Components/icons';
 
 // Per-location status breakdown, so a guard glancing at this list — not
@@ -21,11 +23,15 @@ function LocationStatusChips({ location }) {
     const stillHere = onShelf + claimed + pendingRelease + unclaimed;
 
     if (!stillHere && !released) {
-        return <span className="ds-badge ds-badge-default">Empty — no items assigned yet</span>;
+        return (
+            <div className="ds-chip-row">
+                <span className="ds-badge ds-badge-default ds-badge-icon"><PackageOpen size={12} /> Empty — no items assigned yet</span>
+            </div>
+        );
     }
 
     return (
-        <div className="ds-chip-row" style={{ marginTop: 6 }}>
+        <div className="ds-chip-row">
             {onShelf > 0 && (
                 <span className="ds-badge ds-badge-found ds-badge-icon">
                     <PackageOpen size={12} /> {onShelf} on shelf, not yet claimed
@@ -76,7 +82,7 @@ function CapacityBadge({ location }) {
 // after the fact (see the PATCH /storage-locations/{id}/capacity route),
 // not required at creation, since an officer measuring actual shelf slots
 // usually happens later than initial setup.
-function CapacityEditor({ location, onSaved }) {
+function CapacityEditor({ location, onSaved, compact = false }) {
     const [value, setValue] = useState(location.capacity ?? '');
     const [saving, setSaving] = useState(false);
     const toast = useToast();
@@ -97,18 +103,21 @@ function CapacityEditor({ location, onSaved }) {
     };
 
     return (
-        <div className="ds-list-item-side" style={{ marginTop: 8 }}>
-            <input
-                type="number"
-                min="1"
-                placeholder="No limit"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                style={{ width: 90 }}
-            />
-            <button className="ds-btn ds-btn-secondary" disabled={saving} onClick={save}>
-                Set capacity
-            </button>
+        <div className={`ds-loc-capacity ${compact ? 'is-compact' : ''}`}>
+            {!compact && <label className="ds-loc-capacity-label" htmlFor={`cap-${location.id}`}>Capacity (max items)</label>}
+            <div className="ds-loc-capacity-row">
+                <input
+                    id={`cap-${location.id}`}
+                    type="number"
+                    min="1"
+                    placeholder="No limit"
+                    value={value}
+                    onChange={(e) => setValue(e.target.value)}
+                />
+                <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" disabled={saving} onClick={save}>
+                    {saving ? 'Saving…' : 'Set capacity'}
+                </button>
+            </div>
         </div>
     );
 }
@@ -118,7 +127,7 @@ function CapacityEditor({ location, onSaved }) {
 // its label, while shelving cares about the room/cabinet/shelf/box chain.
 // Delete is left to the backend to actually block (still-shelved items or
 // an active queue); this just surfaces whatever message comes back.
-function LocationEditor({ location, type, onSaved, onDeleted }) {
+function useLocationEditor(location, onSaved, onDeleted) {
     const [editing, setEditing] = useState(false);
     const [form, setForm] = useState(null);
     const [saving, setSaving] = useState(false);
@@ -177,21 +186,13 @@ function LocationEditor({ location, type, onSaved, onDeleted }) {
         }
     };
 
-    if (!editing) {
-        return (
-            <div className="ds-list-item-side" style={{ marginTop: 8 }}>
-                <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={startEditing}>
-                    <Pencil size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> Edit
-                </button>
-                <button type="button" className="ds-btn ds-btn-danger ds-btn-sm" disabled={deleting} onClick={remove}>
-                    <Trash2 size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> {deleting ? 'Deleting…' : 'Delete'}
-                </button>
-            </div>
-        );
-    }
+    return { editing, setEditing, form, setForm, saving, deleting, startEditing, save, remove };
+}
 
+function LocationEditForm({ type, ed, className = 'ds-loc-edit' }) {
+    const { form, setForm, saving, save, setEditing } = ed;
     return (
-        <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div className={className}>
             <div className="ds-form-row ds-form-row-2">
                 <div className="ds-field">
                     <label>Code</label>
@@ -240,22 +241,141 @@ function LocationEditor({ location, type, onSaved, onDeleted }) {
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
                 <button type="button" className="ds-btn ds-btn-primary ds-btn-sm" disabled={saving} onClick={save}>
-                    <Check size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> Save
+                    <Check size={13} /> Save
                 </button>
                 <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" disabled={saving} onClick={() => setEditing(false)}>
-                    <X size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> Cancel
+                    <X size={13} /> Cancel
                 </button>
             </div>
         </div>
     );
 }
 
+function LocationButtons({ ed, className = 'ds-loc-actions' }) {
+    return (
+        <div className={className}>
+            <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={ed.startEditing}>
+                <Pencil size={13} /> Edit
+            </button>
+            <button type="button" className="ds-btn ds-btn-danger ds-btn-sm" disabled={ed.deleting} onClick={ed.remove}>
+                <Trash2 size={13} /> {ed.deleting ? 'Deleting…' : 'Delete'}
+            </button>
+        </div>
+    );
+}
+
+function TypeBadge({ type }) {
+    return type === 'counter'
+        ? <span className="ds-badge ds-badge-pending">Counter</span>
+        : <span className="ds-badge ds-badge-found">Lost &amp; Found</span>;
+}
+
+// Card layout: code/path/creator, status, (capacity), edit + delete.
+function LocationCard({ location: l, type, onSaved }) {
+    const ed = useLocationEditor(l, onSaved, onSaved);
+    const path = type === 'counter'
+        ? (l.label || [l.building?.name, l.room, l.cabinet, l.shelf, l.box].filter(Boolean).join(' · '))
+        : [l.building?.name, l.room, l.cabinet, l.shelf, l.box].filter(Boolean).join(' · ');
+    return (
+        <div className="ds-location-card">
+            <div className="ds-loc-head">
+                <div className="ds-loc-title-row">
+                    <p className="ds-list-item-title">{l.code}</p>
+                    <TypeBadge type={type} />
+                </div>
+                <p className="ds-loc-path">{path || 'No location details'}</p>
+                <p className="ds-loc-creator">
+                    <UserCircle size={13} />
+                    Added by {l.creator?.name || 'Unknown (legacy entry)'}
+                </p>
+            </div>
+            <div className="ds-loc-section">
+                <span className="ds-loc-section-label">Status</span>
+                {type === 'storage' && <div className="ds-chip-row"><CapacityBadge location={l} /></div>}
+                <LocationStatusChips location={l} />
+            </div>
+            {type === 'storage' && <CapacityEditor location={l} onSaved={onSaved} />}
+            {ed.editing
+                ? <LocationEditForm type={type} ed={ed} />
+                : <LocationButtons ed={ed} />}
+        </div>
+    );
+}
+
+// Table layout: one row per location; editing opens a full-width row beneath.
+function LocationTableRow({ location: l, onSaved }) {
+    const type = l._type;
+    const ed = useLocationEditor(l, onSaved, onSaved);
+    const path = type === 'counter'
+        ? (l.label || [l.building?.name, l.room, l.cabinet, l.shelf, l.box].filter(Boolean).join(' · '))
+        : [l.building?.name, l.room, l.cabinet, l.shelf, l.box].filter(Boolean).join(' · ');
+    const cols = 6;
+    return (
+        <>
+            <tr>
+                <td>
+                    <div className="ds-table-title">{l.code}</div>
+                    <div className="ds-table-sub" style={{ textTransform: 'uppercase' }}>{path || '—'}</div>
+                </td>
+                <td><TypeBadge type={type} /></td>
+                <td className="ds-table-nowrap">{l.creator?.name || 'Unknown (legacy entry)'}</td>
+                <td><LocationStatusChips location={l} /></td>
+                {type === 'storage' ? (
+                    <td>
+                        <div className="ds-chip-row" style={{ marginTop: 0, marginBottom: 6 }}>
+                            {l.capacity === null || l.capacity === undefined
+                                ? <span className="ds-badge ds-badge-default">No limit</span>
+                                : <CapacityBadge location={l} />}
+                        </div>
+                        <CapacityEditor location={l} onSaved={onSaved} compact />
+                    </td>
+                ) : (
+                    <td><span className="ds-table-sub">—</span></td>
+                )}
+                <td><LocationButtons ed={ed} className="ds-table-actions" /></td>
+            </tr>
+            {ed.editing && (
+                <tr className="ds-visitor-edit-row">
+                    <td colSpan={cols}><LocationEditForm type={type} ed={ed} className="ds-loc-edit ds-loc-edit-table" /></td>
+                </tr>
+            )}
+        </>
+    );
+}
+
+function LocationTable({ locations, onSaved }) {
+    return (
+        <div className="ds-table-wrap">
+            <table className="ds-table">
+                <thead>
+                    <tr>
+                        <th>Location</th>
+                        <th>Type</th>
+                        <th>Added By</th>
+                        <th>Status</th>
+                        <th>Capacity</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {locations.map((l) => <LocationTableRow key={`${l._type}-${l.id}`} location={l} onSaved={onSaved} />)}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
 export default function SecurityInventory() {
+    const [view, setView] = useViewMode('inventory-locations');
     const [storageLocations, setStorageLocations] = useState([]);
     const [counterLocations, setCounterLocations] = useState([]);
     const [unstored, setUnstored] = useState([]);
     const [stored, setStored] = useState([]); // already-shelved items, movable to a new location
     const [loading, setLoading] = useState(true);
+    const allLocations = [
+        ...storageLocations.map((l) => ({ ...l, _type: 'storage' })),
+        ...counterLocations.map((l) => ({ ...l, _type: 'counter' })),
+    ];
     const [assign, setAssign] = useState({}); // itemId -> locationId
     const [move, setMove] = useState({}); // itemId -> new locationId
     const [busyId, setBusyId] = useState(null);
@@ -476,69 +596,33 @@ export default function SecurityInventory() {
             <div className="ds-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, rowGap: 14, flexWrap: 'wrap', marginBottom: 20 }}>
                     <div style={{ flex: '1 1 420px', minWidth: 0 }}>
-                        <h3 style={{ marginBottom: 4 }}>Lost &amp; Found Storage</h3>
+                        <h3 style={{ marginBottom: 4 }}>Storage Locations</h3>
                         <p className="ds-card-desc" style={{ marginBottom: 0 }}>
-                            Room / cabinet / shelf / box shelving for unmatched found items going through the normal
-                            report → verify → match → claim flow. Each spot shows what's actually still there right now,
-                            not just how many items were ever shelved here.
+                            Every spot in one place. <strong>Lost &amp; Found</strong> spots (room / cabinet / shelf / box) hold unmatched
+                            found items going through the report → verify → match → claim flow. <strong>Counter</strong> spots are
+                            front-desk shelves for items checked in with a known owner, expected back same-day. Each spot shows
+                            what's actually still there right now.
                         </p>
                     </div>
-                    <Link to="/app/security/unclaimed-items" className="ds-btn ds-btn-secondary" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>
-                        Unclaimed Items
-                    </Link>
+                    <div className="ds-visitor-head-controls" style={{ flexShrink: 0 }}>
+                        <ViewToggle mode={view} onChange={setView} />
+                        <Link to="/app/security/unclaimed-items" className="ds-btn ds-btn-secondary" style={{ whiteSpace: 'nowrap' }}>
+                            Unclaimed Items
+                        </Link>
+                    </div>
                 </div>
-                {!loading && storageLocations.length === 0 && (
-                    <div className="ds-empty">No lost &amp; found storage locations yet — add one below.</div>
+                {!loading && allLocations.length === 0 && (
+                    <div className="ds-empty">No storage locations yet — add one below.</div>
                 )}
-                <div className="ds-location-grid">
-                    {storageLocations.map(l => (
-                        <div key={l.id} className="ds-location-card">
-                            <p className="ds-list-item-title">{l.code}</p>
-                            <p className="ds-list-item-meta">
-                                {[l.building?.name, l.room, l.cabinet, l.shelf, l.box].filter(Boolean).join(' · ')}
-                            </p>
-                            <p className="ds-list-item-meta">
-                                <UserCircle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
-                                Added by {l.creator?.name || 'Unknown (legacy entry)'}
-                            </p>
-                            <div className="ds-chip-row" style={{ marginTop: 6 }}>
-                                <CapacityBadge location={l} />
-                            </div>
-                            <LocationStatusChips location={l} />
-                            <div style={{ marginTop: 6 }}><CapacityEditor location={l} onSaved={load} /></div>
-                            <LocationEditor location={l} type="storage" onSaved={load} onDeleted={load} />
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="ds-card">
-                <h3>Counter Storage</h3>
-                <p className="ds-card-desc">
-                    Front-desk spots for items checked in with a known owner at the Counter — expected back
-                    same-day, not part of the lost &amp; found shelving above.
-                </p>
-                {!loading && counterLocations.length === 0 && (
-                    <div className="ds-empty">No counter locations yet — add one below and set its type to Counter.</div>
+                {allLocations.length > 0 && view === 'table' && (
+                    <LocationTable locations={allLocations} onSaved={load} />
                 )}
-                <div className="ds-location-grid">
-                    {counterLocations.map(l => (
-                        <div key={l.id} className="ds-location-card">
-                            <p className="ds-list-item-title">{l.code}</p>
-                            <p className="ds-list-item-meta">
-                                {l.label || [l.building?.name, l.room, l.cabinet, l.shelf, l.box].filter(Boolean).join(' · ')}
-                            </p>
-                            <p className="ds-list-item-meta">
-                                <UserCircle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
-                                Added by {l.creator?.name || 'Unknown (legacy entry)'}
-                            </p>
-                            <LocationStatusChips location={l} />
-                            <LocationEditor location={l} type="counter" onSaved={load} onDeleted={load} />
-                        </div>
-                    ))}
-                </div>
+                {allLocations.length > 0 && view === 'cards' && (
+                    <div className="ds-location-grid">
+                        {allLocations.map((l) => <LocationCard key={`${l._type}-${l.id}`} location={l} type={l._type} onSaved={load} />)}
+                    </div>
+                )}
             </div>
-
             <div className="ds-card">
                 <h4 style={{ marginTop: 0 }}>What the badges mean</h4>
                 <p className="ds-card-desc" style={{ marginBottom: 10 }}>

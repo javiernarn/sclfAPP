@@ -91,6 +91,8 @@ class Phase6RefreshCookieTest extends TestCase
 
     public function test_a_refresh_token_in_the_request_body_is_ignored_in_cookie_mode(): void
     {
+        // Pinned here too, so a developer's .env (SCLF_REFRESH_ALLOW_BODY=true) can't change the result.
+        config(['sclf.refresh_cookie.enabled' => true, 'sclf.refresh_cookie.allow_body' => false]);
         $this->makeUser();
         $token = $this->refreshTokenFrom($this->login());
 

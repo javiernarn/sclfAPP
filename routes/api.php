@@ -27,6 +27,7 @@ use App\Http\Controllers\ViolationController;
 use App\Http\Controllers\SecurityIncidentController;
 use App\Http\Controllers\ServiceRequestController;
 use App\Http\Controllers\StorageLocationController;
+use App\Http\Controllers\PublicVisitorController;
 use App\Http\Controllers\VisitorController;
 use Illuminate\Support\Facades\Route;
 
@@ -67,6 +68,16 @@ Route::middleware('throttle:6,1')->group(function () {
 // from the group above so merely opening/refreshing the page doesn't eat the
 // 6-per-minute budget the real reset needs.
 Route::middleware('throttle:30,1')->post('/password/reset-token/check', [PasswordResetController::class, 'checkToken']);
+
+// Visitor portal — the page behind the QR code on a visitor badge. No login: the
+// visitor just scanned the badge. The token is signed (see App\Support\VisitorBadgeLink),
+// every step releases only a little information (see PublicVisitorController), and the
+// routes are throttled per IP so they cannot be used to probe badges.
+Route::middleware('throttle:30,1')->prefix('public/visitor')->group(function () {
+    Route::get('/{token}', [PublicVisitorController::class, 'show']);
+    Route::post('/{token}/confirm', [PublicVisitorController::class, 'confirm']);
+    Route::post('/{token}/not-me', [PublicVisitorController::class, 'notMe']);
+});
 
 // Protected routes — must be logged in (valid Sanctum token) AND have an
 // account that hasn't been disabled by an administrator, AND (via
@@ -319,6 +330,7 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         // officer/admin-only (no student-facing side to this one).
         Route::get('/visitors', [VisitorController::class, 'index']);
         Route::get('/visitors/badges', [VisitorController::class, 'badges']);
+        Route::get('/visitors/purpose-fields', [VisitorController::class, 'purposeFields']);
         Route::get('/visitors/student-search', [VisitorController::class, 'searchStudents']);
         Route::post('/visitors', [VisitorController::class, 'store']);
         Route::post('/visitors/{visitor}/check-out', [VisitorController::class, 'checkOut']);

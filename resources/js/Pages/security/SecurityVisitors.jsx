@@ -14,6 +14,8 @@ import VisitorBadgeFlip, { dayColorFor } from '../../Components/shared/VisitorBa
 import { filterPhoneInput, isValidPhone, FORMAT_ERRORS, FORMAT_HINTS } from '../../utils/validators';
 import { PH_ID_GROUPS, PH_ID_OPTIONS, OTHER_ID_VALUE } from '../../config/philippineIds';
 import { initialsOf } from '../../utils/initials';
+import PurposeDetailsFields, { usePurposeDefs, defFor, missingDetails, detailRows, allowedMinutes } from '../../Components/shared/PurposeDetailsFields';
+import '../../Components/shared/PurposeDetailsFields.css';
 
 const PURPOSE_OPTIONS = [
     { value: 'meeting', label: 'Meeting' },
@@ -43,9 +45,10 @@ const STATUS_FILTERS = [
 const OVERDUE_HOURS = 4;
 
 const EMPTY_FORM = {
-    full_name: '', id_presented: '', id_number: '', contact_number: '', purpose: 'meeting',
+    first_name: '', last_name: '', id_presented: '', id_number: '', contact_number: '', purpose: 'meeting',
     host_name: '', host_department: '', badge_number: '', notes: '',
     student_user_id: '', student_label: '', relationship: 'parent',
+    purpose_details: {},
 };
 
 const durationLabel = (from, to = Date.now()) => {
@@ -54,18 +57,22 @@ const durationLabel = (from, to = Date.now()) => {
     const m = mins % 60;
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
 };
+// Flagged once they have stayed longer than the time they declared (plus a short grace).
 const isOverdue = (visitor) => visitor.status === 'checked_in'
-    && (Date.now() - new Date(visitor.checked_in_at).getTime()) > OVERDUE_HOURS * 3600000;
+    && (Date.now() - new Date(visitor.checked_in_at).getTime()) > allowedMinutes(visitor.purpose_details) * 60000;
 
 // Badge picker: today's pool (M-01..M-200 on Monday, T-01..T-200 on Tuesday, ...).
 //  - red  = still with a visitor (not checked out)
 //  - grey = issued this round and already returned: locked until the whole
 //           pool has been issued, then numbering starts again from the low end
 //  - white = available
+// Any badge can be clicked to LOOK at its card. Only an available one becomes the
+// visitor's badge; a taken one just opens the card with a "taken" note (viewLabel).
 function BadgePicker({ value, onChange, includeVisitorId, refreshKey = 0, error }) {
     const [pool, setPool] = useState(null);
     const [loadError, setLoadError] = useState(false);
     const [prefix, setPrefix] = useState(''); // '' = server default (today's letter)
+    const [viewLabel, setViewLabel] = useState(null); // a taken badge opened just for viewing
 
     useEffect(() => {
         let cancelled = false;
@@ -83,19 +90,21 @@ function BadgePicker({ value, onChange, includeVisitorId, refreshKey = 0, error 
 
     const styleFor = (b) => {
         const selected = value === b.label;
+        const viewing = viewLabel === b.label;
         const base = {
             minWidth: 58, padding: '5px 6px', fontSize: 12, fontWeight: 700, borderRadius: 8,
             border: '1.5px solid #c3ccdb', background: 'transparent', color: 'inherit', cursor: 'pointer',
         };
         if (selected) { const dc = dayColorFor(b.label); return { ...base, background: dc, borderColor: dc, color: '#fff', transition: 'background 0.3s' }; }
-        if (b.state === 'in_use') return { ...base, background: 'rgba(239,68,68,0.12)', borderColor: 'rgba(239,68,68,0.4)', color: '#dc2626', cursor: 'not-allowed' };
-        if (b.state === 'returned') return { ...base, opacity: 0.4, cursor: 'not-allowed', textDecoration: 'line-through' };
+        const ring = viewing ? { outline: `3px solid ${dayColorFor(b.label)}`, outlineOffset: 1 } : {};
+        if (b.state === 'in_use') return { ...base, ...ring, background: 'rgba(239,68,68,0.12)', borderColor: 'rgba(239,68,68,0.4)', color: '#dc2626' };
+        if (b.state === 'returned') return { ...base, ...ring, opacity: viewing ? 0.85 : 0.4, textDecoration: 'line-through' };
         return base;
     };
 
     const titleFor = (b) => {
-        if (b.state === 'in_use') return `${b.label} — with ${b.holder} (not checked out)`;
-        if (b.state === 'returned') return `${b.label} — returned, available again next round`;
+        if (b.state === 'in_use') return `${b.label} — taken: with ${b.holder} (not checked out). Click to view the card only.`;
+        if (b.state === 'returned') return `${b.label} — returned, locked until next round. Click to view the card only.`;
         return `${b.label} — available`;
     };
 
@@ -107,6 +116,7 @@ function BadgePicker({ value, onChange, includeVisitorId, refreshKey = 0, error 
                     onChange={(e) => {
                         const next = e.target.value;
                         setPrefix(next);
+                        setViewLabel(null);
                         if (value && !value.startsWith(`${next}-`)) onChange('');
                     }}>
                     {pool.sets.map((st) => (
@@ -120,7 +130,7 @@ function BadgePicker({ value, onChange, includeVisitorId, refreshKey = 0, error 
                 <span className="ds-chip">Not checked out: <strong>{pool.counts.in_use}</strong></span>
                 <span className="ds-chip">Locked until next round: <strong>{pool.counts.waiting}</strong></span>
                 {pool.next && (
-                    <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={() => onChange(pool.next)}>
+                    <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={() => { setViewLabel(null); onChange(pool.next); }}>
                         Use next: {pool.next}
                     </button>
                 )}
@@ -129,9 +139,11 @@ function BadgePicker({ value, onChange, includeVisitorId, refreshKey = 0, error 
                 <div style={{ flex: '1 1 380px', minWidth: 0, display: 'flex', flexWrap: 'wrap', gap: 6, maxHeight: 400, overflowY: 'auto', padding: 4, border: '1px solid #c3ccdb', borderRadius: 10, alignContent: 'flex-start' }}>
                     {pool.badges.map((b) => (
                         <button key={b.label} type="button" style={styleFor(b)} title={titleFor(b)}
-                            aria-pressed={value === b.label}
-                            disabled={b.state !== 'available' && value !== b.label}
-                            onClick={() => onChange(b.label)}>
+                            aria-pressed={value === b.label || viewLabel === b.label}
+                            onClick={() => {
+                                // Available -> becomes this visitor's badge. Taken -> only opens its card.
+                                if (b.state === 'available') { setViewLabel(null); onChange(b.label); } else { setViewLabel(b.label); }
+                            }}>
                             {b.label}
                         </button>
                     ))}
@@ -139,16 +151,38 @@ function BadgePicker({ value, onChange, includeVisitorId, refreshKey = 0, error 
                 {/* Full badge (front/back). Follows the selection: pick S-23 and it
                     becomes S-23 in Saturday's colour; before a pick it previews the
                     next badge of the chosen day set. */}
-                <VisitorBadgeFlip
-                    label={value || pool.next || `${pool.prefix}-01`}
-                    preview={!value}
-                    width={230}
-                />
+                {(() => {
+                    const shown = viewLabel || value || pool.next || `${pool.prefix}-01`;
+                    const shownBadge = pool.badges.find((b) => b.label === shown);
+                    return (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                            <VisitorBadgeFlip
+                                label={shown}
+                                qrValue={shownBadge?.url || ''}
+                                preview={!value && !viewLabel}
+                                width={230}
+                            />
+                            {viewLabel && shownBadge && (
+                                <div className="ds-chip-row" style={{ marginTop: 0, justifyContent: 'center', textAlign: 'center' }}>
+                                    <span className="ds-chip" style={{ background: 'rgba(239,68,68,0.12)', color: '#dc2626' }}>
+                                        {shownBadge.state === 'in_use'
+                                            ? `Taken — with ${shownBadge.holder}`
+                                            : 'Taken — returned, locked until next round'}
+                                    </span>
+                                    <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={() => setViewLabel(null)}>
+                                        Close preview
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
             </div>
             <p className="ds-list-item-meta" style={{ marginTop: 6 }}>
-                {value ? <>Selected badge: <strong>{value}</strong></> : 'Tap a badge to select it.'}
+                {value ? <>Selected badge: <strong>{value}</strong></> : 'Tap an available badge to select it.'}
+                {viewLabel && <> · Viewing <strong>{viewLabel}</strong> only (taken — not selected for this visitor)</>}
                 <br />
-                Red = not checked out · Faded = returned, locked until the pool is used up.
+                Red = taken, not checked out · Faded = returned, locked until the pool is used up. You can tap a taken badge to view its card; it will not be assigned.
             </p>
             {error && <p className="ds-field-error">{error}</p>}
         </div>
@@ -302,6 +336,21 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [contactError, setContactError] = useState('');
+    const purposeDefs = usePurposeDefs();
+    const [editErrors, setEditErrors] = useState({});
+    const visitDef = defFor(purposeDefs, visitor.purpose);
+    // Badge QR activity: did the visitor open their welcome page, and did someone report the badge as found?
+    const scanChips = visitor.status === 'checked_in' && (visitor.welcomed_at || visitor.badge_found_reported_at) ? (
+        <p className="ds-visit-detail">
+            {visitor.welcomed_at && <span className="ds-live-chip" title={`Opened ${new Date(visitor.welcomed_at).toLocaleString()}`}>Opened welcome page</span>}
+            {visitor.badge_found_reported_at && (
+                <span className="ds-live-chip is-overdue" style={{ marginLeft: 6 }} title={`Reported ${new Date(visitor.badge_found_reported_at).toLocaleString()}`}>
+                    <AlertTriangle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />Badge reported as not theirs / found
+                </span>
+            )}
+        </p>
+    ) : null;
+    const visitSummary = detailRows(visitDef, visitor.purpose_details).filter((r) => r.value !== 'Yes').slice(0, 3).map((r) => r.value).join(' · ');
     const [viewing, setViewing] = useState(null); // theme classes of the page while the details modal is open
     const toast = useToast();
     const confirm = useConfirm();
@@ -314,7 +363,7 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
         setViewing(classes.join(' '));
     };
     const detailsModal = viewing
-        ? <VisitorDetailsModal visitor={visitor} shellClass={viewing} onClose={() => setViewing(null)} />
+        ? <VisitorDetailsModal visitor={visitor} purposeDef={visitDef} shellClass={viewing} onClose={() => setViewing(null)} />
         : null;
 
     const checkOut = async () => {
@@ -340,7 +389,8 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
 
     const startEditing = () => {
         setForm({
-            full_name: visitor.full_name || '',
+            first_name: visitor.first_name || visitor.full_name?.split(/\s+/).slice(0, -1).join(' ') || visitor.full_name || '',
+            last_name: visitor.last_name || (visitor.full_name?.includes(' ') ? visitor.full_name.split(/\s+/).slice(-1)[0] : ''),
             id_presented: visitor.id_presented || '',
             id_number: visitor.id_number || '',
             purpose: visitor.purpose || 'meeting',
@@ -351,8 +401,10 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
             student_user_id: visitor.student_user_id || '',
             student_label: visitor.student_name ? `${visitor.student_name}${visitor.student_number ? ` (${visitor.student_number})` : ''}` : '',
             relationship: visitor.relationship || 'parent',
+            purpose_details: visitor.purpose_details || {},
             notes: visitor.notes || '',
         });
+        setEditErrors({});
         setEditing(true);
     };
 
@@ -361,6 +413,13 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
         if (!phone) { setContactError('Contact number is required.'); return; }
         if (!isValidPhone(phone)) { setContactError(FORMAT_ERRORS.phone); return; }
         setContactError('');
+        const missing = missingDetails(defFor(purposeDefs, form.purpose), form.purpose_details, form.host_name);
+        if (Object.keys(missing).length) {
+            setEditErrors(missing);
+            toast.error('Complete the visit details for this purpose.', { title: 'Details required' });
+            return;
+        }
+        setEditErrors({});
         setSaving(true);
         try {
             const { student_label, ...payload } = form;
@@ -371,6 +430,7 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
             onUpdated(res.data.data);
         } catch (err) {
             const errors = err?.response?.data?.errors;
+            if (errors) setEditErrors(Object.fromEntries(Object.entries(errors).map(([k, v]) => [k, v[0]])));
             const message = errors ? Object.values(errors).flat().join('\n') : (err?.response?.data?.message || 'Could not update this entry.');
             toast.error(message, { title: 'Could not save' });
         } finally {
@@ -404,36 +464,43 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
         <>
                 <div className="ds-form-row ds-form-row-2">
                     <div className="ds-field">
-                        <label>Full name</label>
-                        <input value={form.full_name} maxLength={150} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+                        <label>First name *</label>
+                        <input value={form.first_name} maxLength={100} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
+                        {editErrors.first_name && <p className="ds-field-error">{editErrors.first_name}</p>}
+                        <label style={{ marginTop: 8 }}>Last name *</label>
+                        <input value={form.last_name} maxLength={100} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
+                        {editErrors.last_name && <p className="ds-field-error">{editErrors.last_name}</p>}
                     </div>
                     <div className="ds-field">
                         <label>Purpose</label>
-                        <select value={form.purpose} onChange={(e) => setForm({ ...form, purpose: e.target.value })}>
+                        <select value={form.purpose} onChange={(e) => { setEditErrors({}); setForm({ ...form, purpose: e.target.value, purpose_details: e.target.value === visitor.purpose ? (visitor.purpose_details || {}) : {} }); }}>
                             {PURPOSE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                     </div>
                 </div>
                 <div className="ds-form-row ds-form-row-2">
                     <div className="ds-field">
-                        <label>ID presented</label>
+                        <label>ID presented *</label>
                         <IdPresentedSelect value={form.id_presented} onChange={(v) => setForm({ ...form, id_presented: v })} />
                     </div>
                     <div className="ds-field">
-                        <label>ID number</label>
+                        <label>ID number *</label>
                         <input value={form.id_number} maxLength={100} onChange={(e) => setForm({ ...form, id_number: e.target.value })} />
                     </div>
                 </div>
                 <div className="ds-form-row ds-form-row-2">
                     <div className="ds-field">
-                        <label>Host</label>
+                        <label>{(visitDef && form.purpose === visitor.purpose ? visitDef.host_label : (defFor(purposeDefs, form.purpose)?.host_label || 'Host')) + (defFor(purposeDefs, form.purpose)?.requires_host ? ' *' : '')}</label>
                         <input value={form.host_name} maxLength={150} onChange={(e) => setForm({ ...form, host_name: e.target.value })} />
+                        {editErrors.host_name && <p className="ds-field-error">{editErrors.host_name}</p>}
                     </div>
                     <div className="ds-field">
                         <label>Host's department</label>
                         <DepartmentSelect value={form.host_department} onChange={(e) => setForm({ ...form, host_department: e.target.value })} />
                     </div>
                 </div>
+                <PurposeDetailsFields def={defFor(purposeDefs, form.purpose)} values={form.purpose_details || {}} errors={editErrors}
+                    onChange={(details) => setForm({ ...form, purpose_details: details })} />
                 <div className="ds-form-row">
                     <div className="ds-field">
                         <label>Badge number *</label>
@@ -531,7 +598,10 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
                         </div>
                     )}
                 </td>
-                <td className="ds-table-nowrap" style={{ textTransform: 'capitalize' }}>{purposeLabel(visitor.purpose)}</td>
+                <td style={{ textTransform: 'capitalize' }}>
+                    <div className="ds-table-nowrap">{purposeLabel(visitor.purpose)}</div>
+                    {visitSummary && <div className="ds-table-sub" style={{ textTransform: 'none' }} title={visitSummary}>{visitSummary}</div>}
+                </td>
                 <td>
                     <div className="ds-table-title" title={hostLine}>{visitor.host_name || '—'}</div>
                     {visitor.host_department && <div className="ds-table-sub" title={visitor.host_department}>{visitor.host_department}</div>}
@@ -561,6 +631,7 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
                                     {isOverdue(visitor) && <AlertTriangle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />}
                                     {durationLabel(visitor.checked_in_at)} inside
                                 </div>
+                                {scanChips}
                             </>
                         )}
                 </td>
@@ -577,58 +648,95 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, onDeleted, isAdmin, view
         );
     }
 
+    const fmt = (d) => new Date(d).toLocaleString();
+    const hostLine = visitor.host_name
+        ? `${visitor.host_name}${visitor.host_department ? ` (${visitor.host_department})` : ''}`
+        : null;
+    const studentLine = visitor.student_name
+        ? `${visitor.relationship ? `${visitor.relationship} of ` : ''}${visitor.student_name}${visitor.student_number ? ` (${visitor.student_number})` : ''}`
+        : null;
+    const infoRows = [
+        { label: 'Purpose', value: visitor.purpose ? purposeLabel(visitor.purpose) : null },
+        { label: 'Visiting', value: hostLine },
+        { label: 'Student', value: studentLine },
+        { label: 'Contact', value: visitor.contact_number },
+        { label: 'Details', value: visitSummary },
+    ].filter((r) => r.value);
+
     return (
-        <li className="ds-list-item">
-            <div className="ds-list-item-main" style={{ minWidth: 0 }}>
-                <div style={{ minWidth: 0 }}>
+        <li className="ds-list-item ds-visitor-card">
+            <div className="ds-visitor-card-head">
+                <div className="ds-visitor-card-title">
                     <p className="ds-list-item-title">{visitor.full_name}</p>
-                    <p className="ds-list-item-meta">
-                        {visitor.purpose}
-                        {visitor.host_name ? ` · Visiting ${visitor.host_name}` : ''}
-                        {visitor.host_department ? ` (${visitor.host_department})` : ''}
-                        {visitor.badge_number ? ` · Badge #${visitor.badge_number}` : ''}
-                        {visitor.contact_number ? ` · ${visitor.contact_number}` : ''}
-                    </p>
-                    {visitor.student_name && (
-                        <p className="ds-list-item-meta">
-                            <GraduationCap size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
-                            {visitor.relationship ? `${visitor.relationship} of ` : 'Visiting '}{visitor.student_name}{visitor.student_number ? ` (${visitor.student_number})` : ''}
-                        </p>
+                    {visitor.badge_number && (
+                        <span className="ds-badge ds-badge-icon ds-visitor-badge-no" title="Visitor badge">
+                            <Tag size={12} /> Badge #{visitor.badge_number}
+                        </span>
                     )}
-                    {visitor.status === 'checked_in' && (
-                        <p className="ds-list-item-meta" style={{ color: isOverdue(visitor) ? '#ef4444' : undefined }}>
-                            {isOverdue(visitor) && <AlertTriangle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />}
-                            {durationLabel(visitor.checked_in_at)} inside · badge not returned
-                        </p>
-                    )}
-                    <p className="ds-list-item-meta">
-                        <Clock size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
-                        Checked in {new Date(visitor.checked_in_at).toLocaleString()} by {roleAndName(visitor.checked_in_by)}
-                        {visitor.status === 'checked_out' && visitor.checked_out_at && (
-                            ` · Checked out ${new Date(visitor.checked_out_at).toLocaleString()}`
-                        )}
-                    </p>
                 </div>
+                {visitor.status === 'checked_in' ? (
+                    <span className={`ds-badge ds-badge-icon ${isOverdue(visitor) ? 'ds-badge-rejected' : 'ds-badge-found'}`}>
+                        {isOverdue(visitor) && <AlertTriangle size={12} />}
+                        {durationLabel(visitor.checked_in_at)} inside
+                    </span>
+                ) : (
+                    <span className="ds-badge ds-badge-default">Checked out</span>
+                )}
             </div>
-            <div className="ds-list-item-side">
+
+            {infoRows.length > 0 && (
+                <dl className="ds-visitor-info">
+                    {infoRows.map((r) => (
+                        <div key={r.label} className="ds-visitor-info-row">
+                            <dt>{r.label}</dt>
+                            <dd>{r.value}</dd>
+                        </div>
+                    ))}
+                </dl>
+            )}
+
+            {scanChips}
+
+            <div className="ds-visitor-times">
+                <div className="ds-visitor-time">
+                    <Clock size={13} />
+                    <span className="ds-visitor-time-label">Checked in</span>
+                    <span className="ds-visitor-time-value">{fmt(visitor.checked_in_at)}</span>
+                    <span className="ds-visitor-time-by">by {roleAndName(visitor.checked_in_by)}</span>
+                </div>
+                {visitor.status === 'checked_out' && visitor.checked_out_at && (
+                    <div className="ds-visitor-time">
+                        <LogOut size={13} />
+                        <span className="ds-visitor-time-label">Checked out</span>
+                        <span className="ds-visitor-time-value">{fmt(visitor.checked_out_at)}</span>
+                    </div>
+                )}
+                {visitor.status === 'checked_in' && (
+                    <div className="ds-visitor-time" style={{ color: isOverdue(visitor) ? '#ef4444' : undefined }}>
+                        {isOverdue(visitor) ? <AlertTriangle size={13} /> : <Tag size={13} />}
+                        <span className="ds-visitor-time-label">Badge</span>
+                        <span className="ds-visitor-time-value">not returned{isOverdue(visitor) ? ' — past expected stay' : ''}</span>
+                    </div>
+                )}
+            </div>
+
+            <div className="ds-visitor-actions">
                 <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={openView} title="View all details">
-                    <Eye size={13} style={{ verticalAlign: -2, marginRight: 4 }} /> View
+                    <Eye size={13} /> View
                 </button>
                 {detailsModal}
                 {visitor.status === 'checked_in' && (
-                    <button className="ds-btn ds-btn-secondary" disabled={busy} onClick={checkOut}>
-                        <LogOut size={14} style={{ verticalAlign: -2, marginRight: 4 }} /> Check Out
+                    <button type="button" className="ds-btn ds-btn-primary ds-btn-sm" disabled={busy} onClick={checkOut}>
+                        <LogOut size={13} /> Check Out
                     </button>
                 )}
-                {visitor.status === 'checked_out' && (
-                    <span className="ds-badge ds-badge-default">Checked out</span>
-                )}
+                <span className="ds-visitor-actions-spacer" />
                 <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" onClick={startEditing} title="Edit entry">
-                    <Pencil size={13} />
+                    <Pencil size={13} /> Edit
                 </button>
                 {isAdmin && (
                     <button type="button" className="ds-btn ds-btn-danger ds-btn-sm" disabled={deleting} onClick={remove} title="Delete entry">
-                        <Trash2 size={13} />
+                        <Trash2 size={13} /> {deleting ? 'Deleting…' : 'Delete'}
                     </button>
                 )}
             </div>
@@ -654,27 +762,43 @@ export default function SecurityVisitors() {
     const [submitting, setSubmitting] = useState(false);
     const [fieldErrors, setFieldErrors] = useState({});
     const toast = useToast();
+    const purposeDefs = usePurposeDefs();
+    const [live, setLive] = useState({ by_purpose: {}, overdue: 0 });
+    const [updatedAt, setUpdatedAt] = useState(null);
 
     useEffect(() => {
         document.title = "Visitor Management | SCLF - Opol Community College";
     }, []);
 
-    const load = () => {
-        setLoading(true);
+    // silent = background refresh (no spinner, no error popup)
+    const load = (silent = false) => {
+        if (!silent) setLoading(true);
         axios.get('/visitors', { params: { status: statusFilter, ...(search ? { search } : {}) } })
             .then((res) => {
                 setVisitors(res.data.data?.data || []);
                 setOnCampusCount(res.data.currently_on_campus || 0);
                 setOutstanding(res.data.outstanding_badges || []);
                 setStats(res.data.stats || { checked_in_today: 0, checked_out_today: 0 });
+                setLive(res.data.live || { by_purpose: {}, overdue: 0 });
+                setUpdatedAt(new Date());
             })
             .catch((err) => {
+                if (silent === true) return;
                 toast.error(err?.response?.data?.message || 'Could not load visitors.', { title: 'Could not load' });
             })
             .finally(() => setLoading(false));
     };
 
-    useEffect(load, [statusFilter, search]);
+    useEffect(() => { load(); }, [statusFilter, search]);
+
+    // Real-time view: quietly refresh every 10 s while this tab is visible, and
+    // straight away when the officer comes back to it.
+    useEffect(() => {
+        const tick = () => { if (document.visibilityState === 'visible') load(true); };
+        const id = setInterval(tick, 10000);
+        document.addEventListener('visibilitychange', tick);
+        return () => { clearInterval(id); document.removeEventListener('visibilitychange', tick); };
+    }, [statusFilter, search]);
 
     // Debounce the search box so we don't hit the API on every keystroke.
     useEffect(() => {
@@ -701,13 +825,29 @@ export default function SecurityVisitors() {
             toast.error('Enter the visitor\'s Philippine mobile number (09XXXXXXXXX).', { title: 'Contact number required' });
             return;
         }
+        // Every visitor must show an ID; the number is recorded with the entry.
+        if (!String(form.id_presented || '').trim() || !String(form.id_number || '').trim()) {
+            setFieldErrors({
+                ...(!String(form.id_presented || '').trim() ? { id_presented: 'Select the ID the visitor presented.' } : {}),
+                ...(!String(form.id_number || '').trim() ? { id_number: 'Enter the number on the visitor\'s ID.' } : {}),
+            });
+            toast.error('Check the visitor\'s ID and record it before they go inside.', { title: 'ID required' });
+            return;
+        }
+        // Each purpose has required details; without them the visitor is not admitted.
+        const missing = missingDetails(defFor(purposeDefs, form.purpose), form.purpose_details, form.host_name);
+        if (Object.keys(missing).length) {
+            setFieldErrors(missing);
+            toast.error('Complete the visit details before this visitor can go inside.', { title: 'Details required' });
+            return;
+        }
         setSubmitting(true);
         setFieldErrors({});
         try {
             const { student_label, ...payload } = form;
             if (payload.purpose !== 'parent_guardian') { payload.student_user_id = null; payload.relationship = null; }
             await axios.post('/visitors', payload, { silent: true });
-            toast.success(`${form.full_name} checked in.`, { title: 'Checked in' });
+            toast.success(`${form.first_name} ${form.last_name} checked in.`, { title: 'Checked in' });
             setForm(EMPTY_FORM);
             setFormKey((k) => k + 1);
             setBadgeRefresh((k) => k + 1);
@@ -780,21 +920,30 @@ export default function SecurityVisitors() {
                 <form onSubmit={handleCheckIn}>
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
-                            <label>Full name</label>
-                            <input name="full_name" value={form.full_name} onChange={handleChange} required maxLength={150}
-                                aria-invalid={!!fieldErrors.full_name} />
-                            {fieldErrors.full_name && <p className="ds-field-error">{fieldErrors.full_name}</p>}
+                            <label>First name *</label>
+                            <input name="first_name" value={form.first_name} onChange={handleChange} required maxLength={100}
+                                autoComplete="given-name" aria-invalid={!!fieldErrors.first_name} />
+                            {fieldErrors.first_name && <p className="ds-field-error">{fieldErrors.first_name}</p>}
+                            <label style={{ marginTop: 8 }}>Last name *</label>
+                            <input name="last_name" value={form.last_name} onChange={handleChange} required maxLength={100}
+                                autoComplete="family-name" aria-invalid={!!fieldErrors.last_name} />
+                            {fieldErrors.last_name && <p className="ds-field-error">{fieldErrors.last_name}</p>}
                         </div>
                         <div className="ds-field">
                             <label>Purpose of visit</label>
-                            <select name="purpose" value={form.purpose} onChange={handleChange} required>
+                            <select name="purpose" value={form.purpose} required
+                                onChange={(e) => {
+                                    const purpose = e.target.value;
+                                    setForm((prev) => ({ ...prev, purpose, purpose_details: {} }));
+                                    setFieldErrors((prev) => Object.fromEntries(Object.entries(prev).filter(([k]) => !k.startsWith('purpose_details.') && k !== 'host_name')));
+                                }}>
                                 {PURPOSE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
                     </div>
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
-                            <label>ID presented</label>
+                            <label>ID presented *</label>
                             <IdPresentedSelect
                                 key={formKey}
                                 name="id_presented"
@@ -807,20 +956,33 @@ export default function SecurityVisitors() {
                             {fieldErrors.id_presented && <p className="ds-field-error">{fieldErrors.id_presented}</p>}
                         </div>
                         <div className="ds-field">
-                            <label>ID number</label>
-                            <input name="id_number" value={form.id_number} onChange={handleChange} maxLength={100} />
+                            <label>ID number *</label>
+                            <input name="id_number" value={form.id_number} onChange={handleChange} maxLength={100}
+                                aria-invalid={!!fieldErrors.id_number} />
+                            {fieldErrors.id_number && <p className="ds-field-error">{fieldErrors.id_number}</p>}
                         </div>
                     </div>
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
-                            <label>Host / person visiting</label>
-                            <input name="host_name" value={form.host_name} onChange={handleChange} maxLength={150} />
+                            <label>{(defFor(purposeDefs, form.purpose)?.host_label || 'Host / person visiting') + (defFor(purposeDefs, form.purpose)?.requires_host ? ' *' : '')}</label>
+                            <input name="host_name" value={form.host_name} onChange={handleChange} maxLength={150}
+                                aria-invalid={!!fieldErrors.host_name} />
+                            {fieldErrors.host_name && <p className="ds-field-error">{fieldErrors.host_name}</p>}
                         </div>
                         <div className="ds-field">
                             <label>Host's department</label>
                             <DepartmentSelect name="host_department" value={form.host_department} onChange={handleChange} />
                         </div>
                     </div>
+                    <PurposeDetailsFields
+                        def={defFor(purposeDefs, form.purpose)}
+                        values={form.purpose_details}
+                        errors={fieldErrors}
+                        onChange={(details) => {
+                            setForm((prev) => ({ ...prev, purpose_details: details }));
+                            setFieldErrors((prev) => Object.fromEntries(Object.entries(prev).filter(([k]) => !k.startsWith('purpose_details.'))));
+                        }}
+                    />
                     <div className="ds-form-row">
                         <div className="ds-field">
                             <label>Badge number * (physical badge handed to visitor)</label>
@@ -895,6 +1057,16 @@ export default function SecurityVisitors() {
                     <div className="ds-visitor-head-controls">
                         <ViewToggle mode={view} onChange={setView} />
                     </div>
+                </div>
+
+                <div className="ds-live-board" aria-live="polite">
+                    <span className="ds-live-dot">Live{updatedAt ? ` · updated ${updatedAt.toLocaleTimeString()}` : ''}</span>
+                    {Object.entries(live.by_purpose || {}).map(([purpose, n]) => (
+                        <span key={purpose} className="ds-live-chip">{purposeLabel(purpose)}: <strong>{n}</strong></span>
+                    ))}
+                    {live.overdue > 0 && (
+                        <span className="ds-live-chip is-overdue"><AlertTriangle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />{live.overdue} past their expected stay</span>
+                    )}
                 </div>
 
                 <div className="ds-chip-row" style={{ marginTop: 0, marginBottom: 12 }}>

@@ -1,0 +1,168 @@
+/*
+ * Public visitor page (opened from the badge QR). Built as a phone app first:
+ *   - a fixed app bar on top (respects the notch / status bar),
+ *   - the content scrolls in the middle,
+ *   - the main actions live in a thumb-reach bar at the bottom (respects the
+ *     home indicator / gesture bar),
+ *   - on wider screens the same layout becomes a centred card.
+ * Works from ~320px wide up, portrait and landscape, light and dark.
+ */
+html.vp-root, html.vp-root body { height: 100%; overflow: hidden; background: #f1f5f9; overscroll-behavior: none; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+@media (prefers-color-scheme: dark) { html.vp-root, html.vp-root body { background: #0b1020; } }
+
+.vp-page {
+    --vp-bg: #f1f5f9; --vp-card: #ffffff; --vp-ink: #0f172a; --vp-muted: #64748b; --vp-line: #e2e8f0;
+    --vp-accent: #4f46e5; --vp-accent-2: #6366f1; --vp-accent-ink: #ffffff; --vp-soft: #eef2ff;
+    --vp-danger: #dc2626; --vp-edge: 16px;
+    height: 100vh; height: 100dvh; overflow: hidden; box-sizing: border-box; background: var(--vp-bg); color: var(--vp-ink);
+    display: flex; flex-direction: column; align-items: stretch;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; line-height: 1.5;
+    -webkit-tap-highlight-color: transparent;
+}
+.vp-page *, .vp-page *::before, .vp-page *::after { box-sizing: border-box; }
+@media (prefers-color-scheme: dark) {
+    .vp-page { --vp-bg: #0b1020; --vp-card: #131a2e; --vp-ink: #e8ecf8; --vp-muted: #9aa6c4; --vp-line: #26304d; --vp-accent: #818cf8; --vp-accent-2: #a5b4fc; --vp-accent-ink: #0b1020; --vp-soft: #1b2342; }
+}
+
+/* ---------- app bar ---------- */
+.vp-appbar {
+    flex: none; position: relative; z-index: 30;
+    display: flex; align-items: center; gap: 12px;
+    padding: calc(10px + env(safe-area-inset-top)) max(var(--vp-edge), env(safe-area-inset-right)) 10px max(var(--vp-edge), env(safe-area-inset-left));
+    background: var(--vp-card); border-bottom: 1px solid var(--vp-line);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4);
+}
+.vp-appbar img { border-radius: 12px; flex: none; object-fit: contain; }
+.vp-appbar-text { min-width: 0; }
+.vp-college { font-weight: 800; font-size: 15.5px; line-height: 1.2; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vp-sub { font-size: 11px; color: var(--vp-muted); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+
+/* ---------- content ---------- */
+.vp-scroll {
+    flex: 1 1 0; min-height: 0; overflow-y: auto; overflow-x: hidden;
+    -webkit-overflow-scrolling: touch; overscroll-behavior: contain; scrollbar-width: thin;
+}
+.vp-main {
+    flex: none; width: 100%; max-width: 560px; margin: 0 auto;
+    padding: 16px max(var(--vp-edge), env(safe-area-inset-right)) 24px max(var(--vp-edge), env(safe-area-inset-left));
+}
+.vp-card { animation: vp-in .22s ease-out both; }
+@keyframes vp-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.vp-eyebrow { margin: 0; color: var(--vp-muted); font-weight: 700; font-size: 13px; letter-spacing: .06em; text-transform: uppercase; }
+.vp-title { margin: 4px 0 6px; font-size: 26px; line-height: 1.2; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.vp-name { margin: 6px 0 4px; font-size: 26px; line-height: 1.2; font-weight: 800; color: var(--vp-accent); overflow-wrap: anywhere; }
+.vp-thanks { margin: 18px 0 6px; font-weight: 800; font-size: 18px; }
+.vp-text { margin: 8px 0; overflow-wrap: anywhere; }
+.vp-muted { margin: 10px 0; color: var(--vp-muted); font-size: 14px; }
+.vp-foot { margin: 20px 0 0; color: var(--vp-muted); font-size: 12px; text-align: center; }
+
+/* "Are you …?" and "All done" screens: centred like an app prompt */
+.vp-ask { text-align: center; padding: 28px 8px 8px; }
+.vp-ask-icon { display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 72px; margin-bottom: 8px; font-size: 36px; border-radius: 24px; background: var(--vp-soft); }
+.vp-ask .vp-name { font-size: 32px; }
+.vp-badge-chip { display: inline-block; margin: 8px 0 0; padding: 6px 14px; border-radius: 999px; background: var(--vp-soft); color: var(--vp-accent); font-size: 14px; font-weight: 600; }
+
+/* Welcome: a hero panel, then calm cards */
+.vp-hero {
+    margin: 0 0 4px; padding: 20px 18px 18px; border-radius: 24px; color: #fff;
+    background: linear-gradient(140deg, #3730a3 0%, #4f46e5 55%, #6366f1 100%);
+    box-shadow: 0 14px 30px -16px rgba(79, 70, 229, .75);
+}
+.vp-hero .vp-eyebrow { color: rgba(255, 255, 255, .8); }
+.vp-hero .vp-title { color: #fff; font-size: 22px; margin: 4px 0 10px; }
+.vp-hero .vp-name { color: #fff; font-size: 28px; margin: 0 0 8px; }
+.vp-hero .vp-badge-chip { background: rgba(255, 255, 255, .18); color: #fff; margin: 0; }
+
+.vp-section { margin-top: 14px; padding: 16px; border: 1px solid var(--vp-line); border-radius: 20px; background: var(--vp-card); }
+.vp-section h2 { margin: 0 0 10px; font-size: 12.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--vp-muted); }
+.vp-section ul { margin: 0; padding-left: 20px; }
+.vp-section li { margin: 8px 0; overflow-wrap: anywhere; }
+.vp-next { background: var(--vp-soft); border-color: transparent; }
+.vp-dl { margin: 0; display: grid; gap: 0; }
+.vp-dl > div { display: grid; grid-template-columns: minmax(110px, 38%) 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px dashed var(--vp-line); }
+.vp-dl > div:first-child { padding-top: 0; }
+.vp-dl > div:last-child { padding-bottom: 0; border-bottom: 0; }
+.vp-dl dt { color: var(--vp-muted); font-size: 14px; }
+.vp-dl dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.vp-return { margin: 12px 0 0; font-weight: 700; }
+.vp-privacy p { margin: 0; font-size: 13px; color: var(--vp-muted); }
+/* the finder page shows the same list directly under the owner's name */
+.vp-card > .vp-dl { margin-top: 12px; padding: 16px; border: 1px solid var(--vp-line); border-radius: 20px; background: var(--vp-card); }
+
+/* ---------- forms ---------- */
+.vp-label { display: block; margin: 16px 0 6px; font-weight: 700; font-size: 14px; }
+.vp-input {
+    width: 100%; font: inherit; font-size: 18px; /* 16px+ stops iOS zooming in on focus */
+    padding: 14px 16px; min-height: 56px; border-radius: 16px; border: 1.5px solid var(--vp-line);
+    background: var(--vp-card); color: var(--vp-ink); -webkit-appearance: none; appearance: none;
+}
+.vp-input:focus-visible { outline: 3px solid var(--vp-accent); outline-offset: 1px; border-color: transparent; }
+.vp-input[aria-invalid="true"] { border-color: var(--vp-danger); }
+.vp-error { margin: 8px 0 0; color: var(--vp-danger); font-weight: 600; font-size: 14px; }
+.vp-link { font: inherit; background: none; border: 0; padding: 6px 2px; color: var(--vp-accent); font-weight: 700; text-decoration: underline; cursor: pointer; min-height: 44px; }
+
+/* ---------- buttons ---------- */
+.vp-actions { display: grid; gap: 10px; margin-top: 20px; }
+.vp-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+    font: inherit; font-weight: 700; font-size: 16px; line-height: 1.2; text-align: center; text-decoration: none;
+    padding: 14px 16px; min-height: 54px; border-radius: 16px; border: 1.5px solid transparent; cursor: pointer;
+    touch-action: manipulation; transition: transform .1s ease, opacity .15s ease;
+}
+.vp-btn:active:not(:disabled) { transform: scale(.98); }
+.vp-btn:disabled { opacity: .55; cursor: not-allowed; }
+.vp-btn-primary { background: var(--vp-accent); color: var(--vp-accent-ink); box-shadow: 0 10px 20px -12px var(--vp-accent); }
+.vp-btn-ghost { background: transparent; color: var(--vp-ink); border-color: var(--vp-line); }
+.vp-btn:focus-visible { outline: 3px solid var(--vp-accent); outline-offset: 2px; }
+
+/* ---------- bottom action bar (thumb reach) ---------- */
+.vp-bar {
+    flex: none; position: relative; z-index: 30;
+    background: var(--vp-card); border-top: 1px solid var(--vp-line);
+    box-shadow: 0 -10px 28px -18px rgba(15, 23, 42, .45);
+    padding: 12px max(var(--vp-edge), env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) max(var(--vp-edge), env(safe-area-inset-left));
+}
+.vp-bar-inner { width: 100%; max-width: 560px; margin: 0 auto; display: grid; gap: 10px; }
+
+/* ---------- small phones (320 - 380px) ---------- */
+@media (max-width: 380px) {
+    .vp-page { --vp-edge: 12px; }
+    .vp-title { font-size: 22px; }
+    .vp-name, .vp-ask .vp-name { font-size: 24px; }
+    .vp-hero .vp-name { font-size: 23px; }
+    .vp-hero { padding: 16px 14px; border-radius: 20px; }
+    .vp-section { padding: 14px 12px; border-radius: 16px; }
+    .vp-btn { font-size: 15px; padding: 12px 12px; }
+    .vp-dl > div { grid-template-columns: 1fr; gap: 0; }
+}
+@media (max-width: 420px) { .vp-dl > div { grid-template-columns: 1fr; gap: 0; } .vp-dl dt { font-size: 12.5px; } }
+
+/* ---------- landscape phones: little height, so compact bars so more of the page shows ---------- */
+@media (orientation: landscape) and (max-height: 500px) {
+    .vp-appbar { padding-top: calc(6px + env(safe-area-inset-top)); padding-bottom: 6px; }
+    .vp-appbar img { width: 32px; height: 32px; }
+    .vp-bar { padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+    .vp-bar-inner { grid-template-columns: 1fr 1fr; }
+    .vp-btn { min-height: 46px; padding-top: 8px; padding-bottom: 8px; }
+    .vp-ask { padding-top: 8px; }
+    .vp-ask-icon { display: none; }
+}
+
+/* ---------- tablets / desktop: centred card ---------- */
+@media (min-width: 601px) {
+    .vp-appbar { justify-content: center; }
+    .vp-main { padding-top: 28px; }
+    .vp-card { background: var(--vp-card); border: 1px solid var(--vp-line); border-radius: 24px; padding: 24px 22px 26px; box-shadow: 0 12px 40px rgba(15, 23, 42, .10); }
+    .vp-bar-inner { grid-template-columns: 1fr 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .vp-card { animation: none; }
+    .vp-btn { transition: none; }
+}
+
+/* ---------- greeting ---------- */
+.vp-greeting { margin: 0 0 4px; font-size: 20px; font-weight: 800; color: var(--vp-muted); letter-spacing: -.01em; }
+.vp-hero-greet { margin: 0; font-size: 20px; font-weight: 800; color: #fff; }
+.vp-hero-date { margin: 2px 0 12px; font-size: 13px; color: rgba(255, 255, 255, .8); }

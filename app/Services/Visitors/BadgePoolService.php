@@ -91,6 +91,7 @@ class BadgePoolService
                 $badges[] = [
                     'number' => $n,
                     'label' => $this->label($prefix, $n),
+                    'url' => \App\Support\VisitorBadgeLink::url($campusId, $this->label($prefix, $n)),
                     'state' => $state,
                     'holder' => $out[$n] ?? null,
                 ];

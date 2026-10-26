@@ -30,6 +30,9 @@
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="SCLF_ONE_REPORT_PER_DAY" value="false"/>
+        <!-- Tests must not depend on the developer's .env: cookie mode on, body tokens refused. -->
+        <env name="SCLF_REFRESH_COOKIE" value="true"/>
+        <env name="SCLF_REFRESH_ALLOW_BODY" value="false"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>

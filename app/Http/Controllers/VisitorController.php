@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Visitor;
 use App\Services\Visitors\BadgePoolService;
+use App\Services\Visitors\PurposeDetails;
 use App\Services\Visitors\VisitorService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -95,6 +96,17 @@ class VisitorController extends Controller
                     'full_name' => $v->full_name,
                     'checked_in_at' => $v->checked_in_at,
                 ])->values(),
+            // Live board: who is inside right now, by purpose, and who has stayed too long.
+            'live' => [
+                'by_purpose' => $scopeCampus($this->visitors->currentlyOnCampusQuery())
+                    ->selectRaw('purpose, count(*) as total')->groupBy('purpose')->pluck('total', 'purpose'),
+                // Inside longer than the stay they declared (+ a short grace), or past the default cut-off.
+                'overdue' => $scopeCampus($this->visitors->currentlyOnCampusQuery())
+                    ->get(['id', 'checked_in_at', 'purpose_details'])
+                    ->filter(fn ($v) => $v->checked_in_at->lt(now()->subMinutes(PurposeDetails::allowedMinutes($v->purpose_details))))
+                    ->count(),
+                'server_time' => now()->toIso8601String(),
+            ],
             'stats' => [
                 'checked_in_today' => $scopeCampus(Visitor::query())->where('checked_in_at', '>=', $todayStart)->count(),
                 'checked_out_today' => $scopeCampus(Visitor::query())->where('checked_out_at', '>=', $todayStart)->count(),
@@ -119,6 +131,19 @@ class VisitorController extends Controller
                 $request->input('prefix'),
             ),
         ]);
+    }
+
+    /**
+     * The extra questions for each purpose of visit — the check-in form is
+     * built from this, and the same rules are enforced on store/update.
+     */
+    public function purposeFields(Request $request)
+    {
+        if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
+            abort(403);
+        }
+
+        return response()->json(['data' => PurposeDetails::definitions()]);
     }
 
     /**
@@ -163,9 +188,11 @@ class VisitorController extends Controller
         }
 
         $validated = $request->validate([
-            'full_name' => 'required|string|max:150',
-            'id_presented' => 'nullable|string|max:100',
-            'id_number' => 'nullable|string|max:100',
+            'first_name' => 'required_with:last_name|nullable|string|max:100',
+            'last_name' => 'required_with:first_name|nullable|string|max:100',
+            'full_name' => 'required_without_all:first_name,last_name|nullable|string|max:150',
+            'id_presented' => 'required|string|max:100',
+            'id_number' => 'required|string|max:100',
             'contact_number' => ['required', 'string', 'regex:/^09\d{9}$/'],
             'purpose' => 'required|string|in:' . implode(',', Visitor::PURPOSES),
             'host_name' => 'nullable|string|max:150',
@@ -173,8 +200,14 @@ class VisitorController extends Controller
             'badge_number' => 'required|string|max:50',
             'student_user_id' => 'nullable|integer|exists:users,id|required_if:purpose,' . Visitor::PURPOSE_PARENT_VISIT,
             'relationship' => 'nullable|string|in:' . implode(',', Visitor::RELATIONSHIPS),
+            'purpose_details' => 'nullable|array',
             'notes' => 'nullable|string|max:1000',
         ], [
+            'first_name.required_with' => 'Enter the visitor\'s first name.',
+            'last_name.required_with' => 'Enter the visitor\'s last name.',
+            'full_name.required_without_all' => 'Enter the visitor\'s first and last name.',
+            'id_presented.required' => 'Select the ID the visitor presented.',
+            'id_number.required' => 'Enter the number on the visitor\'s ID.',
             'contact_number.required' => 'Contact number is required.',
             'contact_number.regex' => 'Enter a valid Philippine mobile number, e.g. 09171234567.',
             'badge_number.required' => 'Select the physical badge you are handing to this visitor.',
@@ -206,9 +239,11 @@ class VisitorController extends Controller
         }
 
         $validated = $request->validate([
-            'full_name' => 'required|string|max:150',
-            'id_presented' => 'nullable|string|max:100',
-            'id_number' => 'nullable|string|max:100',
+            'first_name' => 'required_with:last_name|nullable|string|max:100',
+            'last_name' => 'required_with:first_name|nullable|string|max:100',
+            'full_name' => 'required_without_all:first_name,last_name|nullable|string|max:150',
+            'id_presented' => 'required|string|max:100',
+            'id_number' => 'required|string|max:100',
             'contact_number' => ['required', 'string', 'regex:/^09\d{9}$/'],
             'purpose' => 'required|string|in:' . implode(',', Visitor::PURPOSES),
             'host_name' => 'nullable|string|max:150',
@@ -216,8 +251,14 @@ class VisitorController extends Controller
             'badge_number' => 'required|string|max:50',
             'student_user_id' => 'nullable|integer|exists:users,id|required_if:purpose,' . Visitor::PURPOSE_PARENT_VISIT,
             'relationship' => 'nullable|string|in:' . implode(',', Visitor::RELATIONSHIPS),
+            'purpose_details' => 'nullable|array',
             'notes' => 'nullable|string|max:1000',
         ], [
+            'first_name.required_with' => 'Enter the visitor\'s first name.',
+            'last_name.required_with' => 'Enter the visitor\'s last name.',
+            'full_name.required_without_all' => 'Enter the visitor\'s first and last name.',
+            'id_presented.required' => 'Select the ID the visitor presented.',
+            'id_number.required' => 'Enter the number on the visitor\'s ID.',
             'contact_number.required' => 'Contact number is required.',
             'contact_number.regex' => 'Enter a valid Philippine mobile number, e.g. 09171234567.',
             'badge_number.required' => 'Select the physical badge you are handing to this visitor.',

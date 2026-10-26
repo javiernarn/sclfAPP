@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X } from '../icons';
 import { roleAndName } from '../../utils/roleLabel';
 import VisitorBadgeFlip from './VisitorBadgeFlip';
+import { detailRows } from './PurposeDetailsFields';
 import './StaffRequestDetails.css'; // shared modal chrome (srd-*)
 import './VisitorDetailsModal.css';
 
@@ -23,7 +24,7 @@ function Field({ label, children }) {
  * Read-only, full record of one visitor entry — for admin, staff and security.
  * Portaled into <body>, so the opener passes its theme classes (`shellClass`).
  */
-export default function VisitorDetailsModal({ visitor: v, shellClass = 'light', onClose }) {
+export default function VisitorDetailsModal({ visitor: v, purposeDef = null, shellClass = 'light', onClose }) {
     useEffect(() => {
         const onKey = (e) => { if (e.key === 'Escape') onClose(); };
         document.addEventListener('keydown', onKey);
@@ -32,6 +33,10 @@ export default function VisitorDetailsModal({ visitor: v, shellClass = 'light', 
 
     const inside = v.status === 'checked_in';
     const hasStudent = !!(v.student_name || v.student);
+    // Saved answers for this purpose; falls back to the raw keys if the field list isn't loaded.
+    const extra = purposeDef
+        ? detailRows(purposeDef, v.purpose_details)
+        : Object.entries(v.purpose_details || {}).map(([key, value]) => ({ key, label: humanize(key), value: value === true ? 'Yes' : String(value) }));
 
     return createPortal(
         <div className={`ds-shell ${shellClass} srd-root`}>
@@ -71,6 +76,15 @@ export default function VisitorDetailsModal({ visitor: v, shellClass = 'light', 
                                 <p className="srd-muted" style={{ marginTop: 10 }}><strong>Notes:</strong> {v.notes ? v.notes : 'None'}</p>
                             </section>
 
+                            {extra.length > 0 && (
+                                <section className="srd-section">
+                                    <h4>{humanize(v.purpose)} details</h4>
+                                    <dl className="srd-dl">
+                                        {extra.map((r) => <Field key={r.key} label={r.label}>{r.value}</Field>)}
+                                    </dl>
+                                </section>
+                            )}
+
                             {hasStudent && (
                                 <section className="srd-section">
                                     <h4>Student being visited</h4>
@@ -92,6 +106,11 @@ export default function VisitorDetailsModal({ visitor: v, shellClass = 'light', 
                                     <Field label="Checked out by">{v.checked_out_by ? roleAndName(v.checked_out_by) : '—'}</Field>
                                     <Field label={inside ? 'Time inside so far' : 'Total time on campus'}>{duration(v.checked_in_at, inside ? null : v.checked_out_at)}</Field>
                                     <Field label="Badge cycle (round)">{val(v.badge_cycle)}</Field>
+                                    <Field label="Visitor opened the welcome page">{v.welcomed_at ? fmt(v.welcomed_at) : 'Not yet'}</Field>
+                                    <Field label="Badge QR scans">{val(v.badge_scan_count ?? 0)}</Field>
+                                    {v.badge_found_reported_at && (
+                                        <Field label="Badge reported as found / not theirs"><strong style={{ color: '#ef4444' }}>{fmt(v.badge_found_reported_at)}</strong></Field>
+                                    )}
                                 </dl>
                             </section>
                         </div>
@@ -99,7 +118,7 @@ export default function VisitorDetailsModal({ visitor: v, shellClass = 'light', 
                         <aside className="vdm-badge">
                             <h4>Badge {v.badge_number ? `#${v.badge_number}` : ''}</h4>
                             {v.badge_number
-                                ? <VisitorBadgeFlip label={v.badge_number} width={170} />
+                                ? <VisitorBadgeFlip label={v.badge_number} qrValue={v.badge_url || ''} width={170} />
                                 : <p className="srd-muted">No badge recorded.</p>}
                         </aside>
                     </div>

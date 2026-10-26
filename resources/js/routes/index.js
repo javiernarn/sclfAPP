@@ -10,6 +10,8 @@ import LoginPage from '../Pages/Auth/LoginPage';
 const RegisterPage = lazyWithRetry(() => import('../Pages/Auth/RegisterPage'));
 const ForgotPassword = lazyWithRetry(() => import('../Pages/Auth/ForgotPassword'));
 const ResetPassword = lazyWithRetry(() => import('../Pages/Auth/ResetPassword'));
+// Public page opened by scanning a visitor badge QR (no login).
+const VisitorPortal = lazyWithRetry(() => import('../Pages/Public/VisitorPortal'));
 const AdminDashboard = lazyWithRetry(() => import('../Pages/admin/AdminDashboard'));
 const AdminUsers = lazyWithRetry(() => import('../Pages/admin/AdminUsers'));
 const AdminUserDetail = lazyWithRetry(() => import('../Pages/admin/AdminUserDetail'));
@@ -53,6 +55,8 @@ const publicRoutes = [
     // is replaced with after a successful reset (see ResetPassword.jsx).
     { path: '/reset-password/success', component: ResetPassword },
     { path: '/reset-password/:token', component: ResetPassword },
+    // Visitor badge QR: /visitor/{signed badge token}. Outside /app/ on purpose (see PwaManifestController).
+    { path: '/visitor/:token', component: VisitorPortal },
 ];
 
 // All authenticated routes live under /app/ so the installed PWA's

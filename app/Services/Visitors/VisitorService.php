@@ -28,6 +28,12 @@ class VisitorService
             throw ValidationException::withMessages(['purpose' => 'Invalid visit purpose.']);
         }
 
+        $data = array_merge($data, $this->nameFields($data));
+
+        // Each purpose has its own required details; without them the visitor
+        // is not admitted (throws a 422 before anything is saved or a badge claimed).
+        $data['purpose_details'] = PurposeDetails::validate($data['purpose'], $data['purpose_details'] ?? null, $data['host_name'] ?? null);
+
         return DB::transaction(function () use ($officer, $data) {
             $campusId = $data['campus_id'] ?? $officer->campus_id;
             $badgeFields = $this->badges->claim($data['badge_number'] ?? null, $campusId);
@@ -36,10 +42,13 @@ class VisitorService
             $visitor = Visitor::create([
                 'campus_id' => $campusId,
                 'full_name' => $data['full_name'],
+                'first_name' => $data['first_name'],
+                'last_name' => $data['last_name'],
                 'id_presented' => $data['id_presented'] ?? null,
                 'id_number' => $data['id_number'] ?? null,
                 'contact_number' => $data['contact_number'] ?? null,
                 'purpose' => $data['purpose'],
+                'purpose_details' => $data['purpose_details'],
                 'host_name' => $data['host_name'] ?? null,
                 'host_department' => $data['host_department'] ?? null,
                 ...$badgeFields,
@@ -61,6 +70,41 @@ class VisitorService
 
             return $visitor;
         });
+    }
+
+    /**
+     * "Juan Dela Cruz" -> ['Juan Dela', 'Cruz']. The last word is taken as the
+     * last name; one-word names have no last name.
+     */
+    public static function splitName(string $fullName): array
+    {
+        $parts = preg_split('/\s+/', trim($fullName)) ?: [];
+        $last = count($parts) > 1 ? array_pop($parts) : null;
+
+        return [implode(' ', $parts) ?: null, $last];
+    }
+
+    /**
+     * Name columns from either first_name + last_name (the form) or a single
+     * full_name (older callers): returns full_name, first_name and last_name.
+     */
+    protected function nameFields(array $data): array
+    {
+        $first = trim((string) ($data['first_name'] ?? ''));
+        $last = trim((string) ($data['last_name'] ?? ''));
+
+        if ($first !== '' && $last !== '') {
+            return ['full_name' => "{$first} {$last}", 'first_name' => $first, 'last_name' => $last];
+        }
+
+        $full = trim((string) ($data['full_name'] ?? ''));
+        if ($full === '') {
+            throw ValidationException::withMessages(['first_name' => 'Enter the visitor\'s first and last name.']);
+        }
+
+        [$first, $last] = self::splitName($full);
+
+        return ['full_name' => $full, 'first_name' => $first, 'last_name' => $last];
     }
 
     /**
@@ -105,6 +149,14 @@ class VisitorService
         if (!in_array($data['purpose'], Visitor::PURPOSES, true)) {
             throw ValidationException::withMessages(['purpose' => 'Invalid visit purpose.']);
         }
+
+        $data = array_merge($data, $this->nameFields($data));
+
+        $data['purpose_details'] = PurposeDetails::validate(
+            $data['purpose'],
+            $data['purpose_details'] ?? null,
+            array_key_exists('host_name', $data) ? $data['host_name'] : $visitor->host_name,
+        );
 
         return DB::transaction(function () use ($visitor, $officer, $data) {
             if ($visitor->status !== Visitor::STATUS_CHECKED_IN) {

@@ -165,6 +165,28 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Visitor portal (the page opened by scanning a visitor badge)
+    |--------------------------------------------------------------------------
+    |
+    | Texts shown on /visitor/{token}. Edit freely — they are only wording.
+    | `security_office` completes the sentence "...return it to ___".
+    |
+    */
+    'visitor_portal' => [
+        'college' => 'Opol Community College',
+        'intro' => 'Opol Community College is a local college in Opol, Misamis Oriental, committed to providing accessible, quality higher education to the community. We are glad to have you on our campus.',
+        'security_office' => env('SCLF_SECURITY_OFFICE', 'the Security Office at the main gate'),
+        'conduct' => [
+            'Wear this badge where it can be seen at all times while you are on campus.',
+            'Stay in the areas related to your visit and follow the instructions of Security Officers.',
+            'Photography or recording of students, offices and facilities needs permission from the school.',
+            'The badge is non-transferable. Report a lost badge to Security right away.',
+        ],
+        'privacy' => 'We collected your name, ID details, contact number and purpose of visit for campus safety and security under the Data Privacy Act of 2012 (RA 10173). They are used only to manage your visit and keep the campus secure, are visible only to authorized school personnel, and are kept only as long as school policy requires. You may ask the Security Office about your record.',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Visitor badge pool
     |--------------------------------------------------------------------------
     |

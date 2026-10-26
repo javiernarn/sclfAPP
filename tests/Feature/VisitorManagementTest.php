@@ -52,6 +52,30 @@ class VisitorManagementTest extends TestCase
         return app(BadgePoolService::class)->label(app(BadgePoolService::class)->prefixFor(), $n);
     }
 
+    protected function meetingDetails(array $overrides = []): array
+    {
+        return array_merge([
+            'meeting_type' => 'official',
+            'appointment' => 'scheduled',
+            'agenda' => 'Submit signed MOA',
+            'expected_duration' => 'to_1h',
+            'host_confirmed' => true,
+        ], $overrides);
+    }
+
+    protected function deliveryDetails(array $overrides = []): array
+    {
+        return array_merge([
+            'company' => 'LBC Express',
+            'delivery_type' => 'parcel',
+            'items' => '3 boxes of bond paper',
+            'recipient' => 'Registrar Office',
+            'quantity' => 3,
+            'inspected' => true,
+            'recipient_confirmed' => true,
+        ], $overrides);
+    }
+
     protected function baseCheckInData(array $overrides = []): array
     {
         return array_merge([
@@ -60,6 +84,7 @@ class VisitorManagementTest extends TestCase
             'id_number' => 'N01-23-456789',
             'contact_number' => '09171234567',
             'purpose' => Visitor::PURPOSE_MEETING,
+            'purpose_details' => $this->meetingDetails(),
             'host_name' => 'Dean Santos',
             'host_department' => 'Registrar',
             'badge_number' => $this->badge(++$this->badgeCounter + 100),
@@ -344,6 +369,7 @@ class VisitorManagementTest extends TestCase
         $this->withHeaders($headers)
             ->postJson('/api/visitors', $this->baseCheckInData([
                 'purpose' => Visitor::PURPOSE_PARENT_VISIT,
+                'purpose_details' => ['reason' => 'adviser', 'expected_duration' => 'to_1h', 'relationship_verified' => true],
                 'student_user_id' => $student->id,
                 'relationship' => 'parent',
             ]))
@@ -384,5 +410,170 @@ class VisitorManagementTest extends TestCase
         $this->assertSame(['Ben Tan'], collect($out->json('data.data'))->pluck('full_name')->all());
 
         $this->assertSame([$this->badge(9)], collect($byBadge->json('outstanding_badges'))->pluck('badge_number')->all());
+    }
+
+    // --- Purpose-specific details ------------------------------------------
+
+    public function test_purpose_fields_endpoint_lists_every_purpose_with_its_fields(): void
+    {
+        $officer = $this->user('security_officer');
+
+        $res = $this->withHeaders($this->authHeaders($officer))->getJson('/api/visitors/purpose-fields')->assertOk();
+
+        $this->assertEqualsCanonicalizing(Visitor::PURPOSES, collect($res->json('data'))->pluck('value')->all());
+        $delivery = collect($res->json('data'))->firstWhere('value', 'delivery');
+        $this->assertContains('items', collect($delivery['fields'])->pluck('key')->all());
+    }
+
+    public function test_delivery_is_refused_without_its_details_and_no_badge_is_used(): void
+    {
+        $officer = $this->user('security_officer');
+        $data = $this->baseCheckInData(['purpose' => Visitor::PURPOSE_DELIVERY, 'purpose_details' => ['company' => 'LBC Express']]);
+
+        $this->withHeaders($this->authHeaders($officer))->postJson('/api/visitors', $data)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['purpose_details.delivery_type', 'purpose_details.items', 'purpose_details.recipient', 'purpose_details.recipient_confirmed']);
+
+        $this->assertDatabaseCount('visitors', 0);
+    }
+
+    public function test_delivery_details_are_saved_with_the_visitor(): void
+    {
+        $officer = $this->user('security_officer');
+        $data = $this->baseCheckInData([
+            'purpose' => Visitor::PURPOSE_DELIVERY,
+            'purpose_details' => $this->deliveryDetails(['unknown_field' => 'ignored']),
+        ]);
+
+        $this->withHeaders($this->authHeaders($officer))->postJson('/api/visitors', $data)
+            ->assertStatus(201)
+            ->assertJsonPath('data.purpose_details.company', 'LBC Express')
+            ->assertJsonPath('data.purpose_details.recipient_confirmed', true)
+            ->assertJsonMissingPath('data.purpose_details.unknown_field');
+
+        $this->assertSame('3 boxes of bond paper', Visitor::first()->purpose_details['items']);
+    }
+
+    public function test_meeting_needs_a_host_and_the_host_confirmation(): void
+    {
+        $officer = $this->user('security_officer');
+        $headers = $this->authHeaders($officer);
+
+        $this->withHeaders($headers)->postJson('/api/visitors', $this->baseCheckInData(['host_name' => null]))
+            ->assertStatus(422)->assertJsonValidationErrors('host_name');
+
+        $this->withHeaders($headers)->postJson('/api/visitors', $this->baseCheckInData([
+            'purpose_details' => $this->meetingDetails(['host_confirmed' => false]),
+        ]))->assertStatus(422)->assertJsonValidationErrors('purpose_details.host_confirmed');
+    }
+
+    public function test_maintenance_needs_a_work_order_and_who_authorized_it(): void
+    {
+        $officer = $this->user('security_officer');
+
+        $this->withHeaders($this->authHeaders($officer))->postJson('/api/visitors', $this->baseCheckInData([
+            'purpose' => Visitor::PURPOSE_MAINTENANCE,
+            'purpose_details' => ['company' => 'CoolAir Inc.', 'work_type' => 'aircon', 'work_location' => 'Room 201', 'workers' => 2, 'tools' => 'Toolbox'],
+        ]))->assertStatus(422)->assertJsonValidationErrors(['purpose_details.work_order', 'purpose_details.authorized_by']);
+    }
+
+    public function test_editing_an_entry_also_requires_the_details_for_the_chosen_purpose(): void
+    {
+        $officer = $this->user('security_officer');
+        $headers = $this->authHeaders($officer);
+
+        $id = $this->withHeaders($headers)->postJson('/api/visitors', $this->baseCheckInData())->assertStatus(201)->json('data.id');
+
+        $change = $this->baseCheckInData(['purpose' => Visitor::PURPOSE_DELIVERY, 'purpose_details' => []]);
+        unset($change['badge_number']);
+
+        $this->withHeaders($headers)->patchJson("/api/visitors/{$id}", $change + ['badge_number' => Visitor::find($id)->badge_number])
+            ->assertStatus(422)->assertJsonValidationErrors('purpose_details.company');
+
+        $this->withHeaders($headers)->patchJson("/api/visitors/{$id}", array_merge($change, [
+            'purpose_details' => $this->deliveryDetails(),
+            'badge_number' => Visitor::find($id)->badge_number,
+        ]))->assertOk()->assertJsonPath('data.purpose_details.delivery_type', 'parcel');
+    }
+
+    public function test_index_reports_the_live_board_by_purpose(): void
+    {
+        $officer = $this->user('security_officer');
+        $headers = $this->authHeaders($officer);
+
+        $this->withHeaders($headers)->postJson('/api/visitors', $this->baseCheckInData())->assertStatus(201);
+        $this->withHeaders($headers)->postJson('/api/visitors', $this->baseCheckInData([
+            'purpose' => Visitor::PURPOSE_DELIVERY, 'purpose_details' => $this->deliveryDetails(), 'host_name' => null,
+        ]))->assertStatus(201);
+
+        $this->withHeaders($headers)->getJson('/api/visitors')->assertOk()
+            ->assertJsonPath('live.by_purpose.meeting', 1)
+            ->assertJsonPath('live.by_purpose.delivery', 1)
+            ->assertJsonPath('live.overdue', 0);
+    }
+
+    public function test_every_visitor_must_present_an_id(): void
+    {
+        $officer = $this->user('security_officer');
+
+        $this->withHeaders($this->authHeaders($officer))
+            ->postJson('/api/visitors', $this->baseCheckInData(['id_presented' => null, 'id_number' => null]))
+            ->assertStatus(422)->assertJsonValidationErrors(['id_presented', 'id_number']);
+
+        $this->assertDatabaseCount('visitors', 0);
+    }
+
+    public function test_maintenance_needs_worker_names_hazard_and_id_check(): void
+    {
+        $officer = $this->user('security_officer');
+
+        $this->withHeaders($this->authHeaders($officer))->postJson('/api/visitors', $this->baseCheckInData([
+            'purpose' => Visitor::PURPOSE_MAINTENANCE,
+            'purpose_details' => [
+                'company' => 'CoolAir Inc.', 'work_type' => 'aircon', 'work_location' => 'Room 201', 'work_order' => 'WO-1',
+                'authorized_by' => 'Engr. Reyes', 'workers' => 2, 'tools' => 'Toolbox', 'expected_duration' => 'half_day',
+            ],
+        ]))->assertStatus(422)->assertJsonValidationErrors([
+            'purpose_details.hazard', 'purpose_details.worker_names', 'purpose_details.ids_recorded',
+        ]);
+    }
+
+    public function test_a_visitor_is_flagged_once_past_the_stay_they_declared(): void
+    {
+        $officer = $this->user('security_officer');
+
+        // Said "under 30 minutes" but has been inside for 2 hours -> flagged.
+        Visitor::create([
+            'full_name' => 'Late Visitor', 'purpose' => Visitor::PURPOSE_MEETING,
+            'purpose_details' => ['expected_duration' => 'under_30'],
+            'checked_in_by' => $officer->id, 'checked_in_at' => now()->subHours(2), 'status' => Visitor::STATUS_CHECKED_IN,
+        ]);
+        // Said "whole day" and has been inside for 2 hours -> fine.
+        Visitor::create([
+            'full_name' => 'Long Stay', 'purpose' => Visitor::PURPOSE_MEETING,
+            'purpose_details' => ['expected_duration' => 'whole_day'],
+            'checked_in_by' => $officer->id, 'checked_in_at' => now()->subHours(2), 'status' => Visitor::STATUS_CHECKED_IN,
+        ]);
+
+        $this->withHeaders($this->authHeaders($officer))->getJson('/api/visitors')->assertOk()
+            ->assertJsonPath('live.overdue', 1);
+    }
+
+    public function test_first_and_last_name_must_both_be_given_when_either_is(): void
+    {
+        $officer = $this->user('security_officer');
+        $headers = $this->authHeaders($officer);
+
+        $this->withHeaders($headers)->postJson('/api/visitors', $this->baseCheckInData(['full_name' => null, 'first_name' => 'Juan']))
+            ->assertStatus(422)->assertJsonValidationErrors('last_name');
+
+        $this->withHeaders($headers)->postJson('/api/visitors', $this->baseCheckInData(['full_name' => null]))
+            ->assertStatus(422)->assertJsonValidationErrors('full_name');
+
+        $this->withHeaders($headers)->postJson('/api/visitors', $this->baseCheckInData(['full_name' => null, 'first_name' => 'Juan', 'last_name' => 'Dela Cruz']))
+            ->assertStatus(201)
+            ->assertJsonPath('data.full_name', 'Juan Dela Cruz')
+            ->assertJsonPath('data.last_name', 'Dela Cruz')
+            ->assertJsonPath('data.first_name', 'Juan');
     }
 }
