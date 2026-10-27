@@ -260,6 +260,25 @@ body { overflow: hidden; }
 /* Digits follow the theme: by default they use the sidebar's own text colour
    (dark on light themes, light on dark), then pick up each theme's accent. */
 .ds-dotlogo { --dl-color: currentColor; }
+/* Laptop/desktop: the logo is anchored to the sidebar's left edge at a fixed
+   size, so as the sidebar widens it is simply REVEALED (like the nav labels)
+   instead of being re-laid-out or moved on every frame. It sits on its own
+   layer, so its digits are drawn once, and it fades with the same 0.32s
+   curve as the sidebar width. */
+@media (min-width: 960px) {
+    .ds-dotlogo {
+        left: 1px; top: 8px; transform: none;
+        width: 220px; height: calc(100% - 16px);
+        will-change: transform;
+        opacity: 1; visibility: visible;
+        transition: opacity 0.32s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0s;
+    }
+    .ds-sidebar.collapsed .ds-dotlogo {
+        opacity: 0; visibility: hidden;
+        transition: opacity 0.2s ease, visibility 0s linear 0.2s;
+    }
+}
+@media (prefers-reduced-motion: reduce) { .ds-dotlogo { transition: none !important; } }
 .ds-shell.maroon .ds-dotlogo { --dl-color: #7f1d2e; }
 .ds-shell.blue .ds-dotlogo { --dl-color: #1e40af; }
 .ds-shell.yellow .ds-dotlogo { --dl-color: #b45309; }
@@ -353,6 +372,18 @@ body { overflow: hidden; }
 @keyframes ds-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 /* ---------- Right side ---------- */
 .ds-content { flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+/* ---- Desktop sidebar (laptop/desktop only, not phones) ----------------------
+   The sidebar floats over the left edge instead of sitting in the flex row, and
+   the content reserves the rail's FINAL width with a margin that changes
+   instantly. So animating the sidebar's width never re-flows the page; the
+   content's slide is done with a transform in DashboardShell.jsx. */
+@media (min-width: 960px) {
+    .ds-shell:not(.ds-phone) .ds-sidebar {
+        position: absolute; top: 0; bottom: 0; left: 0; height: auto;
+    }
+    .ds-shell:not(.ds-phone) .ds-content { margin-left: 250px; }
+    .ds-shell:not(.ds-phone) .ds-sidebar.collapsed ~ .ds-content { margin-left: 68px; }
+}
 /* Header never scrolls with the page — it's a fixed, non-scrolling
    part of the flex column; only .ds-main below it scrolls. */
 .ds-topbar {
@@ -2211,8 +2242,67 @@ body { overflow: hidden; }
 .ds-switch.is-on .ds-switch-knob { transform: translateX(14px); }
 .ds-switch.is-busy { opacity: 0.6; }
 
-/* Auto Save line above report forms */
-.ds-autosave-status {
-    display: flex; align-items: center; gap: 6px; margin: 0 0 12px;
-    font-size: 12.5px; font-weight: 600; opacity: 0.75;
+/* Auto Save status card above report forms — responsive from 320px phones to
+   wide desktops. Colours come from the active theme tokens. */
+.ds-autosave {
+    margin: 0 0 14px; padding: 10px 12px; border-radius: 14px; min-width: 0;
+    background: var(--tk-field, rgba(127, 127, 127, 0.08));
+    border: 1px solid var(--tk-edge, rgba(127, 127, 127, 0.3));
+    display: flex; flex-direction: column; gap: 8px;
+}
+.ds-autosave-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ds-autosave-icon {
+    flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(var(--tk-accent-rgb, 79, 70, 229), 0.14);
+    color: var(--tk-accent-text, #4f46e5);
+}
+.ds-autosave-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.ds-autosave-title { font-size: 13.5px; font-weight: 700; line-height: 1.25; }
+.ds-autosave-detail { font-size: 12px; line-height: 1.4; opacity: 0.72; overflow-wrap: anywhere; }
+.ds-autosave-chip {
+    flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 999px; white-space: nowrap;
+    font-size: 11.5px; font-weight: 700; line-height: 1;
+    background: rgba(var(--tk-accent-rgb, 79, 70, 229), 0.12); color: var(--tk-accent-text, #4f46e5);
+}
+.ds-autosave-chip-icon { display: inline-flex; align-items: center; justify-content: center; }
+.ds-autosave-chip-icon.is-spinning { animation: ds-autosave-spin 0.9s linear infinite; }
+.ds-autosave-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.ds-autosave.is-synced .ds-autosave-chip { background: rgba(22, 163, 74, 0.14); color: #15803d; }
+.ds-autosave.is-synced .ds-autosave-icon { background: rgba(22, 163, 74, 0.14); color: #15803d; }
+.ds-autosave.is-saving .ds-autosave-chip,
+.ds-autosave.is-offline .ds-autosave-chip { background: rgba(217, 119, 6, 0.15); color: #b45309; }
+.ds-shell.dark .ds-autosave.is-synced .ds-autosave-chip,
+.ds-shell.dark .ds-autosave.is-synced .ds-autosave-icon { color: #4ade80; }
+.ds-shell.dark .ds-autosave.is-saving .ds-autosave-chip,
+.ds-shell.dark .ds-autosave.is-offline .ds-autosave-chip { color: #fbbf24; }
+.ds-autosave-note {
+    display: flex; align-items: flex-start; gap: 7px; padding-top: 8px;
+    border-top: 1px dashed var(--tk-edge, rgba(127, 127, 127, 0.3));
+    font-size: 11.5px; line-height: 1.45; opacity: 0.7;
+}
+.ds-autosave-note svg { flex-shrink: 0; margin-top: 2px; }
+@keyframes ds-autosave-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .ds-autosave-chip-icon.is-spinning { animation: none; } }
+
+/* Phones: the chip drops under the text so nothing gets squeezed, and the
+   card hugs the screen edge like a native app notice. */
+@media (max-width: 520px) {
+    .ds-autosave { padding: 10px; border-radius: 12px; }
+    .ds-autosave-main { flex-wrap: wrap; row-gap: 8px; }
+    .ds-autosave-text { flex-basis: calc(100% - 44px); }
+    .ds-autosave-chip { margin-left: 42px; }
+}
+@media (max-width: 340px) {
+    .ds-autosave-icon { width: 28px; height: 28px; }
+    .ds-autosave-text { flex-basis: calc(100% - 38px); }
+    .ds-autosave-chip { margin-left: 38px; }
+    .ds-autosave-title { font-size: 13px; }
+}
+/* Laptops / desktops: roomier padding and one tidy row. */
+@media (min-width: 960px) {
+    .ds-autosave { padding: 12px 16px; }
+    .ds-autosave-title { font-size: 14px; }
+    .ds-autosave-detail { font-size: 12.5px; }
 }

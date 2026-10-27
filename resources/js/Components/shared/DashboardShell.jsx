@@ -349,6 +349,27 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     // The icons-only collapsed rail is a desktop feature; a phone's
     // slide-over should never inherit it from a saved desktop preference.
     const railCollapsed = collapsed && !isPhone;
+    // Laptop/desktop sidebar open/close, made cheap: the sidebar is taken out of
+    // the page flow (see "Desktop sidebar" in DashboardShell.css), so the page
+    // content only re-lays-out ONCE at the toggle instead of on every frame of the
+    // width animation. To hide that one jump, the content is slid from where it
+    // used to be to where it now is with a GPU-only transform (FLIP technique),
+    // in step with the sidebar's own width transition (same 0.32s curve).
+    const contentRef = useRef(null);
+    const prevRail = useRef(railCollapsed);
+    useLayoutEffect(() => {
+        if (prevRail.current === railCollapsed) return;
+        prevRail.current = railCollapsed;
+        const el = contentRef.current;
+        if (!el || !el.animate || !isDesktop || isPhone) return;
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+        const SHIFT = 182; // 250px expanded rail - 68px collapsed rail
+        el.getAnimations().forEach((a) => a.cancel());
+        el.animate(
+            [{ transform: `translateX(${railCollapsed ? SHIFT : -SHIFT}px)` }, { transform: "translateX(0)" }],
+            { duration: 320, easing: "cubic-bezier(0.4, 0, 0.2, 1)" }
+        );
+    }, [railCollapsed]);
 
     // Top-of-header route progress bar. "idle" | "is-active" | "is-done".
     // Fires on every route change — a sidebar nav click, the account menu's
@@ -715,11 +736,14 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                             })}
                         </ul>
 
-                        {/* Student / Instructor only (few nav links): on the slide-over
-                            (non-desktop) sidebar, fill the empty space with the OCC
-                            logo drawn as coloured dots. See DotLogo.jsx. */}
-                        <div className={`ds-sidebar-spacer ${navRole === "student" && !isDesktop ? "has-dotlogo" : ""}`}>
-                            {navRole === "student" && !isDesktop && <DotLogo />}
+                        {/* Student / Instructor only (few nav links): fill the empty
+                            space under the features with the OCC logo drawn as
+                            numbers — on phones/tablets (slide-over) and on laptops/
+                            desktops. It is always present and CSS animates it with
+                            the sidebar (revealed as the sidebar widens, faded out in
+                            the narrow collapsed rail). See DotLogo.jsx. */}
+                        <div className={`ds-sidebar-spacer ${navRole === "student" ? "has-dotlogo" : ""}`}>
+                            {navRole === "student" && <DotLogo />}
                         </div>
                     </div>
 
@@ -836,7 +860,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                     </div>
                 </nav>
 
-                <div className="ds-content">
+                <div className="ds-content" ref={contentRef}>
                     <header className="ds-topbar">
                         <div
                             className={`ds-route-progress ${routeProgress !== "idle" ? routeProgress : ""}`}

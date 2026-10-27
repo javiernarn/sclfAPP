@@ -53,7 +53,7 @@ const detectTheme = (el) => {
  *     <button aria-label="Collapse sidebar">...</button>
  * </Tooltip>
  */
-export default function Tooltip({ label, children, side = 'bottom', delay = 350 }) {
+export default function Tooltip({ label, children, side = 'bottom', delay = 350, disabled = false }) {
     const [open, setOpen] = useState(false);
     const [coords, setCoords] = useState(null);
     // Computed synchronously (not in an effect) so there's no render where
@@ -154,6 +154,10 @@ export default function Tooltip({ label, children, side = 'bottom', delay = 350 
     // self-explanatory (or have a visible label), so skip the tooltip
     // entirely rather than trying to make tap-to-dismiss feel right.
     if (!label || isTouch) return children;
+    // `disabled` keeps the same wrapper element but turns the tooltip off.
+    // The collapsing sidebar uses it so its links are NOT re-created when the
+    // rail collapses/expands (a re-created element can't animate, it just jumps).
+    if (disabled) return <span className="sclf-tooltip-wrap">{children}</span>;
 
     const handlers = {
         onMouseEnter: scheduleShow,

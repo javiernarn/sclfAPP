@@ -38,6 +38,9 @@ export default function useAutoSaveDraft({ formKey, value, initial, isDirty, onR
 
     const [savedAt, setSavedAt] = useState(null);
     const [synced, setSynced] = useState(false);
+    // Set only once the restore for this account+form has FINISHED. Until then
+    // the (still blank) form must never be saved or allowed to wipe the draft.
+    const [readyKey, setReadyKey] = useState(null);
 
     const latest = useRef({ value, isDirty, enabled });
     const restoredFor = useRef(null);
@@ -92,11 +95,14 @@ export default function useAutoSaveDraft({ formKey, value, initial, isDirty, onR
     // ---- restore ----------------------------------------------------------
     // Put the newest draft back once, when Auto Save is on and the form opens.
     useEffect(() => {
-        if (!enabled) { restoredFor.current = null; return undefined; }
+        if (!enabled) { restoredFor.current = null; setReadyKey(null); return undefined; }
         const marker = `${uid}:${formKey}`;
         if (restoredFor.current === marker) return undefined;
-        restoredFor.current = marker;
 
+        // NOTE: `restoredFor` is only set when the restore has really finished
+        // (below). Setting it up-front broke React StrictMode / re-runs: the
+        // first, cancelled run marked it done and the second run then skipped
+        // the restore, so the saved draft never came back.
         let cancelled = false;
         (async () => {
             const local = readDraft(uid, formKey);
@@ -107,21 +113,20 @@ export default function useAutoSaveDraft({ formKey, value, initial, isDirty, onR
             } catch { /* offline: the on-device copy is all there is */ }
             if (cancelled) return;
 
+            restoredFor.current = marker;
             const best = remote && (!local || remote.savedAt > local.savedAt) ? remote : local;
-            if (!best) return;
-            // Already typing something new? Don't overwrite it.
-            if (latest.current.isDirty) return;
-
-            onRestoreRef.current({ ...(initial || {}), ...best.data });
-            setSavedAt(best.savedAt || Date.now());
-            if (best === remote) {
-                // keep a copy on this device too, and note it is already on the server
+            // Nothing saved, or already typing something new? Leave the form alone.
+            if (best && !latest.current.isDirty) {
+                onRestoreRef.current({ ...(initial || {}), ...best.data });
+                setSavedAt(best.savedAt || Date.now());
+                // keep a copy on this device too and note the account has it
                 writeDraft(uid, formKey, best.data);
                 localVersion.current += 1;
-                syncedVersion.current = localVersion.current;
-                setSynced(true);
+                syncedVersion.current = best === remote ? localVersion.current : 0;
+                setSynced(best === remote);
+                toast.info('We restored the draft you were working on. Fields stay locked until you tap Add Report.', { title: 'Draft restored' });
             }
-            toast.info('We restored the draft you were working on. Fields stay locked until you tap Add Report.', { title: 'Draft restored' });
+            setReadyKey(marker);
         })();
 
         return () => { cancelled = true; };
@@ -156,14 +161,15 @@ export default function useAutoSaveDraft({ formKey, value, initial, isDirty, onR
     // Debounced saves while typing: device first, account a moment later.
     useEffect(() => {
         if (!enabled) return undefined;
-        // Don't wipe a stored draft with the blank first render, before it has been restored.
-        if (!isDirty && readDraft(uid, formKey) && restoredFor.current !== `${uid}:${formKey}`) return undefined;
+        // Don't save (or wipe a stored draft) with the blank first render
+        // while the restore is still looking for that draft.
+        if (readyKey !== `${uid}:${formKey}`) return undefined;
         suppress.current = false;
         const local = setTimeout(() => flush(true), LOCAL_DEBOUNCE_MS);
         clearTimeout(serverTimer.current);
         serverTimer.current = setTimeout(pushToServer, SERVER_DEBOUNCE_MS);
         return () => clearTimeout(local);
-    }, [value, isDirty, enabled, flush, pushToServer, uid, formKey]);
+    }, [value, isDirty, enabled, readyKey, flush, pushToServer, uid, formKey]);
 
     // Page hidden / closed / connection dropped or back / leaving the form.
     useEffect(() => {
