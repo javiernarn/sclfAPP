@@ -45,11 +45,13 @@ class HistoryController extends Controller
             ->where('intake_channel', FoundItem::CHANNEL_COUNTER_INTAKE)
             ->with([
                 'securityOfficer:id,name',
+                'securityOfficer.roles',
                 'storageLocation:id,code,label',
                 'claims' => fn ($q) => $q->orderByDesc('id')->with([
                     'claimant:id,name,student_id,staff_id,profile_picture',
                     'qrRelease.generator:id,name',
                     'qrRelease.scanner:id,name',
+                    'qrRelease.scanner.roles',
                 ]),
             ])
             ->when($request->q, function ($q) use ($request) {
@@ -96,6 +98,8 @@ class HistoryController extends Controller
                 'qr_code' => $item->qr_code,
                 'checked_in_at' => $item->created_at,
                 'checked_in_by' => $item->securityOfficer?->name,
+                // Role shown next to the name so readers know who acted (Admin / Staff / Security Officer).
+                'checked_in_by_role' => $item->securityOfficer?->role_label ?: null,
                 'counter' => $item->storageLocation?->label ?: $item->storageLocation?->code,
                 'owner' => $claim?->claimant,
                 'claim_id' => $claim?->id,
@@ -103,6 +107,7 @@ class HistoryController extends Controller
                 'public_code' => $qr?->public_code,
                 'released_at' => $qr?->scanned_at,
                 'released_by' => $qr?->scanner?->name,
+                'released_by_role' => $qr?->scanner?->role_label ?: null,
                 'release_method' => $this->releaseMethod($claim, $qr, $manualClaimIds),
             ];
         });
@@ -136,8 +141,10 @@ class HistoryController extends Controller
                 'foundItem.storageLocation:id,code,label',
                 'claimant:id,name,student_id,staff_id,profile_picture',
                 'reviewer:id,name',
+                'reviewer.roles',
                 'qrRelease.generator:id,name',
                 'qrRelease.scanner:id,name',
+                'qrRelease.scanner.roles',
             ])
             ->when($request->channel, fn ($q) => $q->whereHas(
                 'foundItem',
@@ -175,10 +182,12 @@ class HistoryController extends Controller
                 'storage_location' => $claim->foundItem?->storageLocation,
                 'claimant' => $claim->claimant,
                 'reviewed_by' => $claim->reviewer?->name,
+                'reviewed_by_role' => $claim->reviewer?->role_label ?: null,
                 'reviewed_at' => $claim->reviewed_at,
                 'public_code' => $qr?->public_code,
                 'released_at' => $qr?->scanned_at ?? $claim->updated_at,
                 'released_by' => $qr?->scanner?->name,
+                'released_by_role' => $qr?->scanner?->role_label ?: null,
                 'release_method' => $this->releaseMethod($claim, $qr, $manualClaimIds),
             ];
         });

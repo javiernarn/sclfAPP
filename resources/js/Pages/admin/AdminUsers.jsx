@@ -20,6 +20,7 @@ import {
     FORMAT_ERRORS,
 } from '../../utils/validators';
 import { checkAvailability } from '../../utils/availability';
+import PhotoUploadModal from '../../Components/shared/PhotoUploadModal';
 import { COURSE_GROUPS } from '../../config/courseGroups';
 
 // Role -> label + the prefix used for that role's system-generated ID
@@ -77,6 +78,9 @@ export default function AdminUsers() {
     const [editPhoto, setEditPhoto] = useState(null); // File | null — newly chosen replacement photo
     const [editPhotoPreview, setEditPhotoPreview] = useState(null); // object URL for that file
     const editFileInputRef = useRef(null);
+    // Photo pop-ups (requirements + checks) for the create and edit forms.
+    const [photoModal, setPhotoModal] = useState(false);
+    const [editPhotoModal, setEditPhotoModal] = useState(false);
 
     useEffect(() => () => { if (editPhotoPreview) URL.revokeObjectURL(editPhotoPreview); }, [editPhotoPreview]);
 
@@ -507,23 +511,20 @@ export default function AdminUsers() {
                             {!photoPreview && <UserCircle size={26} />}
                         </span>
                         <div>
-                            <input
-                                ref={fileInputRef}
-                                id="profile_picture"
-                                type="file"
-                                accept="image/*"
-                                onChange={handlePhotoChange}
-                                style={{ display: 'none' }}
+                            <PhotoUploadModal
+                                open={photoModal}
+                                onClose={() => setPhotoModal(false)}
+                                onAccept={(f) => handlePhotoChange({ target: { files: [f] } })}
                             />
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                <button type="button" className="ds-btn ds-btn-secondary" onClick={() => fileInputRef.current?.click()}>
+                                <button type="button" className="ds-btn ds-btn-secondary" onClick={() => setPhotoModal(true)}>
                                     <Upload size={14} /> {photo ? 'Change photo' : 'Upload photo'}
                                 </button>
                                 {photo && (
                                     <button type="button" className="ds-btn ds-btn-secondary" onClick={clearPhoto}>Remove</button>
                                 )}
                             </div>
-                            <p className="ds-card-desc" style={{ margin: '6px 0 0' }}>Optional — helps security staff verify people at a glance. JPG/PNG, up to 5MB.</p>
+                            <p className="ds-card-desc" style={{ margin: '6px 0 0' }}>Optional — helps security staff verify people at a glance. Formal ID-style photo (plain background), up to 5MB.</p>
                         </div>
                     </div>
 
@@ -831,23 +832,20 @@ export default function AdminUsers() {
                                     {!editPhotoPreview && !editingUser.profile_picture_url && <UserCircle size={26} />}
                                 </span>
                                 <div>
-                                    <input
-                                        ref={editFileInputRef}
-                                        id="edit_profile_picture"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleEditPhotoChange}
-                                        style={{ display: 'none' }}
+                                    <PhotoUploadModal
+                                        open={editPhotoModal}
+                                        onClose={() => setEditPhotoModal(false)}
+                                        onAccept={(f) => handleEditPhotoChange({ target: { files: [f] } })}
                                     />
                                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                        <button type="button" className="ds-btn ds-btn-secondary" onClick={() => editFileInputRef.current?.click()}>
+                                        <button type="button" className="ds-btn ds-btn-secondary" onClick={() => setEditPhotoModal(true)}>
                                             <Upload size={14} /> {editPhoto ? 'Change photo' : 'Replace photo'}
                                         </button>
                                         {editPhoto && (
                                             <button type="button" className="ds-btn ds-btn-secondary" onClick={clearEditPhoto}>Undo</button>
                                         )}
                                     </div>
-                                    <p className="ds-card-desc" style={{ margin: '6px 0 0' }}>JPG/PNG, up to 5MB. Leave unchanged to keep their current photo.</p>
+                                    <p className="ds-card-desc" style={{ margin: '6px 0 0' }}>Formal ID-style photo, up to 5MB. Leave unchanged to keep their current photo.</p>
                                 </div>
                             </div>
 

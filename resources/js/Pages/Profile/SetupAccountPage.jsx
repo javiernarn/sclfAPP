@@ -27,6 +27,7 @@ import AuthShell, {
 } from '../../Components/shared/AuthShell';
 import { COURSE_GROUPS } from '../../config/courseGroups';
 import { GraduationCap } from '../../Components/icons';
+import PhotoUploadModal from '../../Components/shared/PhotoUploadModal';
 import { User, Phone, VenetianMask, Lock, Camera, Check, IdCard, Mail, MapPin } from '../../Components/icons';
 
 const GENDER_OPTIONS = [
@@ -188,7 +189,9 @@ export default function SetupAccountPage() {
         setFieldErrors((prev) => (prev[name] ? { ...prev, [name]: undefined } : prev));
     };
 
-    const handlePickPhoto = () => fileInputRef.current?.click();
+    // Choosing a photo opens the requirements pop-up; only a photo that passes comes back.
+    const [photoModal, setPhotoModal] = useState(false);
+    const handlePickPhoto = () => setPhotoModal(true);
 
     const handlePhotoChange = (e) => {
         const file = e.target.files?.[0];
@@ -410,14 +413,12 @@ export default function SetupAccountPage() {
                                         <button type="button" className="lg-avatar-btn" onClick={handlePickPhoto}>
                                             {profileImage ? 'Change photo' : 'Upload photo'}
                                         </button>
-                                        <span className="lg-row-hint" style={{ marginTop: 0 }}>{isAdmin ? 'Square image, max 5MB.' : 'Square image, max 5MB. Required so others can recognize you.'}</span>
+                                        <span className="lg-row-hint" style={{ marginTop: 0 }}>{isAdmin ? 'Formal ID-style photo, max 5MB.' : 'Formal ID-style photo, plain background, max 5MB. Required so others can recognize you.'}</span>
                                     </div>
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handlePhotoChange}
-                                        style={{ display: 'none' }}
+                                    <PhotoUploadModal
+                                        open={photoModal}
+                                        onClose={() => setPhotoModal(false)}
+                                        onAccept={(f) => handlePhotoChange({ target: { files: [f] } })}
                                     />
                                 </div>
                             </LedgerRow>

@@ -80,9 +80,12 @@ function NextActions({ data, loading }) {
     const items = [
         { n: data.queue?.waiting ?? 0, label: 'people waiting at the counter', to: '/app/security/counter-dashboard', cta: 'Open Counter Dashboard' },
         { n: sum.found_reports?.pending_verification ?? 0, label: 'found reports to verify', to: '/app/security/found-items', cta: 'Review Found Items' },
-        { n: sum.release_ready ?? 0, label: 'approved claims ready to hand over (QR generated)', to: '/app/security/claims?status=release_pending', cta: 'Open Release Queue' },
+        // QR already generated -> the next step is scanning it at hand-over, not the Claims list.
+        { n: sum.release_ready ?? 0, label: 'approved claims ready to hand over (QR generated)', to: '/app/security/qr-scanner', cta: 'Open QR Scanner' },
         { n: sum.claims_waiting ?? 0, label: 'claims waiting for your review', to: '/app/security/claims', cta: 'Review Claims' },
-        { n: sum.counter?.awaiting_release ?? 0, label: 'counter items waiting to be released', to: '/app/security/claims', cta: 'Open Claims' },
+        // Only counter items that still need their release QR generated (done from Claims).
+        // Items whose QR already exists are counted in the hand-over row above instead.
+        { n: sum.counter?.needs_qr ?? 0, label: 'counter items checked in — generate the release QR', to: '/app/security/claims?status=approved', cta: 'Open Claims' },
     ].filter((i) => i.n > 0);
 
     return (
@@ -145,7 +148,7 @@ function ReleaseQueue({ queue, loading }) {
                 </ul>
             )}
             <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
-                <Link to="/app/security/qr-scanner" className="ds-btn ds-btn-secondary">QR Release Scanner</Link>
+                <Link to="/app/security/qr-scanner" className="ds-btn ds-btn-primary">QR Release Scanner</Link>
                 <Link to="/app/security/claims?status=release_pending" className="ds-btn ds-btn-secondary">See all in queue</Link>
             </div>
         </div>

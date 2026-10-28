@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Rules\FormalProfilePhoto;
 use App\Support\PrivateMedia;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AdminCreateUserRequest;
@@ -338,7 +339,7 @@ class UserController extends Controller
             'id_number' => ['sometimes', 'nullable', 'string', 'max:50'],
             // Teaching course (instructors only), from the registration course list.
             'teaching_course' => ['sometimes', 'nullable', 'string', 'max:255'],
-            'profile_picture' => ['sometimes', 'nullable', 'image', 'max:5120'],
+            'profile_picture' => ['sometimes', 'nullable', 'image', 'max:5120', new FormalProfilePhoto],
         ], [
             'email.unique' => 'That email address is already in use by another account.',
             'phone_number.regex' => 'Enter a valid Philippine mobile number, e.g. 09171234567.',

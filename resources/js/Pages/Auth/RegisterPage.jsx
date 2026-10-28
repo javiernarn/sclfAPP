@@ -18,6 +18,7 @@ import {
     FORMAT_ERRORS,
 } from '../../utils/validators';
 import { checkAvailability } from '../../utils/availability';
+import PhotoUploadModal from '../../Components/shared/PhotoUploadModal';
 import AuthShell, {
     LedgerRow,
     LedgerRowPair,
@@ -147,7 +148,10 @@ export default function RegisterPage() {
         setFieldErrors((prev) => (prev[name] ? { ...prev, [name]: undefined } : prev));
     };
 
-    const handlePickPhoto = () => fileInputRef.current?.click();
+    // Choosing a photo opens the requirements pop-up; the file picker (and the
+    // photo checks) live inside it, and only a photo that passes comes back here.
+    const [photoModal, setPhotoModal] = useState(false);
+    const handlePickPhoto = () => setPhotoModal(true);
 
     const handlePhotoChange = (e) => {
         const file = e.target.files?.[0];
@@ -421,15 +425,12 @@ export default function RegisterPage() {
                                                 Remove
                                             </button>
                                         )}
-                                        <span className="lg-row-hint" style={{ marginTop: 0 }}>Square image, max 5MB. Required so staff can verify you.</span>
+                                        <span className="lg-row-hint" style={{ marginTop: 0 }}>Formal ID-style photo, plain background, max 5MB. Required so staff can verify you.</span>
                                     </div>
-                                    <input
-                                        ref={fileInputRef}
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handlePhotoChange}
-                                        required
-                                        style={{ display: 'none' }}
+                                    <PhotoUploadModal
+                                        open={photoModal}
+                                        onClose={() => setPhotoModal(false)}
+                                        onAccept={(f) => handlePhotoChange({ target: { files: [f] } })}
                                     />
                                 </div>
                             </LedgerRow>

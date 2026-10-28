@@ -120,4 +120,25 @@ class DashboardChannelSeparationTest extends TestCase
         $response->assertJsonPath('summary.counter.awaiting_release', 1);
         $response->assertJsonPath('summary.counter.released', 1);
     }
+
+    public function test_counter_item_drops_out_of_needs_qr_once_its_release_qr_is_generated(): void
+    {
+        $owner = User::factory()->create();
+
+        // Approved claim, no QR yet -> still needs the officer to generate the QR.
+        $needsQr = FoundItem::factory()->create(['intake_channel' => FoundItem::CHANNEL_COUNTER_INTAKE, 'status' => FoundItem::STATUS_STORED]);
+        Claim::create(['found_item_id' => $needsQr->id, 'claimant_id' => $owner->id, 'status' => Claim::STATUS_APPROVED]);
+
+        // QR already generated -> belongs to the hand-over queue, not to "needs QR".
+        $ready = FoundItem::factory()->create(['intake_channel' => FoundItem::CHANNEL_COUNTER_INTAKE, 'status' => FoundItem::STATUS_STORED]);
+        Claim::create(['found_item_id' => $ready->id, 'claimant_id' => $owner->id, 'status' => Claim::STATUS_RELEASE_PENDING]);
+
+        $admin = $this->userWithRole('admin');
+        $response = $this->withHeaders($this->authHeaders($admin))->getJson('/api/analytics/dashboard?days=14');
+
+        $response->assertOk();
+        $response->assertJsonPath('summary.counter.awaiting_release', 2);
+        $response->assertJsonPath('summary.counter.needs_qr', 1);
+        $response->assertJsonPath('summary.release_ready', 1);
+    }
 }

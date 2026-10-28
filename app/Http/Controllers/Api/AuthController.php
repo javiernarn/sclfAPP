@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Rules\FormalProfilePhoto;
 use App\Support\PrivateMedia;
 use App\Http\Controllers\Controller;
 use App\Models\User;
@@ -142,7 +143,7 @@ class AuthController extends Controller
             'student_id' => ['required', 'string', 'max:50', 'regex:/^\d{4}-\d-\d{5}$/', 'unique:users'],
             'course' => 'required|string|max:255',
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
-            'profile_picture' => 'required|image|max:5120',
+            'profile_picture' => ['required', 'image', 'max:5120', new FormalProfilePhoto],
         ], [
             'profile_picture.required' => 'A profile picture is required so staff can verify you at a glance.',
             'first_name.regex' => 'First name can only contain letters, spaces, hyphens and apostrophes.',

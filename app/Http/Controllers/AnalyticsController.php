@@ -145,6 +145,14 @@ class AnalyticsController extends Controller
             'counter' => [
                 'checked_in_today' => (clone $counterItems)->whereDate('created_at', today())->count(),
                 'awaiting_release' => (clone $counterItems)->whereIn('status', FoundItem::ON_SHELF_STATUSES)->count(),
+                // Subset of the above that still needs the officer to generate the
+                // release QR (claim approved, no QR yet). Once the QR exists the item
+                // moves to the hand-over queue (`release_ready`) and drops off here,
+                // so one item is never listed as two to-dos on the dashboard.
+                'needs_qr' => (clone $counterItems)
+                    ->whereIn('status', FoundItem::ON_SHELF_STATUSES)
+                    ->whereDoesntHave('claims', fn ($c) => $c->where('status', Claim::STATUS_RELEASE_PENDING))
+                    ->count(),
                 'released' => (clone $counterItems)->where('status', FoundItem::STATUS_RELEASED)->count(),
                 'total' => (clone $counterItems)->count(),
             ],

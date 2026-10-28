@@ -381,8 +381,14 @@ body { overflow: hidden; }
     .ds-shell:not(.ds-phone) .ds-sidebar {
         position: absolute; top: 0; bottom: 0; left: 0; height: auto;
     }
-    .ds-shell:not(.ds-phone) .ds-content { margin-left: 250px; }
+    .ds-shell:not(.ds-phone) .ds-content {
+        margin-left: 250px;
+        transition: margin-left 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+    }
     .ds-shell:not(.ds-phone) .ds-sidebar.collapsed ~ .ds-content { margin-left: 68px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ds-shell:not(.ds-phone) .ds-content { transition: none; }
 }
 /* Header never scrolls with the page — it's a fixed, non-scrolling
    part of the flex column; only .ds-main below it scrolls. */
@@ -2306,3 +2312,22 @@ body { overflow: hidden; }
     .ds-autosave-title { font-size: 14px; }
     .ds-autosave-detail { font-size: 12.5px; }
 }
+
+
+/* ==========================================================================
+ * A card holding an open dropdown must paint above the cards after it.
+ * Every .ds-card has backdrop-filter, which gives it its own stacking
+ * context, so a ComboBox list overflowing the bottom of one card was drawn
+ * *behind* the next card (Counter > Category list hidden under "Counters at
+ * this campus"). Lift the active card instead.
+ * ========================================================================== */
+.ds-card:focus-within,
+.ds-card:has(.cbx-list) { position: relative; z-index: 30; }
+
+/* Role shown after a name in History ("by Jane Doe  [Security Officer]"). */
+.ds-role-chip {
+    display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: .02em; line-height: 1.5; vertical-align: 1px;
+    color: #4f46e5; background: rgba(79, 70, 229, 0.12);
+}
+.ds-shell.dark .ds-role-chip { color: #a5b4fc; background: rgba(99, 102, 241, 0.2); }

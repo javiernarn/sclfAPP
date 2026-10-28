@@ -42,6 +42,16 @@ function ReleaseMethodBadge({ method }) {
     return <span className="ds-badge ds-badge-default">Not released yet</span>;
 }
 
+// "by Javiernarn Rivera · Security Officer" — the role tells readers who acted.
+function ByLine({ name, role }) {
+    return (
+        <div className="ds-table-sub">
+            by {name || 'Unknown'}
+            {role && <span className="ds-role-chip">{role}</span>}
+        </div>
+    );
+}
+
 function Pagination({ meta, onPage }) {
     if (!meta || meta.last_page <= 1) return null;
     return (
@@ -161,14 +171,14 @@ function CounterHistoryTab() {
                                         </td>
                                         <td className="ds-table-nowrap">
                                             <div>{r.checked_in_at ? new Date(r.checked_in_at).toLocaleString() : '—'}</div>
-                                            <div className="ds-table-sub">by {r.checked_in_by || 'Unknown'}</div>
+                                            <ByLine name={r.checked_in_by} role={r.checked_in_by_role} />
                                         </td>
                                         <td className="ds-table-nowrap">{r.counter || '—'}</td>
                                         <td className="ds-table-nowrap">
                                             {r.released_at ? (
                                                 <>
                                                     <div>{new Date(r.released_at).toLocaleString()}</div>
-                                                    <div className="ds-table-sub">by {r.released_by || 'Unknown'}</div>
+                                                    <ByLine name={r.released_by} role={r.released_by_role} />
                                                 </>
                                             ) : '—'}
                                         </td>
@@ -202,7 +212,7 @@ function CounterHistoryTab() {
                                     <span className="ds-history-card-label">Checked in</span>
                                     <span className="ds-history-card-value">
                                         <div>{r.checked_in_at ? new Date(r.checked_in_at).toLocaleString() : '—'}</div>
-                                        <div className="ds-table-sub">by {r.checked_in_by || 'Unknown'}</div>
+                                        <ByLine name={r.checked_in_by} role={r.checked_in_by_role} />
                                     </span>
                                 </div>
                                 <div className="ds-history-card-row">
@@ -215,7 +225,7 @@ function CounterHistoryTab() {
                                         {r.released_at ? (
                                             <>
                                                 <div>{new Date(r.released_at).toLocaleString()}</div>
-                                                <div className="ds-table-sub">by {r.released_by || 'Unknown'}</div>
+                                                <ByLine name={r.released_by} role={r.released_by_role} />
                                             </>
                                         ) : '—'}
                                     </span>
@@ -334,7 +344,7 @@ function LostFoundHistoryTab() {
                                             {r.reviewed_at ? (
                                                 <>
                                                     <div>{new Date(r.reviewed_at).toLocaleString()}</div>
-                                                    <div className="ds-table-sub">by {r.reviewed_by || 'Unknown'}</div>
+                                                    <ByLine name={r.reviewed_by} role={r.reviewed_by_role} />
                                                 </>
                                             ) : '—'}
                                         </td>
@@ -342,7 +352,7 @@ function LostFoundHistoryTab() {
                                             {r.released_at ? (
                                                 <>
                                                     <div>{new Date(r.released_at).toLocaleString()}</div>
-                                                    <div className="ds-table-sub">by {r.released_by || 'Unknown'}</div>
+                                                    <ByLine name={r.released_by} role={r.released_by_role} />
                                                 </>
                                             ) : '—'}
                                         </td>
@@ -378,7 +388,7 @@ function LostFoundHistoryTab() {
                                         {r.reviewed_at ? (
                                             <>
                                                 <div>{new Date(r.reviewed_at).toLocaleString()}</div>
-                                                <div className="ds-table-sub">by {r.reviewed_by || 'Unknown'}</div>
+                                                <ByLine name={r.reviewed_by} role={r.reviewed_by_role} />
                                             </>
                                         ) : '—'}
                                     </span>
@@ -389,7 +399,7 @@ function LostFoundHistoryTab() {
                                         {r.released_at ? (
                                             <>
                                                 <div>{new Date(r.released_at).toLocaleString()}</div>
-                                                <div className="ds-table-sub">by {r.released_by || 'Unknown'}</div>
+                                                <ByLine name={r.released_by} role={r.released_by_role} />
                                             </>
                                         ) : '—'}
                                     </span>

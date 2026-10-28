@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Rules\FormalProfilePhoto;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AdminCreateUserRequest extends FormRequest
@@ -33,7 +34,7 @@ class AdminCreateUserRequest extends FormRequest
             'teaching_course' => ['nullable', 'string', 'max:255'],
             // Optional at creation — staff can also add one later from
             // their own Profile page. Same limits as self-registration.
-            'profile_picture' => ['nullable', 'image', 'max:5120'],
+            'profile_picture' => ['nullable', 'image', 'max:5120', new FormalProfilePhoto],
         ];
     }
 

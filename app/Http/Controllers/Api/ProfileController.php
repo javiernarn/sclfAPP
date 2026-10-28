@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Rules\FormalProfilePhoto;
 use App\Support\PrivateMedia;
 use App\Http\Controllers\Controller;
 use App\Services\Audit\AuditLogService;
@@ -129,7 +130,7 @@ class ProfileController extends Controller
             'gender' => ['nullable', 'string', 'in:male,female,other,prefer_not_to_say'],
             // Required only if the account has no photo yet. The seeded Admin
             // already carries the default avatar, so it may keep it.
-            'profile_picture' => [$user->profile_picture ? 'nullable' : 'required', 'image', 'max:5120'],
+            'profile_picture' => [$user->profile_picture ? 'nullable' : 'required', 'image', 'max:5120', new FormalProfilePhoto],
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
             // Instructors must choose the course they teach during setup.
             'teaching_course' => [$user->hasRole('instructor') ? 'required' : 'prohibited', 'string', 'max:255'],

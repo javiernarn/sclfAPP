@@ -39,6 +39,11 @@ export default defineConfig({
         react(),
     ],
     build: {
+        // The face-detection library (~1.3 MB, loaded only when someone opens the
+        // profile-photo pop-up) is deliberately its own lazy file; everything else
+        // stays well under 500 kB, so a limit just above it keeps the warning
+        // meaningful for the rest of the app.
+        chunkSizeWarningLimit: 1400,
         rollupOptions: {
             output: {
                 // Split the big, rarely-changing libraries out of the main file into

@@ -729,6 +729,19 @@ const LEDGER_CSS = `
     .lg-avatar-btn { font-size: 11.5px; font-weight: 700; color: var(--lg-accent); background: none; border: none; padding: 0; cursor: pointer; text-align: left; width: fit-content; }
     .lg-avatar-btn:hover { text-decoration: underline; }
     .lg-avatar-btn.danger { color: var(--lg-danger); }
+    /* phones / tablets: a real, finger-sized photo button instead of 11px link text */
+    @media (pointer: coarse) {
+        .lg-avatar-row { gap: 16px; }
+        .lg-avatar-frame { width: 76px; height: 76px; border-radius: 18px; }
+        .lg-avatar-actions { gap: 8px; align-items: flex-start; }
+        .lg-avatar-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-height: 44px; padding: 0 18px; border-radius: 12px; font-size: 14px; text-decoration: none;
+            background: color-mix(in srgb, var(--lg-accent) 12%, transparent);
+        }
+        .lg-avatar-btn.danger { background: color-mix(in srgb, var(--lg-danger) 12%, transparent); }
+    }
+    @media (max-width: 360px) { .lg-avatar-frame { width: 64px; height: 64px; } .lg-avatar-btn { padding: 0 14px; } }
 
     /* ============ STRENGTH TICKS ============ */
     .lg-strength { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
