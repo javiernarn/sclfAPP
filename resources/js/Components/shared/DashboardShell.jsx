@@ -439,6 +439,22 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     // rather than from wherever the trigger button sits, so it lands in the
     // same spot whether the sidebar is collapsed or expanded.
     const sidebarRef = useRef(null);
+    // Phone slide-over menu: when it opens, the bottom bar (where the tapped
+    // Menu button lives) goes inert, so move keyboard/screen-reader focus into
+    // the menu first, and hand it back to the Menu button when the menu closes.
+    const menuReturnFocus = useRef(null);
+    useLayoutEffect(() => {
+        if (!isPhone) return undefined;
+        if (sidebarOpen) {
+            menuReturnFocus.current = document.activeElement;
+            sidebarRef.current?.querySelector(".ds-sidebar-close")?.focus({ preventScroll: true });
+        } else if (menuReturnFocus.current) {
+            const el = menuReturnFocus.current;
+            menuReturnFocus.current = null;
+            if (document.contains(el) && !el.closest?.("[inert]")) el.focus({ preventScroll: true });
+        }
+        return undefined;
+    }, [sidebarOpen, isPhone]);
     const navScrollRef = useRef(null);
 
 

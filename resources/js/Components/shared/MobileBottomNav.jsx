@@ -38,7 +38,10 @@ const MobileBottomNav = ({ tabs, pathname, hidden, menuOpen, onMenu, sidebarId, 
     <nav
         className={`ds-bottomnav ${hidden ? "is-hidden" : ""}`}
         aria-label="Quick navigation"
-        aria-hidden={hidden || undefined}
+        // `inert` (not aria-hidden): hiding the bar from assistive tech while the
+        // tapped Menu button still has focus is blocked by browsers. inert hides
+        // it AND makes it unfocusable/untappable, with no such conflict.
+        inert={hidden ? "" : undefined}
     >
         {tabs.map((tab, i) => {
             const Icon = tab.icon;

@@ -38,4 +38,25 @@ export default defineConfig({
         }),
         react(),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                // Split the big, rarely-changing libraries out of the main file into
+                // their own long-cached files. After a deploy, visitors re-download
+                // only the small app chunk instead of React/animation code again, the
+                // files load in parallel, and no single file passes Vite's 500 kB
+                // warning. Pages are already lazy-loaded (see routes/index.js), and
+                // page-only libraries (qr-scanner, qrcode) are deliberately NOT listed
+                // so they keep loading only on the pages that use them.
+                manualChunks(id) {
+                    if (!id.includes('node_modules')) return undefined;
+                    if (/node_modules[\\/](react|react-dom|scheduler|react-router|react-router-dom)[\\/]/.test(id)) return 'vendor-react';
+                    if (/node_modules[\\/](motion|motion-dom|motion-utils|framer-motion|lucide-animated)[\\/]/.test(id)) return 'vendor-motion';
+                    if (/node_modules[\\/]axios[\\/]/.test(id)) return 'vendor-http';
+                    if (/node_modules[\\/](crypto-js|react-secure-storage)[\\/]/.test(id)) return 'vendor-crypto';
+                    return undefined;
+                },
+            },
+        },
+    },
 });
