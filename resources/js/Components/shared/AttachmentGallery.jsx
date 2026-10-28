@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import ImageViewer from './ImageViewer';
 import { PlayCircle, ShieldAlert, Eye } from '../icons';
+import { getProtectedImageUrl } from '../../utils/imageCache';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -16,7 +17,7 @@ const formatSize = (bytes) =>
 // Attachments live on the private disk, so a bare <img src> / <video src>
 // can't carry the Authorization header. Fetch the bytes through axios and
 // hand the element a local object URL instead (same approach as claim evidence).
-function useProtectedBlobUrl(id, enabled = true) {
+function useProtectedBlobUrl(id, enabled = true, cache = true) {
     const [state, setState] = useState({ url: null, loading: false, error: false });
     const urlRef = useRef(null);
 
@@ -25,10 +26,24 @@ function useProtectedBlobUrl(id, enabled = true) {
         let cancelled = false;
         setState({ url: null, loading: true, error: false });
 
-        axios.get(`/report-attachments/${id}`, { responseType: 'blob', timeout: 180000, silent: true })
-            .then((res) => {
+        const fetchBlob = () =>
+            axios.get(`/report-attachments/${id}`, { responseType: 'blob', timeout: 180000, silent: true })
+                .then((res) => res.data);
+
+        if (cache) {
+            // Photos: kept for the session by utils/imageCache, so opening the
+            // same report again shows them instantly instead of re-downloading.
+            getProtectedImageUrl(id, fetchBlob)
+                .then((url) => { if (!cancelled) setState({ url, loading: false, error: false }); })
+                .catch(() => { if (!cancelled) setState({ url: null, loading: false, error: true }); });
+            return () => { cancelled = true; };
+        }
+
+        // Videos can be large: not cached, and released when the tile closes.
+        fetchBlob()
+            .then((blob) => {
                 if (cancelled) return;
-                urlRef.current = window.URL.createObjectURL(res.data);
+                urlRef.current = window.URL.createObjectURL(blob);
                 setState({ url: urlRef.current, loading: false, error: false });
             })
             .catch(() => { if (!cancelled) setState({ url: null, loading: false, error: true }); });
@@ -38,7 +53,7 @@ function useProtectedBlobUrl(id, enabled = true) {
             if (urlRef.current) window.URL.revokeObjectURL(urlRef.current);
             urlRef.current = null;
         };
-    }, [id, enabled]);
+    }, [id, enabled, cache]);
 
     return state;
 }
@@ -81,7 +96,7 @@ function PhotoTile({ item, blurred, onReveal, footer }) {
 // Videos can be large, so they're only downloaded when someone presses play.
 function VideoTile({ item, blurred, onReveal, footer }) {
     const [requested, setRequested] = useState(false);
-    const { url, loading, error } = useProtectedBlobUrl(item.id, requested && !blurred);
+    const { url, loading, error } = useProtectedBlobUrl(item.id, requested && !blurred, false);
 
     return (
         <div className="att-tile">

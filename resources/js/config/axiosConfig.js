@@ -5,6 +5,7 @@ import { showToast, requestApproval, notifySessionDisplaced } from '../utils/eve
 import { humanizeValidationErrors } from '../utils/validators';
 import { disablePush } from '../utils/push';
 import { clearRememberedCredentials } from '../hooks/useRememberedCredentials';
+import { preloadFromApiData } from '../utils/imageCache';
 
 const SESSION_KEY = 'sclf_token_pair';
 const LOCAL_KEY = 'token_pair';
@@ -167,7 +168,14 @@ const processQueue = (error, accessToken = null) => {
 };
 
 instance.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        // Start downloading any photos in this reply right away, so they are
+        // already loaded (or loading) by the time the page draws them.
+        if (response.config?.responseType !== 'blob') {
+            try { preloadFromApiData(response.data); } catch { /* never block a reply */ }
+        }
+        return response;
+    },
     async (error) => {
         const statusCode = error.response?.status || null;
         const originalRequest = error.config;

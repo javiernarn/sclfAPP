@@ -19,6 +19,14 @@
     RewriteRule "(^|/)\.(?!well-known/)" - [F,L]
     RewriteRule "\.(env|sql|sqlite|log|bak|old|orig|swp|ini|lock|md)$" - [F,L,NC]
 
+    # --- Browser caching for static files --------------------------------------
+    # Vite names everything in /build/assets with a content hash, so a changed
+    # file always gets a new name and the old one can be cached for a year.
+    # /images has fixed names, so it only gets a week. Photos and attachments
+    # served by Laravel set their own cache headers and are not touched here.
+    RewriteRule ^build/assets/ - [E=SCLF_CACHE_LONG:1]
+    RewriteRule ^images/ - [E=SCLF_CACHE_WEEK:1]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
@@ -36,4 +44,9 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header set Cache-Control "public, max-age=31536000, immutable" env=SCLF_CACHE_LONG
+    Header set Cache-Control "public, max-age=604800" env=SCLF_CACHE_WEEK
 </IfModule>

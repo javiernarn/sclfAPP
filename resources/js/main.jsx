@@ -15,6 +15,12 @@ import './utils/pwaInstall'; // start listening for the browser's install event 
 import InstallPrompt from './Components/shared/InstallPrompt';
 import OfflineNotice from './Components/shared/OfflineNotice';
 import './i18n'; // applies the saved language to <html lang> before first paint
+import { preloadImage } from './utils/imageCache';
+import siteLogo from './assets/images/site-logo.png';
+
+// The logo shows on every screen (sidebar, header, login). Start it loading
+// before React mounts so it is never seen popping in.
+preloadImage(siteLogo);
 
 // Registering here (rather than only when the user flips the settings
 // toggle on) means the worker is already installed and ready by the time

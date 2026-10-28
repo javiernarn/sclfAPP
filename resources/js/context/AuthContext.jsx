@@ -3,6 +3,7 @@ import axios, { storeTokenPair, getStoredToken, clearStoredToken, restoreSession
 import { clearLoginMemory } from '../utils/welcome';
 import { getCurrentSubscription, disablePush } from '../utils/push';
 import { clearAllDrafts } from '../utils/autosave';
+import { clearImageCaches } from '../utils/imageCache';
 
 const AuthContext = createContext(null);
 
@@ -182,6 +183,7 @@ export function AuthProvider({ children }) {
             setSignedOut(true);
             clearStoredToken();
             clearLoginMemory();
+            clearImageCaches(); // private photos must not linger for the next person
             setUser(null);
             setRoles([]);
         }
