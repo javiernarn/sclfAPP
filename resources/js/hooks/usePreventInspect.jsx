@@ -80,6 +80,89 @@ export default function usePreventInspect() {
         };
     }, []);
 
+    // ----------------------------------------------------------
+    // DevTools detector: when DevTools is opened (docked OR
+    // undocked), hide the whole UI and show a plain white page
+    // with the same text as the <noscript> fallback. The UI comes
+    // back when DevTools is closed. Desktop only. Deterrent only —
+    // real security stays on the server (auth, policies, throttle).
+    // ----------------------------------------------------------
+    useEffect(() => {
+        if (!INSPECT_PROTECTION_ENABLED) return undefined;
+        if (window.innerWidth < DESKTOP_MIN_WIDTH) return undefined;
+
+        const root = document.getElementById("app");
+        if (!root) return undefined;
+
+        const baseDPR = window.devicePixelRatio || 1;
+        let cover = null;
+
+        const showCover = () => {
+            if (cover) return;
+            root.style.display = "none";
+            cover = document.createElement("div");
+            cover.setAttribute("data-pi-cover", "1");
+            cover.style.cssText =
+                "position:fixed;inset:0;z-index:2147483647;background:#fff;" +
+                "color:#111;font-family:Arial,Helvetica,sans-serif;padding:24px;";
+            cover.innerHTML =
+                "<h1>SCLF - Opol Community College</h1>" +
+                "<p>Smart Campus Lost &amp; Found system for Opol Community College. " +
+                "Report, search, and claim lost or found items on campus.</p>" +
+                "<p>JavaScript is required to use SCLF. Please enable JavaScript " +
+                "in your browser, then reload this page.</p>";
+            document.body.appendChild(cover);
+        };
+
+        const hideCover = () => {
+            if (!cover) return;
+            cover.remove();
+            cover = null;
+            root.style.display = "";
+        };
+
+        // Docked DevTools makes the outer window bigger than the page
+        // viewport. Normalised by zoom so browser zoom doesn't trigger it.
+        const dockedOpen = () => {
+            const zoom = (window.devicePixelRatio || 1) / baseDPR;
+            const w = window.outerWidth - window.innerWidth * zoom;
+            const h = window.outerHeight - window.innerHeight * zoom;
+            return w > 200 || h > 200;
+        };
+
+        // Undocked / separate-window DevTools: logging an element whose
+        // `id` getter only runs when the console is actually rendering it.
+        let consoleOpen = false;
+        const probe = new Image();
+        Object.defineProperty(probe, "id", {
+            get() {
+                consoleOpen = true;
+                return "";
+            },
+        });
+
+        const check = () => {
+            consoleOpen = false;
+            // eslint-disable-next-line no-console
+            console.debug(probe);
+            if (dockedOpen() || consoleOpen) {
+                showCover();
+            } else {
+                hideCover();
+            }
+        };
+
+        const timer = window.setInterval(check, 1000);
+        window.addEventListener("resize", check);
+        check();
+
+        return () => {
+            window.clearInterval(timer);
+            window.removeEventListener("resize", check);
+            hideCover();
+        };
+    }, []);
+
     useEffect(() => {
         if (!INSPECT_PROTECTION_ENABLED) return undefined;
         if (window.innerWidth < DESKTOP_MIN_WIDTH) return undefined;

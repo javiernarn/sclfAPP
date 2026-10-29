@@ -115,7 +115,8 @@
     <noscript>
         <div style="font-family: Arial, Helvetica, sans-serif; padding: 24px; color: #111; background: #fff;">
             <h1>SCLF - Opol Community College</h1>
-            <p>{{ $seo['description'] }}</p>
+            <p>Smart Campus Lost &amp; Found system for Opol Community College.</p>
+            <p>What a boring  inspect developer HAHAHHAHAHAHA</p>
             <p>JavaScript is required to use SCLF. Please enable JavaScript in your browser, then reload this page.</p>
         </div>
     </noscript>

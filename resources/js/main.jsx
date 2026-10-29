@@ -1,3 +1,4 @@
+import './utils/devtoolsGuard'; // hide the UI while DevTools is open (runs before React mounts)
 
 
 import React from 'react';
