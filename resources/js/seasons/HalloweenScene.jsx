@@ -1,11 +1,17 @@
 import React, { useMemo } from 'react';
 import { HW } from './art';
+import GraveCrew from './GraveCrew';
 
 /**
  * HalloweenScene — FIRST theme.
  * A night (or dusk, in light mode) graveyard: moon, flying bats, glowing
  * jack-o'-lanterns, bones + skulls, cobwebs with dangling spiders, ghosts,
- * candles, drifting fog and rising embers.
+ * candles, drifting fog and rising embers — plus buried coffins that open and
+ * let panicking skeleton thieves run off with a sack of bones (GraveCrew).
+ *
+ * Dark / light wiring (isDark comes from the app theme):
+ *   dark  -> bats fly, candles are lit (flame + glow + flicker)
+ *   light -> NO bats at all, candles are blown out (flame gone, a wisp of smoke)
  *
  * The creatures are real, professionally designed artwork (Google Noto Emoji,
  * Apache 2.0 — see ./art/ART_CREDITS.md), not hand-drawn shapes. Motion, glow
@@ -53,6 +59,18 @@ function Spider({ className = '' }) {
         <div className={`hw-spider ${className}`}>
             <span className="hw-thread" />
             <Img src={HW.spider} className="hw-spider-img" />
+        </div>
+    );
+}
+
+// ---- candle: wax + wick layer, plus a flame layer that only exists while lit ----
+function Candle({ className = '', lit }) {
+    return (
+        <div className={`hw-candle ${className} ${lit ? 'is-lit' : 'is-out'}`}>
+            <span className="hw-candle-halo" />
+            <Img src={HW.candleBody} className="hw-candle-body" />
+            <Img src={HW.candleFlame} className="hw-candle-flame" />
+            <span className="hw-candle-smoke"><i /><i /></span>
         </div>
     );
 }
@@ -114,7 +132,8 @@ export default function HalloweenScene({ variant = 'auth', isDark = true }) {
             <Img src={HW.ghost} className="hw-ghost hw-ghost-1" />
             <Img src={HW.ghost} className="hw-ghost hw-ghost-2" />
 
-            {bats.map((b, i) => <Bat key={i} cfg={b} />)}
+            {/* bats only exist at night — in the light theme they are gone */}
+            {isDark && bats.map((b, i) => <Bat key={i} cfg={b} />)}
 
             <Img src={HW.crossbones} className="hw-fl hw-xbones hw-fl-1" />
             <Img src={HW.skull} className="hw-fl hw-skull hw-fl-2" />
@@ -135,11 +154,14 @@ export default function HalloweenScene({ variant = 'auth', isDark = true }) {
             <Pumpkin className="hw-pk hw-pk-3" flip />
             <Pumpkin className="hw-pk hw-pk-4" />
             <Pumpkin className="hw-pk hw-pk-5" flip />
-            <Img src={HW.candle} className="hw-candle hw-candle-1" />
-            <Img src={HW.candle} className="hw-candle hw-candle-2" />
+            <Candle className="hw-candle-1" lit={isDark} />
+            <Candle className="hw-candle-2" lit={isDark} />
             <Img src={HW.skull} className="hw-gskull" />
             <Img src={HW.bone} className="hw-gbone-1" />
             <Img src={HW.bone} className="hw-gbone-2" />
+
+            {/* buried coffins -> skeleton thieves (run left / right with a sack of bones) */}
+            <GraveCrew variant={variant} />
         </div>
     );
 }

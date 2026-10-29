@@ -10,6 +10,8 @@ import bone from './halloween/bone.svg';
 import crossbones from './halloween/crossbones.svg';
 import spider from './halloween/spider.svg';
 import candle from './halloween/candle.svg';
+import candleBody from './halloween/candle-body.svg';   // wax + wick only (flame is a separate layer)
+import candleFlame from './halloween/candle-flame.svg'; // flame + glow, switched off in the light theme
 import cobweb from './halloween/cobweb.png';
 
 import tree from './christmas/tree.svg';
@@ -31,6 +33,6 @@ import balloon from './newyear/balloon.svg';
 import discoball from './newyear/discoball.svg';
 import partyface from './newyear/partyface.svg';
 
-export const HW = { pumpkin, bat, ghost, skull, bone, crossbones, spider, candle, cobweb };
+export const HW = { pumpkin, bat, ghost, skull, bone, crossbones, spider, candle, candleBody, candleFlame, cobweb };
 export const XM = { tree, snowman, gift, santa, snowflake, bell, star, sparkle, reindeer };
 export const NY = { clock, champagne, glasses, popper, confetti, balloon, discoball, partyface, star, sparkle };

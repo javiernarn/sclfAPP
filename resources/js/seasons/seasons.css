@@ -15,6 +15,9 @@
 /* =====================================================================
    1. SCENE ART — shared
    ===================================================================== */
+/* Keyframes used by more than one season carry a neutral "season-" name, so no season
+   depends on another season's .hw-/.xm- animation (and renaming one cannot break another). */
+
 .hw-scene, .xm-scene {
     position: absolute; inset: 0; z-index: 0;
     overflow: hidden; pointer-events: none; user-select: none;
@@ -47,8 +50,8 @@
         radial-gradient(70% 38% at 50% 100%, var(--hw-glow), transparent 70%),
         linear-gradient(180deg, var(--hw-sky-top) 0%, var(--hw-sky-mid) 58%, var(--hw-sky-low) 100%);
 }
-.hw-stars { position: absolute; top: 0; left: 0; width: 1px; height: 1px; border-radius: 50%; animation: hw-twinkle 4.5s ease-in-out infinite; }
-@keyframes hw-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+.hw-stars { position: absolute; top: 0; left: 0; width: 1px; height: 1px; border-radius: 50%; animation: season-twinkle 4.5s ease-in-out infinite; }
+@keyframes season-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
 .hw-moon {
     position: absolute; top: clamp(54px, 8vh, 96px); right: clamp(14px, 7vw, 120px);
@@ -92,10 +95,12 @@
 .hw-spider-2 .hw-thread { height: 3vh; animation-duration: 9s; animation-delay: -3s; }
 @keyframes hw-drop { 0%, 100% { height: 4vh; } 50% { height: 15vh; } }
 
-/* ---- bats ---- */
+/* ---- bats (night only: HalloweenScene does not even render them in the light theme) ---- */
+.hw-scene.is-light .hw-bat { display: none; }
+@keyframes hw-bat-in { from { opacity: 0; } to { opacity: 1; } }
 .hw-bat { position: absolute; left: 0; width: var(--w); will-change: transform; animation: hw-fly-ltr var(--dur) linear var(--delay) infinite; }
 .hw-bat.rtl { left: auto; right: 0; animation-name: hw-fly-rtl; }
-.hw-bat-img { display: block; width: 100%; height: auto; filter: drop-shadow(0 0 7px rgba(192, 132, 252, 0.65)) drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45)); }
+.hw-bat-img { animation: hw-bat-in 1s ease-out both; display: block; width: 100%; height: auto; filter: drop-shadow(0 0 7px rgba(192, 132, 252, 0.65)) drop-shadow(0 3px 4px rgba(0, 0, 0, 0.45)); }
 .hw-bat.rtl .hw-bat-img { transform: scaleX(-1); }
 .hw-bat-bob { animation: hw-bob calc(var(--flap) * 5) ease-in-out infinite; }
 .hw-bat-flap { transform-origin: 50% 55%; animation: hw-flap var(--flap) ease-in-out infinite; }
@@ -130,7 +135,7 @@
 }
 
 /* ---- floating bones / skulls ---- */
-.hw-fl { position: absolute; opacity: 0.5; animation: hw-drift 18s ease-in-out infinite; }
+.hw-fl { position: absolute; opacity: 0.5; animation: season-drift 18s ease-in-out infinite; }
 .hw-bone { display: block; width: clamp(34px, 6vw, 62px); height: auto; }
 .hw-skull { display: block; width: clamp(24px, 4.4vw, 44px); height: auto; }
 .hw-xbones { display: block; width: clamp(34px, 6vw, 60px); height: auto; }
@@ -140,7 +145,7 @@
 .hw-fl-4 { left: 46%; top: 12%; animation-duration: 19s; animation-delay: -3s; }
 .hw-fl-5 { right: 6%; top: 24%; animation-duration: 26s; animation-delay: -12s; }
 .hw-fl-6 { left: 60%; top: 50%; animation-duration: 22s; animation-delay: -7s; }
-@keyframes hw-drift {
+@keyframes season-drift {
     0%, 100% { transform: translate(0, 0) rotate(-12deg); }
     33% { transform: translate(14px, -22px) rotate(10deg); }
     66% { transform: translate(-10px, -8px) rotate(-6deg); }
@@ -176,10 +181,50 @@
 }
 .hw-pk-2 { animation-delay: -0.9s; } .hw-pk-3 { animation-delay: -1.7s; }
 .hw-pk-4 { animation-delay: -0.4s; } .hw-pk-5 { animation-delay: -2.1s; }
-.hw-candle { position: absolute; height: auto; filter: drop-shadow(0 0 10px rgba(255, 190, 80, 0.7)); animation: hw-flicker 2.2s ease-in-out infinite; }
-.hw-candle-1 { left: 12%; bottom: 0.8%; width: clamp(16px, 2.8vw, 30px); }
-.hw-candle-2 { right: 14%; bottom: 0.6%; width: clamp(14px, 2.4vw, 26px); animation-delay: -1.1s; }
-@keyframes hw-flicker { 0%, 100% { opacity: 1; } 18% { opacity: 0.82; } 24% { opacity: 1; } 55% { opacity: 0.9; } 62% { opacity: 1; } }
+/* ---- candles: lit at night, blown out in the light theme ---- */
+.hw-candle { position: absolute; aspect-ratio: 1; z-index: 1; }
+.hw-candle > * { position: absolute; }
+.hw-candle-1 { left: 12%; bottom: 0.8%; width: clamp(24px, 3.7vw, 42px); }
+.hw-candle-2 { right: 14%; bottom: 0.6%; width: clamp(20px, 3.2vw, 36px); }
+.hw-candle-2 .hw-candle-flame { animation-delay: -0.9s; }
+.hw-candle-body, .hw-candle-flame { inset: 0; width: 100%; height: 100%; display: block; }
+.hw-candle-body { filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); }
+.hw-candle-flame {
+    transform-origin: 50% 42%;
+    filter: drop-shadow(0 0 7px rgba(255, 190, 80, 0.95)) drop-shadow(0 0 16px rgba(255, 140, 30, 0.6));
+    transition: opacity 0.55s ease;
+    animation: hw-flame 1.7s ease-in-out infinite;
+}
+.hw-candle-halo {
+    left: 50%; top: 30%; width: 560%; height: 560%; transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(255, 196, 96, 0.42) 0%, rgba(255, 140, 40, 0.16) 36%, transparent 66%);
+    mix-blend-mode: screen; transition: opacity 0.7s ease;
+    animation: hw-halo 2.3s ease-in-out infinite;
+}
+@keyframes hw-flame {
+    0%, 100% { transform: scale(1, 1) rotate(0deg); }
+    18% { transform: scale(0.95, 1.06) rotate(-2.2deg); }
+    42% { transform: scale(1.04, 0.96) rotate(1.8deg); }
+    66% { transform: scale(0.97, 1.05) rotate(-1.2deg); }
+    84% { transform: scale(1.02, 0.98) rotate(1deg); }
+}
+@keyframes hw-halo { 0%, 100% { opacity: 1; } 30% { opacity: 0.78; } 60% { opacity: 0.94; } }
+/* OUT (light theme): no flame, no glow, no flicker — just wax, a wick and one last wisp of smoke */
+.hw-candle.is-out .hw-candle-flame { opacity: 0; animation: none; }
+.hw-candle.is-out .hw-candle-halo { opacity: 0; animation: none; }
+.hw-candle-smoke { left: 38%; top: 8%; width: 24%; height: 44%; opacity: 0; pointer-events: none; }
+.hw-candle-smoke i {
+    position: absolute; left: 0; bottom: 0; width: 100%; aspect-ratio: 1; border-radius: 50%; opacity: 0;
+    background: radial-gradient(circle, rgba(70, 40, 98, 0.55), rgba(70, 40, 98, 0) 70%); filter: blur(1px);
+}
+.hw-candle.is-out .hw-candle-smoke { opacity: 1; }
+.hw-candle.is-out .hw-candle-smoke i { animation: hw-smoke 3.6s ease-out 1 both; }
+.hw-candle.is-out .hw-candle-smoke i:nth-child(2) { animation-delay: 0.8s; left: 10%; }
+@keyframes hw-smoke {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.45); }
+    18% { opacity: 0.85; }
+    100% { opacity: 0; transform: translate(60%, -260%) scale(2.4); }
+}
 .hw-pk-1 { left: -1%; bottom: 1.5%; width: clamp(74px, 21vw, 200px); }
 .hw-pk-2 { left: 17%; bottom: 0.5%; width: clamp(44px, 11vw, 108px); }
 .hw-pk-3 { right: 0; bottom: 1%; width: clamp(80px, 23vw, 220px); }
@@ -224,9 +269,208 @@
 .hw-dashboard .hw-ground { opacity: 0.75; }
 
 @media (prefers-reduced-motion: reduce) {
-    .hw-bat, .hw-bat-bob, .hw-bat-flap, .hw-ghost, .hw-fl, .hw-ember, .hw-thread, .hw-fog, .hw-pumpkin, .hw-candle, .hw-stars, .hw-moon { animation: none !important; }
+    .hw-bat, .hw-bat-bob, .hw-bat-flap, .hw-ghost, .hw-fl, .hw-ember, .hw-thread, .hw-fog, .hw-pumpkin, .hw-stars, .hw-moon { animation: none !important; }
     .hw-bat.ltr { transform: translate3d(14vw, 0, 0); } .hw-bat.rtl { transform: translate3d(-14vw, 0, 0); }
     .hw-ember { display: none; }
+}
+
+/* =====================================================================
+   1a-2. GRAVE CREW — buried coffins, skeleton thieves (GraveCrew.jsx)
+   ===================================================================== */
+.hw-scene {
+    --hw-run: clamp(34px, 7vh, 70px);            /* the line the skeletons stand/run on */
+    --hw-soil: #2c1a2e; --hw-soil-hi: #4a2d4c; --hw-pebble: #5b4466; --hw-grass: #6b5a3a;
+}
+.hw-scene.is-light { --hw-soil: #4a2a52; --hw-soil-hi: #6f4678; --hw-pebble: #8a6a96; --hw-grass: #3d2a52; }
+.hw-soil { fill: var(--hw-soil); }
+.hw-soil-hi { fill: var(--hw-soil-hi); }
+.hw-pebble { fill: var(--hw-pebble); }
+.hw-grass { stroke: var(--hw-grass); stroke-width: 1.6; }
+
+.hw-crew { position: absolute; inset: 0; z-index: 3; --sw: clamp(78px, 10.4vw, 136px); }
+.hw-crew.is-quiet { opacity: 0.82; }
+.hw-grave {
+    --gw: calc(var(--sw) * 1.34);
+    position: absolute; width: var(--gw); height: calc(var(--gw) / 3);
+    bottom: calc(var(--hw-run) - var(--gw) / 6); margin-left: calc(var(--gw) / -2);
+}
+.hw-grave > * { position: absolute; }
+.hw-grave-back, .hw-grave-front { left: 0; top: 0; width: 100%; height: 100%; display: block; overflow: visible; }
+.hw-grave-back { z-index: 1; }
+.hw-grave-front { z-index: 4; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.35)); }
+
+/* coffin lid: lies over the hole; slides aside (away from the direction he runs) */
+.hw-grave-lidwrap { z-index: 3; left: 5%; width: 90%; top: 50%; transform: translateY(-50%); }
+.hw-grave-lid {
+    display: block; width: 100%; height: auto; overflow: visible;
+    filter: drop-shadow(0 3px 3px rgba(0, 0, 0, 0.45));
+    transition: transform 0.85s cubic-bezier(0.3, 0.1, 0.2, 1);
+}
+.hw-grave:is([data-phase="open"], [data-phase="rise"], [data-phase="run"], [data-phase="empty"]) .hw-grave-lid {
+    transform: translateX(calc(var(--lid-s) * 84%)) translateY(6%) rotate(calc(var(--lid-s) * -10deg));
+}
+.hw-grave[data-phase="shake"] .hw-grave-lid { animation: hw-lid-shake 0.2s linear infinite; }
+@keyframes hw-lid-shake {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(-1.5px, -2px) rotate(-1.4deg); }
+    50% { transform: translate(1.5px, 0) rotate(1.2deg); }
+    75% { transform: translate(-1px, -1.5px) rotate(-0.8deg); }
+}
+
+/* eerie light that pours out of the open grave */
+.hw-grave-glow {
+    z-index: 0; left: -30%; right: -30%; bottom: 30%; height: 520%; opacity: 0; mix-blend-mode: screen;
+    background: radial-gradient(50% 50% at 50% 74%, rgba(150, 255, 175, 0.55), rgba(160, 96, 255, 0.28) 46%, transparent 74%);
+    transition: opacity 0.7s ease;
+}
+.hw-grave:is([data-phase="open"], [data-phase="rise"]) .hw-grave-glow { opacity: 1; }
+.hw-grave:is([data-phase="run"], [data-phase="empty"]) .hw-grave-glow { opacity: 0.45; }
+.hw-scene.is-light .hw-grave-glow { mix-blend-mode: normal; background: radial-gradient(50% 50% at 50% 74%, rgba(255, 244, 200, 0.7), rgba(255, 190, 90, 0.25) 46%, transparent 74%); }
+
+/* dust kicked up while the lid rattles and slides */
+.hw-grave-dust { z-index: 6; left: 0; right: 0; bottom: 50%; height: 0; }
+.hw-grave-dust span {
+    position: absolute; bottom: 0; width: var(--s); height: var(--s); border-radius: 50%; opacity: 0;
+    background: var(--hw-soil-hi);
+}
+.hw-grave:is([data-phase="shake"], [data-phase="open"]) .hw-grave-dust span { animation: hw-dust var(--d) ease-out infinite; }
+.hw-grave-dust span:nth-child(2n) { animation-delay: -0.35s !important; }
+.hw-grave-dust span:nth-child(3n) { animation-delay: -0.6s !important; }
+@keyframes hw-dust {
+    0% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+    14% { opacity: 0.95; }
+    55% { transform: translate(calc(var(--dx) * 0.7), calc(var(--h) * -1)) scale(1); opacity: 0.8; }
+    100% { opacity: 0; transform: translate(var(--dx), calc(var(--h) * -0.15)) scale(0.8); }
+}
+
+/* ---- the runner ---- */
+.hw-grave-runner {
+    --t: 0.5s;
+    z-index: 2; left: 50%; bottom: 50%; width: var(--sw); margin-left: calc(var(--sw) / -2);
+    visibility: hidden;
+}
+.hw-grave[data-phase="rise"] .hw-grave-runner { visibility: visible; clip-path: inset(-400% -400% 0 -400%); }  /* only what is above ground shows */
+.hw-grave[data-phase="run"] .hw-grave-runner { visibility: visible; z-index: 5; will-change: transform; }
+.hw-sk-flip { width: 100%; }
+.hw-grave[data-dir="-1"] .hw-sk-flip { transform: scaleX(-1); }
+.hw-sk-hop { position: relative; }
+.hw-sk-svg { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 0 5px rgba(190, 160, 255, 0.5)); }
+.hw-scene.is-light .hw-sk-svg { filter: drop-shadow(0 3px 3px rgba(40, 10, 60, 0.5)); }
+.hw-sk-bang { position: absolute; left: 66%; top: -9%; width: 13%; height: auto; opacity: 0; overflow: visible; }
+
+/* climbing out */
+.hw-grave[data-phase="rise"] .hw-sk-hop { animation: hw-rise 1.5s cubic-bezier(0.22, 0.8, 0.3, 1) both; }
+@keyframes hw-rise {
+    0% { transform: translateY(104%); }
+    55% { transform: translateY(40%); }
+    68% { transform: translateY(44%); }
+    100% { transform: translateY(0); }
+}
+.hw-grave[data-phase="rise"] .hw-sk-body { animation: hw-shiver 0.12s linear infinite; }
+@keyframes hw-shiver { 0%, 100% { transform: translateX(-0.8px); } 50% { transform: translateX(0.8px); } }
+.hw-grave[data-phase="rise"] .hw-sk-jaw { animation: hw-scream 0.34s ease-in-out infinite; }
+.hw-grave[data-phase="rise"] .hw-sk-sackarm { transform: rotate(16deg); }
+.hw-grave[data-phase="rise"] .hw-sk-sackfore { transform: rotate(-34deg); }
+.hw-grave[data-phase="rise"] .hw-sk-lootarm { transform: rotate(-24deg); }
+.hw-grave[data-phase="rise"] .hw-sk-lootfore { transform: rotate(-62deg); }
+.hw-grave[data-phase="rise"] .hw-sk-head { transform: rotate(-6deg); }
+.hw-grave[data-phase="rise"] .hw-sk-sack { animation: hw-sack 0.5s ease-in-out infinite; }
+
+/* running scared */
+.hw-grave[data-phase="run"] .hw-sk-hop { animation: hw-hop 0.42s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+@keyframes hw-hop { 0% { transform: translateY(0); } 38% { transform: translateY(-13%); } 100% { transform: translateY(0); } }
+.hw-grave[data-phase="run"] .hw-sk-bang { animation: hw-bang 1.2s ease-out both; }
+@keyframes hw-bang {
+    0% { opacity: 0; transform: scale(0.2) translateY(30%); }
+    18% { opacity: 1; transform: scale(1.2) translateY(0); }
+    32% { transform: scale(1); }
+    78% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-20%); }
+}
+.hw-sk-body { transform-origin: 80px 186px; }
+/* NOTE: was also called "hw-bob" — the same name as the bats' bob above. The later rule won, so every
+   bat was tilted 7 degrees and jittered like a runner. Keep the two names different. */
+.hw-grave[data-phase="run"] .hw-sk-body { animation: hw-sk-bob calc(var(--t) / 2) ease-in-out infinite; }
+@keyframes hw-sk-bob {
+    0%, 100% { transform: rotate(7deg) translateY(0); }
+    50% { transform: rotate(7deg) translateY(-4.5px); }
+}
+.hw-grave[data-phase="run"] .hw-sk-thigh-a, .hw-grave[data-phase="run"] .hw-sk-thigh-b { animation: hw-thigh var(--t) ease-in-out infinite; }
+.hw-grave[data-phase="run"] .hw-sk-shin-a, .hw-grave[data-phase="run"] .hw-sk-shin-b { animation: hw-shin var(--t) ease-in-out infinite; }
+.hw-grave[data-phase="run"] .hw-sk-foot-a, .hw-grave[data-phase="run"] .hw-sk-foot-b { animation: hw-foot var(--t) ease-in-out infinite; }
+.hw-grave[data-phase="run"] :is(.hw-sk-thigh-b, .hw-sk-shin-b, .hw-sk-foot-b) { animation-delay: calc(var(--t) / -2); }
+@keyframes hw-thigh { 0%, 100% { transform: rotate(-38deg); } 50% { transform: rotate(30deg); } }
+@keyframes hw-shin {
+    0% { transform: rotate(12deg); } 35% { transform: rotate(8deg); } 50% { transform: rotate(26deg); }
+    75% { transform: rotate(92deg); } 90% { transform: rotate(48deg); } 100% { transform: rotate(12deg); }
+}
+@keyframes hw-foot { 0%, 100% { transform: rotate(-8deg); } 50% { transform: rotate(24deg); } }
+
+.hw-grave[data-phase="run"] .hw-sk-sackarm { animation: hw-sackarm var(--t) ease-in-out infinite; }
+.hw-grave[data-phase="run"] .hw-sk-sackfore { animation: hw-sackfore var(--t) ease-in-out infinite; }
+.hw-grave[data-phase="run"] .hw-sk-sack { animation: hw-sack var(--t) ease-in-out infinite; animation-delay: calc(var(--t) * -0.12); }
+.hw-grave[data-phase="run"] .hw-sk-lootarm { animation: hw-lootarm var(--t) ease-in-out infinite; animation-delay: calc(var(--t) / -2); }
+.hw-grave[data-phase="run"] .hw-sk-lootfore { animation: hw-lootfore var(--t) ease-in-out infinite; animation-delay: calc(var(--t) / -2); }
+@keyframes hw-sackarm { 0%, 100% { transform: rotate(26deg); } 50% { transform: rotate(-26deg); } }
+@keyframes hw-sackfore { 0%, 100% { transform: rotate(-38deg); } 50% { transform: rotate(-70deg); } }
+@keyframes hw-sack { 0%, 100% { transform: rotate(16deg); } 50% { transform: rotate(-22deg); } }
+@keyframes hw-lootarm { 0%, 100% { transform: rotate(-52deg); } 50% { transform: rotate(34deg); } }
+@keyframes hw-lootfore { 0%, 100% { transform: rotate(-88deg); } 50% { transform: rotate(-52deg); } }
+
+/* head thrown back, looking over the shoulder; jaw chattering; sweat flying off */
+.hw-grave[data-phase="run"] .hw-sk-head { animation: hw-head calc(var(--t) / 2) ease-in-out infinite; }
+@keyframes hw-head { 0%, 100% { transform: rotate(-9deg) translateY(0); } 50% { transform: rotate(-3deg) translateY(1px); } }
+.hw-grave[data-phase="run"] .hw-sk-jaw { animation: hw-scream 0.2s ease-in-out infinite; }
+@keyframes hw-scream { 0%, 100% { transform: translateY(1px); } 50% { transform: translateY(5.5px); } }
+.hw-sk-drop { opacity: 0; }
+.hw-grave:is([data-phase="run"], [data-phase="rise"]) .hw-sk-drop { animation: hw-sweat 0.7s ease-out infinite; }
+.hw-sk-drop-2 { animation-delay: -0.25s !important; }
+.hw-sk-drop-3 { animation-delay: -0.5s !important; }
+@keyframes hw-sweat {
+    0% { opacity: 0; transform: translate(6px, 6px) scale(0.6); }
+    20% { opacity: 1; }
+    100% { opacity: 0; transform: translate(-14px, -12px) scale(1); }
+}
+.hw-sk-speed { opacity: 0; }
+.hw-grave[data-phase="run"] .hw-sk-speed { animation: hw-speed calc(var(--t) / 2) linear infinite; }
+@keyframes hw-speed { 0% { opacity: 0.55; transform: translateX(6px); } 100% { opacity: 0; transform: translateX(-10px); } }
+.hw-sk-shadow { transform-box: fill-box; transform-origin: center; }
+.hw-grave[data-phase="run"] .hw-sk-shadow { animation: hw-shadow calc(var(--t) / 2) ease-in-out infinite; }
+@keyframes hw-shadow { 0%, 100% { transform: scaleX(1); opacity: 0.32; } 50% { transform: scaleX(0.82); opacity: 0.2; } }
+
+/* the stolen bone he drops (left behind on the ground) */
+.hw-sk-dropx { position: absolute; left: 50%; top: 58%; width: 24%; margin-left: -12%; opacity: 0; pointer-events: none; }
+.hw-sk-dropbone { display: block; width: 100%; height: auto; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45)); }
+.hw-grave-runner.is-dropping .hw-sk-dropx { animation: hw-dropx 1.5s cubic-bezier(0.5, 0, 0.9, 0.8) both; }
+.hw-grave-runner.is-dropping .hw-sk-dropbone { animation: hw-dropy 1.5s linear both; }
+@keyframes hw-dropx {
+    0% { opacity: 1; transform: translateX(calc(var(--lid-s) * 22%)); }
+    72% { opacity: 1; }
+    100% { opacity: 0; transform: translateX(calc(var(--lid-s) * 22% + var(--lid-s) * var(--back))); }
+}
+@keyframes hw-dropy {
+    0% { transform: translateY(0) rotate(0deg); animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6); }
+    36% { transform: translateY(calc(var(--sw) * 0.4)) rotate(280deg); animation-timing-function: cubic-bezier(0.1, 0.5, 0.4, 1); }
+    52% { transform: translateY(calc(var(--sw) * 0.26)) rotate(400deg); animation-timing-function: cubic-bezier(0.5, 0, 0.9, 0.6); }
+    68% { transform: translateY(calc(var(--sw) * 0.4)) rotate(500deg); }
+    100% { transform: translateY(calc(var(--sw) * 0.4)) rotate(520deg); }
+}
+
+/* phones: smaller figures, lower line so forms stay readable */
+@media (max-width: 600px) {
+    .hw-crew { --sw: clamp(54px, 15vw, 72px); }
+    .hw-scene { --hw-run: clamp(26px, 5vh, 46px); }
+}
+@media (max-width: 767px) and (orientation: portrait) {
+    .hw-auth { --hw-run: clamp(30px, 5.5vh, 52px); }
+}
+@media (orientation: landscape) and (max-height: 480px) {
+    .hw-crew { --sw: clamp(44px, 17vh, 66px); }
+    .hw-scene { --hw-run: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .hw-crew *, .hw-candle-flame, .hw-candle-halo, .hw-candle-smoke i { animation: none !important; }
+    .hw-grave-runner { display: none; }
 }
 
 /* =====================================================================
@@ -241,7 +485,7 @@
     --xm-hill-b: #bfdbe6; --xm-hill-f: #ffffff; --xm-flake: #7ab6d6;
 }
 .xm-sky { position: absolute; inset: 0; background: linear-gradient(180deg, var(--xm-sky-top), var(--xm-sky-mid) 60%, var(--xm-sky-low)); }
-.xm-stars { position: absolute; top: 0; left: 0; width: 1px; height: 1px; border-radius: 50%; animation: hw-twinkle 4s ease-in-out infinite; }
+.xm-stars { position: absolute; top: 0; left: 0; width: 1px; height: 1px; border-radius: 50%; animation: season-twinkle 4s ease-in-out infinite; }
 .xm-moon {
     position: absolute; top: clamp(60px, 9vh, 100px); right: clamp(16px, 8vw, 130px);
     width: clamp(54px, 12vw, 104px); aspect-ratio: 1; border-radius: 50%;
@@ -249,11 +493,11 @@
     box-shadow: 0 0 40px 10px rgba(220, 235, 255, 0.45);
 }
 .xm-scene.is-light .xm-moon { display: none; }
-.xm-bauble { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; animation: xm-swing 4.2s ease-in-out infinite; }
+.xm-bauble { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; animation: season-swing 4.2s ease-in-out infinite; }
 .xm-bauble-string { width: 1.5px; background: rgba(255, 255, 255, 0.55); height: clamp(22px, 5vh, 48px); }
 .xm-bauble-img { width: clamp(24px, 4.6vw, 42px); height: auto; display: block; filter: drop-shadow(0 0 8px rgba(255, 220, 120, 0.55)) drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35)); }
 .xm-bauble-1 { left: 14%; } .xm-bauble-2 { left: 34%; animation-delay: -1.2s; } .xm-bauble-3 { right: 30%; animation-delay: -2.1s; } .xm-bauble-4 { right: 10%; animation-delay: -0.6s; }
-@keyframes xm-swing { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes season-swing { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
 
 .xm-flake { position: absolute; top: -12px; border-radius: 50%; background: var(--xm-flake); box-shadow: 0 0 6px var(--xm-flake); animation: xm-fall var(--d) linear infinite; }
 .xm-flake.xm-flake-img { background: none; box-shadow: none; border-radius: 0; height: auto; top: -40px; filter: drop-shadow(0 0 4px rgba(190, 225, 255, 0.7)); }
@@ -280,10 +524,10 @@
 .xm-g-2 { filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.3)) hue-rotate(205deg) saturate(1.1); }
 .xm-g-3 { filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.3)) hue-rotate(110deg); }
 .xm-deer { position: absolute; left: 32%; bottom: 1%; width: clamp(34px, 7vw, 70px); height: auto; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.3)); }
-.xm-spark { position: absolute; height: auto; animation: xm-twinkle 2.6s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255, 235, 150, 0.9)); }
+.xm-spark { position: absolute; height: auto; animation: season-spark 2.6s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255, 235, 150, 0.9)); }
 .xm-sp-1 { left: 5%; bottom: 20%; width: clamp(16px, 3vw, 28px); }
 .xm-sp-2 { right: 6%; bottom: 24%; width: clamp(14px, 2.6vw, 24px); animation-delay: -1.3s; }
-@keyframes xm-twinkle { 0%, 100% { opacity: 0.35; transform: scale(0.8) rotate(0deg); } 50% { opacity: 1; transform: scale(1.1) rotate(12deg); } }
+@keyframes season-spark { 0%, 100% { opacity: 0.35; transform: scale(0.8) rotate(0deg); } 50% { opacity: 1; transform: scale(1.1) rotate(12deg); } }
 @media (max-width: 520px) { .xm-g-2, .xm-g-3, .xm-bauble-2, .xm-bauble-3, .xm-deer { display: none; } }
 @media (max-width: 767px) and (orientation: portrait) {
     .xm-auth .xm-t-1, .xm-auth .xm-t-2 { bottom: clamp(50px, 8vh, 80px); width: clamp(52px, 17vw, 84px); }
@@ -311,7 +555,7 @@
     --ny-city-back: #3b3f86; --ny-city-front: #1b2150;
 }
 .ny-sky { position: absolute; inset: 0; background: linear-gradient(180deg, var(--ny-sky-top), var(--ny-sky-mid) 58%, var(--ny-sky-low)); }
-.ny-stars { position: absolute; top: 0; left: 0; width: 1px; height: 1px; border-radius: 50%; animation: hw-twinkle 4s ease-in-out infinite; }
+.ny-stars { position: absolute; top: 0; left: 0; width: 1px; height: 1px; border-radius: 50%; animation: season-twinkle 4s ease-in-out infinite; }
 .ny-glow { position: absolute; left: 0; right: 0; bottom: 0; height: 46%; background: radial-gradient(ellipse 70% 100% at 50% 100%, var(--ny-horizon), transparent 70%); }
 
 /* ---- fireworks (CSS particles) ---- */
@@ -337,14 +581,14 @@
 .ny-scene.is-light .ny-burst i { box-shadow: 0 0 5px 1px var(--c), 0 0 0 1px rgba(70, 40, 130, 0.28); }
 
 /* ---- twinkles ---- */
-.ny-spark { position: absolute; height: auto; animation: xm-twinkle 2.8s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255, 235, 150, 0.9)); }
+.ny-spark { position: absolute; height: auto; animation: season-spark 2.8s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255, 235, 150, 0.9)); }
 .ny-sp-1 { left: 12%; top: 26%; width: clamp(14px, 2.6vw, 26px); }
 .ny-sp-2 { left: 44%; top: 8%; width: clamp(14px, 2.4vw, 24px); animation-delay: -1.1s; }
 .ny-sp-3 { right: 14%; top: 30%; width: clamp(16px, 3vw, 30px); animation-delay: -1.9s; }
 .ny-sp-4 { right: 38%; top: 20%; width: clamp(12px, 2vw, 20px); animation-delay: -0.6s; }
 
 /* ---- disco balls hanging from the top ---- */
-.ny-hang { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; animation: xm-swing 4.6s ease-in-out infinite; }
+.ny-hang { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; animation: season-swing 4.6s ease-in-out infinite; }
 .ny-hang-string { width: 1.5px; background: rgba(255, 255, 255, 0.55); height: clamp(22px, 5vh, 52px); }
 .ny-hang-img { width: clamp(34px, 6vw, 62px); height: auto; display: block; filter: drop-shadow(0 0 12px rgba(190, 215, 255, 0.7)) drop-shadow(0 4px 5px rgba(0, 0, 0, 0.35)); }
 .ny-hang-1 { left: 16%; } .ny-hang-2 { right: 18%; animation-delay: -2s; }
@@ -368,7 +612,7 @@
     50% { transform: translate(18px, -68vh) rotate(5deg); }
     100% { transform: translate(-10px, -135vh) rotate(-4deg); }
 }
-.ny-cball { position: absolute; left: 30%; top: 16%; width: clamp(28px, 5vw, 52px); height: auto; animation: hw-drift 16s ease-in-out infinite; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3)); }
+.ny-cball { position: absolute; left: 30%; top: 16%; width: clamp(28px, 5vw, 52px); height: auto; animation: season-drift 16s ease-in-out infinite; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3)); }
 
 /* ---- skyline ---- */
 .ny-city { position: absolute; left: 0; bottom: 0; width: 100%; height: clamp(100px, 22vh, 230px); display: block; }
@@ -649,3 +893,82 @@ html[data-season]:where(:not([data-season=""])) .ds-shell.ds-phone .ds-bottomnav
 html[data-season]:where(:not([data-season=""])) .ds-shell.ds-phone .ds-content { background: transparent; }
 /* keep long-form text readable on top of the artwork */
 html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-main { position: relative; }
+
+/* =====================================================================
+   6. SEASON ACCENT BRIDGE — no default (indigo / sky / violet / slate) colour inside a season
+   ---------------------------------------------------------------------
+   DashboardShell.css and a few shared components hard-code the default indigo accent in places that
+   do not read the --tk-* tokens (progress bar, avatar, primary button, icon chips, focus ring,
+   loading skeletons, charts, popups). Everything below re-points those to the season palette from
+   section 2, so nothing from the normal theme leaks into Halloween / Christmas / New Year.
+   Nothing here applies on the default theme (no data-season attribute = no match).
+   ===================================================================== */
+
+/* 6a. root-level tokens — usable by anything, including portaled popups that sit outside .ds-shell */
+html[data-season="halloween"] { --sxr-grad: linear-gradient(135deg, #c2410c, #f97316 55%, #fbbf24); --sxr-rgb: 234, 88, 12; --sxr-on: #1a0900; }
+html[data-season="christmas"] { --sxr-grad: linear-gradient(135deg, #991b1b, #dc2626 55%, #16a34a 150%); --sxr-rgb: 220, 38, 38; --sxr-on: #ffffff; }
+html[data-season="newyear"]   { --sxr-grad: linear-gradient(135deg, #78350f, #b45309 50%, #d97706 120%); --sxr-rgb: 180, 83, 9; --sxr-on: #ffffff; }
+
+/* 6b. popups, toasts, confirm + approval dialogs (they render outside the dashboard shell) */
+html[data-season="halloween"] [data-sclf-theme="black"] { --pt-bg: #170a28; --pt-fg: #fdeedd; --pt-edge: #5a2f86; --pt-accent: var(--sxr-grad); --pt-accent-fg: #1a0900; --pt-accent-solid: #fb923c; }
+html[data-season="halloween"] [data-sclf-theme="white"] { --pt-bg: #fffaf2; --pt-fg: #2a1305; --pt-edge: #e6b784; --pt-accent: var(--sxr-grad); --pt-accent-fg: #ffffff; --pt-accent-solid: #c2410c; }
+html[data-season="christmas"] [data-sclf-theme="black"] { --pt-bg: #0a2127; --pt-fg: #f1fbf6; --pt-edge: #1f5b52; --pt-accent: var(--sxr-grad); --pt-accent-fg: #ffffff; --pt-accent-solid: #fca5a5; }
+html[data-season="christmas"] [data-sclf-theme="white"] { --pt-bg: #ffffff; --pt-fg: #10261f; --pt-edge: #b9d9d0; --pt-accent: var(--sxr-grad); --pt-accent-fg: #ffffff; --pt-accent-solid: #b91c1c; }
+html[data-season="newyear"] [data-sclf-theme="black"] { --pt-bg: #0d1233; --pt-fg: #fff8e6; --pt-edge: #3a3f8f; --pt-accent: var(--sxr-grad); --pt-accent-fg: #ffffff; --pt-accent-solid: #fcd34d; }
+html[data-season="newyear"] [data-sclf-theme="white"] { --pt-bg: #fffcf0; --pt-fg: #231a05; --pt-edge: #e8cf8d; --pt-accent: var(--sxr-grad); --pt-accent-fg: #ffffff; --pt-accent-solid: #92400e; }
+
+/* 6c. dashboard shell: buttons, chips, focus, progress bar, avatar */
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout { --ds-focus: var(--sx-accent); }
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-route-progress { background: var(--tk-accent); }
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-avatar,
+html[data-season]:where(:not([data-season=""])) .ds-menu .ds-avatar { background: var(--tk-accent); color: var(--sx-on-accent); }
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-btn-primary {
+    background: var(--tk-accent); color: var(--sx-on-accent); box-shadow: 0 10px 24px rgba(var(--sx-accent-rgb), 0.32);
+}
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-view-toggle-btn.is-active {
+    background: var(--tk-accent); color: var(--sx-on-accent); box-shadow: 0 6px 16px rgba(var(--sx-accent-rgb), 0.32);
+}
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout :is(.ds-thumb, .ds-evidence-icon, .ds-evidence-file, .ds-role-chip, .ds-code-copy:not(.is-copied)) {
+    background: rgba(var(--sx-accent-rgb), 0.16); color: var(--sx-accent-text);
+}
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout :is(.ds-btn-edit, .ds-btn-view) {
+    color: var(--sx-accent-text); background: rgba(var(--sx-accent-rgb), 0.08); border-color: rgba(var(--sx-accent-rgb), 0.34);
+}
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout :is(.ds-btn-edit, .ds-btn-view):hover { background: rgba(var(--sx-accent-rgb), 0.16); }
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-visitor-badge-no { background: rgba(var(--sx-accent-rgb), 0.14); color: var(--sx-accent-text); border-color: rgba(var(--sx-accent-rgb), 0.34); }
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-table tbody tr.is-clickable:hover { background: rgba(var(--sx-accent-rgb), 0.07); }
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-visitor-edit-row { background: rgba(var(--sx-accent-rgb), 0.05); }
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-field input:focus,
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-field select:focus,
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-field textarea:focus { border-color: var(--sx-accent); box-shadow: 0 0 0 3px rgba(var(--sx-accent-rgb), 0.22); }
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-spinner { border-color: rgba(var(--sx-accent-rgb), 0.25); border-top-color: var(--sx-accent); }
+
+/* 6d. loading skeletons: slate-blue shimmer -> the season's own edge colour */
+html[data-season]:where(:not([data-season=""])) :is(.ds-shell.ds-layout, .ds-menu) :is(.ds-skeleton, .ds-skel) {
+    background: linear-gradient(90deg,
+        color-mix(in srgb, var(--sx-edge-solid) 28%, transparent),
+        color-mix(in srgb, var(--sx-edge-solid) 60%, transparent),
+        color-mix(in srgb, var(--sx-edge-solid) 28%, transparent));
+    background-size: 200% 100%;
+}
+
+/* 6e. charts: tracks / grid / text from the season, categorical colours from the season palette */
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout {
+    --ch-track: rgba(var(--sx-accent-rgb), 0.16);
+    --ch-grid: color-mix(in srgb, var(--sx-muted) 24%, transparent);
+    --ch-muted: var(--sx-muted);
+}
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ch-feed-icon.is-lost { background: color-mix(in srgb, var(--ch-1) 14%, transparent); }
+html[data-season="halloween"] .ds-shell.ds-layout.dark  { --ch-1: #fb923c; --ch-2: #c084fc; --ch-3: #fbbf24; --ch-4: #a3e635; --ch-5: #f472b6; --ch-6: #22d3ee; }
+html[data-season="halloween"] .ds-shell.ds-layout.light { --ch-1: #ea580c; --ch-2: #7c3aed; --ch-3: #d97706; --ch-4: #65a30d; --ch-5: #db2777; --ch-6: #0891b2; }
+html[data-season="christmas"] .ds-shell.ds-layout.dark  { --ch-1: #f87171; --ch-2: #4ade80; --ch-3: #facc15; --ch-4: #38bdf8; --ch-5: #fb923c; --ch-6: #c084fc; }
+html[data-season="christmas"] .ds-shell.ds-layout.light { --ch-1: #b91c1c; --ch-2: #16a34a; --ch-3: #ca8a04; --ch-4: #0284c7; --ch-5: #ea580c; --ch-6: #7c3aed; }
+html[data-season="newyear"] .ds-shell.ds-layout.dark    { --ch-1: #fbbf24; --ch-2: #a78bfa; --ch-3: #38bdf8; --ch-4: #f472b6; --ch-5: #34d399; --ch-6: #fb923c; }
+html[data-season="newyear"] .ds-shell.ds-layout.light   { --ch-1: #b45309; --ch-2: #7c3aed; --ch-3: #0284c7; --ch-4: #db2777; --ch-5: #059669; --ch-6: #ea580c; }
+
+/* 6f. shared widgets that sit on any page (combo box, install prompt) */
+html[data-season]:where(:not([data-season=""])) .cbx-option.is-active { background: rgba(var(--sx-accent-rgb, var(--sxr-rgb)), 0.16); }
+html[data-season]:where(:not([data-season=""])) .cbx-custom,
+html[data-season]:where(:not([data-season=""])) .ds-shell.dark .cbx-custom { color: var(--sx-accent-text, rgb(var(--sxr-rgb))); }
+html[data-season]:where(:not([data-season=""])) .ip-go { background: var(--sxr-grad); color: var(--sxr-on); box-shadow: 0 10px 20px -10px rgba(var(--sxr-rgb), 0.8); }
+html[data-season]:where(:not([data-season=""])) :is(.ip-later, .ip-go, .ip-x):focus-visible { outline-color: rgb(var(--sxr-rgb)); }

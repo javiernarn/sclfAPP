@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { getSeason, isSeasonal, seasonBarColor } from '../seasons/season';
 
 // Same pattern as alumniAPP's useAppTheme: cookie-backed, synced across
@@ -35,9 +35,20 @@ const writeCookie = (theme) => {
 };
 
 export function useAppTheme() {
-    const [theme, setThemeState] = useState(() =>
+    const [savedTheme, setThemeState] = useState(() =>
         typeof document !== 'undefined' ? readCookie() : 'white'
     );
+
+    // A season (Halloween / Christmas / New Year) owns the colours, so the accent themes
+    // (blue / yellow / maroon / black+accent) collapse to plain light or dark while it is on.
+    // Done HERE, not only in DashboardShell, because toasts, the confirm dialog and the
+    // photo modal read the theme straight from this hook and used to show the saved accent
+    // colour (e.g. blue buttons inside Halloween). The saved cookie is left untouched, so the
+    // accent theme comes back by itself when the season ends.
+    const seasonal = useMemo(() => isSeasonal(getSeason()), []);
+    const theme = seasonal && savedTheme !== 'white' && savedTheme !== 'black'
+        ? (isDarkTheme(savedTheme) ? 'black' : 'white')
+        : savedTheme;
 
     useEffect(() => {
         let channel;
