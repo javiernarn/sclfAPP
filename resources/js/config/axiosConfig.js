@@ -80,20 +80,52 @@ export const clearStoredToken = () => {
 // pair: { access_token, refresh_token, expires_in }
 export const storeTokenPair = (pair, remember = true) => {
     sessionDisplaced = false;
+    loggingOut = false;
     clearStoredToken();
+    // Remember WHEN the access token dies so we can swap it for a fresh one
+    // just before that, instead of waiting for a 401 (see request interceptor).
+    const expiresAt = pair.expires_in ? Date.now() + pair.expires_in * 1000 : null;
     if (!pair.refresh_token) {
         // Cookie mode: only the access token is kept, always per tab.
         window.sessionStorage.setItem(
             SESSION_KEY,
-            JSON.stringify({ access_token: pair.access_token, expires_in: pair.expires_in })
+            JSON.stringify({ access_token: pair.access_token, expires_in: pair.expires_in, expires_at: expiresAt })
         );
         writeHint(remember ? 'persistent' : 'session');
     } else if (remember) {
-        secureLocalStorage.setItem(LOCAL_KEY, pair);
+        secureLocalStorage.setItem(LOCAL_KEY, { ...pair, expires_at: expiresAt });
     } else {
-        window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(pair));
+        window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ ...pair, expires_at: expiresAt }));
     }
 };
+
+// Refresh this many ms before the access token expires.
+const REFRESH_AHEAD_MS = 60 * 1000;
+
+// ONE refresh at a time, shared by everyone who needs it (proactive refresh
+// and 401 recovery). Refresh tokens are single-use/rotating, so two parallel
+// calls would make the second look like token reuse and kill the session.
+let refreshPromise = null;
+const refreshOnce = () => {
+    if (!refreshPromise) {
+        const remember = isRemembered();
+        const refreshToken = getStoredRefreshToken();
+        refreshPromise = instance
+            .post(
+                '/token/refresh',
+                refreshToken ? { refresh_token: refreshToken, remember } : { remember },
+                { silent: true, skipAuthRedirect: true }
+            )
+            .then((res) => {
+                storeTokenPair(res.data, remember);
+                return res.data.access_token;
+            })
+            .finally(() => { refreshPromise = null; });
+    }
+    return refreshPromise;
+};
+
+const isAuthUrl = (url) => ['/login', '/token/refresh', '/2fa/login-verify'].some((p) => url?.includes(p));
 
 // Called once when the app opens in a tab that has no access token (new tab,
 // browser restarted with "Keep me signed in"): trade the refresh cookie for a
@@ -115,7 +147,19 @@ export const restoreSession = async () => {
 // instance.defaults.headers.common once) so a token swapped in mid-session
 // by the refresh flow below applies immediately, including to requests
 // that were queued waiting on that same refresh.
-instance.interceptors.request.use((config) => {
+instance.interceptors.request.use(async (config) => {
+    // Quietly renew the access token shortly BEFORE it expires so the person
+    // never sees a failed request, a "session expired" toast or a surprise
+    // redirect. If this fails we just carry on: the 401 handler below is the
+    // safety net and decides whether the session is really over.
+    const pair = getStoredPair();
+    if (
+        pair?.access_token && pair.expires_at && !sessionDisplaced && !isAuthUrl(config.url) &&
+        pair.expires_at - Date.now() < REFRESH_AHEAD_MS &&
+        (pair.refresh_token || hasSessionHint())
+    ) {
+        try { await refreshOnce(); } catch { /* fall through to the 401 safety net */ }
+    }
     const token = getStoredToken();
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -143,28 +187,15 @@ const handleDisplaced = (device) => {
 };
 
 // A brand-new login in this tab re-arms the check (see storeTokenPair).
+let loggingOut = false;
 const hardLogout = () => {
-    if (sessionDisplaced) return;
+    // Once is enough: several requests failing together must not stack toasts.
+    if (sessionDisplaced || loggingOut) return;
+    loggingOut = true;
     clearStoredToken();
     disablePush().catch(() => {});
     showToast({ type: 'warning', title: 'Session expired', message: 'Please sign in again to continue.' });
     window.location.href = `/login?type=session-expired`;
-};
-
-// Concurrent-request handling: while one 401 is triggering a refresh,
-// every other request that also 401s queues its retry instead of each
-// firing its own POST /token/refresh (which would race and, since refresh
-// tokens are single-use/rotating, cause all but one of them to fail with
-// a false reuse-detection trip).
-let isRefreshing = false;
-let refreshQueue = [];
-
-const processQueue = (error, accessToken = null) => {
-    refreshQueue.forEach(({ resolve, reject }) => {
-        if (error) reject(error);
-        else resolve(accessToken);
-    });
-    refreshQueue = [];
 };
 
 instance.interceptors.response.use(
@@ -204,52 +235,34 @@ instance.interceptors.response.use(
         // request that skipped this block entirely used to just 401
         // forever on every poll once the token went stale, with no way
         // to self-heal or ever redirect to login.
-        const isAuthEndpoint = ['/login', '/token/refresh', '/2fa/login-verify'].some((p) =>
-            originalRequest?.url?.includes(p)
-        );
+        const isAuthEndpoint = isAuthUrl(originalRequest?.url);
 
         if (statusCode === 401 && !originalRequest?.skipAuthRedirect && !originalRequest?._retried && !isAuthEndpoint) {
-            const refreshToken = getStoredRefreshToken();
             // Cookie mode has no token in JS; the session hint says a cookie may exist.
-            if (!refreshToken && !hasSessionHint()) {
+            if (!getStoredRefreshToken() && !hasSessionHint()) {
                 hardLogout();
                 return Promise.reject(error);
             }
 
             originalRequest._retried = true;
 
-            if (isRefreshing) {
-                return new Promise((resolve, reject) => {
-                    refreshQueue.push({ resolve, reject });
-                }).then((newAccessToken) => {
-                    originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-                    return instance(originalRequest);
-                });
-            }
-
-            isRefreshing = true;
-
             try {
-                const rememberDevice = isRemembered();
-                const res = await instance.post(
-                    '/token/refresh',
-                    refreshToken ? { refresh_token: refreshToken, remember: rememberDevice } : { remember: rememberDevice },
-                    { silent: true }
-                );
-                storeTokenPair(res.data, rememberDevice);
-                processQueue(null, res.data.access_token);
-                originalRequest.headers.Authorization = `Bearer ${res.data.access_token}`;
+                // Shared with every other caller: concurrent 401s (and a
+                // proactive refresh already under way) all wait on ONE call.
+                const newAccessToken = await refreshOnce();
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
                 return instance(originalRequest);
             } catch (refreshError) {
-                processQueue(refreshError);
                 if (refreshError.response?.data?.code === 'session_displaced') {
                     handleDisplaced(refreshError.response.data.device);
+                } else if (!refreshError.response || refreshError.response.status >= 500) {
+                    // Server/network hiccup, not a dead session: don't sign
+                    // the person out for it — the next poll simply retries.
+                    return Promise.reject(error);
                 } else {
                     hardLogout();
                 }
                 return Promise.reject(refreshError);
-            } finally {
-                isRefreshing = false;
             }
         }
 

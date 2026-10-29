@@ -70,7 +70,7 @@ function UnclaimedItemCard({ item, onDisposed, onRestored }) {
             <div className="ds-form-row ds-form-row-2" style={{ marginTop: 8 }}>
                 <div className="ds-field">
                     <label>Disposition method</label>
-                    <select value={method} onChange={(e) => setMethod(e.target.value)}>
+                    <select name="method" value={method} onChange={(e) => setMethod(e.target.value)}>
                         <option value="">Choose…</option>
                         {DISPOSITION_OPTIONS.map((o) => (
                             <option key={o.value} value={o.value}>{o.label}</option>
@@ -79,7 +79,7 @@ function UnclaimedItemCard({ item, onDisposed, onRestored }) {
                 </div>
                 <div className="ds-field">
                     <label>Notes</label>
-                    <input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional — where it went, why, etc." />
+                    <input name="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional — where it went, why, etc." />
                 </div>
             </div>
             <div className="ds-list-item-side" style={{ marginTop: 4 }}>

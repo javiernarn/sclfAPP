@@ -16,7 +16,7 @@ export default function FoundItemReviewPanel({ onChanged }) {
 
     const load = () => {
         setLoading(true);
-        axios.get('/found-items', { params: { status: 'pending_review' } })
+        axios.get('/found-items', { params: { status: 'pending_review', channel: 'online_report' } })
             .then(res => setItems(res.data.data))
             .finally(() => setLoading(false));
     };
@@ -62,7 +62,7 @@ export default function FoundItemReviewPanel({ onChanged }) {
                                         </p>
                                     </div>
                                 </div>
-                                <input
+                                <input name={`notes-${item.id}`}
                                     placeholder="Notes (optional)"
                                     value={notes[item.id] || ''}
                                     onChange={(e) => setNotes({ ...notes, [item.id]: e.target.value })}

@@ -60,6 +60,9 @@ class AuthController extends Controller
             ), [
                 // The React app sends unverified accounts to /app/verify-email.
                 'email_verified' => $user->hasVerifiedEmail(),
+                // Profile page shows the "Change email" form only when this is true
+                // (SCLF_EMAIL_CHANGE_ENABLED in .env AND the account is a student/instructor).
+                'email_change_enabled' => app(\App\Services\Auth\EmailChangeService::class)->allowedFor($user),
             ]),
             'roles' => $user->getRoleNames(),
         ];

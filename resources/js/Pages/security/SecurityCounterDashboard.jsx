@@ -113,7 +113,7 @@ function CounterCard({ counter, isAdmin, onStatusChange, onOpenQueue, queueOpen 
             )}
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                <select
+                <select name="status"
                     value={counter.status}
                     disabled={changingStatus}
                     onChange={async (e) => {
@@ -240,7 +240,7 @@ function QueuePanel({ counter, toast }) {
                         {!picked ? (
                             <div style={{ position: 'relative' }}>
                                 <Search size={15} style={{ position: 'absolute', left: 10, top: 11, opacity: 0.5 }} />
-                                <input
+                                <input name="query"
                                     style={{ paddingLeft: 32 }}
                                     value={query}
                                     onChange={(e) => setQuery(e.target.value)}
@@ -280,7 +280,7 @@ function QueuePanel({ counter, toast }) {
                     </div>
                     <div className="ds-field">
                         <label>Purpose</label>
-                        <select value={purpose} onChange={(e) => setPurpose(e.target.value)}>
+                        <select name="purpose" value={purpose} onChange={(e) => setPurpose(e.target.value)}>
                             {PURPOSE_OPTIONS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                         </select>
                     </div>

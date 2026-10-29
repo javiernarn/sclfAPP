@@ -213,7 +213,7 @@ export default function LoginPage() {
                 <LedgerBanner tone="notice">{t('login.sessionDisplaced')}</LedgerBanner>
             )}
             {sessionExpired && (
-                <LedgerBanner tone="error">{t('login.sessionExpired')}</LedgerBanner>
+                <LedgerBanner tone="notice">{t('login.sessionExpired')}</LedgerBanner>
             )}
             {verifyStatus === 'ok' && (
                 <LedgerBanner tone="notice">{t('login.verifyOk')}</LedgerBanner>

@@ -64,7 +64,7 @@ export default function ApprovalRequestModal() {
                             Staff accounts can't make changes on their own. Send a request to the admin —
                             once it's approved, come back and do this again.
                         </p>
-                        <textarea
+                        <textarea name="reason"
                             value={reason}
                             onChange={(e) => setReason(e.target.value)}
                             rows={3}

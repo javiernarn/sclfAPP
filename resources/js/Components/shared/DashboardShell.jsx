@@ -23,6 +23,9 @@ import "./DashboardShell.css";
 // Per-theme tokens (search box, menus, theme flyout, Cards/Table toggle...).
 // Must come right after DashboardShell.css so it wins the cascade.
 import "./themes.css";
+import SeasonBackdrop from "../../seasons/SeasonBackdrop";
+import useSeason from "../../seasons/useSeason";
+import { isSeasonal } from "../../seasons/season";
 // Imported AFTER DashboardShell.css on purpose: its phone-only overrides
 // rely on coming later in the cascade.
 import MobileBottomNav from "./MobileBottomNav";
@@ -111,12 +114,12 @@ const themeLabel = (key, t) => {
 //     way that particular account menu itself grows (sidebar menu grows
 //     upward off the trigger, so its flyout is bottom-aligned; header
 //     menu drops down, so its flyout is top-aligned).
-const ThemePicker = ({ open, onToggle, current, onPick, t, side = "right", align = "top" }) => {
+const ThemePicker = ({ open, onToggle, current, onPick, t, side = "right", align = "top", seasonal = false }) => {
     // Custom list (black + accent badges) vs. the regular list. Starts on
     // Custom when the active theme is one of the dark-* accent themes so the
     // checkmark is visible right away.
     const [custom, setCustom] = useState(() => String(current).startsWith("dark-"));
-    const options = custom ? CUSTOM_THEME_OPTIONS : THEME_OPTIONS;
+    const options = seasonal ? THEME_OPTIONS.slice(0, 2) : custom ? CUSTOM_THEME_OPTIONS : THEME_OPTIONS;
     return (
         <div className="ds-theme-row-wrap">
             <button
@@ -138,7 +141,7 @@ const ThemePicker = ({ open, onToggle, current, onPick, t, side = "right", align
                 >
                     <div className="ds-theme-popover-head">
                         <div className="ds-theme-popover-title">{t("shell.chooseTheme")}</div>
-                        <button
+                        {!seasonal && <button
                             type="button"
                             className={`ds-theme-custom-btn ${custom ? "is-on" : ""}`}
                             onClick={() => setCustom((v) => !v)}
@@ -147,7 +150,7 @@ const ThemePicker = ({ open, onToggle, current, onPick, t, side = "right", align
                         >
                             {/* Shows where the tap takes you: Black -> black themes, then White -> back. */}
                             {custom ? t("shell.themeWhite") : t("shell.themeBlack")}
-                        </button>
+                        </button>}
                     </div>
                     {options.map((o) => (
                         <button
@@ -291,7 +294,12 @@ const DESKTOP_QUERY = "(min-width: 960px)";
 // dashboards.
 const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshing = false, greeting, children }) => {
     const { user, roles, logout } = useAuth();
-    const { theme, setTheme } = useAppTheme();
+    const { theme: pickedTheme, setTheme } = useAppTheme();
+    // FIRST / SECOND / THIRD theme (Halloween / Christmas / New Year) own the colours, so the
+    // accent themes (blue/yellow/maroon/black+accent) collapse to plain
+    // light or dark while a season is on.
+    const seasonal = isSeasonal(useSeason());
+    const theme = seasonal ? (isDarkTheme(pickedTheme) ? "black" : "white") : pickedTheme;
     // Translation is for students and instructors only. Admin / staff /
     // security accounts always get the English interface, even on a browser
     // where a student previously picked another language.
@@ -645,7 +653,8 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
 
     return (
         <>
-        <div className={`ds-shell ds-layout ${theme} ${isDark ? "dark" : "light"} ${theme.startsWith("dark-") ? `dk-${theme.slice(5)}` : ""} ${isPhone ? "ds-phone" : ""} ${isPhone ? "ds-user-app" : ""} ${isPhone && navRole !== "student" ? "ds-staff-app" : ""}`}>
+        <div className={`ds-shell ds-layout ${seasonal ? "ds-seasonal" : ""} ${theme} ${isDark ? "dark" : "light"} ${theme.startsWith("dark-") ? `dk-${theme.slice(5)}` : ""} ${isPhone ? "ds-phone" : ""} ${isPhone ? "ds-user-app" : ""} ${isPhone && navRole !== "student" ? "ds-staff-app" : ""}`}>
+                <SeasonBackdrop variant="dashboard" isDark={isDark} />
                 {isPhone && (
                     <MobileQuickActions
                         open={quickOpen}
@@ -803,6 +812,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     <UserCircle size={16} /> {t("shell.profile")}
                                 </Link>
                                 <ThemePicker
+                                        seasonal={seasonal}
                                     open={sidebarThemePickerOpen}
                                     onToggle={() => { setSidebarLangPickerOpen(false); setSidebarThemePickerOpen((v) => !v); }}
                                     current={theme}
@@ -939,6 +949,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                         <UserCircle size={16} /> {t("shell.profile")}
                                     </Link>
                                     <ThemePicker
+                                        seasonal={seasonal}
                                         open={themePickerOpen}
                                         onToggle={() => { setLangPickerOpen(false); setThemePickerOpen((v) => !v); }}
                                         current={theme}

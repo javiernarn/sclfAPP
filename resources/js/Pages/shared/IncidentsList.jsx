@@ -92,13 +92,13 @@ export default function IncidentsList() {
                 <div className="ds-card ds-filter-card">
                     <div className="ds-field" style={{ minWidth: 180 }}>
                         <label>Status</label>
-                        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                        <select name="status" value={status} onChange={(e) => setStatus(e.target.value)}>
                             {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                     </div>
                     <div className="ds-field" style={{ minWidth: 180 }}>
                         <label>Severity</label>
-                        <select value={severity} onChange={(e) => setSeverity(e.target.value)}>
+                        <select name="severity" value={severity} onChange={(e) => setSeverity(e.target.value)}>
                             {SEVERITY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                     </div>

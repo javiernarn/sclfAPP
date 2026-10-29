@@ -334,7 +334,7 @@ export default function SecurityQrScanner() {
 
                 {mode === 'upload' && !result && (
                     <div className="sclf-scan-camera">
-                        <input
+                        <input name="qr_image"
                             ref={fileInputRef}
                             type="file"
                             accept="image/*"
@@ -381,11 +381,11 @@ export default function SecurityQrScanner() {
                         </p>
                         <div className="ds-field">
                             <label>Public Code <span className="ds-required">*</span></label>
-                            <input value={publicCode} onChange={(e) => setPublicCode(e.target.value)} placeholder="SCLF-ITEM-000245" aria-invalid={!!error} required />
+                            <input name="public_code" value={publicCode} onChange={(e) => setPublicCode(e.target.value)} placeholder="SCLF-ITEM-000245" aria-invalid={!!error} required />
                         </div>
                         <div className="ds-field">
                             <label>Token <span className="ds-required">*</span></label>
-                            <input value={token} onChange={(e) => setToken(e.target.value)} placeholder="Paste the token shown on the claim's release step" aria-invalid={!!error} required />
+                            <input name="token" value={token} onChange={(e) => setToken(e.target.value)} placeholder="Paste the token shown on the claim's release step" aria-invalid={!!error} required />
                         </div>
                         <button className="ds-btn ds-btn-primary ds-btn-block" disabled={busy}>
                             {busy ? 'Verifying…' : 'Release Item'}

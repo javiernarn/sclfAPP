@@ -259,6 +259,32 @@ return [
         'blocked_words' => env('SCLF_MODERATION_BLOCKED_WORDS', ''),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Change email (Profile page)
+    |--------------------------------------------------------------------------
+    |
+    | SCLF_EMAIL_CHANGE_ENABLED=true  -> students and instructors see the
+    |                                    "Change email" form on their Profile
+    |                                    page and may use it.
+    | SCLF_EMAIL_CHANGE_ENABLED=false -> the form is hidden and the endpoints
+    |                                    answer 403. Nothing else changes.
+    |
+    | Students must keep the school format occ.lastname.firstname@gmail.com
+    | (lastname must match their Last name); instructors may use any valid
+    | Gmail address. Other roles are managed by the Admin and never see it.
+    | A 6-digit code is emailed to the NEW address and must be typed in, on
+    | top of the current password, before the address is switched.
+    |
+    */
+    'email_change' => [
+        'enabled' => (bool) env('SCLF_EMAIL_CHANGE_ENABLED', true),
+        'roles' => ['student', 'instructor'],
+        'code_ttl_minutes' => (int) env('SCLF_EMAIL_CHANGE_CODE_MINUTES', 15),
+        'max_attempts' => 5,
+        'resend_after_seconds' => 60,
+    ],
+
     // Master switch for the "classmate lost an item" email to all students and
     // instructors when a lost report is approved. Keep false while on a mail
     // plan with a daily cap (Gmail ~500/day). Approval itself works either way.

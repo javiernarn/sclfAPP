@@ -514,7 +514,7 @@ export default function ClaimDetail() {
                             <div className="ds-form-row ds-form-row-2">
                                 <div className="ds-field">
                                     <label>Evidence type</label>
-                                    <select value={evType} onChange={(e) => setEvType(e.target.value)}>
+                                    <select name="ev_type" value={evType} onChange={(e) => setEvType(e.target.value)}>
                                         <option value="description">Description of unique markings</option>
                                         <option value="serial_number">Serial number</option>
                                         <option value="purchase_info">Purchase information</option>
@@ -527,7 +527,7 @@ export default function ClaimDetail() {
                                 {(evType === 'photo' || evType === 'document') ? (
                                     <div className="ds-field">
                                         <label>File</label>
-                                        <input type="file" onChange={(e) => setEvFile(e.target.files?.[0] || null)} />
+                                        <input name="ev_file" type="file" onChange={(e) => setEvFile(e.target.files?.[0] || null)} />
                                         <p className="ds-field-hint">
                                             {evType === 'photo'
                                                 ? "A photo of you with the item, or one from before it was lost — JPG or PNG."
@@ -537,7 +537,7 @@ export default function ClaimDetail() {
                                 ) : (
                                     <div className="ds-field">
                                         <label>Details</label>
-                                        <input value={evContent} onChange={(e) => setEvContent(e.target.value)} placeholder={
+                                        <input name="ev_content" value={evContent} onChange={(e) => setEvContent(e.target.value)} placeholder={
                                             evType === 'serial_number' ? 'e.g. SN-2024-88231'
                                                 : evType === 'purchase_info' ? 'e.g. Bought at SM Cagayan, receipt dated May 2024'
                                                 : evType === 'description' ? 'A mark, scratch, or contents Security hasn\'t mentioned publicly'
@@ -563,7 +563,7 @@ export default function ClaimDetail() {
                     <p className="ds-card-desc">Weigh the evidence above, then move this claim forward.</p>
                     <div className="ds-field">
                         <label>Notes</label>
-                        <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)}
+                        <textarea name="notes" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)}
                             placeholder="e.g. Serial number matches inventory record; approving." />
                         <p className="ds-field-hint">Recorded on the claim's history — explain your decision, especially for a reject or more-evidence request.</p>
                     </div>
@@ -663,7 +663,7 @@ export default function ClaimDetail() {
                         <div>
                             <div className="ds-field">
                                 <label>Reason <span className="ds-required">*</span></label>
-                                <input
+                                <input name="manual_reason"
                                     value={manualReason}
                                     onChange={(e) => setManualReason(e.target.value)}
                                     placeholder="e.g. Claimant's phone battery died, ID verified in person"

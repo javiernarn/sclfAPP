@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\UserActivityController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\EmailChangeController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
 use App\Http\Controllers\Api\ProfileController;
@@ -105,6 +106,14 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     // Mandatory first-login setup for an admin-created staff account —
     // see ProfileController::completeSetup() and SetupAccountPage.jsx.
     Route::middleware('throttle:10,1')->post('/profile/complete-setup', [ProfileController::class, 'completeSetup']);
+
+    // Profile > Change email (students + instructors, switched by
+    // SCLF_EMAIL_CHANGE_ENABLED). Step 1 checks the CURRENT password and
+    // emails a 6-digit code to the new address; step 2 confirms the code.
+    Route::middleware('throttle:5,1')->post('/profile/email/request', [EmailChangeController::class, 'request']);
+    Route::middleware('throttle:10,1')->post('/profile/email/confirm', [EmailChangeController::class, 'confirm']);
+    Route::middleware('throttle:20,1')->get('/profile/email/status', [EmailChangeController::class, 'status']);
+    Route::middleware('throttle:20,1')->delete('/profile/email/pending', [EmailChangeController::class, 'cancel']);
 
     // Avatar-menu switches (currently: email notifications on/off).
     Route::middleware('throttle:30,1')->patch('/profile/preferences', [ProfileController::class, 'updatePreferences']);

@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { getSeason, isSeasonal, seasonBarColor } from '../seasons/season';
 
 // Same pattern as alumniAPP's useAppTheme: cookie-backed, synced across
 // tabs with BroadcastChannel, drives both the PWA manifest color and
@@ -22,8 +23,11 @@ export const isDarkTheme = (theme) => theme === 'black' || (typeof theme === 'st
 
 const readCookie = () => {
     const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]*)`));
-    const value = match ? decodeURIComponent(match[1]) : 'white';
-    return THEMES.includes(value) ? value : 'white';
+    // First visit (no cookie yet): the Halloween / Christmas / New Year themes open in
+    // their night look; the default theme keeps opening light.
+    const fallback = isSeasonal(getSeason()) ? 'black' : 'white';
+    const value = match ? decodeURIComponent(match[1]) : fallback;
+    return THEMES.includes(value) ? value : fallback;
 };
 
 const writeCookie = (theme) => {
@@ -58,7 +62,7 @@ export function useAppTheme() {
     // Keep the PWA title bar color in sync live: navy for light themes,
     // white for dark themes (the manifest covers the next launch).
     useEffect(() => {
-        const color = isDarkTheme(theme) ? '#ffffff' : '#01215f';
+        const color = seasonBarColor(getSeason(), isDarkTheme(theme)) || (isDarkTheme(theme) ? '#ffffff' : '#01215f');
         let meta = document.querySelector('meta[name="theme-color"]');
         if (!meta) {
             meta = document.createElement('meta');

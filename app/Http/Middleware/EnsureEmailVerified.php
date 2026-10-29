@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
  * it cannot be skipped by calling the API directly.
  *
  * Only a few calls stay open so the person can see who they are, ask for a
- * new link, or sign out.
+ * new link, correct their email address, or sign out.
  */
 class EnsureEmailVerified
 {
@@ -23,6 +23,10 @@ class EnsureEmailVerified
         'api/logout',
         'api/email/verification-notification',
         'api/email/verify-code',
+        // Someone who mistyped their address at sign-up must be able to fix it:
+        // the change needs the current password plus a code sent to the new
+        // inbox, and confirming it marks the new address as verified.
+        'api/profile/email/*',
     ];
 
     public function handle(Request $request, Closure $next): Response

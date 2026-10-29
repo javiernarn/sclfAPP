@@ -96,13 +96,13 @@ export default function ServiceRequestsList() {
                 <div className="ds-card ds-filter-card">
                     <div className="ds-field" style={{ minWidth: 180 }}>
                         <label>Status</label>
-                        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                        <select name="status" value={status} onChange={(e) => setStatus(e.target.value)}>
                             {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                     </div>
                     <div className="ds-field" style={{ minWidth: 180 }}>
                         <label>Priority</label>
-                        <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+                        <select name="priority" value={priority} onChange={(e) => setPriority(e.target.value)}>
                             {PRIORITY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                         </select>
                     </div>

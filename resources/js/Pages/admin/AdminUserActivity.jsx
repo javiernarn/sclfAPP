@@ -110,7 +110,7 @@ export default function AdminUserActivity() {
             <div className="ds-card" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                 <div className="ds-field" style={{ minWidth: 180 }}>
                     <label>Device</label>
-                    <select value={deviceType} onChange={(e) => { setPage(1); setDeviceType(e.target.value); }}>
+                    <select name="device_type" value={deviceType} onChange={(e) => { setPage(1); setDeviceType(e.target.value); }}>
                         {DEVICE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                 </div>
@@ -126,7 +126,7 @@ export default function AdminUserActivity() {
                     />
                 </div>
                 <label className="ds-field" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                    <input
+                    <input name="suspicious_only"
                         type="checkbox"
                         checked={suspiciousOnly}
                         onChange={(e) => { setPage(1); setSuspiciousOnly(e.target.checked); }}

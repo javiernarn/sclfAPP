@@ -223,7 +223,7 @@ export default function SecurityCounter() {
                                 <div className="ds-field">
                                     <div style={{ position: 'relative' }}>
                                         <Search size={15} style={{ position: 'absolute', left: 10, top: 11, opacity: 0.5 }} />
-                                        <input
+                                        <input name="query"
                                             style={{ paddingLeft: 32 }}
                                             value={query}
                                             onChange={(e) => setQuery(e.target.value)}
@@ -304,7 +304,7 @@ export default function SecurityCounter() {
                             <h3>3. Item details</h3>
                             <div className="ds-field">
                                 <label>Item name <span className="ds-required">*</span></label>
-                                <input value={form.item_name} onChange={(e) => setForm({ ...form, item_name: e.target.value })}
+                                <input name="item_name" value={form.item_name} onChange={(e) => setForm({ ...form, item_name: e.target.value })}
                                     placeholder="e.g. Blue motorcycle helmet" aria-invalid={!!fieldErrors.item_name} required />
                                 <p className="ds-field-hint">What the owner handed over.</p>
                                 {fieldErrors.item_name && <div className="ds-field-error">{fieldErrors.item_name}</div>}
@@ -317,7 +317,7 @@ export default function SecurityCounter() {
                                 </div>
                                 <div className="ds-field">
                                     <label>Counter <span className="ds-required">*</span></label>
-                                    <select value={form.storage_location_id} onChange={(e) => setForm({ ...form, storage_location_id: e.target.value })}
+                                    <select name="storage_location_id" value={form.storage_location_id} onChange={(e) => setForm({ ...form, storage_location_id: e.target.value })}
                                         aria-invalid={!!fieldErrors.storage_location_id} required>
                                         <option value="">Choose where it's held…</option>
                                         {counters.map((c) => <option key={c.id} value={c.id}>{c.label || c.code}</option>)}
@@ -328,7 +328,7 @@ export default function SecurityCounter() {
                             </div>
                             <div className="ds-field">
                                 <label>Notes</label>
-                                <textarea rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
+                                <textarea name="description" rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
                                     placeholder="Optional — condition, distinguishing details, anything worth noting." />
                             </div>
                             <button className="ds-btn ds-btn-primary" disabled={submitting || !owner || lostChoice === ''}>
@@ -361,20 +361,20 @@ export default function SecurityCounter() {
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
                             <label>Campus <span className="ds-required">*</span></label>
-                            <select value={newCounter.campus_id} onChange={(e) => setNewCounter({ ...newCounter, campus_id: e.target.value })} required>
+                            <select name="campus_id" value={newCounter.campus_id} onChange={(e) => setNewCounter({ ...newCounter, campus_id: e.target.value })} required>
                                 {campuses.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                         </div>
                         <div className="ds-field">
                             <label>Label <span className="ds-required">*</span></label>
-                            <input value={newCounter.label} onChange={(e) => setNewCounter({ ...newCounter, label: e.target.value })}
+                            <input name="label" value={newCounter.label} onChange={(e) => setNewCounter({ ...newCounter, label: e.target.value })}
                                 placeholder="e.g. Front Desk Counter 1" required />
                             <p className="ds-field-hint">What you'll see in the dropdown above.</p>
                         </div>
                     </div>
                     <div className="ds-field">
                         <label>Code (unique) <span className="ds-required">*</span></label>
-                        <input value={newCounter.code} onChange={(e) => setNewCounter({ ...newCounter, code: e.target.value })}
+                        <input name="code" value={newCounter.code} onChange={(e) => setNewCounter({ ...newCounter, code: e.target.value })}
                             placeholder="e.g. CTR-1" required />
                         <p className="ds-field-hint">A short internal ID — nothing else on this campus can use the same code.</p>
                     </div>

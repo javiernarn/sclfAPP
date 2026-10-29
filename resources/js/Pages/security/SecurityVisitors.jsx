@@ -224,7 +224,7 @@ function StudentPicker({ valueId, valueLabel, onSelect, onClear, error }) {
 
     return (
         <div style={{ position: 'relative' }}>
-            <input
+            <input name="q"
                 value={q}
                 placeholder="Search student name or student ID"
                 aria-label="Search student"
@@ -288,7 +288,7 @@ function IdPresentedSelect({ value, onChange, name }) {
                 <option value={OTHER_ID_VALUE}>Other (specify)</option>
             </select>
             {isOther && (
-                <input
+                <input name="other_id_type"
                     style={{ marginTop: 8 }}
                     value={value}
                     maxLength={100}
@@ -440,10 +440,10 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, canManage, view = 'cards
                 <div className="ds-form-row ds-form-row-2">
                     <div className="ds-field">
                         <label>First name *</label>
-                        <input value={form.first_name} maxLength={100} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
+                        <input name="first_name" value={form.first_name} maxLength={100} onChange={(e) => setForm({ ...form, first_name: e.target.value })} />
                         {editErrors.first_name && <p className="ds-field-error">{editErrors.first_name}</p>}
                         <label style={{ marginTop: 8 }}>Last name *</label>
-                        <input value={form.last_name} maxLength={100} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
+                        <input name="last_name" value={form.last_name} maxLength={100} onChange={(e) => setForm({ ...form, last_name: e.target.value })} />
                         {editErrors.last_name && <p className="ds-field-error">{editErrors.last_name}</p>}
                     </div>
                     <div className="ds-field">
@@ -460,13 +460,13 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, canManage, view = 'cards
                     </div>
                     <div className="ds-field">
                         <label>ID number *</label>
-                        <input value={form.id_number} maxLength={100} onChange={(e) => setForm({ ...form, id_number: e.target.value })} />
+                        <input name="id_number" value={form.id_number} maxLength={100} onChange={(e) => setForm({ ...form, id_number: e.target.value })} />
                     </div>
                 </div>
                 <div className="ds-form-row ds-form-row-2">
                     <div className="ds-field">
                         <label>{(visitDef && form.purpose === visitor.purpose ? visitDef.host_label : (defFor(purposeDefs, form.purpose)?.host_label || 'Host')) + (defFor(purposeDefs, form.purpose)?.requires_host ? ' *' : '')}</label>
-                        <input value={form.host_name} maxLength={150} onChange={(e) => setForm({ ...form, host_name: e.target.value })} />
+                        <input name="host_name" value={form.host_name} maxLength={150} onChange={(e) => setForm({ ...form, host_name: e.target.value })} />
                         {editErrors.host_name && <p className="ds-field-error">{editErrors.host_name}</p>}
                     </div>
                     <div className="ds-field">
@@ -482,7 +482,7 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, canManage, view = 'cards
                         {visitor.status === 'checked_in'
                             ? <BadgePicker value={form.badge_number} includeVisitorId={visitor.id}
                                 onChange={(label) => setForm({ ...form, badge_number: label })} />
-                            : <input value={form.badge_number} disabled aria-label="Badge number (returned)" />}
+                            : <input name="badge_number" value={form.badge_number} disabled aria-label="Badge number (returned)" />}
                     </div>
                 </div>
                 <div className="ds-form-row ds-form-row-2">
@@ -505,7 +505,7 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, canManage, view = 'cards
                         </div>
                         <div className="ds-field">
                             <label>Relationship</label>
-                            <select value={form.relationship} onChange={(e) => setForm({ ...form, relationship: e.target.value })}>
+                            <select name="relationship" value={form.relationship} onChange={(e) => setForm({ ...form, relationship: e.target.value })}>
                                 {RELATIONSHIP_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                         </div>
@@ -514,7 +514,7 @@ function VisitorRow({ visitor, onCheckedOut, onUpdated, canManage, view = 'cards
                 <div className="ds-form-row">
                     <div className="ds-field">
                         <label>Notes</label>
-                        <input value={form.notes} maxLength={1000} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                        <input name="notes" value={form.notes} maxLength={1000} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
                     </div>
                 </div>
                 <div className="ds-visitor-edit-actions">
@@ -1072,7 +1072,7 @@ export default function SecurityVisitors() {
                 <div className="ds-vlog-toolbar">
                     <div className="ds-field ds-vlog-search">
                         <Search size={15} className="ds-vlog-search-icon" aria-hidden="true" />
-                        <input
+                        <input name="search_input"
                             type="search"
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}

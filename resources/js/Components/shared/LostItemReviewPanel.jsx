@@ -83,7 +83,7 @@ export default function LostItemReviewPanel({ onChanged }) {
                                     )}
                                     {item.description && <p className="ds-list-item-meta">{item.description}</p>}
                                 </div>
-                                <input
+                                <input name={`notes-${item.id}`}
                                     placeholder="Note shown in the email (optional)"
                                     value={notes[item.id] || ''}
                                     maxLength={500}

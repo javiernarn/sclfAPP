@@ -288,20 +288,20 @@ export default function IncidentDetail() {
                         <div className="ds-form-row">
                             <div className="ds-field">
                                 <label>Title</label>
-                                <input value={editForm.title} maxLength={150} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
+                                <input name="title" value={editForm.title} maxLength={150} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
                                 {editErrors.title && <span className="ds-field-error">{editErrors.title[0]}</span>}
                             </div>
                         </div>
                         <div className="ds-form-row ds-form-row-2">
                             <div className="ds-field">
                                 <label>Category</label>
-                                <select value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}>
+                                <select name="category" value={editForm.category} onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}>
                                     {CATEGORY_OPTIONS.map((c) => <option key={c} value={c}>{c.replace(/_/g, ' ')}</option>)}
                                 </select>
                             </div>
                             <div className="ds-field">
                                 <label>Severity</label>
-                                <select value={editForm.severity} onChange={(e) => setEditForm({ ...editForm, severity: e.target.value })}>
+                                <select name="severity" value={editForm.severity} onChange={(e) => setEditForm({ ...editForm, severity: e.target.value })}>
                                     {SEVERITY_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
                                 </select>
                             </div>
@@ -309,11 +309,11 @@ export default function IncidentDetail() {
                         <div className="ds-form-row ds-form-row-2">
                             <div className="ds-field">
                                 <label>Location</label>
-                                <input value={editForm.location_text} maxLength={255} onChange={(e) => setEditForm({ ...editForm, location_text: e.target.value })} />
+                                <input name="location_text" value={editForm.location_text} maxLength={255} onChange={(e) => setEditForm({ ...editForm, location_text: e.target.value })} />
                             </div>
                             <div className="ds-field">
                                 <label>Occurred at</label>
-                                <input
+                                <input name="occurred_at"
                                     type="datetime-local"
                                     value={editForm.occurred_at}
                                     max={new Date().toISOString().slice(0, 16)}
@@ -324,7 +324,7 @@ export default function IncidentDetail() {
                         </div>
                         <div className="ds-field">
                             <label>Description</label>
-                            <textarea rows={4} maxLength={5000} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+                            <textarea name="description" rows={4} maxLength={5000} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
                             {editErrors.description && <span className="ds-field-error">{editErrors.description[0]}</span>}
                         </div>
                         <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
@@ -373,7 +373,7 @@ export default function IncidentDetail() {
                         <div className="ds-form-row">
                             <div className="ds-field">
                                 <label>Resolution notes</label>
-                                <textarea
+                                <textarea name="resolution_notes"
                                     value={resolutionNotes}
                                     onChange={(e) => setResolutionNotes(e.target.value)}
                                     rows={3}

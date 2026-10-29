@@ -6,6 +6,8 @@ import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hoo
 import { useTranslation } from "../../i18n";
 import logo from "../../assets/images/site-logo.png";
 import occBg from "../../assets/images/occ.webp";
+import SeasonBackdrop from "../../seasons/SeasonBackdrop";
+import SeasonHat from "../../seasons/SeasonHat";
 
 /**
  * ============================================================================
@@ -111,6 +113,8 @@ export default function AuthShell({
             <style>{LEDGER_CSS}</style>
 
             <div className={`lg-wrap ${isDark ? "dark" : "light"}${compact ? " is-compact" : ""}${fit ? " is-fit" : ""}`}>
+                {/* FIRST / SECOND theme animated background (nothing on the default theme) */}
+                <SeasonBackdrop variant="auth" isDark={isDark} />
                 {/* ============ LEFT: LEDGER RAIL ============ */}
                 <aside className="lg-rail">
                     <div className="lg-rail-ruled" aria-hidden="true" />
@@ -119,7 +123,7 @@ export default function AuthShell({
 
                     <div className="lg-rail-top">
                         <Link to="/" className="lg-brand">
-                            <span className="lg-brand-mark"><img src={logo} alt="SCLF" {...guardImageEvents} /></span>
+                            <span className="lg-brand-mark"><img src={logo} alt="SCLF" {...guardImageEvents} /><SeasonHat /></span>
                             <span className="lg-brand-text">
                                 {t("auth.brandOffice")}
                                 <span>Opol Community College</span>
@@ -164,6 +168,7 @@ export default function AuthShell({
                     <header className="lg-appbar">
                         <Link to="/" className="lg-mobile-brand">
                             <img src={logo} alt="SCLF" {...guardImageEvents} />
+                            <SeasonHat />
                             <span>{t("auth.brandOffice")}<span>Opol Community College</span></span>
                         </Link>
                         <button type="button" className="lg-theme-toggle" onClick={toggleTheme} aria-label={t("auth.toggleTheme")}>

@@ -5,6 +5,15 @@ import { useAppTheme, isDarkTheme } from "../../hooks/useAppTheme";
 import usePreventInspect, { ZoomWarningModal, guardImageEvents } from "../../hooks/usePreventInspect";
 import logo from "../../assets/images/site-logo.png";
 import { canOpenPath } from "../../utils/redirectGuard";
+import SeasonBackdrop from "../../seasons/SeasonBackdrop";
+import SeasonHat from "../../seasons/SeasonHat";
+import useSeason from "../../seasons/useSeason";
+
+const SEASON_COPY = {
+    halloween: { sub: "Summoning your workspace, please wait…", loading: "Conjuring" },
+    christmas: { sub: "Wrapping up your workspace, please wait…", loading: "Unwrapping" },
+    newyear: { sub: "Counting down to your workspace, please wait…", loading: "Launching" },
+};
 
 // Shown at "/" before we know where the visitor belongs, and again right
 // after a successful login/register — same screen, same delay, same
@@ -24,6 +33,8 @@ const MainPage = ({ routing = true }) => {
     const { user, roles, loading } = useAuth();
     const { theme } = useAppTheme();
     const isDark = isDarkTheme(theme);
+    const season = useSeason();
+    const copy = SEASON_COPY[season];
     // Right-click / DevTools / browser-zoom guard — same behavior as the
     // public auth pages. See usePreventInspect.jsx to toggle site-wide.
     const { zoomModalOpen, closeZoomModal } = usePreventInspect();
@@ -320,6 +331,7 @@ const MainPage = ({ routing = true }) => {
                 }
             `}</style>
             <div className={`mp-wrapper ${isDark ? "dark" : "light"}`} aria-busy="true">
+                <SeasonBackdrop variant="loading" isDark={isDark} />
                 <span className="mp-blob mp-blob-1" />
                 <span className="mp-blob mp-blob-2" />
                 <span className="mp-blob mp-blob-3" />
@@ -330,14 +342,15 @@ const MainPage = ({ routing = true }) => {
                     </span>
                     <div className="mp-logo-wrap">
                         <img src={logo} alt="SCLF Logo" {...guardImageEvents} />
+                        <SeasonHat />
                     </div>
                     <h1 className="mp-title">
                         SCLF <span className="grad">Lost &amp; Found</span>
                     </h1>
-                    <p className="mp-sub">Preparing your workspace, please wait…</p>
+                    <p className="mp-sub">{copy ? copy.sub : "Preparing your workspace, please wait…"}</p>
                     <div className="mp-loader" aria-hidden="true" />
                     <div className="mp-loading-text">
-                        Loading<span className="dot">.</span>
+                        {copy ? copy.loading : "Loading"}<span className="dot">.</span>
                         <span className="dot">.</span>
                         <span className="dot">.</span>
                     </div>

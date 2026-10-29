@@ -14,6 +14,8 @@ import './utils/disableZoom'; // no pinch / double-tap zoom on phones and tablet
 import './utils/pwaInstall'; // start listening for the browser's install event before React mounts
 import InstallPrompt from './Components/shared/InstallPrompt';
 import OfflineNotice from './Components/shared/OfflineNotice';
+import { applySeason } from './seasons/season';
+applySeason(); // FIRST/SECOND theme (see .env APP_SEASON) before first paint
 import './i18n'; // applies the saved language to <html lang> before first paint
 import { preloadImage } from './utils/imageCache';
 import siteLogo from './assets/images/site-logo.png';

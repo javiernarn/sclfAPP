@@ -17,6 +17,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application look (seasonal theme)
+    |--------------------------------------------------------------------------
+    |
+    | default   = the normal SCLF look
+    | halloween = FIRST theme  (alias: first)  - bats, pumpkins, bones, cobwebs
+    | christmas = SECOND theme (alias: second) - snow, lights, tree, ornaments
+    | newyear   = THIRD theme  (alias: third)  - fireworks, confetti, clock, champagne
+    |
+    | Runtime setting: change APP_SEASON in .env, then `php artisan config:clear`
+    | (no front-end rebuild needed).
+    */
+    'season' => env('APP_SEASON', 'default'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

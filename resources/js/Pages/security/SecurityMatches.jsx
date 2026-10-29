@@ -335,16 +335,16 @@ export default function SecurityMatches() {
                     </span>
                 </div>
                 <div className="mc-toolbar">
-                    <select value={level} onChange={(e) => resetTo(setLevel)(e.target.value)} aria-label="Filter by match level">
+                    <select name="level" value={level} onChange={(e) => resetTo(setLevel)(e.target.value)} aria-label="Filter by match level">
                         <option value="">All levels</option>
                         <option value="very_high">Very high (90+)</option>
                         <option value="high">High (75+)</option>
                         <option value="possible">Possible (60+)</option>
                         <option value="low">Low</option>
                     </select>
-                    <NumberStepper min={0} max={100} placeholder="Min score" value={minScore}
+                    <NumberStepper name="min_score" min={0} max={100} placeholder="Min score" value={minScore}
                         onChange={resetTo(setMinScore)} aria-label="Minimum score" />
-                    <ClearableSearch placeholder="Search name, brand or model…" value={query} style={{ marginLeft: 'auto' }}
+                    <ClearableSearch name="query" placeholder="Search name, brand or model…" value={query} style={{ marginLeft: 'auto' }}
                         onChange={(v) => { setQuery(v); setPage(1); }} aria-label="Search matches" />
                 </div>
 

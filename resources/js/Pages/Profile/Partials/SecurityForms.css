@@ -1,0 +1,242 @@
+/* ==========================================================================
+ * Profile > Security forms (Change email, Change password, Two-factor)
+ *
+ * Mobile-first: the base rules are the phone layout. Wider screens add to it:
+ *   >= 640px  tablet      two-column field rows, buttons sit side by side
+ *   >= 960px  laptop/desk side panels (requirements, QR + steps)
+ *   .ds-phone installed-app / real phone: bigger touch targets, safe area
+ * Colours come from the theme tokens in themes.css (--tk-*), so every theme
+ * (white, black, maroon, blue, yellow and the dark variants) works unchanged.
+ * ========================================================================== */
+
+.sx-root { max-width: 100%; --sx-edge: var(--tk-edge, #c3ccdb); --sx-field: var(--tk-field, #f4f7fb); --sx-accent: var(--tk-accent-text, #4f46e5); --sx-rgb: var(--tk-accent-rgb, 79, 70, 229); min-width: 0; }
+.sx-root * { box-sizing: border-box; }
+
+/* ---------- collapsed row ---------- */
+.sx-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.sx-row-main { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 240px; }
+.sx-row-icon { flex: none; width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; color: var(--sx-accent); background: rgba(var(--sx-rgb), 0.12); }
+.sx-row-title { font-size: 14px; font-weight: 800; }
+.sx-row-meta { font-size: 12.5px; opacity: 0.65; overflow-wrap: anywhere; }
+.sx-row-meta.is-on { color: #16a34a; opacity: 1; font-weight: 700; }
+.sx-row .ds-btn { flex: 0 0 auto; }
+
+/* ---------- panel that replaces the row while editing ---------- */
+.sx-panel { border: 1.5px solid var(--sx-edge); border-radius: 16px; padding: 16px; background: transparent; animation: sx-in .22s ease both; }
+.sx-panel-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.sx-panel-title { font-size: 15px; font-weight: 800; margin: 0; }
+.sx-panel-sub { font-size: 12.5px; opacity: 0.65; margin: 2px 0 0; overflow-wrap: anywhere; }
+@keyframes sx-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* ---------- fields ---------- */
+.sx-field { margin-bottom: 14px; min-width: 0; }
+.sx-field > label { display: block; font-size: 12px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; opacity: .7; margin-bottom: 6px; }
+.sx-input-wrap { position: relative; display: flex; align-items: stretch; min-width: 0; }
+.sx-input-wrap input, .sx-plain {
+    width: 100%; min-width: 0; min-height: 46px; padding: 11px 14px; border-radius: 12px;
+    font: inherit; font-size: 16px; /* 16px stops iOS zoom-on-focus */
+    border: 1.5px solid var(--sx-edge); background: var(--tk-surface, #fff); color: inherit; outline: none;
+    transition: border-color .15s, box-shadow .15s; -webkit-appearance: none; appearance: none;
+}
+.sx-input-wrap input:focus, .sx-plain:focus, .sx-affix:focus-within { border-color: var(--sx-accent); box-shadow: 0 0 0 3px rgba(var(--sx-rgb), .18); }
+.sx-input-wrap input[aria-invalid="true"] { border-color: #ef4444; }
+.sx-input-wrap input[type="password"], .sx-input-wrap input[type="text"] { padding-right: 48px; }
+.sx-eye { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); width: 40px; height: 40px; border: 0; border-radius: 10px; background: none; color: inherit; opacity: .6; cursor: pointer; display: grid; place-items: center; }
+.sx-eye:hover, .sx-eye:focus-visible { opacity: 1; background: var(--tk-hover, rgba(128,128,128,.12)); outline: none; }
+.sx-hint { font-size: 12px; opacity: .65; margin: 6px 0 0; overflow-wrap: anywhere; }
+.sx-error { font-size: 12.5px; font-weight: 700; color: #ef4444; margin: 6px 0 0; }
+
+/* ---------- banners ---------- */
+.sx-banner { border-radius: 12px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; display: flex; gap: 8px; align-items: flex-start; overflow-wrap: anywhere; }
+.sx-banner.is-error { background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.32); color: #ef4444; }
+.sx-banner.is-ok { background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.32); color: #16a34a; }
+.sx-banner.is-warn { background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.35); color: #b45309; }
+.sx-banner.is-info { background: rgba(var(--sx-rgb), .08); border: 1px solid rgba(var(--sx-rgb), .25); }
+.sx-banner svg { flex: none; margin-top: 2px; }
+
+/* ---------- buttons row ---------- */
+.sx-actions { display: flex; flex-direction: column-reverse; gap: 10px; margin-top: 6px; }
+.sx-actions .ds-btn { width: 100%; min-height: 46px; }
+
+/* ---------- step dots ---------- */
+.sx-steps { list-style: none; display: flex; align-items: center; gap: 0; margin: 0 0 16px; padding: 0; min-width: 0; max-width: 100%; }
+.sx-steps li { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; opacity: .5; flex: 0 1 auto; min-width: 0; }
+.sx-steps li + li::before { content: ''; width: clamp(12px, 6vw, 56px); height: 2px; background: var(--sx-edge); margin: 0 10px; flex: none; }
+.sx-steps li.is-now, .sx-steps li.is-done { opacity: 1; }
+.sx-steps-dot { width: 24px; height: 24px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 12px; border: 1.5px solid var(--sx-edge); }
+.sx-steps li.is-now .sx-steps-dot { background: var(--sx-accent); border-color: var(--sx-accent); color: var(--tk-surface, #fff); }
+.sx-steps li.is-done .sx-steps-dot { background: rgba(34,197,94,.16); border-color: rgba(34,197,94,.5); color: #16a34a; }
+.sx-steps-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---------- OTP boxes ---------- */
+.sx-otp { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(6px, 2vw, 10px); max-width: 360px; margin: 6px 0 4px; }
+.sx-otp-box {
+    width: 100%; min-width: 0; aspect-ratio: 1 / 1.15; max-height: 62px; padding: 0; text-align: center;
+    font: 800 clamp(20px, 6vw, 26px)/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    border-radius: 12px; border: 1.5px solid var(--sx-edge); background: var(--tk-surface, #fff); color: inherit; outline: none;
+    transition: border-color .15s, box-shadow .15s, transform .12s; -webkit-appearance: none; appearance: none;
+}
+.sx-otp-box.is-filled { border-color: rgba(var(--sx-rgb), .6); background: rgba(var(--sx-rgb), .06); }
+.sx-otp-box:focus { border-color: var(--sx-accent); box-shadow: 0 0 0 3px rgba(var(--sx-rgb), .2); transform: translateY(-1px); }
+.sx-otp-box[aria-invalid="true"] { border-color: #ef4444; animation: sx-shake .3s; }
+@keyframes sx-shake { 20%, 60% { transform: translateX(-3px); } 40%, 80% { transform: translateX(3px); } }
+
+.sx-linkbtn { display: inline-flex; align-items: center; gap: 6px; background: none; border: 0; padding: 8px 0; min-height: 40px; font: inherit; font-size: 13px; font-weight: 700; color: var(--sx-accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.sx-linkbtn:disabled { opacity: .5; cursor: not-allowed; text-decoration: none; }
+.sx-inline { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+
+/* ==========================================================================
+ * Change email — the "envelope"
+ * ========================================================================== */
+.sx-envelope {
+    position: relative; border-radius: 14px; padding: 14px; margin-bottom: 16px;
+    background: var(--sx-field); border: 1.5px dashed var(--sx-edge); overflow: hidden;
+}
+.sx-env-line { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; align-items: baseline; padding: 3px 0; }
+.sx-env-tag { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; opacity: .55; }
+.sx-env-val { font-size: 13.5px; font-weight: 700; overflow-wrap: break-word; min-width: 0; }
+.sx-env-val.is-old { opacity: .55; text-decoration: line-through; text-decoration-thickness: 1px; }
+.sx-env-val.is-new .sx-seg-fixed { opacity: .55; }
+.sx-env-val.is-new .sx-seg-typed { color: var(--sx-accent); }
+.sx-env-val.is-empty { opacity: .4; font-weight: 600; }
+.sx-env-val.is-bad .sx-seg-typed { color: #ef4444; }
+.sx-env-ok { display: inline-flex; vertical-align: -3px; margin-left: 6px; color: #16a34a; }
+
+/* input with a fixed "occ.lastname." in front and "@gmail.com" behind */
+.sx-affix { display: flex; align-items: stretch; min-width: 0; border: 1.5px solid var(--sx-edge); border-radius: 12px; background: var(--tk-surface, #fff); overflow: hidden; transition: border-color .15s, box-shadow .15s; }
+.sx-affix.is-bad { border-color: #ef4444; }
+.sx-affix-pre, .sx-affix-suf { display: flex; align-items: center; flex: none; padding: 0 10px; font: 700 13.5px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: var(--sx-field); opacity: .85; white-space: nowrap; max-width: 52%; overflow: hidden; text-overflow: ellipsis; }
+.sx-affix-pre { border-right: 1.5px solid var(--sx-edge); }
+.sx-affix-suf { border-left: 1.5px solid var(--sx-edge); }
+.sx-affix input { flex: 1 1 0; width: 0; min-width: 0; min-height: 46px; padding: 11px 10px; border: 0; background: transparent; color: inherit; font: inherit; font-size: 16px; outline: none; box-shadow: none !important; }
+.sx-affix-lock { display: inline-flex; margin-right: 5px; opacity: .6; }
+
+.sx-suggest { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; padding: 6px 10px; min-height: 36px; border-radius: 999px; border: 1.5px solid var(--sx-edge); background: none; color: inherit; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; max-width: 100%; }
+.sx-suggest:hover { border-color: var(--sx-accent); color: var(--sx-accent); }
+.sx-suggest code { font-family: ui-monospace, Menlo, Consolas, monospace; overflow: hidden; text-overflow: ellipsis; }
+
+.sx-sentto { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 12px; background: rgba(var(--sx-rgb), .08); border: 1px solid rgba(var(--sx-rgb), .22); margin-bottom: 14px; font-size: 13px; min-width: 0; }
+.sx-sentto svg { flex: none; color: var(--sx-accent); }
+.sx-sentto b { overflow-wrap: break-word; }
+
+.sx-done { text-align: center; padding: 8px 4px 2px; }
+.sx-done-badge { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 10px; display: grid; place-items: center; color: #16a34a; background: rgba(34,197,94,.14); border: 1.5px solid rgba(34,197,94,.4); }
+.sx-done h4 { margin: 0 0 4px; font-size: 16px; }
+.sx-done p { margin: 0 0 14px; font-size: 13px; opacity: .75; overflow-wrap: anywhere; }
+
+/* ==========================================================================
+ * Change password
+ * ========================================================================== */
+.sx-pw-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px 24px; }
+.sx-strength { border-radius: 12px; padding: 12px 14px; background: var(--sx-field); border: 1px solid var(--sx-edge); margin: 0 0 14px; --sx-s: #94a3b8; }
+.sx-strength.is-0, .sx-strength.is-1 { --sx-s: #ef4444; }
+.sx-strength.is-2 { --sx-s: #f59e0b; }
+.sx-strength.is-3 { --sx-s: #0ea5e9; }
+.sx-strength.is-4 { --sx-s: #16a34a; }
+.sx-strength-head { display: flex; justify-content: space-between; gap: 8px; font-size: 11.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 8px; }
+.sx-strength-head span { opacity: .6; }
+.sx-strength-head b { color: var(--sx-s); }
+.sx-strength-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 10px; }
+.sx-strength-bar span { height: 5px; border-radius: 999px; background: rgba(148,163,184,.3); transition: background .2s; }
+.sx-strength-bar span.on { background: var(--sx-s); }
+.sx-reqs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; }
+.sx-reqs li { display: flex; align-items: center; gap: 6px; font-size: 12px; opacity: .6; min-width: 0; }
+.sx-reqs li.is-ok { opacity: 1; color: #16a34a; }
+.sx-reqs svg { flex: none; }
+.sx-match { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; margin: 6px 0 0; }
+.sx-match.is-ok { color: #16a34a; }
+.sx-match.is-bad { color: #ef4444; }
+
+/* ==========================================================================
+ * Two-factor
+ * ========================================================================== */
+.sx-tfa-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.sx-qr { display: grid; place-items: center; padding: 14px; border-radius: 16px; background: #fff; border: 1.5px solid var(--sx-edge); width: fit-content; max-width: 100%; margin: 0 auto; }
+.sx-qr img { display: block; width: min(220px, 64vw); height: auto; aspect-ratio: 1; }
+.sx-key { display: flex; align-items: center; gap: 8px; border: 1.5px solid var(--sx-edge); background: var(--sx-field); border-radius: 12px; padding: 8px 8px 8px 12px; min-width: 0; }
+.sx-key code { flex: 1 1 auto; min-width: 0; font: 700 13.5px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; letter-spacing: .06em; }
+.sx-icon-btn { flex: none; width: 40px; height: 40px; border-radius: 10px; border: 0; cursor: pointer; display: grid; place-items: center; background: rgba(var(--sx-rgb), .12); color: var(--sx-accent); }
+.sx-icon-btn.is-copied { background: rgba(34,197,94,.16); color: #16a34a; }
+.sx-howto { margin: 0 0 14px; padding: 0; list-style: none; counter-reset: sx; display: grid; gap: 8px; }
+.sx-howto li { counter-increment: sx; display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 10px; font-size: 13px; align-items: start; }
+.sx-howto li::before { content: counter(sx); width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 800; background: rgba(var(--sx-rgb), .14); color: var(--sx-accent); }
+.sx-codes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+.sx-code-chip { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 8px 8px 8px 12px; border-radius: 12px; border: 1.5px solid var(--sx-edge); background: var(--sx-field); min-width: 0; }
+.sx-code-chip code { font: 700 13px/1.2 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; min-width: 0; }
+.sx-check { display: flex; align-items: center; gap: 10px; font-size: 13.5px; padding: 12px; min-height: 48px; border-radius: 12px; border: 1.5px solid var(--sx-edge); cursor: pointer; margin-bottom: 12px; }
+.sx-check input { width: 20px; height: 20px; flex: none; accent-color: var(--sx-accent); }
+
+/* ==========================================================================
+ * Tablet and up
+ * ========================================================================== */
+@media (min-width: 640px) {
+    .sx-panel { padding: 20px; }
+    .sx-actions { flex-direction: row; justify-content: flex-start; }
+    .sx-actions .ds-btn { width: auto; min-width: 140px; }
+    .sx-codes { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .sx-reqs { grid-template-columns: 1fr 1fr; }
+}
+
+/* ==========================================================================
+ * Laptop / desktop: use the width instead of one long column
+ * ========================================================================== */
+@media (min-width: 960px) {
+    .sx-pw-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: start; }
+    .sx-pw-grid .sx-strength { position: sticky; top: 84px; }
+    .sx-tfa-grid { grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: start; }
+    .sx-tfa-grid .sx-qr { margin: 0; }
+    .sx-email-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 4px 24px; align-items: start; }
+    .sx-codes { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* phones: lock the fixed parts into a strip above the typing area so the
+   part the person types always has the full width */
+@media (max-width: 520px) {
+    .sx-affix { flex-wrap: wrap; }
+    .sx-affix-pre, .sx-affix-suf { order: 1; flex: 1 1 0; max-width: none; min-height: 36px; justify-content: center; border-bottom: 1.5px solid var(--sx-edge); }
+    .sx-affix-pre { border-right: 1.5px solid var(--sx-edge); }
+    .sx-affix-suf { border-left: 0; }
+    .sx-affix-pre:only-of-type, .sx-affix-suf:only-child { border-right: 0; }
+    .sx-affix input { order: 2; flex: 1 1 100%; width: 100%; }
+    .sx-inline { gap: 0 14px; }
+}
+
+/* very narrow phones (320-360px) */
+@media (max-width: 520px) {
+    /* three or more steps: only the current one keeps its label */
+    .sx-steps li:not(.is-now) .sx-steps-label { display: none; }
+    .sx-steps li + li::before { margin: 0 8px; }
+}
+@media (max-width: 360px) {
+    .sx-panel { padding: 12px; border-radius: 14px; }
+    .sx-steps-label { display: none; }
+    .sx-steps li.is-now .sx-steps-label { display: inline; }
+    .sx-reqs { grid-template-columns: 1fr; }
+    .sx-codes { grid-template-columns: 1fr; }
+    .sx-affix-pre, .sx-affix-suf { font-size: 12px; padding: 0 7px; }
+    .sx-row .ds-btn { width: 100%; }
+}
+
+/* ==========================================================================
+ * Installed app / real phone (ds-phone): thumb-friendly
+ * ========================================================================== */
+.ds-phone .sx-row .ds-btn { width: 100%; min-height: 48px; }
+.ds-phone .sx-input-wrap input, .ds-phone .sx-plain, .ds-phone .sx-affix input { min-height: 52px; }
+.ds-phone .sx-affix-pre, .ds-phone .sx-affix-suf { font-size: 13px; }
+.ds-phone .sx-actions .ds-btn { min-height: 50px; }
+.ds-phone .sx-panel { padding: 16px 14px; margin-inline: -2px; }
+.ds-phone .sx-actions { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.ds-phone .sx-eye { width: 44px; height: 44px; }
+.ds-phone .sx-otp { max-width: none; }
+
+/* phone turned sideways: keep the form compact, two columns again */
+@media (orientation: landscape) and (max-height: 500px) {
+    .ds-phone .sx-pw-grid, .ds-phone .sx-tfa-grid, .ds-phone .sx-email-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 18px; align-items: start; }
+    .ds-phone .sx-qr img { width: 150px; }
+    .ds-phone .sx-actions { flex-direction: row; }
+    .ds-phone .sx-actions .ds-btn { width: auto; flex: 1 1 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sx-panel, .sx-otp-box, .sx-otp-box[aria-invalid="true"] { animation: none !important; transition: none !important; }
+}

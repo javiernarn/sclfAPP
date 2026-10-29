@@ -222,8 +222,8 @@ export default function PhotoUploadModal({ open, onClose, onAccept }) {
                     <button type="button" className="pum-close" onClick={onClose} aria-label="Close"><X size={18} /></button>
                 </div>
 
-                <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={onPick} hidden />
-                <input ref={camRef} type="file" accept="image/*" capture="user" onChange={onPick} hidden />
+                <input name="photo" ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={onPick} hidden />
+                <input name="photo_camera" ref={camRef} type="file" accept="image/*" capture="user" onChange={onPick} hidden />
 
                 {stage === 'guide' && (
                     <>
@@ -250,7 +250,7 @@ export default function PhotoUploadModal({ open, onClose, onAccept }) {
                         </div>
                         <div className="pum-foot">
                             <label className="pum-agree">
-                                <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
+                                <input name="photo_consent" type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} />
                                 <span>My photo meets these requirements</span>
                             </label>
                             <div className="pum-actions">

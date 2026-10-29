@@ -4,6 +4,7 @@ import { UserCircle, Mail, ShieldCheck, Phone, MapPin, VenetianMask, IdCard, Gra
 import { useAuth } from '../../context/AuthContext';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ProfileSkeleton from '../../Components/shared/ProfileSkeleton';
+import EmailChangeForm from './Partials/EmailChangeForm';
 import ChangePasswordForm from './Partials/ChangePasswordForm';
 import TwoFactorAuthForm from './Partials/TwoFactorAuthForm';
 
@@ -138,7 +139,17 @@ export default function ProfilePage() {
             {/* ---------- Security: Change Password ---------- */}
             <div className="ds-card">
                 <div className="ds-card-title">Security</div>
-                <p className="ds-card-desc">Update your password or turn on two-factor authentication to keep your account secure.</p>
+                <p className="ds-card-desc">Keep your sign-in details up to date and your account protected.</p>
+
+                {/* Only when the server allows it: SCLF_EMAIL_CHANGE_ENABLED=true in .env
+                    AND the account is a student or instructor (user.email_change_enabled). */}
+                {user?.email_change_enabled && (isStudent || isInstructor) && (
+                    <>
+                        <EmailChangeForm />
+                        <hr className="ds-divider" />
+                    </>
+                )}
+
                 <ChangePasswordForm />
                 <hr className="ds-divider" />
                 <TwoFactorAuthForm />

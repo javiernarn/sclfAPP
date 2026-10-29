@@ -1,16 +1,34 @@
 @php
     // Route passes $seo (see App\Support\Seo); fall back for any other caller of view('app').
     $seo = $seo ?? \App\Support\Seo::forRequest(request());
-    $sclfTheme = request()->cookie('sclf-theme', 'white');
+    // FIRST / SECOND / THIRD theme: APP_SEASON = default | halloween (first) | christmas (second) | newyear (third)
+    $sclfSeason = match (strtolower(trim((string) config('app.season', 'default')))) {
+        'halloween', 'first', '1' => 'halloween',
+        'christmas', 'second', '2', 'xmas' => 'christmas',
+        'newyear', 'third', '3', 'ny', 'new-year', 'new_year' => 'newyear',
+        default => 'default',
+    };
+    // A season opens in its night look the first time someone visits (no saved choice yet).
+    $sclfTheme = request()->cookie('sclf-theme', $sclfSeason === 'default' ? 'white' : 'black');
     // 'dark-blue' / 'dark-yellow' / 'dark-maroon' (Custom themes) are dark shells.
     $sclfTheme = in_array($sclfTheme, ['black', 'dark-white', 'dark-blue', 'dark-yellow', 'dark-maroon']) ? 'black' : 'white';
     $sclfThemeColor = $sclfTheme === 'black' ? '#0a0c12' : '#ffffff';
     // PWA title bar / browser toolbar color: navy on light themes, white on dark themes.
     $sclfBarColor = $sclfTheme === 'black' ? '#ffffff' : '#01215f';
+    if ($sclfSeason === 'halloween') {
+        $sclfThemeColor = $sclfTheme === 'black' ? '#0d0618' : '#ffe7c8';
+        $sclfBarColor = $sclfTheme === 'black' ? '#12071f' : '#f97316';
+    } elseif ($sclfSeason === 'christmas') {
+        $sclfThemeColor = $sclfTheme === 'black' ? '#06121c' : '#e6f3f1';
+        $sclfBarColor = $sclfTheme === 'black' ? '#06140f' : '#b91c1c';
+    } elseif ($sclfSeason === 'newyear') {
+        $sclfThemeColor = $sclfTheme === 'black' ? '#070a1f' : '#fff4d6';
+        $sclfBarColor = $sclfTheme === 'black' ? '#0b0f2e' : '#b45309';
+    }
     $sclfStatusBarStyle = $sclfTheme === 'black' ? 'black' : 'default';
 @endphp
 <!DOCTYPE html>
-<html lang="en" data-theme="{{ $sclfTheme === 'black' ? 'black' : '' }}" style="background:{{ $sclfThemeColor }}; overscroll-behavior-y: none; touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adjust: 100%;">
+<html lang="en" data-season="{{ $sclfSeason === 'default' ? '' : $sclfSeason }}" data-theme="{{ $sclfTheme === 'black' ? 'black' : '' }}" style="background:{{ $sclfThemeColor }}; overscroll-behavior-y: none; touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adjust: 100%;">
 
 <head>
     <meta charset="UTF-8">

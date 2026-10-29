@@ -251,7 +251,7 @@ export default function ServiceRequestDetail() {
                         <div className="ds-form-row">
                             <div className="ds-field">
                                 <label>Completion notes</label>
-                                <textarea
+                                <textarea name="completion_notes"
                                     value={completionNotes}
                                     onChange={(e) => setCompletionNotes(e.target.value)}
                                     rows={3}

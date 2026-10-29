@@ -120,7 +120,7 @@ export default function MobileSearch() {
                     <div className="ds-msearch-panel">
                         <div className="ds-global-search-input-wrap ds-msearch-input-wrap">
                             <Search size={16} className="ds-global-search-icon" />
-                            <input
+                            <input name="global_search_mobile"
                                 ref={inputRef}
                                 type="search"
                                 enterKeyHint="search"

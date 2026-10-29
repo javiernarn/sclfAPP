@@ -161,7 +161,10 @@ class TwoFactorController extends Controller
                 'id', 'name', 'first_name', 'last_name', 'email', 'phone_number',
                 'address', 'gender', 'student_id', 'staff_id', 'display_id', 'course', 'teaching_course',
                 'profile_picture_url', 'two_factor_enabled', 'public_token'
-            ), ['email_verified' => $user->hasVerifiedEmail()]),
+            ), [
+                'email_verified' => $user->hasVerifiedEmail(),
+                'email_change_enabled' => app(\App\Services\Auth\EmailChangeService::class)->allowedFor($user),
+            ]),
             'roles' => $user->getRoleNames(),
             'access_token' => $pair['access_token'],
             'expires_in' => $pair['expires_in'],

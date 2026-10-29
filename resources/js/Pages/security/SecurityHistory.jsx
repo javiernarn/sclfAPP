@@ -126,7 +126,7 @@ function CounterHistoryTab() {
             <div className="ds-filter-row" style={{ alignItems: 'center' }}>
                 <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
                     <Search size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', opacity: 0.5, pointerEvents: 'none' }} />
-                    <input
+                    <input name="q"
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
                         placeholder="Search item, owner name, or school ID…"
@@ -136,8 +136,8 @@ function CounterHistoryTab() {
                 <button type="button" className={`ds-filter-chip ${status === '' ? 'is-active' : ''}`} onClick={() => setStatus('')}>All</button>
                 <button type="button" className={`ds-filter-chip ${status === 'released' ? 'is-active' : ''}`} onClick={() => setStatus('released')}>Released</button>
                 <button type="button" className={`ds-filter-chip ${status === 'pending' ? 'is-active' : ''}`} onClick={() => setStatus('pending')}>Not yet released</button>
-                <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} title="Checked in from" />
-                <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} title="Checked in to" />
+                <input name="date_from" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} title="Checked in from" />
+                <input name="date_to" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} title="Checked in to" />
             </div>
 
             {loading && <div className="ds-skeleton" />}
@@ -301,15 +301,15 @@ function LostFoundHistoryTab() {
             <div className="ds-filter-row" style={{ alignItems: 'center' }}>
                 <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
                     <Search size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', opacity: 0.5, pointerEvents: 'none' }} />
-                    <input
+                    <input name="q"
                         value={q}
                         onChange={(e) => setQ(e.target.value)}
                         placeholder="Search item, claimant name, or school ID…"
                         style={{ paddingLeft: 32, width: '100%' }}
                     />
                 </div>
-                <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} title="Released from" />
-                <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} title="Released to" />
+                <input name="date_from" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} title="Released from" />
+                <input name="date_to" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} title="Released to" />
             </div>
 
             {loading && <div className="ds-skeleton" />}

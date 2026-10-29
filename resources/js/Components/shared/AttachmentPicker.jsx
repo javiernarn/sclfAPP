@@ -79,7 +79,7 @@ export default function AttachmentPicker({ files, onChange, disabled = false, la
                 </span>
             </button>
 
-            <input
+            <input name="attachments"
                 ref={inputRef}
                 className="att-file-input"
                 type="file"

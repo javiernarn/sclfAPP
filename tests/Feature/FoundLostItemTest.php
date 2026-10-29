@@ -59,7 +59,23 @@ class FoundLostItemTest extends TestCase
         $this->assertCount(1, $response->json('data'));
     }
 
-    public function test_counter_intake_items_are_visible_to_staff_in_the_found_items_list(): void
+    public function test_found_items_page_excludes_counter_intake_items_for_admin_and_staff(): void
+    {
+        FoundItem::factory()->create(['intake_channel' => FoundItem::CHANNEL_COUNTER_INTAKE]);
+        FoundItem::factory()->create(['intake_channel' => FoundItem::CHANNEL_ONLINE_REPORT]);
+
+        foreach (['admin', 'staff', 'security_officer'] as $role) {
+            $user = $this->makeUser($role);
+
+            $response = $this->actingAs($user)->getJson('/api/found-items?channel=online_report');
+
+            $response->assertStatus(200);
+            $this->assertCount(1, $response->json('data'), "{$role} should only see online reports");
+            $this->assertSame(FoundItem::CHANNEL_ONLINE_REPORT, $response->json('data.0.intake_channel'));
+        }
+    }
+
+    public function test_staff_can_still_fetch_counter_items_without_the_channel_filter(): void
     {
         $officer = $this->makeUser('security_officer');
         FoundItem::factory()->create(['intake_channel' => FoundItem::CHANNEL_COUNTER_INTAKE]);

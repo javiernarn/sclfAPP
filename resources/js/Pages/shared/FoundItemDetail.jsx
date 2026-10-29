@@ -269,7 +269,7 @@ export default function FoundItemDetail() {
                     {myLostItems.length > 0 && (
                         <div className="ds-field">
                             <label>Link to one of your lost item reports (optional)</label>
-                            <select value={selectedLostItem} onChange={(e) => setSelectedLostItem(e.target.value)}>
+                            <select name="selected_lost_item" value={selectedLostItem} onChange={(e) => setSelectedLostItem(e.target.value)}>
                                 <option value="">— None —</option>
                                 {myLostItems.map(li => (
                                     <option key={li.id} value={li.id}>{li.item_name}</option>

@@ -217,14 +217,14 @@ export default function PrintReport() {
                             <button type="button" className={orientation === 'portrait' ? 'is-active' : ''} onClick={() => setOrientation('portrait')}>A4 Portrait</button>
                         </div>
                     </div>
-                    <label className="pr-check"><input type="checkbox" checked={showDaily} onChange={(e) => setShowDaily(e.target.checked)} /> Daily table</label>
-                    <label className="pr-check"><input type="checkbox" checked={showActivity} onChange={(e) => setShowActivity(e.target.checked)} /> Recent activity</label>
-                    <label className="pr-check"><input type="checkbox" checked={showNotedBy} onChange={(e) => setShowNotedBy(e.target.checked)} /> “Noted by” line</label>
+                    <label className="pr-check"><input name="show_daily" type="checkbox" checked={showDaily} onChange={(e) => setShowDaily(e.target.checked)} /> Daily table</label>
+                    <label className="pr-check"><input name="show_activity" type="checkbox" checked={showActivity} onChange={(e) => setShowActivity(e.target.checked)} /> Recent activity</label>
+                    <label className="pr-check"><input name="show_noted_by" type="checkbox" checked={showNotedBy} onChange={(e) => setShowNotedBy(e.target.checked)} /> “Noted by” line</label>
                 </div>
                 <div className="pr-toolbar-row">
                     <label className="pr-remarks">
                         <span>Remarks (printed on the report — optional)</span>
-                        <textarea rows={2} maxLength={600} value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="e.g. Reviewed for the monthly meeting. Follow up on the canteen cases." />
+                        <textarea name="remarks" rows={2} maxLength={600} value={remarks} onChange={(e) => setRemarks(e.target.value)} placeholder="e.g. Reviewed for the monthly meeting. Follow up on the canteen cases." />
                     </label>
                     <p className="pr-tip">Tip: in the print window choose <b>Save as PDF</b>. If colors look pale, turn on <b>Background graphics</b>.</p>
                 </div>

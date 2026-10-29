@@ -59,7 +59,7 @@ export default function FoundItemsList() {
     const [reviewKey, setReviewKey] = useState(0);
     const loadPending = () => {
         if (!isReviewer) return;
-        axios.get('/found-items', { params: { status: 'pending_review' } })
+        axios.get('/found-items', { params: { status: 'pending_review', channel: 'online_report' } })
             .then(res => setPendingCount((res.data.data || []).length))
             .catch(() => {});
     };
@@ -78,7 +78,7 @@ export default function FoundItemsList() {
     const load = (query, { initial = false } = {}) => {
         const thisRequest = ++requestId.current;
         if (initial) setLoading(true); else setSearching(true);
-        axios.get('/found-items', { params: query ? { q: query } : {} })
+        axios.get('/found-items', { params: query ? { q: query, channel: 'online_report' } : { channel: 'online_report' } })
             .then(res => {
                 // Ignore stale responses if a newer search has since fired
                 // (fast typing can otherwise let an older reply land last).
@@ -150,7 +150,7 @@ export default function FoundItemsList() {
                         className="ds-field"
                         style={{ flex: '1 1 260px', position: 'relative' }}
                     >
-                        <input
+                        <input name="q"
                             value={q}
                             onChange={(e) => setQ(e.target.value)}
                             placeholder="Search by name or description…"

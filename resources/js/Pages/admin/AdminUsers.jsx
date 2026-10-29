@@ -628,7 +628,7 @@ export default function AdminUsers() {
                     <h3 style={{ margin: 0 }}>All Users</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}>
-                            <input type="checkbox" checked={showDisabled} onChange={(e) => setShowDisabled(e.target.checked)} />
+                            <input name="show_disabled" type="checkbox" checked={showDisabled} onChange={(e) => setShowDisabled(e.target.checked)} />
                             Show disabled accounts only
                         </label>
                         <ViewToggle mode={view} onChange={setView} />

@@ -49,7 +49,7 @@ export default function GlobalSearchBar() {
         <div className="ds-global-search" ref={wrapRef}>
             <div className="ds-global-search-input-wrap">
                 <Search size={16} className="ds-global-search-icon" />
-                <input
+                <input name="global_search"
                     ref={inputRef}
                     type="text"
                     value={query}

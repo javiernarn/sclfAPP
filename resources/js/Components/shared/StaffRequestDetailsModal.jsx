@@ -211,7 +211,7 @@ export default function StaffRequestDetailsModal({ row, shellClass = 'light', is
                         {canReview && (
                             <section className="srd-section">
                                 <h4>Your decision</h4>
-                                <textarea
+                                <textarea name="note"
                                     className="srd-note"
                                     rows={2}
                                     maxLength={500}

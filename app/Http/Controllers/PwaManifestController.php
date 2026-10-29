@@ -18,7 +18,13 @@ class PwaManifestController extends Controller
      */
     public function __invoke(Request $request): JsonResponse
     {
-        $theme = $request->cookie('sclf-theme', 'white');
+        $season = match (strtolower(trim((string) config('app.season', 'default')))) {
+            'halloween', 'first', '1' => 'halloween',
+            'christmas', 'second', '2', 'xmas' => 'christmas',
+            'newyear', 'third', '3', 'ny', 'new-year', 'new_year' => 'newyear',
+            default => 'default',
+        };
+        $theme = $request->cookie('sclf-theme', $season === 'default' ? 'white' : 'black');
         // 'dark-*' Custom themes are dark shells too.
         $theme = in_array($theme, ['black', 'dark-white', 'dark-blue', 'dark-yellow', 'dark-maroon']) ? 'black' : 'white';
 
@@ -42,10 +48,20 @@ class PwaManifestController extends Controller
             'display' => 'standalone',
             'display_override' => ['standalone', 'minimal-ui'],
             'orientation' => 'any',
-            'background_color' => $isBlack ? '#0a0c12' : '#ffffff',
+            'background_color' => match ($season) {
+                'halloween' => $isBlack ? '#0d0618' : '#ffe7c8',
+                'christmas' => $isBlack ? '#06121c' : '#e6f3f1',
+                'newyear' => $isBlack ? '#070a1f' : '#fff4d6',
+                default => $isBlack ? '#0a0c12' : '#ffffff',
+            },
             // Title-bar color of the installed app: navy in light themes,
             // white in dark/black themes.
-            'theme_color' => $isBlack ? '#ffffff' : '#01215f',
+            'theme_color' => match ($season) {
+                'halloween' => $isBlack ? '#12071f' : '#f97316',
+                'christmas' => $isBlack ? '#06140f' : '#b91c1c',
+                'newyear' => $isBlack ? '#0b0f2e' : '#b45309',
+                default => $isBlack ? '#ffffff' : '#01215f',
+            },
             'lang' => 'en-PH',
             'dir' => 'ltr',
             'categories' => ['education', 'productivity'],

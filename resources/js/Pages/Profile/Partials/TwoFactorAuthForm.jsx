@@ -8,11 +8,10 @@ import axios from '../../../config/axiosConfig';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { useDiscardConfirm } from '../../../context/ConfirmContext';
+import { PasswordField, OtpInput, Steps, Banner, Actions } from './SecurityParts';
 
-// Small copy-to-clipboard row, same visual language as ClaimDetail's
-// CodeBox (release codes / tokens) — reused here for the manual-entry
-// secret and each recovery code.
-const CopyRow = ({ label, value }) => {
+// Copy button used by the manual key and each recovery code.
+const CopyBtn = ({ value, label }) => {
     const [copied, setCopied] = useState(false);
     const copy = async () => {
         try {
@@ -20,26 +19,19 @@ const CopyRow = ({ label, value }) => {
             setCopied(true);
             setTimeout(() => setCopied(false), 1500);
         } catch (e) {
-            // clipboard unavailable — silently ignore
+            // clipboard unavailable (older in-app browsers) — ignore
         }
     };
     return (
-        <div className="ds-code-box">
-            <div className="ds-code-box-text">
-                {label && <div className="ds-code-box-label">{label}</div>}
-                <div className="ds-code-box-value">{value}</div>
-            </div>
-            <button type="button" className={`ds-code-copy ${copied ? 'is-copied' : ''}`} onClick={copy} aria-label={`Copy ${label || value}`}>
-                {copied ? <Check size={15} /> : <Copy size={15} />}
-            </button>
-        </div>
+        <button type="button" className={`sx-icon-btn${copied ? ' is-copied' : ''}`} onClick={copy} aria-label={`Copy ${label}`}>
+            {copied ? <Check size={16} /> : <Copy size={16} />}
+        </button>
     );
 };
 
-// Three phases live under one component so the "cancel" / discard-confirm
-// handling is in one place: 'idle' (collapsed row) -> 'enroll' (QR + code
-// entry) -> 'recovery' (one-time codes, shown exactly once) for turning
-// 2FA on; a separate 'disable' phase (password confirm) for turning it off.
+// Phases: idle (collapsed) -> enroll (QR + code) -> recovery (shown once);
+// plus disable (password confirm). Layout: phone = single column, laptop =
+// QR on the left and the steps on the right.
 export default function TwoFactorAuthForm() {
     const { user, updateUser } = useAuth();
     const toast = useToast();
@@ -99,13 +91,13 @@ export default function TwoFactorAuthForm() {
     const handleConfirm = async (e) => {
         e.preventDefault();
         setError('');
-        if (!code.trim()) {
+        if (code.length !== 6) {
             setError('Enter the 6-digit code from your authenticator app.');
             return;
         }
         setLoading(true);
         try {
-            const res = await axios.post('/2fa/confirm', { code: code.trim() }, { silent: true });
+            const res = await axios.post('/2fa/confirm', { code }, { silent: true });
             setRecoveryCodes(res.data.recovery_codes || []);
             setPhase('recovery');
             updateUser({ two_factor_enabled: true });
@@ -170,30 +162,40 @@ export default function TwoFactorAuthForm() {
         }
     };
 
+    const header = (title, sub, Icon = ShieldCheck) => (
+        <div className="sx-panel-head">
+            <span className="sx-row-icon"><Icon size={19} /></span>
+            <div style={{ minWidth: 0 }}>
+                <h4 className="sx-panel-title">{title}</h4>
+                {sub && <p className="sx-panel-sub">{sub}</p>}
+            </div>
+        </div>
+    );
+
     // ---------- Collapsed row ----------
     if (phase === 'idle') {
         return (
-            <div className="ds-security-row">
-                <div className="ds-security-row-text">
-                    <span className="ds-security-icon">
-                        {enabled ? <ShieldCheck size={18} /> : <ShieldOff size={18} />}
-                    </span>
-                    <div>
-                        <div className="ds-security-row-title">Two-factor authentication</div>
-                        <div className="ds-security-row-meta">
-                            {enabled ? 'On — an authenticator app code is required at sign-in' : 'Off'}
+            <div className="sx-root">
+                <div className="sx-row">
+                    <div className="sx-row-main">
+                        <span className="sx-row-icon">{enabled ? <ShieldCheck size={19} /> : <ShieldOff size={19} />}</span>
+                        <div style={{ minWidth: 0 }}>
+                            <div className="sx-row-title">Two-factor authentication</div>
+                            <div className={`sx-row-meta${enabled ? ' is-on' : ''}`}>
+                                {enabled ? 'On — a code from your authenticator app is needed at sign-in' : 'Off — add a second step when you sign in'}
+                            </div>
                         </div>
                     </div>
+                    {enabled ? (
+                        <button type="button" className="ds-btn ds-btn-secondary" onClick={() => setPhase('disable')}>
+                            <ShieldOff size={15} /> Turn off
+                        </button>
+                    ) : (
+                        <button type="button" className="ds-btn ds-btn-secondary" onClick={startEnroll} disabled={loading}>
+                            <Smartphone size={15} /> {loading ? 'Starting…' : 'Set up 2FA'}
+                        </button>
+                    )}
                 </div>
-                {enabled ? (
-                    <button type="button" className="ds-btn ds-btn-secondary" onClick={() => setPhase('disable')}>
-                        <ShieldOff size={15} /> Turn off
-                    </button>
-                ) : (
-                    <button type="button" className="ds-btn ds-btn-secondary" onClick={startEnroll} disabled={loading}>
-                        <Smartphone size={15} /> {loading ? 'Starting…' : 'Set up 2FA'}
-                    </button>
-                )}
             </div>
         );
     }
@@ -201,62 +203,49 @@ export default function TwoFactorAuthForm() {
     // ---------- Step 1: scan + verify ----------
     if (phase === 'enroll') {
         return (
-            <form onSubmit={handleConfirm}>
-                {error && <div className="ds-error">{error}</div>}
+            <form className="sx-root sx-panel" onSubmit={handleConfirm} noValidate>
+                {header('Set up two-factor authentication', 'Use an authenticator app such as Google Authenticator, Authy or 1Password.', Smartphone)}
+                <Steps labels={['Scan', 'Verify', 'Save codes']} current={0} />
+                {error && <Banner tone="error">{error}</Banner>}
 
-                <p className="ds-card-desc" style={{ marginBottom: 12 }}>
-                    Scan this QR code with an authenticator app (Google Authenticator, Authy, 1Password, etc.),
-                    then enter the 6-digit code it shows you.
-                </p>
+                <div className="sx-tfa-grid">
+                    <div>
+                        <div className="sx-qr">
+                            {qrDataUrl && <img src={qrDataUrl} alt="QR code to scan with your authenticator app" width={220} height={220} />}
+                        </div>
+                    </div>
 
-                <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0 16px' }}>
-                    {qrDataUrl && (
-                        <img
-                            src={qrDataUrl}
-                            alt="Scan with your authenticator app"
-                            width={200}
-                            height={200}
-                            style={{ borderRadius: 12, border: '1.5px solid rgba(128,128,128,0.25)' }}
-                        />
-                    )}
+                    <div style={{ minWidth: 0 }}>
+                        <ol className="sx-howto">
+                            <li><span>Open your authenticator app and choose <b>Add account</b>.</span></li>
+                            <li><span>Scan the QR code. On this phone? Use the key below instead.</span></li>
+                            <li><span>Type the 6-digit code the app shows.</span></li>
+                        </ol>
+
+                        <div className="sx-field">
+                            <label>Setup key</label>
+                            <div className="sx-key">
+                                <code>{showSecret ? secret : secret.replace(/./g, '•')}</code>
+                                <button type="button" className="sx-icon-btn" onClick={() => setShowSecret((v) => !v)} aria-label={showSecret ? 'Hide key' : 'Show key'}>
+                                    {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                                <CopyBtn value={secret} label="setup key" />
+                            </div>
+                        </div>
+
+                        <div className="sx-field">
+                            <label>6-digit code <span className="ds-required">*</span></label>
+                            <OtpInput value={code} onChange={(v) => { setCode(v); setError(''); }} invalid={!!error} disabled={loading} autoFocus />
+                        </div>
+                    </div>
                 </div>
 
-                <div className="ds-field">
-                    <label>Can't scan it? Enter this key manually</label>
-                    <CopyRow value={showSecret ? secret : secret.replace(/./g, '•')} />
-                    <button
-                        type="button"
-                        onClick={() => setShowSecret((v) => !v)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0 0', fontSize: 12.5, opacity: 0.7, display: 'inline-flex', alignItems: 'center', gap: 5 }}
-                    >
-                        {showSecret ? <EyeOff size={13} /> : <Eye size={13} />} {showSecret ? 'Hide key' : 'Show key'}
+                <Actions>
+                    <button type="button" className="ds-btn ds-btn-secondary" onClick={handleCancelEnroll} disabled={loading}>Cancel</button>
+                    <button type="submit" className="ds-btn ds-btn-primary" disabled={loading || code.length !== 6}>
+                        {loading ? 'Verifying…' : 'Verify & enable'}
                     </button>
-                </div>
-
-                <div className="ds-field">
-                    <label htmlFor="tfa-code">Verification code <span className="ds-required">*</span></label>
-                    <input
-                        id="tfa-code"
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        placeholder="123456"
-                        value={code}
-                        onChange={(e) => { setCode(e.target.value); setError(''); }}
-                        aria-invalid={!!error}
-                        autoFocus
-                        required
-                    />
-                </div>
-
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    <button type="submit" className="ds-btn ds-btn-primary" disabled={loading || !code.trim()}>
-                        {loading ? 'Verifying…' : 'Verify & Enable'}
-                    </button>
-                    <button type="button" className="ds-btn ds-btn-secondary" onClick={handleCancelEnroll} disabled={loading}>
-                        Cancel
-                    </button>
-                </div>
+                </Actions>
             </form>
         );
     }
@@ -264,43 +253,36 @@ export default function TwoFactorAuthForm() {
     // ---------- Step 2: recovery codes (shown exactly once) ----------
     if (phase === 'recovery') {
         return (
-            <div>
-                <div className="ds-success" style={{ marginBottom: 14 }}>
-                    <ShieldCheck size={16} />
-                    Two-factor authentication is enabled.
-                </div>
+            <div className="sx-root sx-panel">
+                {header('Two-factor is on', 'One last thing: keep your recovery codes.')}
+                <Steps labels={['Scan', 'Verify', 'Save codes']} current={2} />
 
-                <div className="ds-risk-banner" style={{ marginBottom: 14 }}>
-                    <div className="ds-risk-banner-head">
-                        <span className="ds-risk-banner-title"><AlertTriangle size={15} /> Save your recovery codes</span>
-                    </div>
-                    <p style={{ fontSize: 12.5, opacity: 0.85, margin: '0 0 4px' }}>
-                        Each code works once and lets you sign in if you lose access to your authenticator app.
-                        This is the only time they'll be shown — store them somewhere safe.
-                    </p>
-                </div>
+                <Banner tone="warn">
+                    <AlertTriangle size={16} />
+                    <span><b>Save these codes now.</b> Each works once if you lose your authenticator app. They are shown only this one time.</span>
+                </Banner>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8, marginBottom: 14 }}>
+                <div className="sx-codes">
                     {recoveryCodes.map((c) => (
-                        <CopyRow key={c} value={c} />
+                        <div className="sx-code-chip" key={c}>
+                            <code>{c}</code>
+                            <CopyBtn value={c} label="recovery code" />
+                        </div>
                     ))}
                 </div>
 
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <button type="button" className="ds-btn ds-btn-secondary" onClick={downloadRecoveryCodes}>
-                        <Download size={15} /> Download as .txt
-                    </button>
-                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, opacity: 0.85 }}>
-                        <input type="checkbox" checked={savedAck} onChange={(e) => setSavedAck(e.target.checked)} />
-                        I've saved these codes
-                    </label>
-                </div>
+                <button type="button" className="ds-btn ds-btn-secondary" onClick={downloadRecoveryCodes} style={{ marginBottom: 12 }}>
+                    <Download size={15} /> Download as .txt
+                </button>
 
-                <div style={{ marginTop: 14 }}>
-                    <button type="button" className="ds-btn ds-btn-primary" onClick={finishRecovery} disabled={!savedAck}>
-                        Done
-                    </button>
-                </div>
+                <label className="sx-check">
+                    <input name="saved_ack" type="checkbox" checked={savedAck} onChange={(e) => setSavedAck(e.target.checked)} />
+                    <span>I have saved these codes somewhere safe</span>
+                </label>
+
+                <Actions>
+                    <button type="button" className="ds-btn ds-btn-primary" onClick={finishRecovery} disabled={!savedAck}>Done</button>
+                </Actions>
             </div>
         );
     }
@@ -308,44 +290,29 @@ export default function TwoFactorAuthForm() {
     // ---------- Disable ----------
     if (phase === 'disable') {
         return (
-            <form onSubmit={handleDisable}>
-                {error && <div className="ds-error">{error}</div>}
-                <p className="ds-card-desc" style={{ marginBottom: 12 }}>
-                    Turning this off means only your password will be needed to sign in. Enter your password to confirm.
-                </p>
+            <form className="sx-root sx-panel" onSubmit={handleDisable} noValidate>
+                {header('Turn off two-factor?', 'Only your password will be needed to sign in.', ShieldOff)}
+                {error && <Banner tone="error">{error}</Banner>}
 
-                <div className="ds-field">
-                    <label htmlFor="tfa-disable-password">Current password <span className="ds-required">*</span></label>
-                    <div className="ds-pwd-wrap">
-                        <input
-                            id="tfa-disable-password"
-                            type={showPassword ? 'text' : 'password'}
-                            value={password}
-                            onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                            autoComplete="current-password"
-                            autoFocus
-                            required
-                        />
-                        <button
-                            type="button"
-                            className="ds-pwd-toggle"
-                            onClick={() => setShowPassword((v) => !v)}
-                            tabIndex={-1}
-                            aria-label={showPassword ? 'Hide password' : 'Show password'}
-                        >
-                            {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                    </div>
-                </div>
+                <PasswordField
+                    id="tfa-disable-password"
+                    label="Current password"
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                    show={showPassword}
+                    onToggle={() => setShowPassword((v) => !v)}
+                    autoComplete="current-password"
+                    autoFocus
+                    hint="Type it yourself to confirm. Autofill and paste are turned off."
+                    manual
+                />
 
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <Actions>
+                    <button type="button" className="ds-btn ds-btn-secondary" onClick={reset} disabled={loading}>Cancel</button>
                     <button type="submit" className="ds-btn ds-btn-primary" disabled={loading || !password}>
                         <KeyRound size={15} /> {loading ? 'Turning off…' : 'Turn off 2FA'}
                     </button>
-                    <button type="button" className="ds-btn ds-btn-secondary" onClick={reset} disabled={loading}>
-                        Cancel
-                    </button>
-                </div>
+                </Actions>
             </form>
         );
     }

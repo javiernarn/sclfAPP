@@ -196,17 +196,17 @@ function LocationEditForm({ type, ed, className = 'ds-loc-edit' }) {
             <div className="ds-form-row ds-form-row-2">
                 <div className="ds-field">
                     <label>Code</label>
-                    <input value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+                    <input name="code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
                 </div>
                 {type === 'counter' ? (
                     <div className="ds-field">
                         <label>Label</label>
-                        <input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+                        <input name="label" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
                     </div>
                 ) : (
                     <div className="ds-field">
                         <label>Room</label>
-                        <input value={form.room} onChange={(e) => setForm({ ...form, room: e.target.value })} />
+                        <input name="room" value={form.room} onChange={(e) => setForm({ ...form, room: e.target.value })} />
                     </div>
                 )}
             </div>
@@ -214,11 +214,11 @@ function LocationEditForm({ type, ed, className = 'ds-loc-edit' }) {
                 <div className="ds-form-row ds-form-row-2">
                     <div className="ds-field">
                         <label>Cabinet</label>
-                        <input value={form.cabinet} onChange={(e) => setForm({ ...form, cabinet: e.target.value })} />
+                        <input name="cabinet" value={form.cabinet} onChange={(e) => setForm({ ...form, cabinet: e.target.value })} />
                     </div>
                     <div className="ds-field">
                         <label>Shelf</label>
-                        <input value={form.shelf} onChange={(e) => setForm({ ...form, shelf: e.target.value })} />
+                        <input name="shelf" value={form.shelf} onChange={(e) => setForm({ ...form, shelf: e.target.value })} />
                     </div>
                 </div>
             )}
@@ -226,12 +226,12 @@ function LocationEditForm({ type, ed, className = 'ds-loc-edit' }) {
                 {type !== 'counter' && (
                     <div className="ds-field">
                         <label>Box</label>
-                        <input value={form.box} onChange={(e) => setForm({ ...form, box: e.target.value })} />
+                        <input name="box" value={form.box} onChange={(e) => setForm({ ...form, box: e.target.value })} />
                     </div>
                 )}
                 <div className="ds-field">
                     <label>Status</label>
-                    <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
+                    <select name="status" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
                         <option value="open">Open</option>
                         <option value="closed">Closed</option>
                         <option value="maintenance">Maintenance</option>
@@ -397,10 +397,10 @@ export default function SecurityInventory() {
         Promise.all([
             axios.get('/storage-locations', { params: { type: 'storage' } }),
             axios.get('/storage-locations', { params: { type: 'counter' } }),
-            axios.get('/found-items', { params: { status: 'accepted' } }),
+            axios.get('/found-items', { params: { status: 'accepted', channel: 'online_report' } }),
             // Already shelved, still on the shelf — eligible to be moved to
             // a different location (e.g. consolidating or re-organizing).
-            axios.get('/found-items', { params: { status: 'stored' } }),
+            axios.get('/found-items', { params: { status: 'stored', channel: 'online_report' } }),
             axios.get('/campuses'),
         ])
             .then(([storeRes, counterRes, itemRes, storedRes, campRes]) => {
@@ -505,7 +505,7 @@ export default function SecurityInventory() {
                                     </div>
                                 </div>
                                 <div className="ds-list-item-side">
-                                    <select
+                                    <select name={`assign-${item.id}`}
                                         value={assign[item.id] || ''}
                                         onChange={(e) => setAssign({ ...assign, [item.id]: e.target.value })}
                                         style={{ flex: 1, minWidth: 0 }}
@@ -544,7 +544,7 @@ export default function SecurityInventory() {
                                     </div>
                                 </div>
                                 <div className="ds-list-item-side">
-                                    <select
+                                    <select name={`move-${item.id}`}
                                         value={move[item.id] || ''}
                                         onChange={(e) => setMove({ ...move, [item.id]: e.target.value })}
                                         style={{ flex: 1, minWidth: 0 }}
@@ -655,7 +655,7 @@ export default function SecurityInventory() {
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
                             <label>Type <span className="ds-required">*</span></label>
-                            <select value={newLoc.type} onChange={(e) => setNewLoc({ ...newLoc, type: e.target.value })} required>
+                            <select name="type" value={newLoc.type} onChange={(e) => setNewLoc({ ...newLoc, type: e.target.value })} required>
                                 <option value="storage">Lost &amp; Found Storage (room/cabinet/shelf/box)</option>
                                 <option value="counter">Counter (front-desk, known-owner check-in)</option>
                             </select>
@@ -663,7 +663,7 @@ export default function SecurityInventory() {
                         </div>
                         <div className="ds-field">
                             <label>Campus <span className="ds-required">*</span></label>
-                            <select value={newLoc.campus_id} onChange={(e) => setNewLoc({ ...newLoc, campus_id: e.target.value })} aria-invalid={!!fieldErrors.campus_id} required>
+                            <select name="campus_id" value={newLoc.campus_id} onChange={(e) => setNewLoc({ ...newLoc, campus_id: e.target.value })} aria-invalid={!!fieldErrors.campus_id} required>
                                 {campuses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                             </select>
                             <p className="ds-field-hint">Which campus this spot physically belongs to.</p>
@@ -673,7 +673,7 @@ export default function SecurityInventory() {
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
                             <label>Code (unique) <span className="ds-required">*</span></label>
-                            <input value={newLoc.code} onChange={(e) => setNewLoc({ ...newLoc, code: e.target.value })}
+                            <input name="code" value={newLoc.code} onChange={(e) => setNewLoc({ ...newLoc, code: e.target.value })}
                                 placeholder={newLoc.type === 'counter' ? 'e.g. CTR-MAIN-02' : 'e.g. STORE-A-3-5'} aria-invalid={!!fieldErrors.code} required />
                             <p className="ds-field-hint">A short internal ID — nothing else on this campus can use the same code.</p>
                             {fieldErrors.code && <div className="ds-field-error">{fieldErrors.code}</div>}
@@ -681,7 +681,7 @@ export default function SecurityInventory() {
                         {newLoc.type === 'counter' && (
                             <div className="ds-field">
                                 <label>Label <span className="ds-required">*</span></label>
-                                <input value={newLoc.label} onChange={(e) => setNewLoc({ ...newLoc, label: e.target.value })}
+                                <input name="label" value={newLoc.label} onChange={(e) => setNewLoc({ ...newLoc, label: e.target.value })}
                                     placeholder="e.g. Counter 2 / Guard House Front Desk" aria-invalid={!!fieldErrors.label} required />
                                 <p className="ds-field-hint">A friendly name shown to students on their release notice.</p>
                                 {fieldErrors.label && <div className="ds-field-error">{fieldErrors.label}</div>}
@@ -693,31 +693,31 @@ export default function SecurityInventory() {
                             <div className="ds-form-row ds-form-row-2">
                                 <div className="ds-field">
                                     <label>Room</label>
-                                    <input value={newLoc.room} onChange={(e) => setNewLoc({ ...newLoc, room: e.target.value })} placeholder="e.g. Security Office" />
+                                    <input name="room" value={newLoc.room} onChange={(e) => setNewLoc({ ...newLoc, room: e.target.value })} placeholder="e.g. Security Office" />
                                     <p className="ds-field-hint">Optional — the room this location is inside.</p>
                                 </div>
                                 <div className="ds-field">
                                     <label>Cabinet</label>
-                                    <input value={newLoc.cabinet} onChange={(e) => setNewLoc({ ...newLoc, cabinet: e.target.value })} placeholder="e.g. Cabinet 2" />
+                                    <input name="cabinet" value={newLoc.cabinet} onChange={(e) => setNewLoc({ ...newLoc, cabinet: e.target.value })} placeholder="e.g. Cabinet 2" />
                                     <p className="ds-field-hint">Optional — narrows it down further within the room.</p>
                                 </div>
                             </div>
                             <div className="ds-form-row ds-form-row-2">
                                 <div className="ds-field">
                                     <label>Shelf</label>
-                                    <input value={newLoc.shelf} onChange={(e) => setNewLoc({ ...newLoc, shelf: e.target.value })} placeholder="e.g. Shelf B" />
+                                    <input name="shelf" value={newLoc.shelf} onChange={(e) => setNewLoc({ ...newLoc, shelf: e.target.value })} placeholder="e.g. Shelf B" />
                                     <p className="ds-field-hint">Optional — leave blank if the cabinet has no shelves.</p>
                                 </div>
                                 <div className="ds-field">
                                     <label>Box</label>
-                                    <input value={newLoc.box} onChange={(e) => setNewLoc({ ...newLoc, box: e.target.value })} placeholder="e.g. Box 5" />
+                                    <input name="box" value={newLoc.box} onChange={(e) => setNewLoc({ ...newLoc, box: e.target.value })} placeholder="e.g. Box 5" />
                                     <p className="ds-field-hint">Optional — the most specific level, e.g. a labeled bin.</p>
                                 </div>
                             </div>
                             <div className="ds-form-row ds-form-row-2">
                                 <div className="ds-field">
                                     <label>Capacity</label>
-                                    <input type="number" min="1" value={newLoc.capacity}
+                                    <input name="capacity" type="number" min="1" value={newLoc.capacity}
                                         onChange={(e) => setNewLoc({ ...newLoc, capacity: e.target.value })} placeholder="No limit" />
                                     <p className="ds-field-hint">Optional — max items this spot can hold. Leave blank for no limit; can be set later too.</p>
                                 </div>

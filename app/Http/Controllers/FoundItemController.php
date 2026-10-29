@@ -39,6 +39,18 @@ class FoundItemController extends Controller
                         ->orWhere('intake_channel', '!=', FoundItem::CHANNEL_COUNTER_INTAKE);
                 })
             )
+            // Found Items is for items reported by students/instructors.
+            // Counter check-ins live on the Counter pages, so the Found
+            // Items page asks for `channel=online_report`. Other callers
+            // (e.g. Inventory, which shelves/moves every stored item) omit
+            // it and still get counter items back for staff.
+            ->when(
+                in_array($request->channel, [FoundItem::CHANNEL_ONLINE_REPORT, FoundItem::CHANNEL_COUNTER_INTAKE], true),
+                fn ($q) => $request->channel === FoundItem::CHANNEL_ONLINE_REPORT
+                    ? $q->where(fn ($sub) => $sub->whereNull('intake_channel')
+                        ->orWhere('intake_channel', FoundItem::CHANNEL_ONLINE_REPORT))
+                    : $q->where('intake_channel', FoundItem::CHANNEL_COUNTER_INTAKE)
+            )
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->when($request->category, fn ($q) => $q->where('category', $request->category))
             ->when($request->q, function ($q) use ($request) {

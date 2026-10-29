@@ -142,7 +142,7 @@ export default function StudentQrScanModal({ open, onClose }) {
                     <p className="sq-sub">Hold the QR from the bottom of their printed dashboard inside the frame. It opens automatically.</p>
 
                     <form className="sq-paste" onSubmit={(e) => { e.preventDefault(); openStudent(manual); }}>
-                        <input
+                        <input name="manual_code"
                             type="text"
                             value={manual}
                             onChange={(e) => setManual(e.target.value)}
@@ -159,7 +159,7 @@ export default function StudentQrScanModal({ open, onClose }) {
                     <button type="button" className="sq-upload" onClick={() => fileRef.current?.click()}>
                         <Upload size={15} /> Choose a photo of the QR
                     </button>
-                    <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
+                    <input name="qr_image" ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
                 </div>
             </div>
         </div>
