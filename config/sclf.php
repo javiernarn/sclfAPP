@@ -293,4 +293,7 @@ return [
     // Recipients per BCC email (max 100; Gmail's per-message limit).
     'broadcast_batch_size' => env('SCLF_BROADCAST_BATCH_SIZE', 50),
 
+    // Also email every student when the admin opens Print / Save as PDF (off = bell + push only).
+    'print_open_emails' => env('SCLF_PRINT_OPEN_EMAILS', false),
+
 ];

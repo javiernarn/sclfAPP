@@ -42,6 +42,16 @@ class PrintReportController extends Controller
             'There is no printable dashboard for this account.'
         );
 
+        // Admin switch: while printing is OFF (clearance signing not open yet) the
+        // owner gets no report at all - nothing to print, save as PDF or screenshot.
+        // Admin / staff and instructors are never restricted by this switch (it is for students).
+        if ($isSelf && ! $viewer->hasAnyRole(self::HANDLER_ROLES) && ! $viewer->hasRole('instructor') && ! PrintAccessController::isEnabled()) {
+            return response()->json([
+                'code' => 'print_disabled',
+                'message' => PrintAccessController::message(),
+            ], 403);
+        }
+
         // Opening somebody else's dashboard is a privileged read — keep a trail.
         if (! $isSelf) {
             $audit->log(

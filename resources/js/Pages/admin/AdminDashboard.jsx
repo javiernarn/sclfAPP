@@ -6,6 +6,7 @@ import {
     PackageSearch, CircleCheck, ShieldAlert, ListOrdered, Activity, Clock,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import PrintAccessCard from '../../Components/shared/PrintAccessCard';
 import RefreshButton from '../../Components/shared/RefreshButton';
 import DashboardSkeleton from '../../Components/shared/DashboardSkeleton';
 import MobileStaffHome from '../../Components/shared/MobileStaffHome';
@@ -22,7 +23,8 @@ const RANGE_OPTIONS = [
 ];
 
 export default function AdminDashboard() {
-    const { user } = useAuth();
+    const { user, roles } = useAuth();
+    const isAdmin = Array.isArray(roles) && roles.includes('admin');
     const { label: roleLabel } = useRoleLabel();
     const isPhone = useIsPhone();
     const [days, setDays] = useState(14);
@@ -57,6 +59,7 @@ export default function AdminDashboard() {
 
     return (
         <DashboardShell {...shellProps}>
+            {isAdmin && <PrintAccessCard />}
             {isPhone && (
                 <MobileStaffHome
                     name={user?.name || roleLabel}

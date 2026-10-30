@@ -8,6 +8,7 @@ import {
     Wrench, ShieldAlert, Activity, Printer,
 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import usePrintAccess from '../../hooks/usePrintAccess';
 import useIsPhone from '../../hooks/useIsPhone';
 import MobileHome from '../../Components/shared/MobileHome';
 import RefreshButton from '../../Components/shared/RefreshButton';
@@ -21,6 +22,7 @@ export default function StudentDashboard() {
     const { token } = useParams();
     const isPhone = useIsPhone();
     const { t } = useRoleTranslation();
+    const printAccess = usePrintAccess(); // admin switch for Print / Save as PDF
     const isInstructor = Array.isArray(roles) && roles.includes('instructor');
     const { data, loading, error, updatedAt, refresh } = usePolling('/analytics/me', { interval: 20000 });
     // The account's own user token — the dashboard address and the printed
@@ -78,13 +80,36 @@ export default function StudentDashboard() {
                 <LiveBadge updatedAt={updatedAt} error={error} />
                 <div className="ch-toolbar-actions">
                     <RefreshButton onRefresh={refresh} loading={loading} />
-                    {ownToken && (
+                    {ownToken && (printAccess.enabled || isInstructor ? (
                         <Link to={`/app/print/${ownToken}`} className="ds-btn ds-btn-secondary">
                             <Printer size={16} /> {t('dash.printMine')}
                         </Link>
-                    )}
+                    ) : (
+                        <button
+                            type="button"
+                            className="ds-btn ds-btn-secondary"
+                            disabled
+                            title={printAccess.message}
+                            style={{ opacity: 0.55, cursor: 'not-allowed' }}
+                        >
+                            <Printer size={16} /> {printAccess.loaded ? 'Printing not open yet' : t('dash.printMine')}
+                        </button>
+                    ))}
                 </div>
             </div>
+
+            {/* Admin switch is OFF: tell the student why Print is locked (visible on phones too). */}
+            {ownToken && !isInstructor && printAccess.loaded && !printAccess.enabled && printAccess.message && (
+                <div
+                    role="status"
+                    style={{
+                        margin: '0 0 14px', padding: '10px 14px', borderRadius: 12, fontSize: 13.5, lineHeight: 1.5,
+                        border: '1px solid rgba(245,158,11,.45)', background: 'rgba(245,158,11,.12)',
+                    }}
+                >
+                    <strong>Printing not open yet.</strong> {printAccess.message}
+                </div>
+            )}
 
             {/* ---- Personal KPIs ---- */}
             {!isPhone && (

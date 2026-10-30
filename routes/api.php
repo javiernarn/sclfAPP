@@ -375,6 +375,13 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
         Route::get('/analytics/monthly', [AnalyticsController::class, 'monthly']);
     });
 
+    // --- Student dashboard printing switch (clearance signing) ---
+    // Anyone signed in can read it (the student's button needs it);
+    // only the admin can change it.
+    Route::get('/print-access', [\App\Http\Controllers\PrintAccessController::class, 'show']);
+    Route::middleware('role:admin')->put('/admin/print-access', [\App\Http\Controllers\PrintAccessController::class, 'update']);
+    Route::middleware('role:admin')->post('/admin/print-access/notify', [\App\Http\Controllers\PrintAccessController::class, 'notify']);
+
     // --- Approval requests (staff files them, admin reviews them) ---
     // Only the admin can open the request list; staff can no longer view it.
     Route::middleware('role:admin')->get('/action-requests', [ActionRequestController::class, 'index']);

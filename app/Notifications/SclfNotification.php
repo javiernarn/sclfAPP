@@ -35,6 +35,8 @@ class SclfNotification extends Notification
     public const TYPE_SERVICE_REQUEST_ASSIGNED = 'service_request_assigned';
     public const TYPE_SERVICE_REQUEST_SUBMITTED = 'service_request_submitted';
     public const TYPE_SERVICE_REQUEST_COMPLETED = 'service_request_completed';
+    // Admin opened Print / Save as PDF for students (clearance signing).
+    public const TYPE_PRINT_OPENED = 'print_opened';
 
     // Sent to the lost & found handlers (see User::LOST_FOUND_HANDLER_ROLES).
     public const TYPE_LOST_REPORTED = 'lost_reported';
@@ -81,6 +83,7 @@ class SclfNotification extends Notification
         self::TYPE_SERVICE_REQUEST_ASSIGNED => ['Service Request Assigned', 'warning'],
         self::TYPE_SERVICE_REQUEST_SUBMITTED => ['New Service Request', 'info'],
         self::TYPE_SERVICE_REQUEST_COMPLETED => ['Request Completed', 'success'],
+        self::TYPE_PRINT_OPENED => ['Printing Open', 'success'],
         self::TYPE_LOST_REPORTED => ['New Lost Report', 'info'],
         self::TYPE_FOUND_REPORTED => ['Found Item To Review', 'warning'],
         self::TYPE_MATCH_FOR_REVIEW => ['Match To Review', 'warning'],
@@ -128,6 +131,7 @@ class SclfNotification extends Notification
             $notifiable instanceof User
             && $notifiable->hasAnyRole(self::EMAILED_ROLES)
             && ($notifiable->email_notifications ?? true)
+            && empty($this->extra['no_email']) // bulk announcements can opt out of email
         ) {
             $channels[] = 'mail';
         }

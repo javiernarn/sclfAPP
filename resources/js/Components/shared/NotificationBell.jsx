@@ -31,6 +31,7 @@ const TONE_FOR_TYPE = {
     service_request_assigned: 'ds-badge-pending',
     service_request_submitted: 'ds-badge-review',
     service_request_completed: 'ds-badge-found',
+    print_opened: 'ds-badge-found',
     staff_request_submitted: 'ds-badge-pending',
     staff_request_approved: 'ds-badge-found',
     staff_request_rejected: 'ds-badge-rejected',
