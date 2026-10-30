@@ -23,7 +23,7 @@ class ActionRequestController extends Controller
         $user = $request->user();
 
         $requests = ActionRequest::query()
-            ->with(['requester:id,name,email,staff_id', 'reviewer:id,name'])
+            ->with(['requester:id,name,email,staff_id', 'reviewer:id,name', 'reviewer.roles:id,name', 'requester.roles:id,name'])
             // Staff only ever see their own; the admin sees everyone's.
             ->when(!$user->hasRole('admin'), fn ($q) => $q->where('requester_id', $user->id))
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))

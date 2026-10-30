@@ -9,6 +9,7 @@ import {
     ShieldCheck, ClipboardList, Clock,
 } from '../../Components/icons';
 import './SecurityQrScanner.css';
+import { roleAndName } from '../../utils/roleLabel';
 
 // Force the JS/WASM decoder path instead of the browser's native
 // BarcodeDetector API. BarcodeDetector is much stricter about module
@@ -409,7 +410,7 @@ export default function SecurityQrScanner() {
                             <ResultRow icon={Hash} label="Release code" value={result.public_code} />
                             <ResultRow icon={Tag} label="Item" value={result.found_item?.item_name} />
                             <ResultRow icon={Tag} label="Category" value={result.found_item?.category} />
-                            <ResultRow icon={User} label="Released to" value={result.claim?.claimant?.name} avatarUser={result.claim?.claimant} />
+                            <ResultRow icon={User} label="Released to" value={result.claim?.claimant?.name ? roleAndName(result.claim.claimant) : null} avatarUser={result.claim?.claimant} />
                             {/* Was hardcoded to student_id, so releasing to an instructor (who
                                 has a staff_id, not a student_id) showed a blank "Student ID"
                                 field. display_id resolves to whichever ID the claimant actually
@@ -514,7 +515,7 @@ export function StoredItemCard({ item, claim }) {
     };
 
     const officers = loc?.current_officers || [];
-    const officer = item.security_officer?.name;
+    const officer = item.security_officer?.name ? roleAndName(item.security_officer) : undefined;
     const storedAt = item.created_at ? new Date(item.created_at).toLocaleString() : null;
     const showCategory = item.category && item.category.toLowerCase() !== (item.item_name || '').toLowerCase();
     // The Counter form fills this in automatically when the officer leaves it blank.
@@ -606,7 +607,7 @@ export function StoredItemCard({ item, claim }) {
                             { label: 'Checked in by', value: officer },
                             { label: 'Checked in at', value: storedAt ? `${storedAt}${daysAgo(item.created_at) ? ` (${daysAgo(item.created_at)})` : ''}` : null },
                             { label: 'Counter', value: loc ? [loc.label, loc.code].filter(Boolean).join(' · ') : null },
-                            { label: 'Owner', value: claim?.claimant ? `${claim.claimant.name}${claim.claimant.display_id ? ` (${claim.claimant.display_id})` : ''}` : null },
+                            { label: 'Owner', value: claim?.claimant ? `${roleAndName(claim.claimant)}${claim.claimant.display_id ? ` (${claim.claimant.display_id})` : ''}` : null },
                         ]} />
                     </Block>
                     <Block icon={Tag} title="Owner's lost report">
@@ -632,7 +633,7 @@ export function StoredItemCard({ item, claim }) {
                 <>
                     <Block icon={Clock} title="How it was found">
                         <Rows rows={[
-                            { label: 'Found by', value: item.finder ? `${item.finder.name}${item.finder.display_id ? ` (${item.finder.display_id})` : ''}` : null },
+                            { label: 'Found by', value: item.finder ? `${roleAndName(item.finder)}${item.finder.display_id ? ` (${item.finder.display_id})` : ''}` : null },
                             { label: 'Found at', value: item.location_found },
                             { label: 'Found on', value: whenText(item.date_found, item.time_found) },
                             { label: 'Reported', value: storedAt },

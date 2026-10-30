@@ -22,6 +22,8 @@ import {
     RefreshCw,
 } from '../../Components/icons';
 import { KpiCard, ChartCard, DonutChart, RankedBars, LiveBadge, usePolling } from '../../Components/charts';
+import { roleAndName } from '../../utils/roleLabel';
+import RoleText from '../../Components/shared/RoleText';
 
 // Status a counter can be in — mirrors StorageLocation::STATUSES on the
 // backend exactly (see the status migration + CounterIntakeService,
@@ -299,7 +301,7 @@ function QueuePanel({ counter, toast }) {
                             <div className="ds-list-item-main">
                                 <div>
                                     <p className="ds-list-item-title">
-                                        #{entry.ticket_number} — {entry.requester?.name}
+                                        #{entry.ticket_number} — <RoleText text={roleAndName(entry.requester)} />
                                         {' '}
                                         <span className={`ds-badge ds-badge-icon ${entry.status === 'completed' ? 'ds-badge-claimed' : entry.status === 'cancelled' || entry.status === 'no_show' ? 'ds-badge-rejected' : 'ds-badge-pending'}`}>
                                             {QUEUE_LABEL[entry.status] || entry.status}

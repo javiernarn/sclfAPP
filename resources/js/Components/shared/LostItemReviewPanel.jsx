@@ -1,6 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import axios from '../../config/axiosConfig';
 import { useToast } from '../../context/ToastContext';
+import { roleAndName } from '../../utils/roleLabel';
+import RoleText from '../../Components/shared/RoleText';
 
 /**
  * Lost reports waiting for approval — shown inside the Lost Items page
@@ -74,7 +76,7 @@ export default function LostItemReviewPanel({ onChanged }) {
                                 <div>
                                     <p className="ds-list-item-title">{item.item_name}</p>
                                     <p className="ds-list-item-meta">
-                                        {item.category || 'Uncategorized'} · Lost by {item.reporter}
+                                        {item.category || 'Uncategorized'} · Lost by <RoleText text={roleAndName({ name: item.reporter, roles: item.reporter_roles })} />
                                         {item.location_lost ? ` near ${item.location_lost}` : ''}
                                         {item.date_lost ? ` · ${String(item.date_lost).slice(0, 10)}` : ''}
                                     </p>

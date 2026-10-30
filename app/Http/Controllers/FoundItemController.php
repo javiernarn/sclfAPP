@@ -23,7 +23,7 @@ class FoundItemController extends Controller
         $this->authorize('viewAny', FoundItem::class);
 
         $items = FoundItem::query()
-            ->with(['finder:id,name', 'storageLocation:id,code'])
+            ->with(['finder:id,name', 'finder.roles:id,name', 'storageLocation:id,code'])
             // Counter check-ins already have a known, confirmed owner — an
             // approved claim is created for them the moment security checks
             // the item in (see CounterIntakeService::checkIn), and they see
@@ -119,10 +119,10 @@ class FoundItemController extends Controller
 
         $viewer = request()->user();
 
-        $foundItem->load(['finder:id,name', 'storageLocation']);
+        $foundItem->load(['finder:id,name', 'finder.roles:id,name', 'storageLocation']);
 
         if ($foundItem->confidentialVisibleTo($viewer)) {
-            $foundItem->load('securityOfficer:id,name');
+            $foundItem->load(['securityOfficer:id,name', 'securityOfficer.roles:id,name']);
         }
 
         return response()->json($foundItem->redactedFor($viewer));

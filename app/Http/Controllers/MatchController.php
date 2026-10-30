@@ -48,6 +48,7 @@ class MatchController extends Controller
             ->with([
                 'lostItem:id,user_id,item_name,category,color,brand,model,description,unique_characteristics,details,location_lost,date_lost,time_lost,contact_info,status,image_path,updated_at',
                 'lostItem.user:id,name',
+                'lostItem.user.roles:id,name',
                 'foundItem:id,item_name,category,color,brand,model,description,unique_characteristics,details,location_found,date_found,time_found,status,image_path,intake_channel,storage_location_id,updated_at',
                 'foundItem.storageLocation:id,code,label,room,cabinet,shelf,box',
             ])
@@ -114,8 +115,10 @@ class MatchController extends Controller
     {
         $match->load([
             'lostItem.user:id,name',
+            'lostItem.user.roles:id,name',
             'foundItem.storageLocation:id,code,label,room,cabinet,shelf,box',
             'foundItem.finder:id,name',
+            'foundItem.finder.roles:id,name',
         ]);
         abort_unless($match->lostItem && $match->foundItem, 404, 'One of the reports in this match no longer exists.');
 

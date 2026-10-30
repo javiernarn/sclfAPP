@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
 import WorkflowGuide from './WorkflowGuide';
 import { useToast } from '../../context/ToastContext';
+import { roleAndName } from '../../utils/roleLabel';
+import RoleText from '../../Components/shared/RoleText';
 
 /**
  * Found reports waiting for verification — shown inside the Found Items page
@@ -58,7 +60,7 @@ export default function FoundItemReviewPanel({ onChanged }) {
                                     <div>
                                         <p className="ds-list-item-title">{item.item_name}</p>
                                         <p className="ds-list-item-meta">
-                                            {item.category || 'Uncategorized'} · Found by {item.finder?.name} near {item.location_found || 'campus'}
+                                            {item.category || 'Uncategorized'} · Found by <RoleText text={roleAndName(item.finder, 'Unknown')} /> near {item.location_found || 'campus'}
                                         </p>
                                     </div>
                                 </div>

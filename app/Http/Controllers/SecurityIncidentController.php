@@ -30,7 +30,7 @@ class SecurityIncidentController extends Controller
         $isStaff = $viewer->hasAnyRole(['security_officer', 'admin', 'staff']);
 
         $query = SecurityIncident::query()
-            ->with(['reporter:id,name', 'assignee:id,name', 'assignee.roles:id,name', 'campus:id,name,code'])
+            ->with(['reporter:id,name', 'reporter.roles:id,name', 'assignee:id,name', 'assignee.roles:id,name', 'campus:id,name,code'])
             ->when(!$isStaff, fn ($q) => $q->where('reported_by', $viewer->id))
             ->when(
                 $isStaff && $viewer->campus_id && !$viewer->hasAdminAccess(),
@@ -101,6 +101,7 @@ class SecurityIncidentController extends Controller
     {
         return $incident->load([
             'reporter:id,name,email',
+            'reporter.roles:id,name',
             'assignee:id,name,student_id,staff_id',
             'assignee.roles:id,name',
             'resolver:id,name,student_id,staff_id',

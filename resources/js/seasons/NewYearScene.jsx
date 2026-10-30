@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import { NY } from './art';
+import useNewYearClock from './newyearClock';
+import { LiveClock, CountdownSign, BallTower, Bunting } from './NewYearLive';
 
 /**
  * NewYearScene — THIRD theme.
@@ -7,7 +9,14 @@ import { NY } from './art';
  * disco balls swinging from the top, balloons drifting up, a clock at twelve,
  * champagne, glasses and party poppers.
  *
- * The clock, champagne, glasses, poppers, balloons, disco balls, stars and
+ * REAL-TIME: the analog clock shows the viewer's actual time, the neon sign counts
+ * down to the next 1 January, the Times Square style ball really drops in the last
+ * 60 s of 31 Dec and the finale fireworks fire at midnight (see NewYearLive.jsx,
+ * newyearClock.js; preview with ?nydate=2026-12-31T23:59:20).
+ * Fireworks and rockets only exist in the DARK theme; the light theme is a
+ * daytime party (bunting, streamers, balloons, lanterns, confetti).
+ *
+ * The champagne, glasses, poppers, balloons, disco balls, stars and
  * sparkles are real, professionally designed artwork (Google Noto Emoji,
  * Apache 2.0 — see ./art/ART_CREDITS.md). Fireworks and confetti are plain
  * CSS particles (like snow), and only the skyline silhouette is drawn in code.
@@ -34,10 +43,26 @@ const BURSTS = [
     { x: 92, y: 38, c: '#34d399', c2: '#a7f3d0', s: 0.85, dur: 4.2, delay: -4.1 },
     { x: 9, y: 40, c: '#fb7185', c2: '#fecdd3', s: 0.8, dur: 5.2, delay: -2.9 },
 ];
+// midnight finale: extra, faster bursts that only appear in the last 10 s and on 1 January
+const FINALE = [
+    { x: 14, y: 18, c: '#fbbf24', c2: '#fff', s: 1.2, dur: 2.6, delay: -0.2 },
+    { x: 30, y: 30, c: '#f472b6', c2: '#fff', s: 1.1, dur: 2.9, delay: -1.0 },
+    { x: 50, y: 14, c: '#38bdf8', c2: '#fff', s: 1.3, dur: 2.7, delay: -0.6 },
+    { x: 68, y: 28, c: '#a78bfa', c2: '#fff', s: 1.1, dur: 3.0, delay: -1.6 },
+    { x: 86, y: 20, c: '#34d399', c2: '#fff', s: 1.2, dur: 2.5, delay: -0.9 },
+    { x: 58, y: 40, c: '#fb7185', c2: '#fff', s: 1.0, dur: 2.8, delay: -2.0 },
+];
+function Finale() {
+    const { total, celebrating } = useNewYearClock();
+    if (!celebrating && total > 10) return null;
+    return <div className="ny-finale">{FINALE.map((b, i) => <Burst key={i} cfg={b} />)}</div>;
+}
+
 const SPOKES = 18;
 function Burst({ cfg }) {
     return (
-        <div className="ny-burst" style={{ left: `${cfg.x}%`, top: `${cfg.y}%`, '--c': cfg.c, '--c2': cfg.c2, '--s': cfg.s, '--dur': `${cfg.dur}s`, '--delay': `${cfg.delay}s` }}>
+        <div className="ny-burst" style={{ left: `${cfg.x}%`, top: `${cfg.y}%`, '--c': cfg.c, '--c2': cfg.c2, '--s': cfg.s, '--dur': `${cfg.dur}s`, '--delay': `${cfg.delay}s`, '--by': `${cfg.y}vh` }}>
+            <b className="ny-rocket" />
             <b className="ny-flash" />
             {Array.from({ length: SPOKES }, (_, i) => (
                 <i key={i} className={i % 2 ? 'in' : 'out'} style={{ '--a': `${(i * 360) / SPOKES}deg` }} />
@@ -108,7 +133,14 @@ export default function NewYearScene({ variant = 'auth', isDark = true }) {
             {isDark && <div className="ny-stars" style={{ boxShadow: stars }} />}
             <div className="ny-glow" />
 
-            {bursts.map((b, i) => <Burst key={i} cfg={b} />)}
+            {/* fireworks + rockets: dark theme only */}
+            {isDark && bursts.map((b, i) => <Burst key={i} cfg={b} />)}
+            {isDark && variant !== 'dashboard' && <Finale />}
+
+            <Bunting />
+            <CountdownSign />
+
+            {[1, 2, 3].map((n) => <Img key={n} src={NY.lantern} className={`ny-lantern ny-l-${n}`} />)}
 
             <Img src={NY.star} className="ny-spark ny-sp-1" />
             <Img src={NY.sparkle} className="ny-spark ny-sp-2" />
@@ -129,9 +161,13 @@ export default function NewYearScene({ variant = 'auth', isDark = true }) {
             <Img src={NY.confetti} className="ny-cball" />
 
             <City />
+            <BallTower />
 
             <Img src={NY.popper} className="ny-popper" />
-            <Img src={NY.clock} className="ny-clock" />
+            <LiveClock className="ny-clock" />
+            <Img src={NY.tophat} className="ny-prop ny-hat" />
+            <Img src={NY.grapes} className="ny-prop ny-grapes" />
+            <Img src={NY.sparkler} className="ny-prop ny-sparkler" />
             <Img src={NY.glasses} className="ny-glasses" />
             <Img src={NY.champagne} className="ny-bottle" />
         </div>

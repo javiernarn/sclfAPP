@@ -32,7 +32,7 @@ class DispositionController extends Controller
 
         $items = FoundItem::query()
             ->where('status', FoundItem::STATUS_UNCLAIMED)
-            ->with(['finder:id,name', 'storageLocation:id,code,campus_id'])
+            ->with(['finder:id,name', 'finder.roles:id,name', 'storageLocation:id,code,campus_id'])
             ->when(
                 $viewer->campus_id && !$viewer->hasAdminAccess(),
                 fn ($q) => $q->where('campus_id', $viewer->campus_id)

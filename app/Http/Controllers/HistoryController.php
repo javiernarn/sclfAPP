@@ -49,6 +49,7 @@ class HistoryController extends Controller
                 'storageLocation:id,code,label',
                 'claims' => fn ($q) => $q->orderByDesc('id')->with([
                     'claimant:id,name,student_id,staff_id,profile_picture',
+                    'claimant.roles:id,name',
                     'qrRelease.generator:id,name',
                     'qrRelease.scanner:id,name',
                     'qrRelease.scanner.roles',
@@ -140,6 +141,7 @@ class HistoryController extends Controller
                 'foundItem:id,item_name,category,image_path,intake_channel,storage_location_id',
                 'foundItem.storageLocation:id,code,label',
                 'claimant:id,name,student_id,staff_id,profile_picture',
+                'claimant.roles:id,name',
                 'reviewer:id,name',
                 'reviewer.roles',
                 'qrRelease.generator:id,name',

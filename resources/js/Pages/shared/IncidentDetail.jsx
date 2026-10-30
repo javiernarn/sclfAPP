@@ -11,7 +11,7 @@ import AttachmentGallery from '../../Components/shared/AttachmentGallery';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useConfirm, useDiscardConfirm } from '../../context/ConfirmContext';
-import { roleNameAndId } from '../../utils/roleLabel';
+import { roleNameAndId, roleAndName } from '../../utils/roleLabel';
 import { initialsOf } from '../../utils/initials';
 import RoleText from '../../Components/shared/RoleText';
 
@@ -244,7 +244,7 @@ export default function IncidentDetail() {
         <DashboardShell
             eyebrow="Security"
             title={incident.title}
-            subtitle={`Reported ${new Date(incident.created_at).toLocaleString()}${incident.reporter?.name ? ` by ${incident.reporter.name}` : ''}`}
+            subtitle={<>Reported {new Date(incident.created_at).toLocaleString()}{incident.reporter?.name ? <> by <RoleText text={roleAndName(incident.reporter)} /></> : ''}</>}
             actions={<span className={statusBadgeClass(incident.status)}>{incident.status.replace(/_/g, ' ')}</span>}
         >
             <Link to="/app/incidents" className="ds-back-link">

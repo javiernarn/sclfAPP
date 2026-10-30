@@ -151,7 +151,7 @@ export default function IncidentsList() {
                                             </div>
                                         </td>
                                         <td className="ds-table-nowrap">
-                                            {isStaff ? (incident.reporter?.name || '—') : <RoleText text={roleAndName(incident.assignee, 'Unassigned')} />}
+                                            {isStaff ? (incident.reporter?.name ? <RoleText text={roleAndName(incident.reporter)} /> : '—') : <RoleText text={roleAndName(incident.assignee, 'Unassigned')} />}
                                         </td>
                                         <td><span className={severityBadgeClass(incident.severity)}>{incident.severity}</span></td>
                                         <td><span className={statusBadgeClass(incident.status)}>{statusLabel(incident.status)}</span></td>
@@ -184,7 +184,7 @@ export default function IncidentsList() {
                                             <p className="ds-list-item-meta">
                                                 {incident.category?.replace(/_/g, ' ')}
                                                 {incident.campus?.code ? ` · ${incident.campus.code}` : ''}
-                                                {isStaff && incident.reporter?.name ? ` · Reported by ${incident.reporter.name}` : ''}
+                                                {isStaff && incident.reporter?.name ? <> · Reported by <RoleText text={roleAndName(incident.reporter)} /></> : ''}
                                                 {incident.assignee?.name ? <> · Assigned to <RoleText text={roleAndName(incident.assignee)} /></> : ''}
                                             </p>
                                             <p className="ds-list-item-meta">

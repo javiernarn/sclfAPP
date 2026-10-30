@@ -298,7 +298,7 @@ class CounterController extends Controller
             // Same reasoning as searchOwners() above: staff_id is needed
             // for the requester's display_id accessor to resolve for
             // instructor walk-ins, not just students.
-            ->with('requester:id,name,student_id,staff_id,profile_picture', 'handledBy:id,name')
+            ->with('requester:id,name,student_id,staff_id,profile_picture', 'requester.roles:id,name', 'handledBy:id,name', 'handledBy.roles:id,name')
             ->orderBy('ticket_number')
             ->get();
 

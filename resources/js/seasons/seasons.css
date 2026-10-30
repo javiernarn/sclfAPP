@@ -15,9 +15,6 @@
 /* =====================================================================
    1. SCENE ART — shared
    ===================================================================== */
-/* Keyframes used by more than one season carry a neutral "season-" name, so no season
-   depends on another season's .hw-/.xm- animation (and renaming one cannot break another). */
-
 .hw-scene, .xm-scene {
     position: absolute; inset: 0; z-index: 0;
     overflow: hidden; pointer-events: none; user-select: none;
@@ -50,8 +47,8 @@
         radial-gradient(70% 38% at 50% 100%, var(--hw-glow), transparent 70%),
         linear-gradient(180deg, var(--hw-sky-top) 0%, var(--hw-sky-mid) 58%, var(--hw-sky-low) 100%);
 }
-.hw-stars { position: absolute; top: 0; left: 0; width: 1px; height: 1px; border-radius: 50%; animation: season-twinkle 4.5s ease-in-out infinite; }
-@keyframes season-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+.hw-stars { position: absolute; top: 0; left: 0; width: 1px; height: 1px; border-radius: 50%; animation: hw-twinkle 4.5s ease-in-out infinite; }
+@keyframes hw-twinkle { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
 
 .hw-moon {
     position: absolute; top: clamp(54px, 8vh, 96px); right: clamp(14px, 7vw, 120px);
@@ -135,7 +132,7 @@
 }
 
 /* ---- floating bones / skulls ---- */
-.hw-fl { position: absolute; opacity: 0.5; animation: season-drift 18s ease-in-out infinite; }
+.hw-fl { position: absolute; opacity: 0.5; animation: hw-drift 18s ease-in-out infinite; }
 .hw-bone { display: block; width: clamp(34px, 6vw, 62px); height: auto; }
 .hw-skull { display: block; width: clamp(24px, 4.4vw, 44px); height: auto; }
 .hw-xbones { display: block; width: clamp(34px, 6vw, 60px); height: auto; }
@@ -145,7 +142,7 @@
 .hw-fl-4 { left: 46%; top: 12%; animation-duration: 19s; animation-delay: -3s; }
 .hw-fl-5 { right: 6%; top: 24%; animation-duration: 26s; animation-delay: -12s; }
 .hw-fl-6 { left: 60%; top: 50%; animation-duration: 22s; animation-delay: -7s; }
-@keyframes season-drift {
+@keyframes hw-drift {
     0%, 100% { transform: translate(0, 0) rotate(-12deg); }
     33% { transform: translate(14px, -22px) rotate(10deg); }
     66% { transform: translate(-10px, -8px) rotate(-6deg); }
@@ -388,10 +385,8 @@
     100% { opacity: 0; transform: translateY(-20%); }
 }
 .hw-sk-body { transform-origin: 80px 186px; }
-/* NOTE: was also called "hw-bob" — the same name as the bats' bob above. The later rule won, so every
-   bat was tilted 7 degrees and jittered like a runner. Keep the two names different. */
-.hw-grave[data-phase="run"] .hw-sk-body { animation: hw-sk-bob calc(var(--t) / 2) ease-in-out infinite; }
-@keyframes hw-sk-bob {
+.hw-grave[data-phase="run"] .hw-sk-body { animation: hw-bob calc(var(--t) / 2) ease-in-out infinite; }
+@keyframes hw-bob {
     0%, 100% { transform: rotate(7deg) translateY(0); }
     50% { transform: rotate(7deg) translateY(-4.5px); }
 }
@@ -485,7 +480,7 @@
     --xm-hill-b: #bfdbe6; --xm-hill-f: #ffffff; --xm-flake: #7ab6d6;
 }
 .xm-sky { position: absolute; inset: 0; background: linear-gradient(180deg, var(--xm-sky-top), var(--xm-sky-mid) 60%, var(--xm-sky-low)); }
-.xm-stars { position: absolute; top: 0; left: 0; width: 1px; height: 1px; border-radius: 50%; animation: season-twinkle 4s ease-in-out infinite; }
+.xm-stars { position: absolute; top: 0; left: 0; width: 1px; height: 1px; border-radius: 50%; animation: hw-twinkle 4s ease-in-out infinite; }
 .xm-moon {
     position: absolute; top: clamp(60px, 9vh, 100px); right: clamp(16px, 8vw, 130px);
     width: clamp(54px, 12vw, 104px); aspect-ratio: 1; border-radius: 50%;
@@ -493,11 +488,11 @@
     box-shadow: 0 0 40px 10px rgba(220, 235, 255, 0.45);
 }
 .xm-scene.is-light .xm-moon { display: none; }
-.xm-bauble { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; animation: season-swing 4.2s ease-in-out infinite; }
+.xm-bauble { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; animation: xm-swing 4.2s ease-in-out infinite; }
 .xm-bauble-string { width: 1.5px; background: rgba(255, 255, 255, 0.55); height: clamp(22px, 5vh, 48px); }
 .xm-bauble-img { width: clamp(24px, 4.6vw, 42px); height: auto; display: block; filter: drop-shadow(0 0 8px rgba(255, 220, 120, 0.55)) drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35)); }
 .xm-bauble-1 { left: 14%; } .xm-bauble-2 { left: 34%; animation-delay: -1.2s; } .xm-bauble-3 { right: 30%; animation-delay: -2.1s; } .xm-bauble-4 { right: 10%; animation-delay: -0.6s; }
-@keyframes season-swing { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@keyframes xm-swing { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
 
 .xm-flake { position: absolute; top: -12px; border-radius: 50%; background: var(--xm-flake); box-shadow: 0 0 6px var(--xm-flake); animation: xm-fall var(--d) linear infinite; }
 .xm-flake.xm-flake-img { background: none; box-shadow: none; border-radius: 0; height: auto; top: -40px; filter: drop-shadow(0 0 4px rgba(190, 225, 255, 0.7)); }
@@ -506,7 +501,7 @@
     50% { transform: translate(var(--sway), 55vh); }
     100% { transform: translate(calc(var(--sway) * -0.6), 112vh); }
 }
-.xm-hills { position: absolute; left: 0; bottom: 0; width: 100%; height: clamp(90px, 20vh, 210px); display: block; }
+.xm-hills, .xm-town { position: absolute; left: 0; bottom: 0; width: 100%; height: var(--xm-town-h, max(clamp(110px, 24vh, 300px), 16.7vw)); display: block; }
 .xm-hill-b { fill: var(--xm-hill-b); } .xm-hill-f { fill: var(--xm-hill-f); }
 .xm-tree, .xm-snowman, .xm-gift { position: absolute; display: block; height: auto; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.3)); }
 .xm-t-1 { left: 1%; bottom: 1.5%; width: clamp(70px, 17vw, 170px); }
@@ -524,10 +519,10 @@
 .xm-g-2 { filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.3)) hue-rotate(205deg) saturate(1.1); }
 .xm-g-3 { filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.3)) hue-rotate(110deg); }
 .xm-deer { position: absolute; left: 32%; bottom: 1%; width: clamp(34px, 7vw, 70px); height: auto; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.3)); }
-.xm-spark { position: absolute; height: auto; animation: season-spark 2.6s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255, 235, 150, 0.9)); }
+.xm-spark { position: absolute; height: auto; animation: xm-twinkle 2.6s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255, 235, 150, 0.9)); }
 .xm-sp-1 { left: 5%; bottom: 20%; width: clamp(16px, 3vw, 28px); }
 .xm-sp-2 { right: 6%; bottom: 24%; width: clamp(14px, 2.6vw, 24px); animation-delay: -1.3s; }
-@keyframes season-spark { 0%, 100% { opacity: 0.35; transform: scale(0.8) rotate(0deg); } 50% { opacity: 1; transform: scale(1.1) rotate(12deg); } }
+@keyframes xm-twinkle { 0%, 100% { opacity: 0.35; transform: scale(0.8) rotate(0deg); } 50% { opacity: 1; transform: scale(1.1) rotate(12deg); } }
 @media (max-width: 520px) { .xm-g-2, .xm-g-3, .xm-bauble-2, .xm-bauble-3, .xm-deer { display: none; } }
 @media (max-width: 767px) and (orientation: portrait) {
     .xm-auth .xm-t-1, .xm-auth .xm-t-2 { bottom: clamp(50px, 8vh, 80px); width: clamp(52px, 17vw, 84px); }
@@ -536,10 +531,170 @@
     /* sit just under the phone app bar so the ornaments are not hidden by it */
     .xm-auth .xm-bauble { top: 56px; }
 }
-@media (orientation: landscape) and (max-height: 480px) { .xm-t-1, .xm-t-2 { width: clamp(42px, 22vh, 78px); } .xm-sm, .xm-g-1, .xm-g-2, .xm-g-3, .xm-bauble, .xm-deer, .xm-spark { display: none; } .xm-hills { height: 60px; } }
+@media (orientation: landscape) and (max-height: 480px) { .xm-t-1, .xm-t-2 { width: clamp(42px, 22vh, 78px); } .xm-sm, .xm-g-1, .xm-g-2, .xm-g-3, .xm-bauble, .xm-deer, .xm-spark { display: none; } .xm-hills, .xm-town { height: 60px; } .xm-town, .xm-flight, .xm-garland, .xm-folk, .xm-aurora, .xm-shoot, .xm-bauble-5, .xm-bauble-6 { display: none; } }
 .xm-dashboard .xm-deer, .xm-dashboard .xm-spark, .xm-dashboard .xm-sm, .xm-dashboard .xm-g-1, .xm-dashboard .xm-g-2, .xm-dashboard .xm-g-3, .xm-dashboard .xm-bauble-2, .xm-dashboard .xm-bauble-3 { display: none; }
 .xm-dashboard .xm-tree { opacity: 0.55; } .xm-dashboard .xm-flake { opacity: 0.5 !important; }
-@media (prefers-reduced-motion: reduce) { .xm-flake, .xm-bauble, .xm-tree, .xm-spark, .xm-stars { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .xm-flake, .xm-bauble, .xm-tree, .xm-spark, .xm-stars, .xm-smoke, .xm-win, .xm-bulb, .xm-aurora i, .xm-shoot, .xm-nose-halo, .xm-lantern { animation: none !important; } }
+
+/* =====================================================================
+   1b-2. CHRISTMAS UPGRADE — Santa's sleigh, falling gifts, village, garland,
+   aurora, shooting star, elf + Mrs. Claus.  (components: SantaSleigh.jsx,
+   ChristmasTown.jsx)
+   ===================================================================== */
+.xm-scene { --xm-fly-t: 32s; --xm-fly-w: clamp(250px, 40vw, 560px); --xm-fly-top: 9vh; --xm-shade: 0.34; --xm-halo: 0.30; }
+.xm-scene.is-light { --xm-shade: 0; --xm-halo: 0.12; }
+
+/* ---- Santa's sleigh flight (one loop; gifts use the same period) ---- */
+.xm-flight {
+    position: absolute; top: var(--xm-fly-top); left: 0; width: var(--xm-fly-w);
+    animation: xm-fly var(--xm-fly-t) linear infinite; will-change: transform;
+}
+@keyframes xm-fly {
+    0%   { transform: translate3d(calc(-1 * var(--xm-fly-w) - 30px), 0, 0); }
+    54%  { transform: translate3d(calc(100vw + 30px), 0, 0); }
+    100% { transform: translate3d(calc(100vw + 30px), 0, 0); }
+}
+.xm-arc { position: relative; width: 100%; animation: xm-arc var(--xm-fly-t) ease-in-out infinite; }
+@keyframes xm-arc {
+    0%   { transform: translateY(2vh) rotate(3deg); }
+    27%  { transform: translateY(-1.5vh) rotate(-1deg); }
+    54%  { transform: translateY(3vh) rotate(4deg); }
+    100% { transform: translateY(3vh) rotate(4deg); }
+}
+.xm-sleigh { display: block; width: 100%; height: auto; overflow: visible; filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.35)); }
+.xm-sleigh image { image-rendering: auto; }
+.xm-sleigh-body { animation: xm-sleigh-bob 1.1s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes xm-sleigh-bob { 0%, 100% { transform: translateY(0) rotate(-0.8deg); } 50% { transform: translateY(-4px) rotate(0.8deg); } }
+.xm-deer-g { animation: xm-gallop 0.55s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 85%; }
+.xm-dg-2 { animation-delay: -0.18s; } .xm-dg-3 { animation-delay: -0.36s; }
+@keyframes xm-gallop { 0%, 100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(-9px) rotate(4deg); } }
+.xm-harness { animation: xm-sleigh-bob 1.1s ease-in-out infinite; }
+.xm-nose-halo { opacity: 0.45; animation: xm-nose 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes xm-nose { 0%, 100% { opacity: 0.25; transform: scale(0.8); } 50% { opacity: 0.7; transform: scale(1.35); } }
+.xm-lantern { animation: xm-twinkle 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+
+/* magic dust behind the sleigh */
+.xm-trail {
+    position: absolute; left: 4%; width: clamp(10px, 1.8vw, 20px); height: auto; opacity: 0;
+    filter: drop-shadow(0 0 6px rgba(255, 235, 150, 0.95));
+    animation: xm-dust 1.6s ease-out infinite; animation-delay: calc(var(--i) * -0.27s);
+}
+@keyframes xm-dust {
+    0%   { opacity: 0; transform: translateX(0) scale(0.4) rotate(0); }
+    20%  { opacity: 1; }
+    100% { opacity: 0; transform: translateX(calc(-1 * clamp(40px, 9vw, 110px))) translateY(10px) scale(1.1) rotate(160deg); }
+}
+
+/* ---- gifts falling out of the sack (keep the sleigh's speed = a true arc) ---- */
+.xm-drop {
+    position: absolute; left: 10%; top: 26%; width: calc(clamp(22px, 3.6vw, 44px) * var(--ds, 1)); aspect-ratio: 1;
+    --drop: calc(100vh - var(--xm-fly-top) - 18vh);
+    animation: xm-drop-y var(--xm-fly-t) infinite; animation-delay: var(--dl); animation-fill-mode: backwards;
+    animation-timing-function: linear;
+}
+.xm-drop > img { position: absolute; inset: 0; width: 100%; height: auto; display: block; opacity: 0; }
+.xm-drop-gift {
+    animation: xm-drop-gift var(--xm-fly-t) infinite; animation-delay: var(--dl); animation-fill-mode: backwards;
+    filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.35));
+}
+.xm-drop-poof {
+    animation: xm-drop-poof var(--xm-fly-t) infinite; animation-delay: var(--dl); animation-fill-mode: backwards;
+    filter: drop-shadow(0 0 10px rgba(255, 235, 150, 1));
+}
+@keyframes xm-drop-y {
+    0%     { transform: translate3d(0, 0, 0); animation-timing-function: cubic-bezier(0.45, 0, 0.85, 0.5); }
+    6.2%   { transform: translate3d(var(--dx), var(--drop), 0); }
+    100%   { transform: translate3d(var(--dx), var(--drop), 0); }
+}
+@keyframes xm-drop-gift {
+    0%     { opacity: 0; transform: rotate(0) scale(0.5); }
+    0.5%   { opacity: 1; transform: rotate(0) scale(1); animation-timing-function: linear; }
+    6.2%   { opacity: 1; transform: rotate(var(--rot)) scale(1); }
+    8%     { opacity: 0; transform: rotate(var(--rot)) scale(0.15) translateY(40%); }
+    100%   { opacity: 0; transform: rotate(var(--rot)) scale(0.15); }
+}
+@keyframes xm-drop-poof {
+    0%, 6%  { opacity: 0; transform: scale(0.2) rotate(0); }
+    6.8%    { opacity: 1; transform: scale(1.1) rotate(40deg); }
+    9.5%    { opacity: 0; transform: scale(2.1) rotate(120deg); }
+    100%    { opacity: 0; transform: scale(2.1); }
+}
+
+/* ---- village ---- */
+.xm-town { z-index: 0; overflow: visible; }
+.xm-mound { fill: var(--xm-hill-f); }
+.xm-shade * { fill: #06182a; opacity: var(--xm-shade); }
+.xm-shade { opacity: 1; }
+.xm-halo { fill: #ffc65a; opacity: var(--xm-halo); }
+.xm-win { animation: xm-flicker 3.4s ease-in-out infinite; }
+@keyframes xm-flicker { 0%, 100% { opacity: 1; } 42% { opacity: 0.88; } 50% { opacity: 0.72; } 58% { opacity: 0.95; } }
+.xm-scene.is-light .xm-win { opacity: 0.85; animation: none; }
+.xm-smoke { fill: #fff; opacity: 0; transform-box: fill-box; transform-origin: center; animation: xm-smoke 5s ease-out infinite; }
+@keyframes xm-smoke {
+    0%   { opacity: 0; transform: translate(0, 0) scale(0.5); }
+    15%  { opacity: 0.7; }
+    100% { opacity: 0; transform: translate(14px, -46px) scale(2.6); }
+}
+.xm-scene.is-light .xm-smoke { fill: #e4eef2; }
+.xm-pine { filter: none; opacity: 0.95; }
+.xm-scene.is-dark .xm-church { filter: brightness(0.78) saturate(0.9); }
+.xm-scene.is-dark .xm-pine { filter: brightness(0.7) saturate(0.9); }
+
+/* ---- string lights (house eaves, garland) ---- */
+.xm-bulb { animation: xm-bulb 1.9s ease-in-out infinite; filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.55)); }
+.xm-b1 { animation-delay: -0.4s; } .xm-b2 { animation-delay: -0.8s; } .xm-b3 { animation-delay: -1.2s; } .xm-b4 { animation-delay: -1.6s; }
+@keyframes xm-bulb { 0%, 100% { opacity: 1; } 50% { opacity: 0.38; } }
+.xm-garland { position: absolute; top: 0; left: 0; width: 100%; height: max(clamp(46px, 9vh, 90px), 7.5vw); display: block; overflow: visible; }
+.xm-garland .xm-bulb { filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.55)); }
+.xm-scene.is-light .xm-garland { opacity: 0.85; }
+
+/* extra hanging ornaments */
+.xm-bauble-5 { left: 24%; animation-delay: -3s; } .xm-bauble-6 { right: 19%; animation-delay: -1.7s; }
+.xm-bauble-5 .xm-bauble-img { width: clamp(22px, 3.4vw, 34px); }
+.xm-bauble-6 .xm-bauble-img { width: clamp(20px, 3vw, 30px); }
+
+/* ---- elf + Mrs. Claus ---- */
+.xm-folk { position: absolute; height: auto; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.3)); animation: xm-hop 2.8s ease-in-out infinite; transform-origin: 50% 100%; }
+.xm-elf { left: 23%; bottom: 0.6%; width: clamp(32px, 5.2vw, 56px); }
+.xm-mrs { right: 38.5%; bottom: 0.6%; width: clamp(34px, 5.6vw, 60px); animation-delay: -1.4s; }
+@keyframes xm-hop { 0%, 100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-6px) rotate(2deg); } }
+
+/* ---- aurora + shooting star (night only) ---- */
+.xm-aurora { position: absolute; inset: 0 0 40% 0; overflow: hidden; opacity: 0.55; mix-blend-mode: screen; }
+.xm-aurora i { position: absolute; left: -20%; width: 140%; height: 70%; top: 4%; border-radius: 50%;
+    background: radial-gradient(ellipse at 50% 50%, rgba(80, 255, 190, 0.35), rgba(60, 200, 255, 0.16) 45%, transparent 70%);
+    transform-origin: 50% 100%; animation: xm-aurora 14s ease-in-out infinite; }
+.xm-aurora i:nth-child(2) { top: 14%; background: radial-gradient(ellipse at 40% 50%, rgba(170, 120, 255, 0.28), transparent 62%); animation-duration: 19s; animation-delay: -6s; }
+.xm-aurora i:nth-child(3) { top: 0; width: 100%; left: 0; background: radial-gradient(ellipse at 70% 50%, rgba(90, 255, 140, 0.22), transparent 60%); animation-duration: 23s; animation-delay: -11s; }
+@keyframes xm-aurora { 0%, 100% { transform: translateX(-4%) scaleY(0.85) skewX(-6deg); opacity: 0.55; } 50% { transform: translateX(5%) scaleY(1.15) skewX(7deg); opacity: 1; } }
+.xm-shoot { position: absolute; top: 12%; left: 12%; width: clamp(70px, 11vw, 150px); height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), #fff); opacity: 0; transform: rotate(24deg);
+    animation: xm-shoot 17s ease-in infinite; animation-delay: 5s; }
+@keyframes xm-shoot {
+    0%, 92% { opacity: 0; transform: translate(0, 0) rotate(24deg); }
+    93%     { opacity: 1; }
+    100%    { opacity: 0; transform: translate(34vw, 16vw) rotate(24deg); }
+}
+
+/* big soft flakes in front */
+.xm-flake-near { filter: blur(1.4px) drop-shadow(0 0 6px rgba(190, 225, 255, 0.6)); }
+
+/* ---- responsive ---- */
+@media (max-width: 520px) { .xm-scene { --xm-fly-w: clamp(190px, 52vw, 260px); --xm-fly-top: 11vh; } .xm-bauble-5, .xm-bauble-6, .xm-elf, .xm-mrs { display: none; } }
+@media (min-width: 521px) and (max-width: 900px) { .xm-bauble-6 { display: none; } }
+.xm-auth .xm-garland { z-index: 1; }
+
+/* dashboard: quieter, smaller sleigh, fewer drops */
+.xm-dashboard { --xm-fly-w: clamp(150px, 19vw, 260px); --xm-fly-top: 7vh; }
+.xm-dashboard .xm-town { opacity: 0.6; }
+.xm-dashboard .xm-folk, .xm-dashboard .xm-aurora, .xm-dashboard .xm-shoot, .xm-dashboard .xm-bauble-5, .xm-dashboard .xm-bauble-6, .xm-dashboard .xm-flake-near, .xm-dashboard .xm-d4, .xm-dashboard .xm-d5 { display: none; }
+.xm-dashboard .xm-garland { opacity: 0.7; }
+.xm-dashboard .xm-flight { opacity: 0.9; }
+
+@media (prefers-reduced-motion: reduce) {
+    .xm-flight, .xm-drop, .xm-trail, .xm-folk, .xm-aurora i, .xm-flake-near { display: none !important; }
+}
+
 
 /* =====================================================================
    1c. NEW YEAR SCENE  (THIRD theme)
@@ -555,7 +710,7 @@
     --ny-city-back: #3b3f86; --ny-city-front: #1b2150;
 }
 .ny-sky { position: absolute; inset: 0; background: linear-gradient(180deg, var(--ny-sky-top), var(--ny-sky-mid) 58%, var(--ny-sky-low)); }
-.ny-stars { position: absolute; top: 0; left: 0; width: 1px; height: 1px; border-radius: 50%; animation: season-twinkle 4s ease-in-out infinite; }
+.ny-stars { position: absolute; top: 0; left: 0; width: 1px; height: 1px; border-radius: 50%; animation: hw-twinkle 4s ease-in-out infinite; }
 .ny-glow { position: absolute; left: 0; right: 0; bottom: 0; height: 46%; background: radial-gradient(ellipse 70% 100% at 50% 100%, var(--ny-horizon), transparent 70%); }
 
 /* ---- fireworks (CSS particles) ---- */
@@ -578,17 +733,17 @@
     100% { opacity: 0; transform: rotate(var(--a)) translateX(calc(var(--R) * var(--k) * var(--s) * 1.18)) scale(0.2); }
 }
 @keyframes ny-flash { 0%, 3% { opacity: 0; transform: scale(0.3); } 7% { opacity: 0.95; transform: scale(1.2); } 22%, 100% { opacity: 0; transform: scale(1.9); } }
-.ny-scene.is-light .ny-burst i { box-shadow: 0 0 5px 1px var(--c), 0 0 0 1px rgba(70, 40, 130, 0.28); }
+.ny-scene.is-light .ny-burst, .ny-scene.is-light .ny-finale { display: none; } /* fireworks = night only */
 
 /* ---- twinkles ---- */
-.ny-spark { position: absolute; height: auto; animation: season-spark 2.8s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255, 235, 150, 0.9)); }
+.ny-spark { position: absolute; height: auto; animation: xm-twinkle 2.8s ease-in-out infinite; filter: drop-shadow(0 0 8px rgba(255, 235, 150, 0.9)); }
 .ny-sp-1 { left: 12%; top: 26%; width: clamp(14px, 2.6vw, 26px); }
 .ny-sp-2 { left: 44%; top: 8%; width: clamp(14px, 2.4vw, 24px); animation-delay: -1.1s; }
 .ny-sp-3 { right: 14%; top: 30%; width: clamp(16px, 3vw, 30px); animation-delay: -1.9s; }
 .ny-sp-4 { right: 38%; top: 20%; width: clamp(12px, 2vw, 20px); animation-delay: -0.6s; }
 
 /* ---- disco balls hanging from the top ---- */
-.ny-hang { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; animation: season-swing 4.6s ease-in-out infinite; }
+.ny-hang { position: absolute; top: 0; display: flex; flex-direction: column; align-items: center; transform-origin: 50% 0; animation: xm-swing 4.6s ease-in-out infinite; }
 .ny-hang-string { width: 1.5px; background: rgba(255, 255, 255, 0.55); height: clamp(22px, 5vh, 52px); }
 .ny-hang-img { width: clamp(34px, 6vw, 62px); height: auto; display: block; filter: drop-shadow(0 0 12px rgba(190, 215, 255, 0.7)) drop-shadow(0 4px 5px rgba(0, 0, 0, 0.35)); }
 .ny-hang-1 { left: 16%; } .ny-hang-2 { right: 18%; animation-delay: -2s; }
@@ -612,10 +767,10 @@
     50% { transform: translate(18px, -68vh) rotate(5deg); }
     100% { transform: translate(-10px, -135vh) rotate(-4deg); }
 }
-.ny-cball { position: absolute; left: 30%; top: 16%; width: clamp(28px, 5vw, 52px); height: auto; animation: season-drift 16s ease-in-out infinite; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3)); }
+.ny-cball { position: absolute; left: 30%; top: 16%; width: clamp(28px, 5vw, 52px); height: auto; animation: hw-drift 16s ease-in-out infinite; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3)); }
 
 /* ---- skyline ---- */
-.ny-city { position: absolute; left: 0; bottom: 0; width: 100%; height: clamp(100px, 22vh, 230px); display: block; }
+.ny-city, .ny-tower { position: absolute; left: 0; bottom: 0; width: 100%; height: max(clamp(100px, 22vh, 240px), 16.7vw); display: block; overflow: visible; }
 .ny-city-back rect { fill: var(--ny-city-back); }
 .ny-city-front rect { fill: var(--ny-city-front); }
 .ny-wins rect { fill: var(--ny-win); opacity: 0.9; animation: ny-win 5s ease-in-out infinite; }
@@ -661,7 +816,7 @@
 @media (orientation: landscape) and (max-height: 480px) {
     .ny-clock { width: clamp(44px, 20vh, 80px); }
     .ny-bottle, .ny-glasses, .ny-popper, .ny-hang, .ny-cball, .ny-balloon, .ny-sp-3, .ny-sp-4 { display: none; }
-    .ny-city { height: 62px; }
+    .ny-city, .ny-tower { height: 62px; } .ny-hud, .ny-bunting, .ny-lantern, .ny-prop { display: none; }
     .ny-burst { --R: clamp(34px, 16vh, 60px); }
 }
 /* dashboard = a quiet backdrop behind the work area */
@@ -671,9 +826,110 @@
 .ny-dashboard .ny-confetti { opacity: 0.45 !important; }
 .ny-dashboard .ny-city { opacity: 0.8; }
 @media (prefers-reduced-motion: reduce) {
-    .ny-burst i, .ny-flash, .ny-confetti, .ny-balloon, .ny-hang, .ny-spark, .ny-clock, .ny-bottle, .ny-glasses, .ny-popper, .ny-cball, .ny-wins rect, .ny-stars { animation: none !important; }
-    .ny-burst i, .ny-flash, .ny-balloon { display: none; }
+    .ny-burst i, .ny-flash, .ny-confetti, .ny-balloon, .ny-hang, .ny-spark, .ny-clock, .ny-bottle, .ny-glasses, .ny-popper, .ny-cball, .ny-wins rect, .ny-stars,
+    .ny-lantern, .ny-flag, .ny-hud-year span, .ny-led, .ny-tower-wins rect, .ny-beacon, .ny-ball-facets, .ny-prop { animation: none !important; }
+    .ny-burst i, .ny-flash, .ny-balloon, .ny-rocket, .ny-finale { display: none; }
 }
+
+/* =====================================================================
+   1c-2. NEW YEAR UPGRADE — real-time clock + countdown, ball-drop tower,
+   rockets, finale, bunting, lanterns, props.  (NewYearLive.jsx, newyearClock.js)
+   ===================================================================== */
+/* rockets climb to each burst point, then the burst starts at the top of the next cycle (same --dur/--delay) */
+.ny-rocket {
+    position: absolute; left: -1.5px; top: 0; width: 3px; height: clamp(26px, 5vh, 54px); border-radius: 3px; opacity: 0;
+    background: linear-gradient(0deg, rgba(255, 190, 80, 0), #ffe9a8 70%, #fff);
+    box-shadow: 0 0 8px 1px rgba(255, 220, 140, 0.8);
+    animation: ny-rocket var(--dur) linear var(--delay) infinite;
+}
+@keyframes ny-rocket {
+    0%, 80% { opacity: 0; transform: translateY(calc(100vh - var(--by) - 12vh)); }
+    81%     { opacity: 1; transform: translateY(calc(100vh - var(--by) - 12vh)); animation-timing-function: cubic-bezier(0.2, 0.6, 0.4, 1); }
+    99.5%   { opacity: 1; transform: translateY(0); }
+    100%    { opacity: 0; transform: translateY(0); }
+}
+.ny-finale { position: absolute; inset: 0; }
+.ny-finale .ny-burst { --R: clamp(60px, 12vw, 150px); }
+
+/* live analog clock (replaces the static emoji clock) */
+.ny-live-clock { overflow: visible; }
+.ny-hand { transform-origin: 50px 50px; transition: transform 0.28s cubic-bezier(0.4, 2.2, 0.55, 1); }
+.ny-hand-s { transition-duration: 0.22s; }
+.ny-live-clock.is-hot { animation: ny-clockhot 0.9s ease-in-out infinite !important; }
+@keyframes ny-clockhot { 0%, 100% { filter: drop-shadow(0 0 8px rgba(255, 90, 120, 0.7)); } 50% { filter: drop-shadow(0 0 22px rgba(255, 215, 120, 1)); } }
+
+/* countdown sign: neon at night, gold foil balloons by day */
+.ny-hud {
+    position: absolute; right: clamp(14px, 3.5vw, 64px); top: clamp(84px, 14vh, 150px); text-align: center; z-index: 1;
+    display: flex; flex-direction: column; align-items: center; gap: 6px; font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+}
+.ny-hud-kicker { font-size: clamp(9px, 0.95vw, 12px); letter-spacing: 0.34em; font-weight: 800; color: #c7d2fe; text-shadow: 0 0 8px rgba(165, 180, 252, 0.8); }
+.ny-hud-year { display: flex; gap: clamp(2px, 0.4vw, 6px); font-family: 'Arial Black', Impact, 'Segoe UI', sans-serif; font-weight: 900; font-size: clamp(34px, 5.6vw, 84px); line-height: 1; letter-spacing: 0.02em; }
+.ny-hud-year span { display: block; }
+.ny-scene.is-dark .ny-hud-year span {
+    color: #fff4c2; -webkit-text-stroke: 1px #ffd36a;
+    text-shadow: 0 0 6px #fff, 0 0 14px #ffc94d, 0 0 30px #ff9f1c, 0 0 60px #ff7a00;
+    animation: ny-neon 4.6s ease-in-out infinite; animation-delay: calc(var(--i) * -1.1s);
+}
+@keyframes ny-neon { 0%, 18%, 22%, 62%, 100% { opacity: 1; } 20% { opacity: 0.45; } 64% { opacity: 0.8; } 66% { opacity: 1; } }
+.ny-scene.is-light .ny-hud-year span {
+    background: linear-gradient(160deg, #fff6c9 0%, #f7c948 35%, #b97a0b 62%, #ffe27a 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 3px 2px rgba(120, 80, 0, 0.35)); transform: translateY(calc(var(--i) * -1px)) rotate(calc((var(--i) - 1.5) * 2deg));
+}
+.ny-scene.is-light .ny-hud-kicker { color: #5b3fa8; text-shadow: none; }
+.ny-hud-time { display: flex; gap: clamp(6px, 0.9vw, 12px); }
+.ny-hud-cell { min-width: clamp(38px, 4.4vw, 62px); padding: 6px 4px 4px; border-radius: 10px; background: rgba(8, 12, 45, 0.55); border: 1px solid rgba(253, 230, 138, 0.35); box-shadow: 0 0 14px rgba(251, 191, 36, 0.18) inset; display: flex; flex-direction: column; align-items: center; }
+.ny-hud-cell b { font-size: clamp(15px, 1.9vw, 26px); color: #fde68a; font-weight: 800; font-variant-numeric: tabular-nums; }
+.ny-hud-cell small { font-size: clamp(7px, 0.65vw, 9px); letter-spacing: 0.2em; color: #a5b4fc; }
+.ny-scene.is-light .ny-hud-cell { background: rgba(255, 255, 255, 0.7); border-color: rgba(180, 120, 20, 0.45); }
+.ny-scene.is-light .ny-hud-cell b { color: #8a5a00; } .ny-scene.is-light .ny-hud-cell small { color: #5b3fa8; }
+.ny-hud-big { font-size: clamp(44px, 7vw, 100px); font-weight: 900; color: #ff6b8b; text-shadow: 0 0 22px #ff2d55; animation: ny-pulse 1s ease-in-out infinite; }
+@keyframes ny-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+.ny-hud-wish { font-size: clamp(10px, 1.1vw, 14px); font-weight: 700; color: #fde68a; text-shadow: 0 0 10px rgba(251, 191, 36, 0.8); max-width: 26ch; }
+.ny-hud.is-party .ny-hud-kicker { font-size: clamp(11px, 1.4vw, 18px); color: #fde68a; animation: ny-pulse 1.6s ease-in-out infinite; }
+.ny-scene.is-light .ny-hud-wish { color: #7a4d00; text-shadow: none; }
+
+/* ball-drop tower */
+.ny-tower { z-index: 0; }
+.ny-tower-body { fill: var(--ny-city-front); } .ny-tower-top { fill: var(--ny-city-back); }
+.ny-tower-wins rect { fill: var(--ny-win); opacity: 0.85; animation: ny-win 5s ease-in-out infinite; }
+.ny-led { animation: ny-led 2.4s ease-in-out infinite; } @keyframes ny-led { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+.ny-beacon { animation: xm-twinkle 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.ny-ball { transition: transform 1s linear; }
+.ny-ball-halo { opacity: 0.7; animation: xm-twinkle 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.ny-ball-facets { animation: ny-spin 6s linear infinite; }
+@keyframes ny-spin { to { transform: rotate(360deg); } }
+.ny-tower.is-dropping .ny-ball-halo, .ny-tower.is-landed .ny-ball-halo { opacity: 1; }
+.ny-scene.is-light .ny-ball-halo { opacity: 0.25; }
+
+/* bunting across the top */
+.ny-bunting { position: absolute; top: 0; left: 0; width: 100%; height: max(clamp(46px, 9vh, 90px), 7.5vw); display: block; overflow: visible; }
+.ny-flag { transform-box: fill-box; transform-origin: 50% 0; animation: ny-flag 3.4s ease-in-out infinite; }
+@keyframes ny-flag { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+.ny-scene.is-dark .ny-flag { filter: brightness(0.9); }
+
+/* sky lanterns drifting up (real Noto artwork) */
+.ny-lantern { position: absolute; bottom: -12vh; height: auto; opacity: 0.95; animation: ny-lantern var(--ld, 34s) ease-in-out infinite; filter: drop-shadow(0 0 14px rgba(255, 150, 40, 0.75)); }
+.ny-l-1 { left: 22%; width: clamp(20px, 3.2vw, 36px); --ld: 38s; animation-delay: -9s; }
+.ny-l-2 { left: 48%; width: clamp(16px, 2.6vw, 30px); --ld: 44s; animation-delay: -24s; }
+.ny-l-3 { left: 78%; width: clamp(18px, 2.9vw, 34px); --ld: 40s; animation-delay: -15s; }
+@keyframes ny-lantern {
+    0%   { transform: translate(0, 0) rotate(-4deg); opacity: 0; }
+    8%   { opacity: 0.95; }
+    50%  { transform: translate(26px, -60vh) rotate(4deg); }
+    92%  { opacity: 0.9; }
+    100% { transform: translate(-14px, -118vh) rotate(-3deg); opacity: 0; }
+}
+.ny-scene.is-light .ny-lantern { filter: drop-shadow(0 4px 6px rgba(80, 40, 0, 0.3)); }
+
+/* table props: top hat, 12 grapes (New Year tradition), sparkler */
+.ny-prop { position: absolute; height: auto; filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.45)); animation: ny-clink 4.6s ease-in-out infinite; }
+.ny-hat { left: 24%; bottom: 3%; width: clamp(30px, min(5.6vw, 11vh), 66px); }
+.ny-grapes { left: 31%; bottom: 2.5%; width: clamp(26px, min(4.6vw, 9vh), 54px); animation-delay: -1.5s; }
+.ny-sparkler { left: 38%; bottom: 3%; width: clamp(24px, min(4.2vw, 8vh), 48px); animation-delay: -2.4s; filter: drop-shadow(0 0 10px rgba(255, 220, 120, 0.9)); }
+@media (min-width: 768px) and (orientation: landscape) { .ny-auth .ny-hat { left: auto; right: 41%; } .ny-auth .ny-grapes { left: auto; right: 46.5%; } .ny-auth .ny-sparkler { left: auto; right: 51%; } }
+@media (max-width: 767px) { .ny-prop { display: none; } .ny-hud { top: clamp(60px, 9vh, 90px); right: 50%; transform: translateX(50%); } .ny-hud-time { display: none; } .ny-hud-year { font-size: clamp(30px, 11vw, 48px); } .ny-hud-wish { display: none; } }
+.ny-dashboard .ny-hud { top: auto; bottom: 14px; right: 14px; transform: none; opacity: 0.8; } .ny-dashboard .ny-hud-year { font-size: clamp(20px, 2.4vw, 32px); } .ny-dashboard .ny-hud-time, .ny-dashboard .ny-hud-wish, .ny-dashboard .ny-lantern, .ny-dashboard .ny-prop, .ny-dashboard .ny-bunting { display: none; }
 
 /* =====================================================================
    2. PALETTES  (variables consumed by sections 3-5)
@@ -894,81 +1150,5 @@ html[data-season]:where(:not([data-season=""])) .ds-shell.ds-phone .ds-content {
 /* keep long-form text readable on top of the artwork */
 html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-main { position: relative; }
 
-/* =====================================================================
-   6. SEASON ACCENT BRIDGE — no default (indigo / sky / violet / slate) colour inside a season
-   ---------------------------------------------------------------------
-   DashboardShell.css and a few shared components hard-code the default indigo accent in places that
-   do not read the --tk-* tokens (progress bar, avatar, primary button, icon chips, focus ring,
-   loading skeletons, charts, popups). Everything below re-points those to the season palette from
-   section 2, so nothing from the normal theme leaks into Halloween / Christmas / New Year.
-   Nothing here applies on the default theme (no data-season attribute = no match).
-   ===================================================================== */
-
-/* 6a. root-level tokens — usable by anything, including portaled popups that sit outside .ds-shell */
-html[data-season="halloween"] { --sxr-grad: linear-gradient(135deg, #c2410c, #f97316 55%, #fbbf24); --sxr-rgb: 234, 88, 12; --sxr-on: #1a0900; }
-html[data-season="christmas"] { --sxr-grad: linear-gradient(135deg, #991b1b, #dc2626 55%, #16a34a 150%); --sxr-rgb: 220, 38, 38; --sxr-on: #ffffff; }
-html[data-season="newyear"]   { --sxr-grad: linear-gradient(135deg, #78350f, #b45309 50%, #d97706 120%); --sxr-rgb: 180, 83, 9; --sxr-on: #ffffff; }
-
-/* 6b. popups, toasts, confirm + approval dialogs (they render outside the dashboard shell) */
-html[data-season="halloween"] [data-sclf-theme="black"] { --pt-bg: #170a28; --pt-fg: #fdeedd; --pt-edge: #5a2f86; --pt-accent: var(--sxr-grad); --pt-accent-fg: #1a0900; --pt-accent-solid: #fb923c; }
-html[data-season="halloween"] [data-sclf-theme="white"] { --pt-bg: #fffaf2; --pt-fg: #2a1305; --pt-edge: #e6b784; --pt-accent: var(--sxr-grad); --pt-accent-fg: #ffffff; --pt-accent-solid: #c2410c; }
-html[data-season="christmas"] [data-sclf-theme="black"] { --pt-bg: #0a2127; --pt-fg: #f1fbf6; --pt-edge: #1f5b52; --pt-accent: var(--sxr-grad); --pt-accent-fg: #ffffff; --pt-accent-solid: #fca5a5; }
-html[data-season="christmas"] [data-sclf-theme="white"] { --pt-bg: #ffffff; --pt-fg: #10261f; --pt-edge: #b9d9d0; --pt-accent: var(--sxr-grad); --pt-accent-fg: #ffffff; --pt-accent-solid: #b91c1c; }
-html[data-season="newyear"] [data-sclf-theme="black"] { --pt-bg: #0d1233; --pt-fg: #fff8e6; --pt-edge: #3a3f8f; --pt-accent: var(--sxr-grad); --pt-accent-fg: #ffffff; --pt-accent-solid: #fcd34d; }
-html[data-season="newyear"] [data-sclf-theme="white"] { --pt-bg: #fffcf0; --pt-fg: #231a05; --pt-edge: #e8cf8d; --pt-accent: var(--sxr-grad); --pt-accent-fg: #ffffff; --pt-accent-solid: #92400e; }
-
-/* 6c. dashboard shell: buttons, chips, focus, progress bar, avatar */
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout { --ds-focus: var(--sx-accent); }
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-route-progress { background: var(--tk-accent); }
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-avatar,
-html[data-season]:where(:not([data-season=""])) .ds-menu .ds-avatar { background: var(--tk-accent); color: var(--sx-on-accent); }
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-btn-primary {
-    background: var(--tk-accent); color: var(--sx-on-accent); box-shadow: 0 10px 24px rgba(var(--sx-accent-rgb), 0.32);
-}
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-view-toggle-btn.is-active {
-    background: var(--tk-accent); color: var(--sx-on-accent); box-shadow: 0 6px 16px rgba(var(--sx-accent-rgb), 0.32);
-}
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout :is(.ds-thumb, .ds-evidence-icon, .ds-evidence-file, .ds-role-chip, .ds-code-copy:not(.is-copied)) {
-    background: rgba(var(--sx-accent-rgb), 0.16); color: var(--sx-accent-text);
-}
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout :is(.ds-btn-edit, .ds-btn-view) {
-    color: var(--sx-accent-text); background: rgba(var(--sx-accent-rgb), 0.08); border-color: rgba(var(--sx-accent-rgb), 0.34);
-}
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout :is(.ds-btn-edit, .ds-btn-view):hover { background: rgba(var(--sx-accent-rgb), 0.16); }
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-visitor-badge-no { background: rgba(var(--sx-accent-rgb), 0.14); color: var(--sx-accent-text); border-color: rgba(var(--sx-accent-rgb), 0.34); }
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-table tbody tr.is-clickable:hover { background: rgba(var(--sx-accent-rgb), 0.07); }
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-visitor-edit-row { background: rgba(var(--sx-accent-rgb), 0.05); }
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-field input:focus,
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-field select:focus,
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-field textarea:focus { border-color: var(--sx-accent); box-shadow: 0 0 0 3px rgba(var(--sx-accent-rgb), 0.22); }
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-spinner { border-color: rgba(var(--sx-accent-rgb), 0.25); border-top-color: var(--sx-accent); }
-
-/* 6d. loading skeletons: slate-blue shimmer -> the season's own edge colour */
-html[data-season]:where(:not([data-season=""])) :is(.ds-shell.ds-layout, .ds-menu) :is(.ds-skeleton, .ds-skel) {
-    background: linear-gradient(90deg,
-        color-mix(in srgb, var(--sx-edge-solid) 28%, transparent),
-        color-mix(in srgb, var(--sx-edge-solid) 60%, transparent),
-        color-mix(in srgb, var(--sx-edge-solid) 28%, transparent));
-    background-size: 200% 100%;
-}
-
-/* 6e. charts: tracks / grid / text from the season, categorical colours from the season palette */
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout {
-    --ch-track: rgba(var(--sx-accent-rgb), 0.16);
-    --ch-grid: color-mix(in srgb, var(--sx-muted) 24%, transparent);
-    --ch-muted: var(--sx-muted);
-}
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ch-feed-icon.is-lost { background: color-mix(in srgb, var(--ch-1) 14%, transparent); }
-html[data-season="halloween"] .ds-shell.ds-layout.dark  { --ch-1: #fb923c; --ch-2: #c084fc; --ch-3: #fbbf24; --ch-4: #a3e635; --ch-5: #f472b6; --ch-6: #22d3ee; }
-html[data-season="halloween"] .ds-shell.ds-layout.light { --ch-1: #ea580c; --ch-2: #7c3aed; --ch-3: #d97706; --ch-4: #65a30d; --ch-5: #db2777; --ch-6: #0891b2; }
-html[data-season="christmas"] .ds-shell.ds-layout.dark  { --ch-1: #f87171; --ch-2: #4ade80; --ch-3: #facc15; --ch-4: #38bdf8; --ch-5: #fb923c; --ch-6: #c084fc; }
-html[data-season="christmas"] .ds-shell.ds-layout.light { --ch-1: #b91c1c; --ch-2: #16a34a; --ch-3: #ca8a04; --ch-4: #0284c7; --ch-5: #ea580c; --ch-6: #7c3aed; }
-html[data-season="newyear"] .ds-shell.ds-layout.dark    { --ch-1: #fbbf24; --ch-2: #a78bfa; --ch-3: #38bdf8; --ch-4: #f472b6; --ch-5: #34d399; --ch-6: #fb923c; }
-html[data-season="newyear"] .ds-shell.ds-layout.light   { --ch-1: #b45309; --ch-2: #7c3aed; --ch-3: #0284c7; --ch-4: #db2777; --ch-5: #059669; --ch-6: #ea580c; }
-
-/* 6f. shared widgets that sit on any page (combo box, install prompt) */
-html[data-season]:where(:not([data-season=""])) .cbx-option.is-active { background: rgba(var(--sx-accent-rgb, var(--sxr-rgb)), 0.16); }
-html[data-season]:where(:not([data-season=""])) .cbx-custom,
-html[data-season]:where(:not([data-season=""])) .ds-shell.dark .cbx-custom { color: var(--sx-accent-text, rgb(var(--sxr-rgb))); }
-html[data-season]:where(:not([data-season=""])) .ip-go { background: var(--sxr-grad); color: var(--sxr-on); box-shadow: 0 10px 20px -10px rgba(var(--sxr-rgb), 0.8); }
-html[data-season]:where(:not([data-season=""])) :is(.ip-later, .ip-go, .ip-x):focus-visible { outline-color: rgb(var(--sxr-rgb)); }
+/* Santa's sleigh + gifts: night (dark theme) on phones/tablets only; never on desktop or laptop */
+@media (min-width: 1024px) and (hover: hover), (min-width: 1280px) { .xm-flight { display: none !important; } }

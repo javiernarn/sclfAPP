@@ -27,7 +27,7 @@ class ClaimController extends Controller
 
     public function index(Request $request)
     {
-        $query = Claim::with(['foundItem:id,item_name,category,image_path,intake_channel', 'claimant:id,name']);
+        $query = Claim::with(['foundItem:id,item_name,category,image_path,intake_channel', 'claimant:id,name', 'claimant.roles:id,name']);
 
         // Students/instructor only ever see their own claims. Staff see everything,
         // scoped by their own status filter if provided.
@@ -74,8 +74,8 @@ class ClaimController extends Controller
         $this->authorize('view', $claim);
 
         $claim->load([
-            'foundItem', 'lostItem', 'claimant:id,name,email,student_id,staff_id,profile_picture',
-            'reviewer:id,name', 'evidence.submitter:id,name', 'qrRelease',
+            'foundItem', 'lostItem', 'claimant:id,name,email,student_id,staff_id,profile_picture', 'claimant.roles:id,name',
+            'reviewer:id,name', 'reviewer.roles:id,name', 'evidence.submitter:id,name', 'evidence.submitter.roles:id,name', 'qrRelease',
         ]);
 
         return response()->json($claim);

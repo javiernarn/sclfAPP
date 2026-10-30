@@ -6,6 +6,8 @@ import WorkflowGuide from '../../Components/shared/WorkflowGuide';
 import { NumberStepper, ClearableSearch } from '../../Components/shared/FilterInputs';
 import { useToast } from '../../context/ToastContext';
 import './MatchCompare.css';
+import { roleAndName } from '../../utils/roleLabel';
+import RoleText from '../../Components/shared/RoleText';
 
 // The handlers' match queue (Security Officer, Admin, Staff).
 //
@@ -132,13 +134,13 @@ function Detail({ detail, loading, error }) {
             <div className="mc-facts">
                 <div className="mc-fact">
                     <h4>LOST REPORT</h4>
-                    Reported by <b>{lost.user?.name || 'Unknown'}</b>{lost.contact_info ? <> · contact: {lost.contact_info}</> : null}<br />
+                    Reported by <b><RoleText text={roleAndName(lost.user, 'Unknown')} /></b>{lost.contact_info ? <> · contact: {lost.contact_info}</> : null}<br />
                     {lost.time_lost ? <>Time lost: {lost.time_lost}<br /></> : null}
                     Status: {String(lost.status || '').replace(/_/g, ' ')}
                 </div>
                 <div className="mc-fact">
                     <h4>FOUND ITEM</h4>
-                    {found.finder?.name ? <>Turned in by <b>{found.finder.name}</b><br /></> : null}
+                    {found.finder?.name ? <>Turned in by <b><RoleText text={roleAndName(found.finder)} /></b><br /></> : null}
                     {storage ? <>Stored at: {storage}<br /></> : null}
                     Status: {String(found.status || '').replace(/_/g, ' ')}
                 </div>
@@ -374,7 +376,7 @@ export default function SecurityMatches() {
                                             <small>LOST</small>
                                             <b>{lost.item_name || 'Lost item'}</b>
                                             <span>{[lost.category, spec(lost)].filter(Boolean).join(' — ') || 'No details'}</span><br />
-                                            <span>{[lost.user?.name && `Reported by ${lost.user.name}`, lost.location_lost && `near ${lost.location_lost}`].filter(Boolean).join(' · ')}</span>
+                                            <span>{[lost.user?.name && `Reported by ${roleAndName(lost.user)}`, lost.location_lost && `near ${lost.location_lost}`].filter(Boolean).join(' · ')}</span>
                                         </div>
                                         <div className="mc-side">
                                             <small>FOUND</small>

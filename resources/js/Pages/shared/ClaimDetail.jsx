@@ -13,6 +13,8 @@ import { ClaimDetailSkeleton } from '../../Components/shared/ClaimSkeleton';
 import { useAuth } from '../../context/AuthContext';
 import { claimStatusLabel, claimStatusBadgeClass } from '../../utils/claimStatus';
 import { itemChannelLabel, itemChannelBadgeClass, itemChannelIcon, itemChannelClaimDescription } from '../../utils/itemChannel';
+import { roleAndName } from '../../utils/roleLabel';
+import RoleText from '../../Components/shared/RoleText';
 
 const EVIDENCE_ICON = {
     description: MessageSquare,
@@ -408,13 +410,13 @@ export default function ClaimDetail() {
                 <div className="ds-info-grid">
                     <InfoItem icon={Tag} label="Category" value={claim.found_item?.category} />
                     <InfoItem icon={Calendar} label="Submitted" value={submittedAt} />
-                    {isStaff && <InfoItem icon={UserCircle} label="Claimant" value={claim.claimant?.name} />}
+                    {isStaff && <InfoItem icon={UserCircle} label="Claimant" value={claim.claimant?.name ? <RoleText text={roleAndName(claim.claimant)} /> : null} />}
                     {isStaff && <InfoItem icon={Mail} label="Claimant Email" value={claim.claimant?.email} />}
                     {/* Was gated on student_id alone, so an instructor claimant (who has a
                         staff_id instead) silently lost this row rather than showing their
                         actual ID number. display_id resolves to whichever ID they have. */}
                     {isStaff && claim.claimant?.display_id && <InfoItem icon={IdCard} label="ID Number" value={claim.claimant.display_id} />}
-                    {isStaff && claim.reviewer?.name && <InfoItem icon={ShieldAlert} label="Reviewed by" value={claim.reviewer.name} />}
+                    {isStaff && claim.reviewer?.name && <InfoItem icon={ShieldAlert} label="Reviewed by" value={<RoleText text={roleAndName(claim.reviewer)} />} />}
                 </div>
 
                 {isStaff && claim.risk_score > 0 && (

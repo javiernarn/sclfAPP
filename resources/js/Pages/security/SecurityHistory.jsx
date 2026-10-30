@@ -11,6 +11,8 @@ import {
     ChevronLeft,
     ChevronRight,
 } from '../../Components/icons';
+import { roleAndName } from '../../utils/roleLabel';
+import RoleText from '../../Components/shared/RoleText';
 
 // Two tabs, mirroring the two release flows that actually exist in the
 // backend (see HistoryController):
@@ -166,7 +168,7 @@ function CounterHistoryTab() {
                                             <div className="ds-table-sub">{r.category || '—'}</div>
                                         </td>
                                         <td>
-                                            <div className="ds-table-title">{r.owner?.name || '—'}</div>
+                                            <div className="ds-table-title"><RoleText text={roleAndName(r.owner)} /></div>
                                             <div className="ds-table-sub">{r.owner?.display_id || ''}</div>
                                         </td>
                                         <td className="ds-table-nowrap">
@@ -204,7 +206,7 @@ function CounterHistoryTab() {
                                 <div className="ds-history-card-row">
                                     <span className="ds-history-card-label">Owner</span>
                                     <span className="ds-history-card-value">
-                                        <div className="ds-table-title">{r.owner?.name || '—'}</div>
+                                        <div className="ds-table-title"><RoleText text={roleAndName(r.owner)} /></div>
                                         <div className="ds-table-sub">{r.owner?.display_id || ''}</div>
                                     </span>
                                 </div>
@@ -337,7 +339,7 @@ function LostFoundHistoryTab() {
                                             <div className="ds-table-sub">{r.item?.category || ''}</div>
                                         </td>
                                         <td>
-                                            <div className="ds-table-title">{r.claimant?.name || '—'}</div>
+                                            <div className="ds-table-title"><RoleText text={roleAndName(r.claimant)} /></div>
                                             <div className="ds-table-sub">{r.claimant?.display_id || ''}</div>
                                         </td>
                                         <td className="ds-table-nowrap">
@@ -378,7 +380,7 @@ function LostFoundHistoryTab() {
                                 <div className="ds-history-card-row">
                                     <span className="ds-history-card-label">Claimant</span>
                                     <span className="ds-history-card-value">
-                                        <div className="ds-table-title">{r.claimant?.name || '—'}</div>
+                                        <div className="ds-table-title"><RoleText text={roleAndName(r.claimant)} /></div>
                                         <div className="ds-table-sub">{r.claimant?.display_id || ''}</div>
                                     </span>
                                 </div>

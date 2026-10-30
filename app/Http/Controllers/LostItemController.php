@@ -24,7 +24,7 @@ class LostItemController extends Controller
         // gets approved reports plus their own, enforced here on the server.
         $isHandler = $viewer->hasAnyRole(\App\Models\User::LOST_FOUND_HANDLER_ROLES);
 
-        $lostItems = LostItem::with('user:id,name')
+        $lostItems = LostItem::with(['user:id,name', 'user.roles:id,name'])
             ->visibleTo($viewer)
             ->when($request->boolean('mine'), fn ($q) => $q->where('user_id', $viewer->id))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
@@ -41,6 +41,7 @@ class LostItemController extends Controller
                 'status' => $item->status,
                 'date_lost' => $item->date_lost,
                 'reporter' => $item->user->name ?? 'Deactivated account',
+                'reporter_roles' => $item->user ? $item->user->roles->pluck('name')->values() : [],
                 'description' => $item->description,
                 'brand' => $item->brand,
                 'color' => $item->color,
@@ -175,7 +176,7 @@ class LostItemController extends Controller
     {
         $this->authorize('view', $lostItem);
 
-        $lostItem->load('user:id,name');
+        $lostItem->load(['user:id,name', 'user.roles:id,name']);
 
         return response()->json([
             'id' => $lostItem->id,
@@ -190,6 +191,7 @@ class LostItemController extends Controller
             'status' => $lostItem->status,
             'image_url' => $lostItem->image_url,
             'reporter' => $lostItem->user->name ?? 'Deactivated account',
+            'reporter_roles' => $lostItem->user ? $lostItem->user->roles->pluck('name')->values() : [],
             'reporter_id' => $lostItem->user_id,
         ]);
     }

@@ -12,6 +12,8 @@ import { useConfirm } from '../../context/ConfirmContext';
 import { CLAIM_STATUS, claimStatusLabel, claimStatusBadgeClass } from '../../utils/claimStatus';
 import { itemChannelLabel, itemChannelBadgeClass, itemChannelIcon } from '../../utils/itemChannel';
 import { initialsOf } from '../../utils/initials';
+import { roleAndName } from '../../utils/roleLabel';
+import RoleText from '../../Components/shared/RoleText';
 
 const FILTERS = [
     { key: '', label: 'All' },
@@ -153,7 +155,7 @@ export default function MyClaimsList() {
                                                         <span className="ds-table-title">{c.found_item?.item_name || 'Item'}</span>
                                                     </div>
                                                 </td>
-                                                <td className="ds-table-nowrap">{isStaff ? (c.claimant?.name || '—') : `#${c.id}`}</td>
+                                                <td className="ds-table-nowrap">{isStaff ? (c.claimant?.name ? <RoleText text={roleAndName(c.claimant)} /> : '—') : `#${c.id}`}</td>
                                                 <td className="ds-table-nowrap">{c.found_item?.category || '—'}</td>
                                                 <td className="ds-table-nowrap">
                                                     <span className={`${itemChannelBadgeClass(c.found_item?.intake_channel)} ds-badge-icon`}>
@@ -210,7 +212,7 @@ export default function MyClaimsList() {
                                                 <div style={{ minWidth: 0 }}>
                                                     <p className="ds-list-item-title">{c.found_item?.item_name || 'Item'}</p>
                                                     <p className="ds-list-item-meta">
-                                                        {isStaff ? `Claimant: ${c.claimant?.name}` : `Claim #${c.id}`}
+                                                        {isStaff ? <>Claimant: <RoleText text={roleAndName(c.claimant)} /></> : `Claim #${c.id}`}
                                                         {c.found_item?.category ? ` · ${c.found_item.category}` : ''}
                                                     </p>
                                                 </div>

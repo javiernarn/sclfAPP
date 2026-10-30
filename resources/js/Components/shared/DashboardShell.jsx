@@ -42,6 +42,7 @@ import "./MobileApp.css";
 import "./MobileUserApp.css";
 // Admin / Staff / Security phone app: same app look, card-style tables, staff quick actions.
 import "./MobileStaffApp.css";
+import "./MobileListFix.css";
 import RoleText from "./RoleText";
 import {
     LayoutDashboard,

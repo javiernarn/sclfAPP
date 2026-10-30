@@ -3,6 +3,8 @@ import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { useToast } from '../../context/ToastContext';
 import { AlertTriangle, PackageX, RotateCcw, Trash2, Gift, Building2, ArrowRightLeft } from '../../Components/icons';
+import { roleAndName } from '../../utils/roleLabel';
+import RoleText from '../../Components/shared/RoleText';
 
 // Mirrors FoundItem::DISPOSITION_METHODS on the backend exactly.
 const DISPOSITION_OPTIONS = [
@@ -58,7 +60,7 @@ function UnclaimedItemCard({ item, onDisposed, onRestored }) {
                     <p className="ds-list-item-meta">
                         {item.category}
                         {item.storage_location?.code ? ` · ${item.storage_location.code}` : ''}
-                        {item.finder?.name ? ` · Found by ${item.finder.name}` : ''}
+                        {item.finder?.name ? <> · Found by <RoleText text={roleAndName(item.finder)} /></> : ''}
                     </p>
                     <p className="ds-list-item-meta">
                         <AlertTriangle size={12} style={{ verticalAlign: -2, marginRight: 4 }} />

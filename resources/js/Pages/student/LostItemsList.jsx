@@ -9,6 +9,8 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import LostItemForm from './LostItemForm';
 import LostItemReviewPanel from '../../Components/shared/LostItemReviewPanel';
+import { roleAndName } from '../../utils/roleLabel';
+import RoleText from '../../Components/shared/RoleText';
 
 const badgeClass = (status) => {
     const key = (status || '').toLowerCase();
@@ -169,7 +171,7 @@ export default function LostItemsList() {
                                                 </div>
                                             </td>
                                             <td className="ds-table-nowrap">{item.category || 'Uncategorized'}</td>
-                                            <td className="ds-table-nowrap">{item.reporter}</td>
+                                            <td className="ds-table-nowrap"><RoleText text={roleAndName({ name: item.reporter, roles: item.reporter_roles })} /></td>
                                             <td>
                                                 <span className={badgeClass(item.status)}>{item.status || 'pending'}</span>
                                                 {!item.approved_at && <span className="ds-badge ds-badge-default" style={{ marginLeft: 6 }} title="Only you and Security can see this report until it is approved.">Awaiting review</span>}
@@ -206,7 +208,7 @@ export default function LostItemsList() {
                                         <div style={{ minWidth: 0 }}>
                                             <p className="ds-list-item-title">{item.item_name}</p>
                                             <p className="ds-list-item-meta">
-                                                {item.category || 'Uncategorized'} · Reported by {item.reporter}
+                                                {item.category || 'Uncategorized'} · Reported by <RoleText text={roleAndName({ name: item.reporter, roles: item.reporter_roles })} />
                                             </p>
                                         </div>
                                     </div>

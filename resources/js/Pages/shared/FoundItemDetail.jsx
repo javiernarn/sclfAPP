@@ -8,6 +8,8 @@ import {
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ImageViewer from '../../Components/shared/ImageViewer';
 import { useAuth } from '../../context/AuthContext';
+import RoleText from '../../Components/shared/RoleText';
+import { roleAndName } from '../../utils/roleLabel';
 import { itemChannelLabel, itemChannelBadgeClass, itemChannelIcon, itemChannelItemDescription } from '../../utils/itemChannel';
 
 const badgeClass = (status) => {
@@ -138,8 +140,8 @@ export default function FoundItemDetail() {
             eyebrow="Lost & Found"
             title={item.item_name}
             subtitle={isCounterIntake
-                ? `Logged at the counter by ${item.finder?.name || 'a staff member'}`
-                : `Reported by ${item.finder?.name || 'a community member'}`}
+                ? <>Logged at the counter by <RoleText text={roleAndName(item.finder, 'a staff member')} /></>
+                : <>Reported by <RoleText text={roleAndName(item.finder, 'a community member')} /></>}
             actions={(
                 <>
                     <span className={`${itemChannelBadgeClass(item.intake_channel)} ds-badge-icon`}>
@@ -172,7 +174,7 @@ export default function FoundItemDetail() {
                     <InfoItem icon={MapPin} label="Location Found" value={item.location_found} />
                     <InfoItem icon={Calendar} label="Date Found" value={dateFound} />
                     {item.storage_location && <InfoItem icon={Boxes} label="Storage" value={item.storage_location.code} />}
-                    {isStaff && <InfoItem icon={UserCircle} label="Reported by" value={item.finder?.name} />}
+                    {isStaff && <InfoItem icon={UserCircle} label="Reported by" value={item.finder?.name ? <RoleText text={roleAndName(item.finder)} /> : null} />}
                 </div>
 
                 {item.description && (
@@ -201,7 +203,7 @@ export default function FoundItemDetail() {
                             <span className="ds-info-icon"><MessageSquare size={16} /></span>
                             <div className="ds-info-text">
                                 <div className="ds-info-label">
-                                    Verification{item.security_officer?.name ? ` · ${item.security_officer.name}` : ''}
+                                    Verification{item.security_officer?.name ? <> · <RoleText text={roleAndName(item.security_officer)} /></> : ''}
                                 </div>
                                 <div className="ds-info-value" style={{ fontWeight: 500, whiteSpace: 'pre-wrap' }}>{item.verification_notes}</div>
                             </div>

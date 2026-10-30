@@ -1,0 +1,51 @@
+/*
+ * MobileListFix.css  (imported LAST by DashboardShell)
+ * ----------------------------------------------------
+ * Phone layout for the status + action band under every list card
+ * (Found Items, Lost Items, Claims, Incidents, ...).
+ *
+ * Why this exists: MobileUserApp.css forces the band to `nowrap`, while
+ * MobileStaffApp.css wants it to wrap, and the seasonal themes restyle
+ * `.ds-btn-view` with higher specificity than either. The three fought each
+ * other, so badges and "View Details" ended up on one row, the button was
+ * clipped and its chevron hung outside the card.
+ *
+ * One consistent result on phones:
+ *   - badges wrap on the first line(s), left aligned
+ *   - the action button gets its own full-width line, centred, same height
+ *     everywhere, with its icon + chevron kept inside the card
+ * Selectors are deliberately specific (6 classes) so no theme can undo this.
+ */
+@media (max-width: 640px) {
+    .ds-shell.ds-layout .ds-list-item .ds-list-item-side {
+        display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-start;
+        gap: 8px; width: 100%; min-width: 0; box-sizing: border-box;
+    }
+
+    .ds-shell.ds-layout .ds-list-item .ds-list-item-side .ds-badge {
+        flex: 0 1 auto; min-width: 0; max-width: 100%; box-sizing: border-box;
+    }
+
+    /* Action buttons: one full-width, thumb-sized line below the badges. */
+    .ds-shell.ds-layout .ds-list-item .ds-list-item-side .ds-btn.ds-btn-sm,
+    .ds-shell.ds-layout .ds-list-item .ds-list-item-side .ds-btn.ds-btn-view {
+        flex: 1 1 100%; width: 100%; max-width: 100%; box-sizing: border-box;
+        margin: 2px 0 0; min-height: 42px; padding: 0 14px;
+        display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        font-size: 13.5px; font-weight: 750; border-radius: 14px;
+    }
+    .ds-shell.ds-layout .ds-list-item .ds-list-item-side .ds-btn svg { flex: none; }
+
+    /* Keep long titles / locations inside the card instead of pushing it wider. */
+    .ds-shell.ds-layout .ds-list-item .ds-list-item-main > div { min-width: 0; }
+    .ds-shell.ds-layout .ds-list-item .ds-list-item-title,
+    .ds-shell.ds-layout .ds-list-item .ds-list-item-meta { overflow-wrap: anywhere; }
+
+    /* Role pills inside meta lines must wrap with the text, not stretch the row. */
+    .ds-shell.ds-layout .ds-list-item .ds-list-item-meta .sclf-role { vertical-align: baseline; }
+
+    /* Per-row action groups (claims etc.): equal-width buttons, no orphan overflow. */
+    .ds-shell.ds-layout .ds-list-item .ds-list-item-actions { width: 100%; box-sizing: border-box; gap: 8px; }
+    .ds-shell.ds-layout .ds-list-item .ds-list-item-actions .ds-btn { min-width: 0; min-height: 42px; box-sizing: border-box; }
+}

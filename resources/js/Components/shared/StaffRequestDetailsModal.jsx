@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import axios from '../../config/axiosConfig';
 import { X, ExternalLink } from '../icons';
 import './StaffRequestDetails.css';
+import { roleAndName } from '../../utils/roleLabel';
+import RoleText from './RoleText';
 
 const STATUS_BADGE = {
     pending: 'ds-badge ds-badge-pending',
@@ -116,7 +118,7 @@ export default function StaffRequestDetailsModal({ row, shellClass = 'light', is
                         <section className="srd-section">
                             <h4>Requested by</h4>
                             <dl className="srd-dl">
-                                <div><dt>Name</dt><dd>{row.requester?.name || '—'}</dd></div>
+                                <div><dt>Name</dt><dd>{row.requester?.name ? <RoleText text={roleAndName(row.requester)} /> : '—'}</dd></div>
                                 <div><dt>Staff ID</dt><dd>{row.requester?.staff_id || '—'}</dd></div>
                                 <div><dt>Email</dt><dd>{row.requester?.email || '—'}</dd></div>
                                 <div><dt>Sent</dt><dd>{fmtDate(row.created_at)}</dd></div>
@@ -198,7 +200,7 @@ export default function StaffRequestDetailsModal({ row, shellClass = 'light', is
                         <section className="srd-section">
                             <h4>Review</h4>
                             <dl className="srd-dl">
-                                <div><dt>Reviewed by</dt><dd>{row.reviewer?.name || '—'}</dd></div>
+                                <div><dt>Reviewed by</dt><dd>{row.reviewer?.name ? <RoleText text={roleAndName(row.reviewer)} /> : '—'}</dd></div>
                                 <div><dt>Reviewed at</dt><dd>{fmtDate(row.reviewed_at)}</dd></div>
                                 {row.status === 'approved' && <div><dt>Approval expires</dt><dd>{fmtDate(row.expires_at)}</dd></div>}
                                 {row.executed_at && <div><dt>Carried out</dt><dd>{fmtDate(row.executed_at)}</dd></div>}
