@@ -22,6 +22,12 @@ return [
         'csp' => env('SECURITY_CSP', 'report-only'),
         'hsts' => env('SECURITY_HSTS', false),
         'hsts_max_age' => env('SECURITY_HSTS_MAX_AGE', 31536000),
+
+        // Extra CSP sources, space separated. Leave empty unless you need them.
+        // e.g. SECURITY_CSP_SCRIPT_SRC="https://static.cloudflareinsights.com"
+        //      SECURITY_CSP_CONNECT_SRC="https://cloudflareinsights.com"
+        'csp_script_src' => env('SECURITY_CSP_SCRIPT_SRC', ''),
+        'csp_connect_src' => env('SECURITY_CSP_CONNECT_SRC', ''),
     ],
 
     /*

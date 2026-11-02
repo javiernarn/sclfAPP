@@ -45,7 +45,7 @@ class SecurityHeaders
 
         if ($mode !== 'off' && ! app()->environment('local') && $this->isHtml($response)) {
             $name = $mode === 'enforce' ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only';
-            $headers->set($name, $this->policy($request));
+            $headers->set($name, $this->policy($request, $mode === 'enforce'));
         }
 
         return $response;
@@ -56,16 +56,29 @@ class SecurityHeaders
         return str_contains((string) $response->headers->get('Content-Type'), 'text/html');
     }
 
-    protected function policy(Request $request): string
+    /**
+     * Extra sources from .env (space separated), e.g. a third-party script host
+     * or a 'sha256-...' hash. Anything that is not a plain source token is dropped
+     * so a typo in .env cannot inject a new directive (no ';' or ',' allowed).
+     */
+    protected function extra(string $key): string
+    {
+        $items = preg_split('/\s+/', trim((string) config("security.headers.{$key}", '')), -1, PREG_SPLIT_NO_EMPTY);
+        $items = array_filter($items, fn ($v) => preg_match("/^[A-Za-z0-9:\/\.\-\*_'+=]+$/", $v));
+
+        return $items ? ' ' . implode(' ', $items) : '';
+    }
+
+    protected function policy(Request $request, bool $enforcing = false): string
     {
         $directives = [
             "default-src 'self'",
-            "script-src 'self'",
+            "script-src 'self'" . $this->extra('csp_script_src'),
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "font-src 'self' data: https://fonts.gstatic.com",
             "img-src 'self' data: blob:",
             "media-src 'self' blob:",
-            "connect-src 'self'",
+            "connect-src 'self'" . $this->extra('csp_connect_src'),
             // qr-scanner runs in a worker; the service worker is /sw.js.
             "worker-src 'self' blob:",
             "manifest-src 'self'",
@@ -75,7 +88,9 @@ class SecurityHeaders
             "frame-ancestors 'none'",
         ];
 
-        if ($request->isSecure()) {
+        // Browsers ignore this directive (and print a console warning) in a
+        // report-only policy, so only send it when the policy is enforced.
+        if ($enforcing && $request->isSecure()) {
             $directives[] = 'upgrade-insecure-requests';
         }
 
