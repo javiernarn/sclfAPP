@@ -66,7 +66,7 @@ function startGuard() {
         if (hider) { hider.remove(); hider = null; }
     };
 
-    // 1) Docked DevTools: outer window gets bigger than the page area.
+    // Docked DevTools: outer window gets bigger than the page area.
     //    Normalised by zoom so browser zoom alone does not trigger it.
     const dockedOpen = () => {
         const zoom = (window.devicePixelRatio || 1) / baseDPR;
@@ -76,22 +76,8 @@ function startGuard() {
         );
     };
 
-    // 2) Console open (docked or separate window): the id getter only
-    //    runs when DevTools actually renders the logged element.
-    let consoleHit = false;
-    const probe = new Image();
-    Object.defineProperty(probe, 'id', {
-        get() { consoleHit = true; return ''; },
-    });
-    const consoleOpen = () => {
-        consoleHit = false;
-        // eslint-disable-next-line no-console
-        console.log(probe); // must be .log: .debug is hidden by default in DevTools
-        return consoleHit;
-    };
-
     const check = () => {
-        if (dockedOpen() || consoleOpen()) show();
+        if (dockedOpen()) show();
         else hide();
     };
 

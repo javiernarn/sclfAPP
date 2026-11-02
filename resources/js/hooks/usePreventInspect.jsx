@@ -130,22 +130,8 @@ export default function usePreventInspect() {
             return w > 200 || h > 200;
         };
 
-        // Undocked / separate-window DevTools: logging an element whose
-        // `id` getter only runs when the console is actually rendering it.
-        let consoleOpen = false;
-        const probe = new Image();
-        Object.defineProperty(probe, "id", {
-            get() {
-                consoleOpen = true;
-                return "";
-            },
-        });
-
         const check = () => {
-            consoleOpen = false;
-            // eslint-disable-next-line no-console
-            console.debug(probe);
-            if (dockedOpen() || consoleOpen) {
+            if (dockedOpen()) {
                 showCover();
             } else {
                 hideCover();

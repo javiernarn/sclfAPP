@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Vite;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -24,6 +25,15 @@ class SecurityHeaders
 {
     public function handle(Request $request, Closure $next): Response
     {
+        $mode = config('security.headers.csp', 'report-only');
+        $cspActive = $mode !== 'off' && ! app()->environment('local');
+
+        // A fresh random nonce per request. Laravel stamps it on the inline
+        // Vite prefetch script (its content changes every build, so a hash
+        // can never keep up) and we allow that nonce in script-src below.
+        // Must be called BEFORE the view renders.
+        $nonce = $cspActive ? Vite::useCspNonce() : null;
+
         $response = $next($request);
 
         $headers = $response->headers;
@@ -41,11 +51,9 @@ class SecurityHeaders
             );
         }
 
-        $mode = config('security.headers.csp', 'report-only');
-
-        if ($mode !== 'off' && ! app()->environment('local') && $this->isHtml($response)) {
+        if ($cspActive && $this->isHtml($response)) {
             $name = $mode === 'enforce' ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only';
-            $headers->set($name, $this->policy($request, $mode === 'enforce'));
+            $headers->set($name, $this->policy($request, $mode === 'enforce', $nonce));
         }
 
         return $response;
@@ -69,11 +77,11 @@ class SecurityHeaders
         return $items ? ' ' . implode(' ', $items) : '';
     }
 
-    protected function policy(Request $request, bool $enforcing = false): string
+    protected function policy(Request $request, bool $enforcing = false, ?string $nonce = null): string
     {
         $directives = [
             "default-src 'self'",
-            "script-src 'self'" . $this->extra('csp_script_src'),
+            "script-src 'self'" . ($nonce ? " 'nonce-{$nonce}'" : '') . $this->extra('csp_script_src'),
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
             "font-src 'self' data: https://fonts.gstatic.com",
             "img-src 'self' data: blob:",
