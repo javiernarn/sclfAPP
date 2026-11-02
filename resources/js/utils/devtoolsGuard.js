@@ -90,18 +90,8 @@ function startGuard() {
         return consoleHit;
     };
 
-    // 3) A `debugger` statement only pauses while DevTools is open, so
-    //    the time it takes reveals DevTools - even when it was opened on
-    //    another site first and kept open.
-    const debuggerOpen = () => {
-        const t = performance.now();
-        // eslint-disable-next-line no-new-func
-        new Function('debugger')();
-        return performance.now() - t > 100;
-    };
-
     const check = () => {
-        if (dockedOpen() || consoleOpen() || debuggerOpen()) show();
+        if (dockedOpen() || consoleOpen()) show();
         else hide();
     };
 
