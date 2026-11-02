@@ -67,6 +67,15 @@ export default function LoginPage() {
     // dashboard flashes) and only then does finishLogin() send them to the
     // MainPage loader — or skip the loader entirely when navigation races.
     const signingIn = useRef(false);
+    // True once the person types/pastes themselves. Used to tell that apart
+    // from the browser's password manager filling the form on its own.
+    // iOS (Safari + installed PWA) focuses an autoFocus field WITHOUT opening
+    // the keyboard, and tapping an already-focused field does not open it
+    // either. So only auto-focus on desktops with a real mouse.
+    const canAutoFocus = typeof window === 'undefined' || !window.matchMedia
+        || !window.matchMedia('(pointer: coarse)').matches;
+    const userTyped = useRef(false);
+    const hasRemembered = useRef(false);
     useEffect(() => {
         if (signingIn.current) return;
         if (authLoading || !currentUser || !redirectParam || !/^\/(?!\/)/.test(redirectParam)) return;
@@ -92,11 +101,23 @@ export default function LoginPage() {
             return;
         }
         const remembered = loadRememberedCredentials();
+        hasRemembered.current = !!remembered;
         if (remembered) {
             setEmail(remembered.email || '');
             setPassword(remembered.password || '');
             setRemember(true);
+            return;
         }
+        // Nothing remembered ("Keep me signed in" was not ticked): the form
+        // must start empty. The browser's password manager may fill it a
+        // moment after load, so wipe anything the person did not type.
+        const wipe = () => {
+            if (userTyped.current) return;
+            setEmail('');
+            setPassword('');
+        };
+        const timers = [50, 250, 700, 1500].map((ms) => window.setTimeout(wipe, ms));
+        return () => timers.forEach(window.clearTimeout);
     }, [sessionDisplaced]);
 
     const finishLogin = (firstLogin = false) => {
@@ -251,7 +272,7 @@ export default function LoginPage() {
                             placeholder="123456"
                             aria-invalid={!!error}
                             required
-                            autoFocus
+                            autoFocus={canAutoFocus}
                         />
                     </LedgerRow>
 
@@ -275,12 +296,14 @@ export default function LoginPage() {
                         id="email"
                         type="email"
                         value={email}
+                        onKeyDown={() => { userTyped.current = true; }}
+                        onPaste={() => { userTyped.current = true; }}
                         onChange={(e) => { setEmail(normalizeEmailInput(e.target.value)); setError(''); }}
-                        autoComplete={sessionDisplaced ? 'off' : 'email'}
+                        autoComplete="off"
                         placeholder="occ.lastname.firstname@gmail.com"
                         aria-invalid={!!error}
                         required
-                        autoFocus
+                        autoFocus={canAutoFocus}
                     />
                 </LedgerRow>
 
@@ -288,8 +311,10 @@ export default function LoginPage() {
                     <LedgerPasswordInput
                         id="password"
                         value={password}
+                        onKeyDown={() => { userTyped.current = true; }}
+                        onPaste={() => { userTyped.current = true; }}
                         onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                        autoComplete={sessionDisplaced ? 'new-password' : 'current-password'}
+                        autoComplete="new-password"
                         show={showPassword}
                         onToggle={() => setShowPassword((v) => !v)}
                         aria-invalid={!!error}

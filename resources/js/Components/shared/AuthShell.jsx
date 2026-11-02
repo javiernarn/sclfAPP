@@ -678,6 +678,7 @@ const LEDGER_CSS = `
     .lg-required { color: var(--lg-danger); opacity: 1; margin-left: 1px; }
 
     .lg-input {
+        -webkit-user-select: text; user-select: text; touch-action: manipulation;
         width: 100%; padding: 6px 2px 8px; background: transparent;
         font-size: 14.5px; color: inherit;
         outline: none; border: none; border-radius: 0;
