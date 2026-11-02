@@ -20,18 +20,38 @@ use Illuminate\Support\Str;
 class RefreshTokenService
 {
     private const ACCESS_TOKEN_TTL_MINUTES = 15;
-    private const REFRESH_TOKEN_TTL_DAYS = 30;
+
+    // Extra minutes a NON-remembered refresh token lives beyond the idle limit,
+    // so a refresh that lands a moment late is not rejected. The browser app
+    // does the exact 15-minute inactivity sign-out; this is the server backstop.
+    private const SESSION_GRACE_MINUTES = 5;
 
     /**
      * Issue a brand new access+refresh pair for a fresh login (or after a
      * successful 2FA challenge) — starts a new token family.
      */
-    public function issue(User $user, ?Request $request = null, array $abilities = ['*']): array
+    public function issue(User $user, ?Request $request = null, array $abilities = ['*'], bool $remember = false): array
     {
         // Single-device login: a fresh login ends every other session.
         $this->displaceOtherSessions($user, $request);
 
-        return $this->issueForFamily($user, (string) Str::uuid(), $request, $abilities);
+        return $this->issueForFamily($user, (string) Str::uuid(), $request, $abilities, $remember);
+    }
+
+    /**
+     * When a refresh token issued now stops working.
+     *
+     * "Keep this session open" ticked -> long, sliding window (every refresh
+     * pushes it out again, so the person is never signed out while they keep
+     * using the app). Not ticked -> short window (idle minutes + grace).
+     */
+    public function refreshExpiry(bool $remember): \Illuminate\Support\Carbon
+    {
+        if ($remember) {
+            return now()->addDays(max(1, (int) config('sclf.session.remember_days', 30)));
+        }
+
+        return now()->addMinutes(max(1, (int) config('sclf.session.idle_minutes', 15)) + self::SESSION_GRACE_MINUTES);
     }
 
     /**
@@ -79,7 +99,9 @@ class RefreshTokenService
             $stored->user->tokens()->where('id', $stored->access_token_id)->delete();
         }
 
-        return $this->issueForFamily($stored->user, $stored->family_id, $request, ['*']);
+        // The "keep session open" choice is remembered on the server, so the
+        // browser cannot upgrade a short session into a long one by lying.
+        return $this->issueForFamily($stored->user, $stored->family_id, $request, ['*'], (bool) $stored->remember);
     }
 
     /**
@@ -195,7 +217,7 @@ class RefreshTokenService
         )->plainTextToken;
     }
 
-    private function issueForFamily(User $user, string $familyId, ?Request $request, array $abilities): array
+    private function issueForFamily(User $user, string $familyId, ?Request $request, array $abilities, bool $remember = false): array
     {
         $accessToken = $user->createToken('access-token', $abilities, now()->addMinutes(self::ACCESS_TOKEN_TTL_MINUTES));
 
@@ -206,7 +228,8 @@ class RefreshTokenService
             'token_hash' => hash('sha256', $rawRefreshToken),
             'family_id' => $familyId,
             'access_token_id' => $accessToken->accessToken->id,
-            'expires_at' => now()->addDays(self::REFRESH_TOKEN_TTL_DAYS),
+            'remember' => $remember,
+            'expires_at' => $this->refreshExpiry($remember),
             'user_agent' => $request?->userAgent(),
             'ip_address' => $request?->ip(),
         ]);
@@ -215,6 +238,7 @@ class RefreshTokenService
             'access_token' => $accessToken->plainTextToken,
             'refresh_token' => $rawRefreshToken,
             'expires_in' => self::ACCESS_TOKEN_TTL_MINUTES * 60,
+            'remember' => $remember,
         ];
     }
 }

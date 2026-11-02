@@ -22,7 +22,7 @@ export default {
     emailHint: 'Format: occ.lastname.firstname@gmail.com',
     password: 'Password',
     keepOpen: 'Keep this session open',
-    keepOpenTip: 'Stay signed in on this device. This form also remembers your email/password until you close this tab. Uncheck on shared or public computers.',
+    keepOpenTip: 'Stay signed in on this device. If left unchecked you are signed out after 15 minutes of inactivity. This form also remembers your email/password until you close this tab. Uncheck on shared or public computers.',
     forgot: 'Forgot password?',
     signIn: 'Sign In',
     signInFailed: 'Sign-in failed',

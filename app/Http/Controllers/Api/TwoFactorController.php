@@ -151,7 +151,7 @@ class TwoFactorController extends Controller
         // thing rather than letting it linger until its 5-minute expiry.
         $request->user()->currentAccessToken()->delete();
 
-        $pair = $this->tokens->issue($user, $request);
+        $pair = $this->tokens->issue($user, $request, ['*'], $request->boolean('remember'));
 
         $firstLogin = $user->recordLogin();
 

@@ -188,7 +188,8 @@ class AuthController extends Controller
         // the API closed until they click the link.
         EmailVerificationController::send($user);
 
-        $pair = $this->tokens->issue($user, $request);
+        // Registering has no checkbox; it has always meant a persistent session.
+        $pair = $this->tokens->issue($user, $request, ['*'], true);
 
         // Registering signs them straight in, so this counts as their
         // first session — their next login is a "Welcome back".
@@ -266,11 +267,13 @@ class AuthController extends Controller
             ]);
         }
 
-        $pair = $this->tokens->issue($user, $request);
+        // "Keep this session open" decides how long the refresh token lives
+        // (see RefreshTokenService::refreshExpiry) and is stored with it.
+        $pair = $this->tokens->issue($user, $request, ['*'], $request->boolean('remember'));
 
         $firstLogin = $user->recordLogin();
 
-        // "Keep me signed in" -> a 30-day refresh cookie; otherwise a session cookie.
+        // Ticked -> long-lived refresh cookie; otherwise a session cookie.
         return RefreshCookie::respond($request, array_merge(
             $this->userPayload($user),
             [
@@ -326,12 +329,13 @@ class AuthController extends Controller
             ], 422));
         }
 
-        // The browser app tells us whether this session was a "keep me signed
-        // in" one, so the rotated cookie keeps the same lifetime.
+        // The server remembers whether this session was a "keep me signed in"
+        // one (stored on the refresh token), so the rotated cookie keeps the
+        // same lifetime no matter what the browser sends.
         return RefreshCookie::respond($request, [
             'access_token' => $pair['access_token'],
             'expires_in' => $pair['expires_in'],
-        ], $pair['refresh_token'], $request->boolean('remember'));
+        ], $pair['refresh_token'], $pair['remember']);
     }
 
     public function logout(Request $request)

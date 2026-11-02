@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class RefreshToken extends Model
 {
     protected $fillable = [
-        'user_id', 'token_hash', 'family_id', 'access_token_id',
+        'user_id', 'token_hash', 'family_id', 'access_token_id', 'remember',
         'expires_at', 'rotated_at', 'revoked_at', 'revoked_reason', 'displaced_by',
         'user_agent', 'ip_address',
     ];
@@ -15,6 +15,7 @@ class RefreshToken extends Model
     protected function casts(): array
     {
         return [
+            'remember' => 'boolean',
             'expires_at' => 'datetime',
             'rotated_at' => 'datetime',
             'revoked_at' => 'datetime',

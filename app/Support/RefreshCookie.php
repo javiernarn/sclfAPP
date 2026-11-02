@@ -26,7 +26,8 @@ class RefreshCookie
     // Path of the token endpoints; computed per request so a subfolder install
     // (https://host/sclf/...) still works. See path().
     public const PATH = '/api/token';
-    public const LIFETIME_DAYS = 30; // keep equal to RefreshTokenService::REFRESH_TOKEN_TTL_DAYS
+    // Lifetime of a "keep me signed in" cookie comes from config('sclf.session.remember_days')
+    // (the same value the server uses for the refresh token itself).
 
     public static function enabled(): bool
     {
@@ -82,7 +83,7 @@ class RefreshCookie
         return new Cookie(
             self::NAME,
             $value,
-            $remember ? now()->addDays(self::LIFETIME_DAYS)->getTimestamp() : 0,
+            $remember ? now()->addDays(max(1, (int) config('sclf.session.remember_days', 30)))->getTimestamp() : 0,
             self::path($request),
             null,
             self::secure($request),

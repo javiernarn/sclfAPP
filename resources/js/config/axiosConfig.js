@@ -199,7 +199,7 @@ const refreshOnce = () => {
     return refreshPromise;
 };
 
-const isAuthUrl = (url) => ['/login', '/token/refresh', '/2fa/login-verify'].some((p) => url?.includes(p));
+const isAuthUrl = (url) => ['/login', '/logout', '/token/refresh', '/2fa/login-verify'].some((p) => url?.includes(p));
 
 // Called once when the app opens in a tab that has no access token (new tab,
 // browser restarted with "Keep me signed in"): trade the refresh cookie for a
@@ -284,6 +284,44 @@ const hardLogout = () => {
     showToast({ type: 'warning', title: 'Session expired', message: 'Please sign in again to continue.' });
     window.location.href = `/login?type=session-expired`;
 };
+
+// ---- Inactivity sign-out for sessions WITHOUT "Keep this session open" ----
+// Ticked  -> never signed out for being idle (the access token keeps renewing
+//            itself, and the server keeps the long refresh token sliding).
+// Unticked -> after IDLE_LIMIT_MS with no mouse / keyboard / touch / scroll the
+//            person is signed out. Background polling does NOT count as
+//            activity, only real input does. Keep the value equal to
+//            SCLF_SESSION_IDLE_MINUTES on the server (the server also expires
+//            the refresh token a few minutes after that as a backstop).
+const IDLE_LIMIT_MS = (Number(import.meta.env?.VITE_SESSION_IDLE_MINUTES) || 15) * 60 * 1000;
+let lastActivityAt = Date.now();
+let idleSigningOut = false;
+
+const markActive = () => { lastActivityAt = Date.now(); };
+['pointerdown', 'keydown', 'touchstart', 'scroll', 'mousemove'].forEach((evt) => {
+    window.addEventListener(evt, markActive, { passive: true, capture: true });
+});
+
+const idleSignOut = async () => {
+    if (idleSigningOut) return;
+    idleSigningOut = true;
+    // Tell the server so the refresh token dies now; if the access token has
+    // already expired this simply fails and the server-side expiry covers it.
+    try { await instance.post('/logout', null, { silent: true, skipAuthRedirect: true, timeout: 4000 }); } catch { /* ignore */ }
+    hardLogout();
+};
+
+const idleCheck = () => {
+    if (idleSigningOut || sessionDisplaced || loggingOut) return;
+    if (isRemembered()) return;                           // "Keep this session open" -> never idle out
+    if (!getStoredToken() && !hasSessionHint()) return;   // nobody is signed in on this tab
+    if (Date.now() - lastActivityAt < IDLE_LIMIT_MS) return;
+    idleSignOut();
+};
+
+setInterval(idleCheck, 30 * 1000);
+// Browsers slow timers in background tabs: check right away when the person comes back.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) idleCheck(); });
 
 instance.interceptors.response.use(
     (response) => {

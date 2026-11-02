@@ -12,6 +12,17 @@ return [
         'allow_body' => env('SCLF_REFRESH_ALLOW_BODY', false),
     ],
 
+    // How long a login lasts.
+    //  - "Keep this session open" ticked: stays signed in for `remember_days`
+    //    and the window slides forward every time the app renews its access
+    //    token, so someone who keeps using the app is never signed out.
+    //  - Not ticked: signed out after `idle_minutes` without activity. Keep
+    //    VITE_SESSION_IDLE_MINUTES (browser side) equal to this value.
+    'session' => [
+        'idle_minutes' => (int) env('SCLF_SESSION_IDLE_MINUTES', 15),
+        'remember_days' => (int) env('SCLF_REMEMBER_DAYS', 30),
+    ],
+
 
     /*
     |--------------------------------------------------------------------------
