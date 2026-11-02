@@ -13,9 +13,11 @@
 //      blobs for the session (small cap) so re-opening a report does not
 //      download the same photo again.
 
-const MAX_KEPT = 300;          // decoded images we keep a reference to
-const MAX_PER_REPLY = 60;      // never flood the network from one big list
-const PHOTO_KEYS = new Set(['image_url', 'profile_picture_url', 'photo_url', 'avatar_url']);
+const MAX_KEPT = 40;           // decoded images we keep a reference to (iOS Safari runs out of image memory fast)
+const MAX_PER_REPLY = 20;      // never flood the network from one big list
+// Avatars are NOT preloaded: a list can hold hundreds, and holding them all decoded
+// makes iOS Safari stop painting images. They are tiny and load on demand anyway.
+const PHOTO_KEYS = new Set(['image_url', 'photo_url']);
 
 // url -> HTMLImageElement. Holding the element keeps the decoded bitmap warm.
 const kept = new Map();

@@ -158,7 +158,7 @@ class ProfileController extends Controller
 
         $oldPicture = $user->profile_picture;
         $profilePicturePath = $request->hasFile('profile_picture')
-            ? $request->file('profile_picture')->store('profile-pictures', PrivateMedia::DISK)
+            ? \App\Support\ProfilePhotoStorage::store($request->file('profile_picture'))
             : $oldPicture;
 
         $user->fill([

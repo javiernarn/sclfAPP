@@ -161,7 +161,7 @@ class AuthController extends Controller
 
         $profilePicturePath = null;
         if ($request->hasFile('profile_picture')) {
-            $profilePicturePath = $request->file('profile_picture')->store('profile-pictures', PrivateMedia::DISK);
+            $profilePicturePath = \App\Support\ProfilePhotoStorage::store($request->file('profile_picture'));
         }
 
         $user = User::create([

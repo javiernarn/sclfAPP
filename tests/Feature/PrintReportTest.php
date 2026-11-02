@@ -55,6 +55,8 @@ class PrintReportTest extends TestCase
     public function test_student_can_open_their_own_report(): void
     {
         $student = $this->userWithRole('student');
+        // Printing is OFF by default for students; open it for this test.
+        \App\Models\AppSetting::setValue(\App\Http\Controllers\PrintAccessController::KEY_ENABLED, '1');
 
         $this->getJson("/api/print-report/{$student->public_token}", $this->authHeaders($student))
             ->assertOk()

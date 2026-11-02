@@ -193,6 +193,8 @@ class ViolationTest extends TestCase
         $security = $this->user('security_officer');
         $staff = $this->user('staff'); // only admin/staff open a printed dashboard
         $att = $this->attachmentBy($student);
+        // Printing is OFF by default for students; open it for this test.
+        \App\Models\AppSetting::setValue(\App\Http\Controllers\PrintAccessController::KEY_ENABLED, '1');
 
         $this->getJson("/api/print-report/{$student->public_token}", $this->headers($student))
             ->assertOk()
@@ -423,6 +425,8 @@ class ViolationTest extends TestCase
         $admin = $this->user('admin');
         $admin->update(['name' => 'Jonee John']);
         $att = $this->attachmentBy($student);
+        // Printing is OFF by default (students get a 403 "print_disabled"), so turn it on.
+        \App\Models\AppSetting::setValue(\App\Http\Controllers\PrintAccessController::KEY_ENABLED, '1');
 
         $this->postJson("/api/report-attachments/{$att->id}/violation", ['reason' => 'nudity'], $this->headers($admin))->assertCreated();
 

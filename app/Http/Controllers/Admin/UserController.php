@@ -127,7 +127,7 @@ class UserController extends Controller
 
         $profilePicturePath = null;
         if ($request->hasFile('profile_picture')) {
-            $profilePicturePath = $request->file('profile_picture')->store('profile-pictures', PrivateMedia::DISK);
+            $profilePicturePath = \App\Support\ProfilePhotoStorage::store($request->file('profile_picture'));
         }
 
         // Staff accounts are the admin's to create — a Staff member can
@@ -412,7 +412,7 @@ class UserController extends Controller
         // account without a picture.
         if ($request->hasFile('profile_picture')) {
             $oldPicture = $user->profile_picture;
-            $attributes['profile_picture'] = $request->file('profile_picture')->store('profile-pictures', PrivateMedia::DISK);
+            $attributes['profile_picture'] = \App\Support\ProfilePhotoStorage::store($request->file('profile_picture'));
             if ($oldPicture) {
                 \Illuminate\Support\Facades\Storage::disk(PrivateMedia::DISK)->delete($oldPicture);
             }
