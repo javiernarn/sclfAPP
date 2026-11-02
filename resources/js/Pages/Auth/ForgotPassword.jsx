@@ -10,6 +10,9 @@ import AuthShell, {
     Stamp,
 } from '../../Components/shared/AuthShell';
 import { Mail, CheckCircle2 } from '../../Components/icons';
+import { isUnreachable } from '../../utils/connection';
+
+const NO_CONNECTION = "No connection — we couldn't reach the server. Check your internet and try again.";
 
 // ---------------------------------------------------------------------------
 // Recovery flow: enter email -> confirm the (masked) email -> send (or resend)
@@ -48,6 +51,7 @@ export default function ForgotPassword() {
             setFoundUser({ email: data?.data?.email || email });
             setView('found');
         } catch (err) {
+            if (isUnreachable(err)) { setError(NO_CONNECTION); return; }
             const status = err.response?.status;
             const message = status === 429
                 ? (err.response?.data?.message || 'Too many attempts. Please try again later.')
@@ -66,6 +70,7 @@ export default function ForgotPassword() {
             await axios.post('/forgot-password', { email }, { silent: true });
             setEmailSent(true);
         } catch (err) {
+            if (isUnreachable(err)) { setError(NO_CONNECTION); return; }
             setError(err.response?.data?.message || 'Failed to send reset link. Please try again.');
         } finally {
             setLoading(false);

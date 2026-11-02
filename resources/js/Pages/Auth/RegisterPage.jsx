@@ -43,6 +43,7 @@ import {
     Check,
 } from '../../Components/icons';
 import { COURSE_GROUPS } from '../../config/courseGroups';
+import { isUnreachable } from '../../utils/connection';
 
 const INITIAL_FORM = {
     first_name: '',
@@ -334,7 +335,9 @@ export default function RegisterPage() {
         } catch (err) {
             const errors = err.response?.data?.errors;
 
-            if (err.response?.status === 429) {
+            if (isUnreachable(err)) {
+                toast.error("We couldn't reach the server. Check your internet connection and try again.", { title: 'No connection' });
+            } else if (err.response?.status === 429) {
                 // Laravel's own throttle message is just "Too Many
                 // Attempts." with no context — build a friendlier one
                 // from the Retry-After header (seconds) it always sends

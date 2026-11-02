@@ -1034,12 +1034,12 @@ html[data-season]:where(:not([data-season=""])) .lg-wrap .lg-title .accent { fil
 html[data-season]:where(:not([data-season=""])) .lg-wrap.lg-wrap .lg-input { border-color: var(--sx-edge); }
 html[data-season]:where(:not([data-season=""])) .lg-wrap .lg-input:focus { border-color: var(--sx-accent); box-shadow: 0 0 0 4px rgba(var(--sx-accent-rgb), 0.2); }
 html[data-season]:where(:not([data-season=""])) .lg-wrap.lg-wrap .lg-submit {
-    background: linear-gradient(135deg, var(--sx-accent), var(--sx-accent-3) 140%);
-    color: var(--sx-on-accent); box-shadow: 0 12px 28px rgba(var(--sx-accent-rgb), 0.4);
+    background: var(--sx-grad);
+    color: var(--sx-on-grad); box-shadow: 0 12px 28px rgba(var(--sx-accent-rgb), 0.4);
 }
-html[data-season="halloween"] .lg-wrap.lg-wrap .lg-submit { background: linear-gradient(135deg, #c2410c, #f97316 55%, #fbbf24); }
-html[data-season="christmas"] .lg-wrap.lg-wrap .lg-submit { background: linear-gradient(135deg, #991b1b, #dc2626 55%, #16a34a 150%); }
-html[data-season="newyear"] .lg-wrap.lg-wrap .lg-submit { background: linear-gradient(135deg, #78350f, #b45309 50%, #d97706 120%); color: #fff; }
+html[data-season="halloween"] .lg-wrap.lg-wrap .lg-submit { background: var(--sx-grad); color: var(--sx-on-grad); }
+html[data-season="christmas"] .lg-wrap.lg-wrap .lg-submit { background: var(--sx-grad); color: var(--sx-on-grad); }
+html[data-season="newyear"] .lg-wrap.lg-wrap .lg-submit { background: var(--sx-grad); color: var(--sx-on-grad); }
 html[data-season]:where(:not([data-season=""])) .lg-wrap.lg-wrap .lg-ghost { border-color: var(--sx-edge); color: var(--sx-text); }
 html[data-season]:where(:not([data-season=""])) .lg-wrap .lg-ghost:hover { background: rgba(var(--sx-accent-rgb), 0.12); }
 html[data-season]:where(:not([data-season=""])) .lg-wrap .lg-row-index { background: rgba(var(--sx-accent-rgb), 0.16); color: var(--sx-accent-text); }
@@ -1065,12 +1065,12 @@ html[data-season]:where(:not([data-season=""])) .lg-wrap .lg-mobile-brand .sx-ha
     }
     html[data-season]:where(:not([data-season=""])) .lg-wrap.lg-wrap .lg-input { background: var(--sx-surface); border: 1.5px solid var(--sx-edge); color: var(--sx-text); }
     html[data-season]:where(:not([data-season=""])) .lg-wrap.lg-wrap .lg-submit {
-        border-radius: 16px; color: var(--sx-on-accent);
+        border-radius: 16px; color: var(--sx-on-grad);
         box-shadow: 0 12px 26px rgba(var(--sx-accent-rgb), 0.42);
     }
-    html[data-season="halloween"] .lg-wrap.lg-wrap .lg-submit { background: linear-gradient(135deg, #c2410c, #f97316 55%, #fbbf24); }
-    html[data-season="christmas"] .lg-wrap.lg-wrap .lg-submit { background: linear-gradient(135deg, #991b1b, #dc2626 55%, #16a34a 150%); }
-html[data-season="newyear"] .lg-wrap.lg-wrap .lg-submit { background: linear-gradient(135deg, #78350f, #b45309 50%, #d97706 120%); color: #fff; }
+    html[data-season="halloween"] .lg-wrap.lg-wrap .lg-submit { background: var(--sx-grad); color: var(--sx-on-grad); }
+    html[data-season="christmas"] .lg-wrap.lg-wrap .lg-submit { background: var(--sx-grad); color: var(--sx-on-grad); }
+html[data-season="newyear"] .lg-wrap.lg-wrap .lg-submit { background: var(--sx-grad); color: var(--sx-on-grad); }
     html[data-season]:where(:not([data-season=""])) .lg-wrap .lg-stage-legal { padding-left: 90px; padding-right: 90px; }
     /* the footer line sits on the dark graveyard ground in both modes */
     html[data-season="halloween"] .lg-wrap.lg-wrap .lg-stage-legal { color: #fff1de; opacity: 0.92; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7); }
@@ -1104,12 +1104,12 @@ html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout > .ds-conten
 /* tokens used by menus, theme flyout, the phone app, tables, chips ... */
 html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout, html[data-season]:where(:not([data-season=""])) .ds-menu.dark, html[data-season]:where(:not([data-season=""])) .ds-menu.light {
     --tk-edge: var(--sx-edge-solid); --tk-surface: var(--sx-solid); --tk-field: var(--sx-field); --tk-hover: var(--sx-field);
-    --tk-accent-on: var(--sx-on-accent); --tk-accent-text: var(--sx-accent-text); --tk-accent-rgb: var(--sx-accent-rgb);
+    --tk-accent-on: var(--sx-on-grad); --tk-accent-text: var(--sx-accent-text); --tk-accent-rgb: var(--sx-accent-rgb);
     --tk-shadow: var(--sx-shadow);
 }
-html[data-season="halloween"] .ds-shell.ds-layout, html[data-season="halloween"] .ds-menu { --tk-accent: linear-gradient(135deg, #c2410c, #f97316 55%, #fbbf24); }
-html[data-season="christmas"] .ds-shell.ds-layout, html[data-season="christmas"] .ds-menu { --tk-accent: linear-gradient(135deg, #991b1b, #dc2626 55%, #16a34a 150%); }
-html[data-season="newyear"] .ds-shell.ds-layout, html[data-season="newyear"] .ds-menu { --tk-accent: linear-gradient(135deg, #78350f, #b45309 50%, #d97706 120%); }
+html[data-season="halloween"] .ds-shell.ds-layout, html[data-season="halloween"] .ds-menu { --tk-accent: var(--sx-grad); --tk-accent-on: var(--sx-on-grad); }
+html[data-season="christmas"] .ds-shell.ds-layout, html[data-season="christmas"] .ds-menu { --tk-accent: var(--sx-grad); --tk-accent-on: var(--sx-on-grad); }
+html[data-season="newyear"] .ds-shell.ds-layout, html[data-season="newyear"] .ds-menu { --tk-accent: var(--sx-grad); --tk-accent-on: var(--sx-on-grad); }
 /* the portaled menus are outside .ds-shell, so give them their own palette */
 html[data-season="halloween"] .ds-menu.dark { --sx-solid: #170a28; --sx-field: #22103a; --sx-edge-solid: #5a2f86; --sx-accent-text: #fb923c; --sx-accent-rgb: 249, 115, 22; --sx-on-accent: #1a0900; --sx-shadow: rgba(0, 0, 0, 0.6); }
 html[data-season="halloween"] .ds-menu.light { --sx-solid: #fffaf2; --sx-field: #fff0dc; --sx-edge-solid: #e6b784; --sx-accent-text: #c2410c; --sx-accent-rgb: 234, 88, 12; --sx-on-accent: #fff; --sx-shadow: rgba(122, 52, 8, 0.28); }
@@ -1127,7 +1127,7 @@ html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-stat-car
     box-shadow: 0 16px 40px var(--sx-shadow);
 }
 html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-nav-link:hover:not(.active) { background: var(--sx-field); }
-html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-nav-link.active { background: var(--tk-accent); color: var(--sx-on-accent); box-shadow: 0 8px 20px rgba(var(--sx-accent-rgb), 0.35); }
+html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-nav-link.active { background: var(--tk-accent); color: var(--sx-on-grad); box-shadow: 0 8px 20px rgba(var(--sx-accent-rgb), 0.35); }
 html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-field input,
 html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-field select,
 html[data-season]:where(:not([data-season=""])) .ds-shell.ds-layout .ds-field textarea { background: var(--sx-solid); border-color: var(--sx-edge-solid); color: var(--sx-text); }

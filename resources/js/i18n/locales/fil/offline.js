@@ -6,4 +6,10 @@ export default {
     screenText: 'Hindi namin ma-load ang pahinang ito dahil naputol ang koneksyon. Ligtas ang iyong mga ulat at naka-save na gawa — suriin ang iyong internet at subukan muli.',
     retry: 'Subukan muli',
     dismiss: 'Isara',
+    updateTitle: 'May bagong bersyon na',
+    updateText: 'I-update ngayon para makuha ang pinakabagong pagbabago. Sandali lang ito.',
+    updateNow: 'I-update ngayon',
+    updateLater: 'Mamaya',
+    cantReachTitle: 'Walang koneksyon',
+    cantReach: 'Hindi namin maabot ang server. Suriin ang iyong koneksyon sa internet at subukan muli.',
 };

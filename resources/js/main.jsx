@@ -15,7 +15,9 @@ import './utils/disableZoom'; // no pinch / double-tap zoom on phones and tablet
 import './utils/pwaInstall'; // start listening for the browser's install event before React mounts
 import InstallPrompt from './Components/shared/InstallPrompt';
 import OfflineNotice from './Components/shared/OfflineNotice';
+import UpdateNotice from './Components/shared/UpdateNotice';
 import { applySeason } from './seasons/season';
+import './seasons/seasonSurfaces.css'; // season colours for pop-ups, buttons, charts, tooltips, help panel (loads on every screen)
 applySeason(); // FIRST/SECOND theme (see .env APP_SEASON) before first paint
 import './i18n'; // applies the saved language to <html lang> before first paint
 import { preloadImage } from './utils/imageCache';
@@ -48,6 +50,7 @@ ReactDOM.createRoot(document.getElementById('app')).render(
                         <PreferencesProvider>
                             <NotificationProvider>
                                 <OfflineNotice />
+                                <UpdateNotice />
                                 <RootApp />
                                 <InstallPrompt />
                             </NotificationProvider>

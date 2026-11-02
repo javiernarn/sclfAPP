@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios, { storeTokenPair, getStoredToken, clearStoredToken, restoreSession } from '../config/axiosConfig';
+import axios, { storeTokenPair, getStoredToken, clearStoredToken, restoreSession, restoreWasOffline, readMeCache, writeMeCache, clearOfflineData } from '../config/axiosConfig';
 import { clearLoginMemory } from '../utils/welcome';
 import { getCurrentSubscription, disablePush } from '../utils/push';
 import { clearAllDrafts } from '../utils/autosave';
@@ -28,6 +28,16 @@ export function AuthProvider({ children }) {
             }
 
             if (!token) {
+                // Opened with no connection and the session could not be renewed:
+                // still draw the app from the last known profile (data stays empty
+                // until the connection is back and the session renews itself).
+                if (restoreWasOffline()) {
+                    const cached = readMeCache();
+                    if (cached?.user && !cancelled) {
+                        setUser(cached.user);
+                        setRoles(cached.roles || []);
+                    }
+                }
                 if (!cancelled) setLoading(false);
                 return;
             }
@@ -37,8 +47,19 @@ export function AuthProvider({ children }) {
                 if (cancelled) return;
                 setUser(res.data.user);
                 setRoles(res.data.roles);
-            } catch {
-                clearStoredToken();
+            } catch (err) {
+                if (!err.response || err.response.status >= 500) {
+                    // No connection / server unreachable: keep the session and
+                    // show the app from the last known profile instead of
+                    // signing the person out.
+                    const cached = readMeCache();
+                    if (cached?.user && !cancelled) {
+                        setUser(cached.user);
+                        setRoles(cached.roles || []);
+                    }
+                } else {
+                    clearStoredToken();
+                }
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -46,6 +67,25 @@ export function AuthProvider({ children }) {
 
         return () => { cancelled = true; };
     }, []);
+
+    // Keep the offline copy of the profile fresh.
+    useEffect(() => {
+        if (user) writeMeCache(user, roles);
+    }, [user, roles]);
+
+    // Connection came back: re-check who is signed in (renews the session too).
+    useEffect(() => {
+        if (!user) return undefined;
+        const onBack = async () => {
+            try {
+                const res = await axios.get('/me', { silent: true });
+                setUser(res.data.user);
+                setRoles(res.data.roles);
+            } catch { /* the normal 401 handling decides if the session is really over */ }
+        };
+        window.addEventListener('online', onBack);
+        return () => window.removeEventListener('online', onBack);
+    }, [!!user]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // If this browser/device is still carrying a push subscription from
     // whoever used it before (a shared campus PC where the previous
@@ -76,6 +116,7 @@ export function AuthProvider({ children }) {
     };
 
     const applySession = async (data, remember) => {
+        clearOfflineData(); // never show the previous person's saved screens to the new one
         storeTokenPair(
             { access_token: data.access_token, refresh_token: data.refresh_token, expires_in: data.expires_in },
             remember

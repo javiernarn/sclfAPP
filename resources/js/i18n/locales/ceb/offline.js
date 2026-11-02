@@ -6,4 +6,10 @@ export default {
     screenText: 'Wala namo ma-load kini nga panid kay naputol ang koneksyon. Luwas ang imong mga report ug na-save nga buhat — susiha ang imong internet ug sulayi pag-usab.',
     retry: 'Sulayi pag-usab',
     dismiss: 'Isira',
+    updateTitle: 'Naay bag-ong bersyon',
+    updateText: "I-update karon aron makuha ang pinakabag-o nga mga kausaban. Gamay ra kini'g higayon.",
+    updateNow: 'I-update karon',
+    updateLater: 'Unya na',
+    cantReachTitle: 'Walay koneksyon',
+    cantReach: 'Wala namo maabot ang server. Susiha ang imong koneksyon sa internet ug sulayi pag-usab.',
 };

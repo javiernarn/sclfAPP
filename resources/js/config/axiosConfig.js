@@ -66,10 +66,83 @@ export const getStoredPair = () => {
 export const getStoredToken = () => getStoredPair()?.access_token || null;
 const getStoredRefreshToken = () => getStoredPair()?.refresh_token || null;
 
-export const clearStoredToken = () => {
+// ---- "Last loaded" copy of data, for when there is no connection ----------
+// Every successful GET reply is saved on this device (Cache API). If the same
+// request later fails because there is NO connection, the saved copy is shown
+// instead, so screens the person already opened still show what they last saw.
+// Nothing new can load offline, and the whole store is wiped with the session
+// (logout, expiry, signed in elsewhere, a different person signing in).
+const DATA_CACHE = 'sclf-data-v1';
+const NO_OFFLINE_COPY = ['/login', '/logout', '/register', '/token', '/2fa', '/push', '/password', '/email/verify'];
+const cacheKeyFor = (config) => {
+    try { return new Request('https://sclf-offline.local/' + encodeURIComponent(instance.getUri(config))); } catch { return null; }
+};
+const copyAllowed = (config) =>
+    config && String(config.method || 'get').toLowerCase() === 'get' &&
+    config.responseType !== 'blob' && config.responseType !== 'arraybuffer' &&
+    typeof window !== 'undefined' && 'caches' in window &&
+    !NO_OFFLINE_COPY.some((p) => String(config.url || '').includes(p));
+
+const saveOfflineCopy = async (config, data) => {
+    try {
+        if (!copyAllowed(config) || data === undefined) return;
+        const key = cacheKeyFor(config);
+        if (!key) return;
+        const cache = await window.caches.open(DATA_CACHE);
+        await cache.put(key, new Response(JSON.stringify(data), { headers: { 'Content-Type': 'application/json' } }));
+    } catch { /* storage full/unavailable: skip */ }
+};
+
+const readOfflineCopy = async (config) => {
+    try {
+        if (!copyAllowed(config)) return null;
+        const key = cacheKeyFor(config);
+        if (!key) return null;
+        const cache = await window.caches.open(DATA_CACHE);
+        const hit = await cache.match(key);
+        return hit ? await hit.json() : null;
+    } catch { return null; }
+};
+
+export const clearOfflineData = () => {
+    try { if (typeof window !== 'undefined' && 'caches' in window) window.caches.delete(DATA_CACHE); } catch { /* ignore */ }
+};
+
+// Last known profile (user + roles), kept ONLY so the installed app can still
+// draw its screens when the phone has no connection. It holds no data lists and
+// is wiped with the session (logout, expiry, signed in elsewhere).
+const ME_KEY = 'sclf_me_cache';
+
+export const readMeCache = () => {
+    try {
+        const raw = window.sessionStorage.getItem(ME_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch { /* fall through */ }
+    try {
+        const stored = secureLocalStorage.getItem(ME_KEY);
+        return stored && typeof stored === 'object' ? stored : null;
+    } catch { return null; }
+};
+
+export const writeMeCache = (user, roles) => {
+    if (!user) return;
+    const value = { user, roles: roles || [] };
+    try { window.sessionStorage.setItem(ME_KEY, JSON.stringify(value)); } catch { /* storage unavailable */ }
+    try {
+        if (isRemembered()) secureLocalStorage.setItem(ME_KEY, value);
+        else secureLocalStorage.removeItem(ME_KEY);
+    } catch { /* storage unavailable */ }
+};
+
+export const clearStoredToken = (keepMeCache = false) => {
     window.sessionStorage.removeItem(SESSION_KEY);
     secureLocalStorage.removeItem(LOCAL_KEY);
     writeHint(null);
+    if (!keepMeCache) {
+        clearOfflineData();
+        try { window.sessionStorage.removeItem(ME_KEY); } catch { /* storage unavailable */ }
+        try { secureLocalStorage.removeItem(ME_KEY); } catch { /* storage unavailable */ }
+    }
     // A saved deep link (?redirect=) was meant for the account that just ended.
     try {
         window.sessionStorage.removeItem('sclf-post-login-redirect');
@@ -81,7 +154,8 @@ export const clearStoredToken = () => {
 export const storeTokenPair = (pair, remember = true) => {
     sessionDisplaced = false;
     loggingOut = false;
-    clearStoredToken();
+    clearStoredToken(true); // keep the offline profile cache: this also runs on every silent token refresh
+    if (!remember) { try { secureLocalStorage.removeItem(ME_KEY); } catch { /* storage unavailable */ } }
     // Remember WHEN the access token dies so we can swap it for a fresh one
     // just before that, instead of waiting for a 401 (see request interceptor).
     const expiresAt = pair.expires_in ? Date.now() + pair.expires_in * 1000 : null;
@@ -130,14 +204,27 @@ const isAuthUrl = (url) => ['/login', '/token/refresh', '/2fa/login-verify'].som
 // Called once when the app opens in a tab that has no access token (new tab,
 // browser restarted with "Keep me signed in"): trade the refresh cookie for a
 // fresh access token. Returns true when a session was restored.
+let restoreFailedOffline = false;
+// True when the last restoreSession() failed only because there was no
+// connection / the server was unreachable (the session itself may be fine).
+export const restoreWasOffline = () => restoreFailedOffline;
+
 export const restoreSession = async () => {
+    restoreFailedOffline = false;
     if (getStoredToken() || !hasSessionHint()) return false;
     const remember = isRemembered();
     try {
         const res = await instance.post('/token/refresh', { remember }, { silent: true, skipAuthRedirect: true });
         storeTokenPair(res.data, remember);
         return true;
-    } catch {
+    } catch (err) {
+        if (!err.response || err.response.status >= 500) {
+            // No connection (e.g. the installed app opened offline): the session
+            // is NOT dead. Keep it so the app can still open and sign back in
+            // by itself once the connection returns.
+            restoreFailedOffline = true;
+            return false;
+        }
         clearStoredToken();
         return false;
     }
@@ -205,11 +292,27 @@ instance.interceptors.response.use(
         if (response.config?.responseType !== 'blob') {
             try { preloadFromApiData(response.data); } catch { /* never block a reply */ }
         }
+        saveOfflineCopy(response.config, response.data); // fire and forget
         return response;
     },
     async (error) => {
         const statusCode = error.response?.status || null;
         const originalRequest = error.config;
+
+        // No connection at all (no reply from the server): show what was last
+        // loaded for this same request instead of an empty/error screen.
+        // (A host that is down/restarting often answers 502/503/504 instead of
+        // refusing the connection: treat those the same way.)
+        const serverUnreachable = !error.response || [502, 503, 504].includes(error.response.status);
+        if (serverUnreachable && originalRequest) {
+            const copy = await readOfflineCopy(originalRequest);
+            if (copy !== null) {
+                return {
+                    data: copy, status: 200, statusText: 'OK (saved copy)', headers: {},
+                    config: originalRequest, request: null, offlineCopy: true,
+                };
+            }
+        }
 
         // Already signed out because of a login elsewhere — don't spam
         // toasts or redirects for requests still in flight.

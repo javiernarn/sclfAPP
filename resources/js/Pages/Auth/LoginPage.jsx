@@ -20,6 +20,7 @@ import { Mail, Lock } from '../../Components/icons';
 import { rememberLogin } from '../../utils/welcome';
 import { canOpenPath } from '../../utils/redirectGuard';
 import { useTranslation } from '../../i18n';
+import { isUnreachable } from '../../utils/connection';
 import occBg from '../../assets/images/occ.webp';
 
 export default function LoginPage() {
@@ -163,6 +164,12 @@ export default function LoginPage() {
             // specific message under errors.email — the top-level
             // `message` is just Laravel's generic "The given data was
             // invalid." wrapper.
+            if (isUnreachable(err)) {
+                // No internet / server off: say so, instead of "invalid credentials".
+                setError(t('offline.cantReach'));
+                toast.error(t('offline.cantReach'), { title: t('offline.cantReachTitle') });
+                return;
+            }
             const message = err.response?.data?.errors?.email?.[0]
                 || err.response?.data?.message
                 || t('login.invalidCredentials');
@@ -184,6 +191,11 @@ export default function LoginPage() {
             finishLogin(!!result.first_login);
         } catch (err) {
             signingIn.current = false;
+            if (isUnreachable(err)) {
+                setError(t('offline.cantReach'));
+                toast.error(t('offline.cantReach'), { title: t('offline.cantReachTitle') });
+                return;
+            }
             const message = err.response?.data?.errors?.code?.[0]
                 || err.response?.data?.message
                 || t('login.invalidCode');

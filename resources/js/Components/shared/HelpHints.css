@@ -1,0 +1,115 @@
+/*
+ * "How this works" panel. Every colour comes from the theme tokens (--tk-*),
+ * which themes.css fills for the 9 accent themes and seasonSurfaces.css fills
+ * for Halloween / Christmas / New Year. No hardcoded brand colours here.
+ * Phone: a full-height sheet that respects the notch and the home bar.
+ */
+.sclf-help-backdrop {
+    position: fixed; inset: 0; z-index: 10000; display: flex; justify-content: flex-end;
+    background: rgba(8, 10, 20, 0.5); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+    animation: sclf-help-fade .18s ease-out;
+}
+.sclf-help-panel {
+    --hp-text: #0f172a; --hp-muted: #5b6678;
+    position: relative; display: flex; flex-direction: column;
+    width: min(460px, 100%); height: 100vh; height: 100dvh; max-height: 100dvh;
+    background: var(--tk-surface, #fff); color: var(--hp-text);
+    border-left: 1px solid var(--tk-edge, #c3ccdb);
+    box-shadow: -18px 0 48px var(--tk-shadow, rgba(2, 6, 23, .25));
+    animation: sclf-help-slide .24s cubic-bezier(.2, .8, .2, 1);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; box-sizing: border-box;
+}
+.sclf-help-panel *, .sclf-help-panel *::before, .sclf-help-panel *::after { box-sizing: border-box; }
+.sclf-help-panel.dark { --hp-text: #e8edf6; --hp-muted: #a3aec2; }
+html[data-season]:where(:not([data-season=""])) .sclf-help-panel { --hp-text: var(--sx-text); --hp-muted: var(--sx-muted); }
+
+.sclf-help-head {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    padding: calc(18px + env(safe-area-inset-top, 0px)) 18px 12px;
+}
+.sclf-help-headtext { min-width: 0; display: grid; gap: 8px; justify-items: start; }
+.sclf-help-head h2 { margin: 0; font-size: 20px; line-height: 1.25; font-weight: 800; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.sclf-help-role {
+    display: inline-flex; padding: 4px 11px; border-radius: 999px; font-size: 12px; font-weight: 800; letter-spacing: .03em;
+    background: rgba(var(--tk-accent-rgb, 79, 70, 229), .14); color: var(--tk-accent-text, #4f46e5);
+    border: 1px solid rgba(var(--tk-accent-rgb, 79, 70, 229), .32);
+}
+.sclf-help-close {
+    flex: 0 0 auto; width: 44px; height: 44px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--tk-edge, #c3ccdb); background: var(--tk-field, #f4f7fb); color: var(--hp-text); cursor: pointer;
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.sclf-help-close:hover { background: var(--tk-hover, #f4f7fb); }
+
+.sclf-help-tabs {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 0 18px 4px; padding: 4px;
+    border-radius: 14px; background: var(--tk-field, #f4f7fb); border: 1px solid var(--tk-edge, #c3ccdb);
+}
+.sclf-help-tabs button {
+    min-height: 44px; padding: 8px 10px; border: 0; border-radius: 10px; background: transparent; color: var(--hp-muted);
+    font-family: inherit; font-size: 13.5px; font-weight: 700; line-height: 1.2; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.sclf-help-tabs button.is-on { background: var(--tk-accent, linear-gradient(135deg, #4338ca, #6366f1)); color: var(--tk-accent-on, #fff); box-shadow: 0 6px 16px rgba(var(--tk-accent-rgb, 79, 70, 229), .3); }
+
+.sclf-help-body {
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    padding: 12px 18px calc(24px + env(safe-area-inset-bottom, 0px));
+}
+.sclf-help-intro { margin: 4px 0 16px; font-size: 14.5px; line-height: 1.55; color: var(--hp-muted); }
+
+.sclf-help-lane + .sclf-help-lane { margin-top: 22px; }
+.sclf-help-lanetitle {
+    margin: 0 0 10px; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--tk-accent-text, #4f46e5);
+}
+.sclf-help-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.sclf-help-steps li { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 12px; align-items: start; }
+.sclf-help-num {
+    width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; background: var(--tk-accent, linear-gradient(135deg, #4338ca, #6366f1)); color: var(--tk-accent-on, #fff);
+}
+.sclf-help-steptext strong { display: block; font-size: 15px; line-height: 1.35; }
+.sclf-help-steptext p { margin: 4px 0 0; font-size: 14px; line-height: 1.55; color: var(--hp-muted); overflow-wrap: anywhere; }
+.sclf-help-go {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; min-height: 40px; padding: 8px 14px; border-radius: 999px; cursor: pointer;
+    font-family: inherit; font-size: 13px; font-weight: 700; color: var(--tk-accent-text, #4f46e5);
+    background: rgba(var(--tk-accent-rgb, 79, 70, 229), .10); border: 1px solid rgba(var(--tk-accent-rgb, 79, 70, 229), .34);
+    touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+}
+.sclf-help-go:hover { background: rgba(var(--tk-accent-rgb, 79, 70, 229), .18); }
+
+.sclf-help-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sclf-help-item {
+    width: 100%; display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 12px; align-items: start; text-align: left;
+    padding: 10px 12px; border-radius: 14px; border: 1px solid var(--tk-edge, #c3ccdb); background: var(--tk-field, #f4f7fb); color: inherit; font-family: inherit;
+}
+.sclf-help-item.is-link { cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.sclf-help-item.is-link:hover { background: var(--tk-hover, #f4f7fb); border-color: rgba(var(--tk-accent-rgb, 79, 70, 229), .5); }
+.sclf-help-icon {
+    width: 38px; height: 38px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(var(--tk-accent-rgb, 79, 70, 229), .14); color: var(--tk-accent-text, #4f46e5);
+}
+.sclf-help-itemtext { display: grid; gap: 2px; min-width: 0; }
+.sclf-help-itemtext strong { font-size: 14.5px; line-height: 1.35; }
+.sclf-help-itemtext span { font-size: 13.5px; line-height: 1.5; color: var(--hp-muted); overflow-wrap: anywhere; }
+
+.sclf-help-notes {
+    margin-top: 20px; padding: 12px 14px; border-radius: 14px; display: grid; gap: 10px;
+    background: rgba(var(--tk-accent-rgb, 79, 70, 229), .08); border: 1px solid rgba(var(--tk-accent-rgb, 79, 70, 229), .26);
+}
+.sclf-help-notes p { margin: 0; display: grid; grid-template-columns: 16px minmax(0, 1fr); gap: 9px; font-size: 13.5px; line-height: 1.5; }
+.sclf-help-notes svg { margin-top: 3px; color: var(--tk-accent-text, #4f46e5); }
+
+.sclf-help-panel :is(button):focus-visible { outline: 2px solid var(--tk-accent-text, #4f46e5); outline-offset: 2px; }
+
+@media (max-width: 600px) {
+    .sclf-help-panel { width: 100%; border-left: 0; animation-name: sclf-help-rise; }
+    .sclf-help-head { padding-left: calc(16px + env(safe-area-inset-left, 0px)); padding-right: calc(16px + env(safe-area-inset-right, 0px)); }
+    .sclf-help-tabs { margin-left: calc(16px + env(safe-area-inset-left, 0px)); margin-right: calc(16px + env(safe-area-inset-right, 0px)); }
+    .sclf-help-body { padding-left: calc(16px + env(safe-area-inset-left, 0px)); padding-right: calc(16px + env(safe-area-inset-right, 0px)); }
+}
+@media (max-width: 360px) { .sclf-help-head h2 { font-size: 18px; } .sclf-help-tabs button { font-size: 12.5px; padding: 8px 6px; } }
+@media (max-height: 460px) and (orientation: landscape) { .sclf-help-head { padding-top: calc(10px + env(safe-area-inset-top, 0px)); } .sclf-help-panel { width: min(520px, 100%); } }
+@keyframes sclf-help-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sclf-help-slide { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes sclf-help-rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sclf-help-backdrop, .sclf-help-panel { animation: none; } }

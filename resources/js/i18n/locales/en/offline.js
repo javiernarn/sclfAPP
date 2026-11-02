@@ -6,4 +6,10 @@ export default {
     screenText: "We couldn't load this page because the connection dropped. Your reports and saved work are safe — check your internet and try again.",
     retry: 'Try again',
     dismiss: 'Dismiss',
+    updateTitle: 'A new version is available',
+    updateText: 'Update now to get the latest improvements. It only takes a moment.',
+    updateNow: 'Update now',
+    updateLater: 'Later',
+    cantReachTitle: 'No connection',
+    cantReach: "We couldn't reach the server. Check your internet connection and try again.",
 };

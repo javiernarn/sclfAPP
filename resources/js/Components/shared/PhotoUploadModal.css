@@ -223,14 +223,16 @@
     }
     .pum-agree { min-height: 44px; }
     /* primary on top, the rest side by side underneath */
-    .pum-actions { margin-left: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
-    .pum-btn { width: 100%; min-height: 48px; font-size: 14.5px; }
-    .pum-btn.primary { order: -1; grid-column: 1 / -1; }
+    /* flex-wrap, not a fixed grid: a button that ends up alone on a row stretches to fill it */
+    .pum-actions { margin-left: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+    .pum-btn { width: auto; flex: 1 1 calc(50% - 4px); min-width: 0; min-height: 48px; font-size: 14.5px; }
+    .pum-btn.primary { order: -1; flex-basis: 100%; }
 }
 @keyframes pum-sheet { from { transform: translateY(28px); opacity: 0.6; } to { transform: none; opacity: 1; } }
 
 /* ---------- small phones (≤ 360px wide) ---------- */
 @media (max-width: 360px) {
+    .pum-btn { flex-basis: 100%; }
     .pum-title { font-size: 16px; }
     .pum-sub { font-size: 12.5px; }
     .pum-badge { width: 36px; height: 36px; }
@@ -260,8 +262,8 @@
     .pum-note { display: none; }
     .pum-foot { flex-direction: row; align-items: center; padding: 8px 16px; box-shadow: none; }
     .pum-actions { display: flex; margin-left: auto; }
-    .pum-btn { width: auto; min-height: 42px; }
-    .pum-btn.primary { order: 0; grid-column: auto; }
+    .pum-btn { width: auto; flex: 0 0 auto; min-height: 42px; }
+    .pum-btn.primary { order: 0; flex-basis: auto; }
 }
 
 /* ---------- finger-sized tap targets ---------- */

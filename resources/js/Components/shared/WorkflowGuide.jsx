@@ -132,7 +132,7 @@ export default function WorkflowGuide({ lane = 'counter', defaultOpen = true, co
     };
 
     return (
-        <div className="ds-card sclf-wf" style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent, #1B1F3B) 9%, transparent), transparent 55%)' }}>
+        <div className="ds-card sclf-wf" style={{ background: 'linear-gradient(135deg, rgba(var(--tk-accent-rgb, 79, 70, 229), 0.09), transparent 55%)' }}>
             <div className="sclf-wf-head">
                 <div className="ds-card-title" style={{ margin: 0 }}>
                     <span className="ds-card-title-icon"><Info size={17} /> Step-by-step guide</span>
@@ -180,14 +180,14 @@ export default function WorkflowGuide({ lane = 'counter', defaultOpen = true, co
                 .sclf-wf-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
                 .sclf-wf-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
                 .sclf-wf-tab { border: 1px solid rgba(127,127,127,0.35); background: transparent; color: inherit; padding: 7px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
-                .sclf-wf-tab.is-active { background: var(--accent, #1B1F3B); border-color: var(--accent, #1B1F3B); color: #fff; }
+                .sclf-wf-tab.is-active { background: var(--tk-accent, #4f46e5); border-color: rgba(var(--tk-accent-rgb, 79, 70, 229), 0.6); color: var(--tk-accent-on, #fff); }
                 .sclf-wf-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
                 .sclf-wf-step { display: flex; gap: 12px; align-items: flex-start; }
-                .sclf-wf-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; background: rgba(79,70,229,0.14); color: #6366f1; }
+                .sclf-wf-num { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; background: rgba(var(--tk-accent-rgb, 79, 70, 229), 0.14); color: var(--tk-accent-text, #6366f1); }
                 .sclf-wf-title { font-weight: 700; font-size: 13.5px; }
                 .sclf-wf-what { font-size: 12.5px; opacity: 0.78; line-height: 1.5; margin-top: 2px; }
                 .sclf-wf-done { font-size: 12px; margin-top: 4px; opacity: 0.85; display: flex; align-items: center; gap: 5px; }
-                .sclf-wf-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; font-size: 12px; font-weight: 700; color: #6366f1; text-decoration: none; }
+                .sclf-wf-link { display: inline-flex; align-items: center; gap: 4px; margin-top: 5px; font-size: 12px; font-weight: 700; color: var(--tk-accent-text, #6366f1); text-decoration: none; }
                 .sclf-wf-link:hover { text-decoration: underline; }
             `}</style>
         </div>
@@ -212,11 +212,11 @@ export function StepTracker({ steps, current }) {
             <style>{`
                 .sclf-tracker { list-style: none; display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; padding: 0; }
                 .sclf-tracker-item { display: flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; border: 1px solid rgba(127,127,127,0.3); opacity: 0.6; }
-                .sclf-tracker-item.is-current { opacity: 1; border-color: var(--accent, #1B1F3B); }
+                .sclf-tracker-item.is-current { opacity: 1; border-color: rgba(var(--tk-accent-rgb, 79, 70, 229), 0.7); }
                 .sclf-tracker-item.is-done { opacity: 0.9; }
-                .sclf-tracker-dot { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; background: rgba(79,70,229,0.14); color: #6366f1; }
+                .sclf-tracker-dot { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; background: rgba(var(--tk-accent-rgb, 79, 70, 229), 0.14); color: var(--tk-accent-text, #6366f1); }
                 .sclf-tracker-item.is-done .sclf-tracker-dot { background: #16a34a; color: #fff; }
-                .sclf-tracker-item.is-current .sclf-tracker-dot { background: var(--accent, #1B1F3B); color: #fff; }
+                .sclf-tracker-item.is-current .sclf-tracker-dot { background: var(--tk-accent, #4f46e5); color: var(--tk-accent-on, #fff); }
             `}</style>
         </ol>
     );

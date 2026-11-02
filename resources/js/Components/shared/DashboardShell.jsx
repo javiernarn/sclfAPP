@@ -910,7 +910,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                             {/* Phones / very narrow windows: the same search as an icon that
                                 opens a blurred overlay under the header. */}
                             <MobileSearch />
-                            <HelpHints roles={roles} navRole={navRole} isDark={isDark} />
+                            <HelpHints roles={roles} isDark={isDark} theme={menuTheme} />
                             <NotificationBell isDark={isDark} theme={menuTheme} />
                             <div className="ds-menu-wrap">
                                 <button
