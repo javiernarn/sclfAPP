@@ -25,13 +25,40 @@ class ProfilePhotoStorage
     {
         $resized = self::shrink((string) $file->getRealPath());
         if ($resized === null) {
-            return $file->store('profile-pictures', PrivateMedia::DISK);
+            $path = $file->store('profile-pictures', PrivateMedia::DISK);
+            $raw = @file_get_contents((string) $file->getRealPath());
+            if ($path && $raw !== false) {
+                self::backup($path, $raw, (string) $file->getMimeType());
+            }
+
+            return $path;
         }
 
         $path = 'profile-pictures/' . bin2hex(random_bytes(20)) . '.jpg';
         Storage::disk(PrivateMedia::DISK)->put($path, $resized);
+        self::backup($path, $resized, 'image/jpeg');
 
         return $path;
+    }
+
+    /**
+     * Keeps a copy in the database (see the media_blobs migration) so the photo
+     * survives a host that wipes storage/ on every deploy. Best effort: a failure
+     * here must never block the upload.
+     */
+    public static function backup(string $path, string $bytes, string $mime): void
+    {
+        if ($bytes === '' || strlen($bytes) > 1_500_000) {
+            return;
+        }
+        try {
+            \Illuminate\Support\Facades\DB::table('media_blobs')->updateOrInsert(
+                ['path' => $path],
+                ['mime' => $mime ?: 'image/jpeg', 'data' => base64_encode($bytes), 'updated_at' => now(), 'created_at' => now()]
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('media backup failed', ['path' => $path, 'error' => $e->getMessage()]);
+        }
     }
 
     /** JPEG bytes of the picture scaled to MAX_SIDE and rotated upright, or null. */
