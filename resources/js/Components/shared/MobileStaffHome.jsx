@@ -5,6 +5,7 @@ import { ChevronRight, Plus } from "../icons";
 import { useAuth } from "../../context/AuthContext";
 import { greetingFor, firstNameOf, useOpolWeather, describeWeather } from "./DashboardGreeting";
 import { useQuickActions } from "./MobileQuickActions";
+import AvatarPhoto from "./AvatarPhoto";
 import logo from "../../assets/images/site-logo.png";
 import "./MobileHome.css";
 
@@ -39,10 +40,10 @@ export default function MobileStaffHome({ name, role = "Staff", stats, statsTitl
                 <div className="mh-hero-top">
                     <span
                         className="mh-avatar"
-                        style={user?.profile_picture_url ? { backgroundImage: `url(${user.profile_picture_url})` } : undefined}
                         aria-hidden="true"
                     >
-                        {!user?.profile_picture_url && initialsOf(name)}
+                        {initialsOf(name)}
+                        <AvatarPhoto src={user?.profile_picture_url} />
                     </span>
                     <div className="mh-who">
                         <small>{greetingFor(now)}</small>

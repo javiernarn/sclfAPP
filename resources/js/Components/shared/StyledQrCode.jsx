@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { Download } from '../icons';
 import siteLogo from '../../assets/images/site-logo.png';
@@ -34,10 +34,20 @@ export default function StyledQrCode({
     const [ready, setReady] = useState(false);
     const [progress, setProgress] = useState(0);
     const [error, setError] = useState('');
+    // The finished PNG is built ONCE, right after the code is drawn - not inside
+    // the button tap. iOS only lets "Share / Save" run straight from a tap, and
+    // canvas.toBlob() is asynchronous, so building it at tap time loses that.
+    const fileRef = useRef(null);
+    const [previewUrl, setPreviewUrl] = useState('');
+    const [showSheet, setShowSheet] = useState(false);
+    const [notice, setNotice] = useState('');
 
     useEffect(() => {
         if (!value) return;
         let cancelled = false;
+        fileRef.current = null;
+        setPreviewUrl('');
+        setNotice('');
         setReady(false);
         setProgress(0);
         setError('');
@@ -50,6 +60,21 @@ export default function StyledQrCode({
                     duration: generateDurationMs,
                     onProgress: (p) => { if (!cancelled) setProgress(p); },
                 });
+                if (cancelled) return;
+                // Prepare the downloadable PNG now (see fileRef above).
+                const canvas = canvasRef.current;
+                try { setPreviewUrl(canvas.toDataURL('image/png')); } catch (e) { /* tainted canvas */ }
+                await new Promise((resolve) => {
+                    try {
+                        canvas.toBlob((blob) => {
+                            if (blob && !cancelled) {
+                                try { fileRef.current = new File([blob], downloadName, { type: 'image/png' }); }
+                                catch (e) { fileRef.current = blob; } // very old WebKit: no File constructor
+                            }
+                            resolve();
+                        }, 'image/png');
+                    } catch (e) { resolve(); }
+                });
                 if (!cancelled) setReady(true);
             } catch (e) {
                 if (!cancelled) setError('Could not render the QR code on this device.');
@@ -59,40 +84,59 @@ export default function StyledQrCode({
         return () => { cancelled = true; };
     }, [value, title, subtitle, size, color, logoSrc, generateDurationMs]);
 
-    const download = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+    const isIOS = () =>
+        /iP(hone|ad|od)/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS reports as a Mac
 
-        const triggerDownload = (href, revoke) => {
+    // Save the PNG. Order matters:
+    //  1. iPhone/iPad (browser AND installed PWA): the native share sheet -> "Save Image".
+    //     A plain <a download> is unreliable there: the PWA navigates to the raw image
+    //     (the "glitch") and Safari shows a View/Download pop-up that saves nothing.
+    //  2. Other browsers: a normal blob download.
+    //  3. Anything that fails: an in-page picture the person can press-and-hold to save.
+    //     It never navigates away, so the PWA can't get stuck.
+    const download = async () => {
+        setNotice('');
+        const file = fileRef.current;
+        if (!file) { setShowSheet(true); return; }
+
+        if (file instanceof File && navigator.canShare && navigator.share) {
+            try {
+                if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'SCLF Release QR' });
+                    return;
+                }
+            } catch (e) {
+                if (e && e.name === 'AbortError') return; // person closed the share sheet
+                // otherwise fall through to the next method
+            }
+        }
+
+        if (isIOS()) { setShowSheet(true); return; }
+
+        try {
+            const href = URL.createObjectURL(file);
             const link = document.createElement('a');
-            link.download = downloadName;
             link.href = href;
-            // Firefox (and some other browsers) only honor a synthetic
-            // click on an <a download> if the element is actually in the
-            // document — clicking a detached node silently does nothing,
-            // which is exactly the "I clicked it but nothing happens" bug.
+            link.download = downloadName;
+            link.rel = 'noopener';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            if (revoke) setTimeout(() => URL.revokeObjectURL(href), 1000);
-        };
-
-        try {
-            triggerDownload(canvas.toDataURL('image/png'), false);
+            setTimeout(() => URL.revokeObjectURL(href), 4000);
+            setNotice('Saved to your Downloads.');
         } catch (e) {
-            // toDataURL() throws if the canvas got "tainted" (e.g. the
-            // logo image loaded cross-origin without CORS headers).
-            // toBlob() + an object URL still works in that case for most
-            // browsers; if even that fails, tell the person plainly.
-            canvas.toBlob((blob) => {
-                if (!blob) {
-                    setError('Could not download the QR code on this device.');
-                    return;
-                }
-                triggerDownload(URL.createObjectURL(blob), true);
-            }, 'image/png');
+            setShowSheet(true);
         }
     };
+
+    const closeSheet = useCallback(() => setShowSheet(false), []);
+    useEffect(() => {
+        if (!showSheet) return undefined;
+        const onKey = (e) => { if (e.key === 'Escape') closeSheet(); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [showSheet, closeSheet]);
 
     const pct = Math.round(progress * 100);
 
@@ -111,9 +155,30 @@ export default function StyledQrCode({
             </div>
             {error && <div className="ds-error">{error}</div>}
             {ready && showDownloadButton && (
-                <button type="button" className="ds-btn ds-btn-primary" onClick={download}>
-                    <Download size={16} /> Download QR (PNG)
-                </button>
+                <>
+                    <button type="button" className="ds-btn ds-btn-primary" onClick={download}>
+                        <Download size={16} /> Download QR (PNG)
+                    </button>
+                    <button type="button" className="sclf-qr-link" onClick={() => setShowSheet(true)}>
+                        Can't download? Show the image to save
+                    </button>
+                    {notice && <div className="sclf-qr-notice" role="status">{notice}</div>}
+                </>
+            )}
+            {showSheet && (
+                <div className="sclf-qr-sheet" role="dialog" aria-modal="true" aria-label="Save your QR code" onClick={closeSheet}>
+                    <div className="sclf-qr-sheet-card" onClick={(e) => e.stopPropagation()}>
+                        <p className="sclf-qr-sheet-title">Save your QR</p>
+                        <p className="sclf-qr-sheet-help">
+                            Press and hold the image below, then tap <b>Save to Photos</b> (or <b>Add to Photos</b>).
+                            On Android, long-press and choose <b>Download image</b>.
+                        </p>
+                        {previewUrl
+                            ? <img className="sclf-qr-sheet-img" src={previewUrl} alt="Your release QR code" />
+                            : <p className="sclf-qr-sheet-help">Could not prepare the image. Take a screenshot of the QR instead.</p>}
+                        <button type="button" className="ds-btn ds-btn-primary" onClick={closeSheet}>Done</button>
+                    </div>
+                </div>
             )}
         </div>
     );

@@ -1,4 +1,5 @@
 import React from 'react';
+import AvatarPhoto from './AvatarPhoto';
 import { Clock, Search, X, Sparkles, ChevronRight, ChevronLeft } from '../icons';
 import { CATEGORY_LABELS, FEATURED_LINK_COUNT } from '../../search/searchConfig';
 
@@ -151,9 +152,9 @@ export default function SearchPanelBody({ search, showPages = true }) {
                             {item.avatar !== undefined && (
                                 <span
                                     className="ds-avatar ds-global-search-result-avatar"
-                                    style={item.avatar ? { backgroundImage: `url(${item.avatar})`, backgroundSize: 'cover', backgroundPosition: 'center' } : undefined}
                                 >
-                                    {!item.avatar && initialsOf(item.title)}
+                                    {initialsOf(item.title)}
+                                    <AvatarPhoto src={item.avatar} />
                                 </span>
                             )}
                             <span className="ds-global-search-result-text">

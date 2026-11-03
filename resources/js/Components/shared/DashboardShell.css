@@ -2331,3 +2331,16 @@ body { overflow: hidden; }
     color: #4f46e5; background: rgba(79, 70, 229, 0.12);
 }
 .ds-shell.dark .ds-role-chip { color: #a5b4fc; background: rgba(99, 102, 241, 0.2); }
+
+/* ---------- Avatar photo (real <img> over the initials; see AvatarPhoto.jsx) ---------- */
+.ds-avatar, .mh-avatar { position: relative; overflow: hidden; }
+.sclf-avatar-img {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; border-radius: inherit; display: block;
+    transition: opacity .15s ease;
+    -webkit-user-drag: none; user-select: none; -webkit-touch-callout: none;
+}
+
+/* Edit sheet: lives directly under .ds-shell (see AdminUsers renderInShell). Keep it
+   pinned to the visual screen and stop touch-scroll from chaining to the page. */
+.ds-shell > .ds-edit-backdrop { position: fixed; inset: 0; overscroll-behavior: contain; }

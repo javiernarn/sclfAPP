@@ -10,6 +10,7 @@ import { loginToast } from "../../utils/welcome";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
 import logo from "../../assets/images/site-logo.png";
 import AccountMenu from "./AccountMenu";
+import AvatarPhoto from "./AvatarPhoto";
 import MenuToggles from "./MenuToggles";
 import GlobalSearchBar from "./GlobalSearchBar";
 import MobileSearch from "./MobileSearch";
@@ -548,14 +549,15 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     // avatar bubble in both the sidebar (bottom-left) and the header
     // (top-right) shows that photo instead of the initials fallback —
     // same treatment the Profile page itself already uses.
-    const avatarStyle = user?.profile_picture_url
-        ? {
-              backgroundImage: `url(${user.profile_picture_url})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-          }
-        : undefined;
-    const avatarContent = user?.profile_picture_url ? null : initials || "U";
+    // The initials are ALWAYS rendered; a real <img> (AvatarPhoto) covers them once
+    // the photo has loaded, so a photo that fails on iOS never leaves a blank bubble.
+    const avatarStyle = undefined;
+    const avatarContent = (
+        <>
+            {initials || "U"}
+            <AvatarPhoto src={user?.profile_picture_url} />
+        </>
+    );
 
     // Single burger button drives two different behaviours depending on
     // viewport: collapse the persistent sidebar on desktop, or open/close

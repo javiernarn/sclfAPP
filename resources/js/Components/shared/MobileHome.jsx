@@ -5,6 +5,7 @@ import { ChevronRight, Plus, CircleCheck, Hourglass, ClipboardList, Handshake } 
 import { useAuth } from "../../context/AuthContext";
 import useRoleTranslation from "../../hooks/useRoleTranslation";
 import { greetingFor, firstNameOf, useOpolWeather, describeWeather } from "./DashboardGreeting";
+import AvatarPhoto from "./AvatarPhoto";
 import logo from "../../assets/images/site-logo.png";
 import "./MobileHome.css";
 
@@ -50,10 +51,10 @@ export default function MobileHome({ name, role = "Student", kpis, campus }) {
                 <div className="mh-hero-top">
                     <span
                         className="mh-avatar"
-                        style={user?.profile_picture_url ? { backgroundImage: `url(${user.profile_picture_url})` } : undefined}
                         aria-hidden="true"
                     >
-                        {!user?.profile_picture_url && initialsOf(name)}
+                        {initialsOf(name)}
+                        <AvatarPhoto src={user?.profile_picture_url} />
                     </span>
                     <div className="mh-who">
                         <small>{greetingFor(now, t)}</small>

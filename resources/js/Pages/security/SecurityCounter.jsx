@@ -4,6 +4,7 @@ import { CATEGORY_NAMES } from '../../config/lostFoundCatalog';
 import axios from '../../config/axiosConfig';
 import { useNavigate } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import AvatarPhoto from '../../Components/shared/AvatarPhoto';
 import WorkflowGuide, { StepTracker } from '../../Components/shared/WorkflowGuide';
 import { useToast } from '../../context/ToastContext';
 import { Search, UserCircle, PackageCheck, Info, RotateCcw, ArrowRight } from '../../Components/icons';
@@ -22,11 +23,10 @@ export function OwnerAvatar({ user }) {
             className="ds-avatar"
             style={{
                 width: 32, height: 32, fontSize: 12, borderRadius: 10, flexShrink: 0, marginRight: 8,
-                backgroundImage: user?.profile_picture_url ? `url(${user.profile_picture_url})` : undefined,
-                backgroundSize: 'cover', backgroundPosition: 'center',
             }}
         >
-            {!user?.profile_picture_url && (initials || <UserCircle size={18} />)}
+            {initials || <UserCircle size={18} />}
+            <AvatarPhoto src={user?.profile_picture_url} />
         </span>
     );
 }

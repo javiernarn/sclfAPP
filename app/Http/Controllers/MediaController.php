@@ -22,7 +22,12 @@ class MediaController extends Controller
 
         $disk = Storage::disk(PrivateMedia::DISK);
         $path = "{$dir}/{$file}";
-        abort_unless($disk->exists($path), 404);
+        if (! $disk->exists($path)) {
+            // The database points at a photo that is not on this server's disk -
+            // almost always because storage/app/private was wiped by a redeploy.
+            \Log::warning('media: file missing on private disk', ['path' => $path]);
+            abort(404);
+        }
 
         // Sniff the real file CONTENT. Flysystem's mimeType() falls back to the
         // file extension when the content looks like plain text, so a text file

@@ -86,7 +86,8 @@ class SecurityHeaders
             "font-src 'self' data: https://fonts.gstatic.com",
             "img-src 'self' data: blob:",
             "media-src 'self' blob:",
-            "connect-src 'self'" . $this->extra('csp_connect_src'),
+            // api.open-meteo.com: the home-screen weather chip (DashboardGreeting.jsx).
+            "connect-src 'self' https://api.open-meteo.com" . $this->extra('csp_connect_src'),
             // qr-scanner runs in a worker; the service worker is /sw.js.
             "worker-src 'self' blob:",
             "manifest-src 'self'",

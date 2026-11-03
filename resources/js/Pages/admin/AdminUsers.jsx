@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import AvatarPhoto from '../../Components/shared/AvatarPhoto';
 import RoleText, { RoleBadge } from '../../Components/shared/RoleText';
 import axios from '../../config/axiosConfig';
 import { useNavigate } from 'react-router-dom';
@@ -44,6 +46,27 @@ const emptyEditForm = {
     first_name: '', last_name: '', email: '', password: '',
     role: 'instructor', phone_number: '', gender: '', id_number: '', teaching_course: '',
 };
+
+// The Edit Account sheet must NOT live inside the page's scrolling area (.ds-main):
+// iOS Safari drags position:fixed children along with a -webkit-overflow-scrolling
+// container, so the pinned Save/Cancel footer scrolled away with the page. Rendering
+// it straight under the (non-scrolling) .ds-shell keeps the theme styles and fixes it.
+function renderInShell(node) {
+    const host = typeof document !== 'undefined' ? document.querySelector('.ds-shell') : null;
+    return host ? createPortal(node, host) : node;
+}
+
+// Freezes the page behind a sheet so a swipe inside the form can't scroll it.
+function PageScrollLock() {
+    useEffect(() => {
+        const main = document.querySelector('.ds-shell .ds-main');
+        if (!main) return undefined;
+        const prev = main.style.overflowY;
+        main.style.overflowY = 'hidden';
+        return () => { main.style.overflowY = prev; };
+    }, []);
+    return null;
+}
 
 export default function AdminUsers() {
     const { user: currentUser } = useAuth();
@@ -663,11 +686,10 @@ export default function AdminUsers() {
                                                         className="ds-avatar"
                                                         style={{
                                                             width: 32, height: 32, fontSize: 12, borderRadius: 10, flexShrink: 0,
-                                                            backgroundImage: u.profile_picture_url ? `url(${u.profile_picture_url})` : undefined,
-                                                            backgroundSize: 'cover', backgroundPosition: 'center',
                                                         }}
                                                     >
-                                                        {!u.profile_picture_url && initials}
+                                                        {initials}
+                                                        <AvatarPhoto src={u.profile_picture_url} />
                                                     </span>
                                                     <span className="ds-table-title">
                                                         {u.name}
@@ -742,11 +764,10 @@ export default function AdminUsers() {
                                             className="ds-avatar"
                                             style={{
                                                 width: 40, height: 40, fontSize: 14, borderRadius: 12, flexShrink: 0,
-                                                backgroundImage: u.profile_picture_url ? `url(${u.profile_picture_url})` : undefined,
-                                                backgroundSize: 'cover', backgroundPosition: 'center',
                                             }}
                                         >
-                                            {!u.profile_picture_url && initials}
+                                            {initials}
+                                            <AvatarPhoto src={u.profile_picture_url} />
                                         </span>
                                         <div style={{ minWidth: 0 }}>
                                             <p className="ds-list-item-title">
@@ -801,8 +822,9 @@ export default function AdminUsers() {
                 )}
             </div>
 
-            {editingUser && (
+            {editingUser && renderInShell(
                 <div className="ds-edit-backdrop" role="presentation" onClick={(e) => { if (e.target === e.currentTarget) closeEdit(); }}>
+                    <PageScrollLock />
                     <div className="ds-card ds-edit-card" role="dialog" aria-modal="true" aria-labelledby="edit-user-title">
                         <div className="ds-edit-head">
                             <div>
@@ -823,13 +845,12 @@ export default function AdminUsers() {
                                     className="ds-avatar"
                                     style={{
                                         width: 56, height: 56, fontSize: 20, borderRadius: 16, flexShrink: 0,
-                                        backgroundImage: editPhotoPreview
-                                            ? `url(${editPhotoPreview})`
-                                            : editingUser.profile_picture_url ? `url(${editingUser.profile_picture_url})` : undefined,
+                                        backgroundImage: editPhotoPreview ? `url(${editPhotoPreview})` : undefined,
                                         backgroundSize: 'cover', backgroundPosition: 'center',
                                     }}
                                 >
-                                    {!editPhotoPreview && !editingUser.profile_picture_url && <UserCircle size={26} />}
+                                    {!editPhotoPreview && <UserCircle size={26} />}
+                                    {!editPhotoPreview && <AvatarPhoto src={editingUser.profile_picture_url} />}
                                 </span>
                                 <div>
                                     <PhotoUploadModal

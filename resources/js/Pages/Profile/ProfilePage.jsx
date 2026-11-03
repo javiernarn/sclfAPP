@@ -3,6 +3,7 @@ import RoleText, { RoleBadge } from '../../Components/shared/RoleText';
 import { UserCircle, Mail, ShieldCheck, Phone, MapPin, VenetianMask, IdCard, GraduationCap } from '../../Components/icons';
 import { useAuth } from '../../context/AuthContext';
 import DashboardShell from '../../Components/shared/DashboardShell';
+import AvatarPhoto from '../../Components/shared/AvatarPhoto';
 import ProfileSkeleton from '../../Components/shared/ProfileSkeleton';
 import EmailChangeForm from './Partials/EmailChangeForm';
 import ChangePasswordForm from './Partials/ChangePasswordForm';
@@ -99,12 +100,10 @@ export default function ProfilePage() {
                         height: 64,
                         fontSize: 22,
                         borderRadius: 16,
-                        backgroundImage: user?.profile_picture_url ? `url(${user.profile_picture_url})` : undefined,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
                     }}
                 >
-                    {!user?.profile_picture_url && (initials || <UserCircle size={28} />)}
+                    {initials || <UserCircle size={28} />}
+                    <AvatarPhoto src={user?.profile_picture_url} />
                 </span>
                 <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 18, fontWeight: 800 }}>{user?.name || 'Account'}</div>
