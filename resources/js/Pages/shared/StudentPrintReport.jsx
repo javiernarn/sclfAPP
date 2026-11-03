@@ -51,6 +51,7 @@ export default function StudentPrintReport() {
     const paperRef = useRef(null);
     const qrBlockRef = useRef(null);
     const [chartH, setChartH] = useState(92);
+    const [imagesReady, setImagesReady] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -83,7 +84,17 @@ export default function StudentPrintReport() {
     // Fit-to-page: the sheet is exactly one A4 page, so whatever space the data
     // doesn't use is handed back to the chart, QR code and spacing instead of
     // being left blank. Measured on screen (same 190mm width as the printout).
-    const PAGE_PX = (274 / 25.4) * 96 - 8;
+    // Target height = sheet width x 1.27. A portrait page's printable area is
+    // about 1.30 (US Letter) to 1.45 (A4) times its width, so a sheet this tall
+    // ends on ONE page on any paper, with any browser margins.
+    const FIT_RATIO = 1.27;
+    const pagePx = () => {
+        const paper = paperRef.current;
+        if (!paper) return (190 / 25.4) * 96 * FIT_RATIO;
+        const cs = getComputedStyle(paper);
+        const w = paper.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+        return w * FIT_RATIO;
+    };
     const measure = () => {
         const paper = paperRef.current;
         const qr = qrBlockRef.current;
@@ -100,6 +111,8 @@ export default function StudentPrintReport() {
     };
     useLayoutEffect(() => {
         if (!data) return;
+        const paper = paperRef.current;
+        const PAGE_PX = pagePx();
         setFit(0);
         const h0 = measure();
         if (h0 == null) { setFitted(true); return; }
@@ -109,17 +122,39 @@ export default function StudentPrintReport() {
         // Chart height is settled: grow the QR code and spacing as far as the page allows.
         let lo = 0; let hi = 1;
         setFit(1);
-        if (measure() <= PAGE_PX) { setFitted(true); return; }
+        if (measure() <= PAGE_PX) { paper.style.setProperty('--print-zoom', '1'); setFitted(true); return; }
         for (let i = 0; i < 12; i += 1) {
             const mid = (lo + hi) / 2;
             setFit(mid);
             if (measure() <= PAGE_PX) lo = mid; else hi = mid;
         }
         setFit(lo);
+        // Still taller than one page (long tables, small screens)? Print-time zoom
+        // shrinks the whole sheet so it never spills onto a 2nd page.
+        const finalH = measure();
+        const z = finalH > PAGE_PX ? Math.max(0.6, PAGE_PX / finalH) : 1;
+        paper.style.setProperty('--print-zoom', String(Math.round(z * 1000) / 1000));
         setFitted(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data, chartH]);
 
+
+    // The profile photo / logo must be fully loaded before Print is offered, or the
+    // PDF is saved with an empty "PHOTO 2x2" box (what happened on slow phones).
+    useEffect(() => {
+        setImagesReady(false);
+        if (!data) return undefined;
+        let cancelled = false;
+        const imgs = Array.from(paperRef.current?.querySelectorAll('img') || []);
+        const waits = imgs.map((img) => new Promise((resolve) => {
+            if (img.complete && img.naturalWidth > 0) { resolve(); return; }
+            img.addEventListener('load', resolve, { once: true });
+            img.addEventListener('error', resolve, { once: true });
+        }));
+        const timeout = new Promise((resolve) => setTimeout(resolve, 6000));
+        Promise.race([Promise.all(waits), timeout]).then(() => { if (!cancelled) setImagesReady(true); });
+        return () => { cancelled = true; };
+    }, [data]);
 
     // Browsers use document.title as the default PDF file name.
     useEffect(() => {
@@ -134,7 +169,7 @@ export default function StudentPrintReport() {
     const prepStep = !data ? 'Loading your report…' : 'Fitting to one page…';
     const prepPercent = !data ? 35 : 90;
     const sheetReady = fitted || !!problem;
-    const canPrint = !!data && qrReady && fitted;
+    const canPrint = !!data && qrReady && fitted && imagesReady;
 
     const subject = data?.subject;
     const report = data?.report;
@@ -162,7 +197,7 @@ export default function StudentPrintReport() {
     return (
         <div className={`pr-root ${sheetReady ? '' : 'is-prep'}`}>
             <style>{`
-                @page { size: A4 portrait; margin: 8mm 10mm 12mm; }
+                @page { size: portrait; margin: 8mm 10mm 12mm; }
                 @page { @bottom-left { content: "SCLF — Opol Community College · Confidential"; font-size: 8pt; color: #6b7280; }
                         @bottom-right { content: "Page " counter(page) " of " counter(pages); font-size: 8pt; color: #6b7280; } }
             `}</style>

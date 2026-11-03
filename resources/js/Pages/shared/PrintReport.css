@@ -245,7 +245,7 @@
 @media print {
     /* Fill the A4 sheet (297mm - 10mm top - 14mm bottom margin) and pin the
        footer to its bottom edge, so there is no empty band under the content. */
-    .pr-student { display: flex; flex-direction: column; min-height: 266mm; }
+    .pr-student { display: block; min-height: 0; }
     .pr-student .pr-foot { padding-top: 8px; }
     .pr-student { break-inside: avoid; }
     .pr-student .pr-qr-block { break-inside: avoid; }
@@ -290,7 +290,10 @@
 .pr-student .pr-qr-block { margin-top: 6px; padding-top: 8px; }
 .pr-student .pr-campus-line { margin: 0 0 6px; }
 @media print {
-    .pr-student { height: 274mm; min-height: 0; overflow: hidden; }
+    /* NOT a fixed A4 height any more: the paper may be Letter / A4 / any size the
+       phone or browser picks, and a fixed 274mm box + overflow:hidden was what
+       cut the QR code and pushed content onto a 2nd page. */
+    .pr-student { height: auto; min-height: 0; overflow: visible; }
     .pr-student > * { flex-shrink: 0; }
 }
 .pr-student .pr-row { margin-bottom: 8px; }
@@ -338,3 +341,41 @@
 .pr-root.is-prep .pr-paper { position: absolute; top: 0; left: 0; margin: 0; visibility: hidden; pointer-events: none; }
 @media (prefers-reduced-motion: reduce) { .pr-loading-spin { animation-duration: 2.4s; } .pr-loading-bar i { transition: none; } }
 @media print { .pr-loading { display: none !important; } }
+
+
+/* =====================================================================
+   PRINT / SAVE-AS-PDF ROBUSTNESS (all roles: student, instructor, admin,
+   staff, security) — same result on Windows / macOS / Linux desktops,
+   Android Chrome + installed PWA, iPhone Safari + installed PWA.
+   Rules:
+   1. Never clip: no fixed page height, no overflow:hidden on the sheet.
+   2. Never slice a block across two pages (cards, tiles, QR, signature).
+   3. Keep the same layout the preview shows, whatever paper is used.
+   4. Always print colours / the 2x2 photo / the QR code.
+   ===================================================================== */
+@media print {
+    html, body { width: auto !important; min-width: 0 !important; }
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    .pr-head, .pr-section, .pr-card, .pr-tile, .pr-tiles, .pr-row, .pr-qr-block, .pr-qr-code,
+    .pr-qr-side, .pr-sign, .pr-no-violations, .pr-violation-flag, .pr-campus-line,
+    .pr-photo-wrap, .pr-idcard, .pr-legend, .ch-wrap, .ch-donut, .pr-table tr, .pr-foot {
+        break-inside: avoid; page-break-inside: avoid;
+    }
+    .pr-h2, .pr-card-title { break-after: avoid; page-break-after: avoid; }
+
+    /* Student / instructor sheet: always the layout of the preview (190mm wide),
+       centred if the paper is wider; the browser shrinks it if the paper is narrower. */
+    .pr-student.pr-paper { width: 190mm !important; max-width: 100%; margin: 0 auto !important; zoom: var(--print-zoom, 1); }
+    /* Five tiles stay on ONE row (they used to wrap, leaving "Active claims" alone). */
+    .pr-student .pr-tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .pr-student .pr-tile-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* A landscape page is short: shrink the portrait sheet so it still ends cleanly. */
+    @media (orientation: landscape) {
+        .pr-student.pr-paper { zoom: calc(var(--print-zoom, 1) * 0.74); }
+    }
+}
+/* Keep the five tiles on one row on screen too, so the preview == the PDF. */
+.pr-student .pr-tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.pr-student .pr-tile-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

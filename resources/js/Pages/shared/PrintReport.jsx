@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import axios from '../../config/axiosConfig';
 import { useAuth } from '../../context/AuthContext';
@@ -51,6 +51,25 @@ export default function PrintReport() {
     const [error, setError] = useState(false);
     const [generatedAt, setGeneratedAt] = useState(() => new Date());
     const [attempt, setAttempt] = useState(0);
+    const paperRef = useRef(null);
+    const [imagesReady, setImagesReady] = useState(false);
+
+    // Wait for the logo / profile photo to finish loading before Print is enabled,
+    // otherwise the saved PDF can contain an empty "PHOTO 2x2" box.
+    useEffect(() => {
+        setImagesReady(false);
+        if (!data) return undefined;
+        let cancelled = false;
+        const imgs = Array.from(paperRef.current?.querySelectorAll('img') || []);
+        const waits = imgs.map((img) => new Promise((resolve) => {
+            if (img.complete && img.naturalWidth > 0) { resolve(); return; }
+            img.addEventListener('load', resolve, { once: true });
+            img.addEventListener('error', resolve, { once: true });
+        }));
+        const timeout = new Promise((resolve) => setTimeout(resolve, 6000));
+        Promise.race([Promise.all(waits), timeout]).then(() => { if (!cancelled) setImagesReady(true); });
+        return () => { cancelled = true; };
+    }, [data]);
 
     const homePath = kind === 'admin' ? '/app/admin/dashboard' : '/app/security/dashboard';
     const roleTitle = kind === 'admin' ? (isStaff ? 'Staff' : 'Administrator') : 'Security Officer';
@@ -173,7 +192,7 @@ export default function PrintReport() {
         ];
 
     const chartHeight = orientation === 'landscape' ? 220 : 210;
-    const ready = !!data && !loading && !error;
+    const ready = !!data && !loading && !error && imagesReady;
 
     return (
         <div className="pr-root">
@@ -234,7 +253,7 @@ export default function PrintReport() {
 
             {/* ===== The sheet ===== */}
             <div className="pr-stage">
-                <div className={`pr-paper pr-${orientation}`}>
+                <div className={`pr-paper pr-${orientation}`} ref={paperRef}>
                     {kind === 'admin' ? (
                     <header className="pr-head">
                         <div className="pr-head-brand">
