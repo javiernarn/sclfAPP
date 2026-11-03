@@ -170,7 +170,7 @@
 }
 
 /* Landscape phones: no raised button (there's no vertical room above the bar). */
-@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 500px) and (pointer: coarse) {
     .ds-shell.ds-user-app .ds-bottomnav-fab-btn { margin-top: 0; width: 38px; height: 38px; border-radius: 14px; box-shadow: none; }
     .ds-shell.ds-user-app .ds-bottomnav-fab-btn svg { width: 20px; height: 20px; }
     .ds-shell.ds-user-app .ds-bottomnav-fab { gap: 1px; }

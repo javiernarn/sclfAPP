@@ -1,0 +1,91 @@
+/* ==========================================================================
+   crossPlatform.css — makes buttons / fields look the same on iPhone, Android
+   (Chrome, Samsung Internet, Firefox, installed PWA / WebAPK) and desktop.
+
+   Why this exists
+   ---------------
+   1. Tailwind's preflight (css/app.css) is not loaded by the app, so raw
+      <button>/<input> fall back to each browser's own defaults. Safari (iOS)
+      and Chrome (Android) disagree on font, line-height, padding and
+      appearance, which made buttons look different — often thinner — on
+      Android.
+   2. Screens must never depend on `orientation: portrait` to decide "phone
+      layout": Android shrinks the viewport when the keyboard opens, the
+      browser then reports "landscape", and every phone rule switched off.
+      (Those queries were replaced with width-based ones.)
+   Deliberately conservative: it only normalises inherited typography and
+   native chrome; it never sets sizes, colours or backgrounds, so every
+   component keeps the look it already declares.
+   ========================================================================== */
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input,
+select,
+textarea,
+optgroup {
+    font-family: inherit;
+    -webkit-text-size-adjust: 100%;
+}
+
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+summary,
+label[for],
+select {
+    touch-action: manipulation;          /* no 300 ms delay / double-tap zoom on Android */
+    -webkit-tap-highlight-color: transparent;
+}
+
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+    -webkit-appearance: none;
+    appearance: none;                    /* Android draws its own bevel otherwise */
+    box-sizing: border-box;
+    text-align: center;
+}
+
+input,
+textarea,
+select {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+input[type="search"] {
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Touch screens: give real tap targets (>= 44 px, Apple HIG / Material 48 dp
+   guideline) to the primary form buttons only — icon buttons keep their size. */
+@media (pointer: coarse) {
+    .lg-submit,
+    .lg-ghost,
+    form button[type="submit"] {
+        min-height: 44px;
+    }
+}
+
+/* Inputs: keep 16 px on touch so neither iOS nor Samsung Internet auto-zooms. */
+@media (pointer: coarse) {
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="button"]):not([type="submit"]),
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}
+
+/* Safe areas: notches (iOS) and gesture bars / cut-outs (Android PWA). */
+.safe-pad-top    { padding-top: env(safe-area-inset-top, 0px); }
+.safe-pad-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }

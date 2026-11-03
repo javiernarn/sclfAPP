@@ -13,6 +13,7 @@ import { ConfirmProvider } from './context/ConfirmContext';
 import RootApp from './RootApp';
 import { registerServiceWorker } from './utils/push';
 import './utils/disableZoom'; // no pinch / double-tap zoom on phones and tablets
+import './styles/crossPlatform.css'; // same buttons / fields on iPhone, Android (browser + PWA) and desktop
 import './utils/pwaInstall'; // start listening for the browser's install event before React mounts
 import InstallPrompt from './Components/shared/InstallPrompt';
 import OfflineNotice from './Components/shared/OfflineNotice';

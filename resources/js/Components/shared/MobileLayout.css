@@ -199,7 +199,7 @@
 }
 
 /* Landscape phones: wide but short — use the width, save the height. */
-@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 500px) and (pointer: coarse) {
     .ds-shell.ds-phone .ds-main { padding-top: 10px; padding-bottom: 10px; }
     .ds-shell.ds-phone .ch-kpi-grid,
     .ds-shell.ds-phone .ds-stat-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }

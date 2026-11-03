@@ -65,11 +65,11 @@ const AuthLayout = ({ eyebrow = "Secure Session", title, subtitle, children, foo
                    form only). It reappears whenever the viewport is in
                    landscape orientation — covering mobile landscape as well
                    as tablets/desktops, which are landscape by default. */
-                @media (orientation: landscape) { .al-panel { display: flex; } }
+                @media (min-width: 768px) and (orientation: landscape) { .al-panel { display: flex; } }
                 /* Very short landscape (small phones rotated) — the story
                    panel is a nice-to-have, not essential; drop it so the
                    form gets the full, short viewport instead of squeezing. */
-                @media (orientation: landscape) and (max-height: 380px) { .al-panel { display: none; } }
+                @media (min-width: 768px) and (orientation: landscape) and (max-height: 380px) { .al-panel { display: none; } }
 
                 .al-blob { position: absolute; border-radius: 50%; filter: blur(90px); opacity: 0.5; pointer-events: none; animation: al-float 16s ease-in-out infinite; }
                 .al-blob-1 { width: 320px; height: 320px; background: #a5b4fc; top: -80px; left: -60px; }
@@ -141,7 +141,7 @@ const AuthLayout = ({ eyebrow = "Secure Session", title, subtitle, children, foo
                 .al-mobile-brand img { width: 34px; height: 34px; object-fit: contain; border-radius: 10px; }
                 .al-mobile-brand-text { font-weight: 800; font-size: 13.5px; line-height: 1.2; }
                 .al-mobile-brand-text span { display: block; font-weight: 600; font-size: 10px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.06em; }
-                @media (orientation: landscape) { .al-mobile-brand { display: none; } }
+                @media (min-width: 768px) and (orientation: landscape) { .al-mobile-brand { display: none; } }
 
                 .al-chip {
                     display: inline-flex; align-items: center; gap: 8px;

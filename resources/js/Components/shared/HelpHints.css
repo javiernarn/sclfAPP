@@ -108,7 +108,7 @@ html[data-season]:where(:not([data-season=""])) .sclf-help-panel { --hp-text: va
     .sclf-help-body { padding-left: calc(16px + env(safe-area-inset-left, 0px)); padding-right: calc(16px + env(safe-area-inset-right, 0px)); }
 }
 @media (max-width: 360px) { .sclf-help-head h2 { font-size: 18px; } .sclf-help-tabs button { font-size: 12.5px; padding: 8px 6px; } }
-@media (max-height: 460px) and (orientation: landscape) { .sclf-help-head { padding-top: calc(10px + env(safe-area-inset-top, 0px)); } .sclf-help-panel { width: min(520px, 100%); } }
+@media (max-height: 460px) and (orientation: landscape) and (min-width: 560px) { .sclf-help-head { padding-top: calc(10px + env(safe-area-inset-top, 0px)); } .sclf-help-panel { width: min(520px, 100%); } }
 @keyframes sclf-help-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes sclf-help-slide { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes sclf-help-rise { from { transform: translateY(24px); opacity: 0; } to { transform: none; opacity: 1; } }

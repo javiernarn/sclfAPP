@@ -458,7 +458,7 @@ const LEDGER_CSS = `
 
     .lg-wrap, .lg-wrap * { box-sizing: border-box; }
     .lg-wrap {
-        position: fixed; inset: 0; width: 100%; height: 100dvh;
+        position: fixed; inset: 0; width: 100%; height: 100%;
         display: flex; overflow: hidden;
         font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto,
             "Helvetica Neue", Arial, sans-serif;
@@ -500,8 +500,8 @@ const LEDGER_CSS = `
             radial-gradient(550px 460px at 105% 105%, rgba(56,189,248,0.30), transparent 60%),
             linear-gradient(165deg, #0b2a6f 0%, #1d4ed8 55%, #2f7bff 100%);
     }
-    @media (orientation: landscape) { .lg-rail { display: flex; } }
-    @media (orientation: landscape) and (max-height: 380px) { .lg-rail { display: none; } }
+    @media (min-width: 768px) and (orientation: landscape) { .lg-rail { display: flex; } }
+    @media (min-width: 768px) and (orientation: landscape) and (max-height: 380px) { .lg-rail { display: none; } }
 
     .lg-rail-ruled {
         position: absolute; inset: 0;
@@ -587,7 +587,7 @@ const LEDGER_CSS = `
     .lg-mobile-brand img { width: 30px; height: 30px; object-fit: contain; border-radius: 9px; }
     .lg-mobile-brand span { font-weight: 800; font-size: 12.5px; line-height: 1.2; }
     .lg-mobile-brand span span { display: block; font-weight: 600; font-size: 9.5px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.07em; }
-    @media (max-width: 767px) and (orientation: portrait) { .lg-mobile-brand { display: flex; } }
+    @media (max-width: 767px) { .lg-mobile-brand { display: flex; } }
 
     /* ============ RECORD CARD ============ */
     .lg-card {
@@ -795,6 +795,13 @@ const LEDGER_CSS = `
     /* ============ BUTTONS ============ */
     .lg-submit {
         width: 100%; padding: 12px 16px; margin-top: 6px;
+        /* Fixed minimum height + flex centring so the button looks identical on
+           iOS (SF) and Android (Roboto / OEM fonts) and never collapses into a
+           thin strip when a media query fails to match. */
+        min-height: 48px; display: inline-flex; align-items: center; justify-content: center;
+        line-height: 1.2; text-align: center; box-sizing: border-box;
+        -webkit-appearance: none; appearance: none;
+        -webkit-tap-highlight-color: transparent; touch-action: manipulation;
         border: none; border-radius: 12px; cursor: pointer;
         color: #fff;
         background: linear-gradient(135deg, var(--lg-accent), var(--lg-accent-3) 50%, var(--lg-accent-2));
@@ -808,6 +815,10 @@ const LEDGER_CSS = `
     .lg-submit:disabled { opacity: 0.55; cursor: not-allowed; }
 
     .lg-ghost {
+        min-height: 48px; display: inline-flex; align-items: center; justify-content: center;
+        line-height: 1.2; text-align: center; box-sizing: border-box;
+        -webkit-appearance: none; appearance: none;
+        -webkit-tap-highlight-color: transparent; touch-action: manipulation;
         padding: 12px 16px; border-radius: 12px; cursor: pointer; background: transparent;
         font-size: 13.5px; font-weight: 700;
         text-transform: uppercase; letter-spacing: 0.03em; flex-shrink: 0;
@@ -878,7 +889,7 @@ const LEDGER_CSS = `
        Palette follows the logo blue (#003078): dark = navy centre with
        lighter-blue glowing edges, light = pale sky / white-blue.
        ===================================================================== */
-    @media (max-width: 767px) and (orientation: portrait) {
+    @media (max-width: 767px) {
         .lg-wrap { --lg-accent: #2563eb; --lg-accent-2: #38bdf8; --lg-accent-3: #1d4ed8; }
         .lg-wrap.dark { --lg-accent: #60a5fa; --lg-accent-3: #3b82f6; }
 
@@ -960,7 +971,7 @@ const LEDGER_CSS = `
 
         /* App-style filled inputs (16px font stops iOS zoom-on-focus) */
         .lg-input {
-            height: 52px; padding: 0 16px; font-size: 16px;
+            height: 52px; min-height: 52px; padding: 0 16px; font-size: 16px;
             border-radius: 14px; -webkit-appearance: none; appearance: none;
         }
         .lg-wrap.light .lg-input { background: #fff; border: 1.5px solid #cfe0fa; }
@@ -980,11 +991,11 @@ const LEDGER_CSS = `
         .lg-remember input { width: 19px; height: 19px; }
 
         .lg-submit {
-            height: 54px; padding: 0 16px; margin-top: 12px; border-radius: 16px; font-size: 15px;
+            height: auto; min-height: 54px; padding: 12px 16px; margin-top: 12px; border-radius: 16px; font-size: 15px;
             background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 55%, #0ea5e9 130%);
             box-shadow: 0 12px 26px rgba(29,78,216,0.34);
         }
-        .lg-ghost { height: 54px; padding: 0 16px; border-radius: 16px; }
+        .lg-ghost { height: auto; min-height: 54px; padding: 12px 16px; border-radius: 16px; }
 
         .lg-card-foot { padding: 20px 0 6px; text-align: center; font-size: 14px; border-top: none !important; }
 

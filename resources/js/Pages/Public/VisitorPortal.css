@@ -139,7 +139,7 @@ html.vp-root, html.vp-root body { height: 100%; overflow: hidden; background: #f
 @media (max-width: 420px) { .vp-dl > div { grid-template-columns: 1fr; gap: 0; } .vp-dl dt { font-size: 12.5px; } }
 
 /* ---------- landscape phones: little height, so compact bars so more of the page shows ---------- */
-@media (orientation: landscape) and (max-height: 500px) {
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 500px) {
     .vp-appbar { padding-top: calc(6px + env(safe-area-inset-top)); padding-bottom: 6px; }
     .vp-appbar img { width: 32px; height: 32px; }
     .vp-bar { padding-top: 8px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }

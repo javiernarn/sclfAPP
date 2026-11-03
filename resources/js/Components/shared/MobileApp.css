@@ -214,7 +214,7 @@
 }
 
 /* Landscape phones: sheets become centred and narrow again (there's no height to slide up). */
-@media (orientation: landscape) and (max-height: 500px) and (pointer: coarse) {
+@media (orientation: landscape) and (min-width: 560px) and (max-height: 500px) and (pointer: coarse) {
     .sclf-confirm-backdrop.sclf-confirm-backdrop,
     .ds-nd-backdrop.ds-nd-backdrop,
     .srd-backdrop.srd-backdrop { align-items: center; padding: 10px; }
