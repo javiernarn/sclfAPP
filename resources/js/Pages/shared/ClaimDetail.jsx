@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import {
     Package, Tag, UserCircle, Mail, IdCard, Calendar, ShieldAlert, AlertTriangle,
     MessageSquare, Hash, Receipt, Image as ImageIcon, FileText, HelpCircle,
@@ -200,6 +200,7 @@ export function ClaimNextSteps({ claim, onGoToEvidence }) {
 
 export default function ClaimDetail() {
     const { id } = useParams();
+    const location = useLocation(); // .key changes on every navigation, even to the same URL — used to re-fetch
     const { roles } = useAuth();
     const isStaff = roles?.includes('security_officer') || roles?.includes('admin') || roles?.includes('staff');
 
@@ -232,7 +233,10 @@ export default function ClaimDetail() {
             .finally(() => setLoading(false));
     };
 
-    useEffect(load, [id]);
+    // location.key changes on EVERY navigation, even to the URL you're already on —
+    // so tapping a notification for this same record re-fetches it instead of
+    // leaving stale data on screen.
+    useEffect(load, [id, location.key]);
 
     const transition = async (status) => {
         setBusy(true);

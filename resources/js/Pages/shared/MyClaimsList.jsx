@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Package, ChevronRight, Eye, Trash2 } from '../../Components/icons';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import ViewToggle from '../../Components/shared/ViewToggle';
@@ -35,6 +35,7 @@ export default function MyClaimsList() {
     const toast = useToast();
     const confirm = useConfirm();
     const navigate = useNavigate();
+    const location = useLocation(); // .key changes on every navigation, even to the same URL — used to re-fetch
     const [claims, setClaims] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -58,7 +59,7 @@ export default function MyClaimsList() {
             .finally(() => setLoading(false));
     };
 
-    useEffect(load, [status]);
+    useEffect(load, [status, location.key]);
 
     const handleDelete = async (e, claim) => {
         e.preventDefault();

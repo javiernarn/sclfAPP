@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import RefreshButton from "./RefreshButton";
+import BackLink from "./BackLink";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useAppTheme, isDarkTheme } from "../../hooks/useAppTheme";
@@ -988,6 +989,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                     </header>
 
                     <main className="ds-main">
+                        <BackLink />
                         {(title || greeting || actions || onRefresh) && (
                             <div className={`ds-header ${greeting ? "ds-header-greeting" : ""}`}>
                                 {greeting ? (

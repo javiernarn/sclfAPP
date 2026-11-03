@@ -176,9 +176,6 @@ export default function AdminUserDetail() {
                 </span>
             }
         >
-            <Link to="/app/admin/users" className="ds-back-link">
-                <ArrowLeft size={14} /> Back to Users
-            </Link>
 
             <div className="ds-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 6 }}>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import {
     Wrench, MapPin, Calendar, UserCircle, Tag, AlertTriangle,
     CheckCircle2, RotateCcw, UserPlus, Lock, PlayCircle, XCircle, Building2,
@@ -36,6 +36,7 @@ const statusBadgeClass = (status) => {
 
 export default function ServiceRequestDetail() {
     const { id } = useParams();
+    const location = useLocation(); // .key changes on every navigation, even to the same URL — used to re-fetch
     const { user, roles } = useAuth();
     const isStaff = Array.isArray(roles) && roles.some((r) => ['security_officer', 'admin', 'staff'].includes(r));
     const toast = useToast();
@@ -68,7 +69,7 @@ export default function ServiceRequestDetail() {
             .finally(() => setLoading(false));
     };
 
-    useEffect(load, [id]);
+    useEffect(load, [id, location.key]);
 
     // Same "assign to me" shortcut as IncidentDetail — no lightweight
     // "staff at my campus" roster endpoint exists yet, so this covers

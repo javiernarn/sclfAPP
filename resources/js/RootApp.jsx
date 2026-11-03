@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigationType } from 'react-router-dom';
+import { trackLocation } from './utils/navHistory';
 import { useAuth } from './context/AuthContext';
 import { publicRoutes, adminRoutes, securityRoutes, studentRoutes } from './routes';
 import MainPage from './Pages/Main/MainPage';
@@ -82,6 +83,10 @@ function SetupRoute({ children }) {
 }
 
 export default function RootApp() {
+    // Remember where each page was opened from, for the shared "Back to …" link.
+    // Runs during render (idempotent per history entry) so it is recorded
+    // before any page asks for it.
+    trackLocation(useLocation(), useNavigationType());
     // Lets tapping a background push notification jump straight to the
     // relevant claim/match/item when SCLF is already open in another tab.
     useServiceWorkerNavigation();

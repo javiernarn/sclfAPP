@@ -1553,6 +1553,11 @@ body { overflow: hidden; }
     opacity: 0.7; margin-bottom: 14px;
 }
 .ds-back-link:hover { opacity: 1; }
+button.ds-back-btn {
+    background: none; border: 0; padding: 0; color: inherit; font-family: inherit;
+    cursor: pointer; text-align: left;
+}
+button.ds-back-btn:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; border-radius: 4px; }
 
 /* Evidence rows: icon + type/content on the left, file link + submitter
    meta stacked on the right — replaces the old plain <li> text dump. */

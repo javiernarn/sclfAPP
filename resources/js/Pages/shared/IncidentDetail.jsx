@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
     ShieldAlert, MapPin, Calendar, UserCircle, Tag, AlertTriangle,
     CheckCircle2, RotateCcw, UserPlus, Lock, Pencil, Trash2,
@@ -40,6 +40,7 @@ const statusBadgeClass = (status) => {
 
 export default function IncidentDetail() {
     const { id } = useParams();
+    const location = useLocation(); // .key changes on every navigation, even to the same URL — used to re-fetch
     const navigate = useNavigate();
     const { user, roles } = useAuth();
     const isStaff = Array.isArray(roles) && roles.some((r) => ['security_officer', 'admin', 'staff'].includes(r));
@@ -83,7 +84,7 @@ export default function IncidentDetail() {
             .finally(() => setLoading(false));
     };
 
-    useEffect(load, [id]);
+    useEffect(load, [id, location.key]);
 
     // Officer picker for "Assign" — reuses /admin/users would be overkill
     // and admin-only; a lightweight campus roster isn't exposed elsewhere,
@@ -247,9 +248,6 @@ export default function IncidentDetail() {
             subtitle={<>Reported {new Date(incident.created_at).toLocaleString()}{incident.reporter?.name ? <> by <RoleText text={roleAndName(incident.reporter)} /></> : ''}</>}
             actions={<span className={statusBadgeClass(incident.status)}>{incident.status.replace(/_/g, ' ')}</span>}
         >
-            <Link to="/app/incidents" className="ds-back-link">
-                <ArrowLeft size={14} /> Back to Incidents
-            </Link>
 
             <div className="ds-card">
                 <div className="ds-card-head">

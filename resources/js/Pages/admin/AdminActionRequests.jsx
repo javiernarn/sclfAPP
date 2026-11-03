@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import axios from '../../config/axiosConfig';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import StaffRequestDetailsModal from '../../Components/shared/StaffRequestDetailsModal';
@@ -32,6 +32,7 @@ export default function AdminActionRequests() {
     // Arriving from a bell notification (?request=ID): show every status so the
     // request is visible whatever state it is in, and highlight its row.
     const [searchParams] = useSearchParams();
+    const location = useLocation(); // .key changes on every navigation, even to the same URL — used to re-fetch
     const focusId = Number(searchParams.get('request')) || null;
     const [status, setStatus] = useState(isAdmin && !focusId ? 'pending' : '');
     const [busyId, setBusyId] = useState(null);
@@ -50,6 +51,7 @@ export default function AdminActionRequests() {
 
     useEffect(() => { document.title = 'Staff Requests | SCLF - Opol Community College'; }, []);
 
+    const autoOpened = useRef(false);
     const load = useCallback(() => {
         setLoading(true);
         axios.get('/action-requests', { params: status ? { status } : {} })
@@ -57,10 +59,9 @@ export default function AdminActionRequests() {
             .finally(() => setLoading(false));
     }, [status]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => { autoOpened.current = false; load(); }, [load, location.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Arriving from a notification: open that request's full details once.
-    const autoOpened = useRef(false);
     useEffect(() => {
         if (!focusId || autoOpened.current || !rows.some((r) => r.id === focusId)) return;
         autoOpened.current = true;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useLocation, Link } from 'react-router-dom';
 import DashboardShell from '../../Components/shared/DashboardShell';
 import { useAuth } from '../../context/AuthContext';
 
@@ -20,6 +20,7 @@ const levelBadge = (level) => {
 
 export default function LostItemMatches() {
     const { id } = useParams();
+    const location = useLocation(); // .key changes on every navigation, even to the same URL — used to re-fetch
     const { roles } = useAuth();
     // Security / admin / staff open this page from a "new lost report"
     // notification to review candidates — they are not the owner, so no
@@ -42,7 +43,7 @@ export default function LostItemMatches() {
             .finally(() => { if (!background) setLoading(false); });
     };
 
-    useEffect(() => { load(); }, [id]);
+    useEffect(() => { load(); }, [id, location.key]);
 
     // Re-check while the tab is open and visible (scores are re-computed server-side when a report changes).
     useEffect(() => {

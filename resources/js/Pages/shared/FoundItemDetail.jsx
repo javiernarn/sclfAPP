@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import axios from '../../config/axiosConfig';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import {
     ArrowLeft, Package, Tag, MapPin, Calendar, Boxes, UserCircle,
     HelpCircle, CheckCircle2, Sparkles, MessageSquare,
@@ -33,6 +33,7 @@ const InfoItem = ({ icon: Icon, label, value }) => (
 
 export default function FoundItemDetail() {
     const { id } = useParams();
+    const location = useLocation(); // .key changes on every navigation, even to the same URL — used to re-fetch
     const navigate = useNavigate();
     const { roles, user } = useAuth();
     const [item, setItem] = useState(null);
@@ -76,7 +77,7 @@ export default function FoundItemDetail() {
             })
             .catch(() => setError('Could not load this item.'))
             .finally(() => setLoading(false));
-    }, [id, isStaff]);
+    }, [id, isStaff, location.key]);
 
     const handleClaim = async () => {
         // Synchronous guard against double-click/double-tap spam — see
@@ -152,9 +153,6 @@ export default function FoundItemDetail() {
                 </>
             )}
         >
-            <Link to="/app/found-items" className="ds-back-link">
-                <ArrowLeft size={14} /> Back to Found Items
-            </Link>
 
             <div className="ds-card">
                 <div className="ds-card-title">Item</div>
