@@ -2349,3 +2349,14 @@ button.ds-back-btn:focus-visible { outline: 2px solid currentColor; outline-offs
 /* Edit sheet: lives directly under .ds-shell (see AdminUsers renderInShell). Keep it
    pinned to the visual screen and stop touch-scroll from chaining to the page. */
 .ds-shell > .ds-edit-backdrop { position: fixed; inset: 0; overscroll-behavior: contain; }
+
+/* Path trail: ← Back   Dashboard \ Users \ User Details */
+.ds-crumbs { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 14px; margin-bottom: 14px; font-size: 13px; }
+.ds-crumbs .ds-back-link { margin-bottom: 0; }
+.ds-crumb-list { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; list-style: none; margin: 0; padding: 0; }
+.ds-crumb-list li { display: inline-flex; align-items: center; gap: 8px; }
+.ds-crumb-list a { color: inherit; text-decoration: none; opacity: 0.7; font-weight: 600; }
+.ds-crumb-list a:hover { opacity: 1; text-decoration: underline; }
+.ds-crumb-sep { opacity: 0.4; }
+.ds-crumb-list strong { font-weight: 800; }
+@media (max-width: 640px) { .ds-crumbs { font-size: 12.5px; } }
