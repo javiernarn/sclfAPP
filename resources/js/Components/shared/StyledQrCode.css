@@ -106,3 +106,13 @@
     width: 100%; height: auto; border-radius: 12px; background: #fff;
     -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; pointer-events: auto;
 }
+
+/* Long-press must reach the PICTURE: text in the sheet is not selectable, so iOS never
+   starts a text selection instead of the image's Save menu. */
+.sclf-qr-sheet, .sclf-qr-sheet * {
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+}
+.sclf-qr-sheet .sclf-qr-sheet-img {
+    -webkit-touch-callout: default !important; -webkit-user-select: auto; user-select: auto;
+    pointer-events: auto; touch-action: manipulation;
+}

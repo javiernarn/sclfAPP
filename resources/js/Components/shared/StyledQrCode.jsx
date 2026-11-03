@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import QRCode from 'qrcode';
 import { Download } from '../icons';
 import siteLogo from '../../assets/images/site-logo.png';
@@ -165,20 +166,21 @@ export default function StyledQrCode({
                     {notice && <div className="sclf-qr-notice" role="status">{notice}</div>}
                 </>
             )}
-            {showSheet && (
+            {showSheet && createPortal(
                 <div className="sclf-qr-sheet" role="dialog" aria-modal="true" aria-label="Save your QR code" onClick={closeSheet}>
                     <div className="sclf-qr-sheet-card" onClick={(e) => e.stopPropagation()}>
                         <p className="sclf-qr-sheet-title">Save your QR</p>
-                        <p className="sclf-qr-sheet-help">
-                            Press and hold the image below, then tap <b>Save to Photos</b> (or <b>Add to Photos</b>).
-                            On Android, long-press and choose <b>Download image</b>.
-                        </p>
                         {previewUrl
                             ? <img className="sclf-qr-sheet-img" src={previewUrl} alt="Your release QR code" />
                             : <p className="sclf-qr-sheet-help">Could not prepare the image. Take a screenshot of the QR instead.</p>}
+                        <p className="sclf-qr-sheet-help">
+                            Press and hold <b>on the QR picture</b> until a menu appears, then tap <b>Save to Photos</b>
+                            (or <b>Add to Photos</b>). On Android, long-press and choose <b>Download image</b>.
+                        </p>
                         <button type="button" className="ds-btn ds-btn-primary" onClick={closeSheet}>Done</button>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

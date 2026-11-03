@@ -1,66 +1,83 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 /**
  * Profile photo drawn as a real <img> on top of an avatar bubble.
  *
- * Why not CSS `background-image` (what the app used before)?
- *   - iOS Safari / installed PWAs silently paint NOTHING when a CSS background
- *     fails to load or decode, and give no way to notice - so the bubble stayed
- *     blank (no photo AND no initials).
- *   - A real <img> reports failures (onError), so we can retry and then fall
- *     back to the initials that sit underneath.
+ * Keep the initials as the element's other content; the photo covers them once it
+ * is ready:  <span className="ds-avatar">{initials}<AvatarPhoto src={url} /></span>
  *
- * Usage: put it inside the avatar element and ALWAYS keep the initials as the
- * element's other content. The photo covers them once it has loaded.
- *   <span className="ds-avatar">{initials}<AvatarPhoto src={user.profile_picture_url} /></span>
+ * Why it works the way it does (iPhone PWA + a host that may run several copies of
+ * the app):
+ *  - Every page has its own avatar, so each page change re-creates it. Previously each
+ *    one started invisible and re-requested the image, which looked like the photo
+ *    "disappearing and reappearing" while you tapped around.
+ *  - So a photo is downloaded ONCE per session into memory (a blob: URL) and every
+ *    avatar - on every page - shows it instantly from there.
+ *  - A failed download (e.g. one app copy that does not have the file yet and restores it
+ *    from the database on first request) is retried a few times instead of giving up.
  */
-export default function AvatarPhoto({ src }) {
-    const [url, setUrl] = useState(src || '');
-    const [failed, setFailed] = useState(false);
-    const [shown, setShown] = useState(false);
-    const retried = useRef(false);
-    const blobRef = useRef(null);
 
-    const dropBlob = () => {
-        if (blobRef.current) {
-            URL.revokeObjectURL(blobRef.current);
-            blobRef.current = null;
+const ready = new Map();     // src -> blob: URL already downloaded this session
+const pending = new Map();   // src -> Promise<blob: URL> currently downloading (shared)
+const MAX_READY = 30;
+const DELAYS = [0, 700, 1800, 4000]; // ms before each attempt
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function load(src) {
+    if (ready.has(src)) return Promise.resolve(ready.get(src));
+    if (pending.has(src)) return pending.get(src);
+
+    const job = (async () => {
+        let lastErr = new Error('failed');
+        for (const delay of DELAYS) {
+            if (delay) await sleep(delay);
+            try {
+                const res = await fetch(src, { credentials: 'same-origin', cache: delay ? 'reload' : 'default' });
+                if (!res.ok) throw new Error(`status ${res.status}`);
+                const blob = await res.blob();
+                if (!blob || !blob.size) throw new Error('empty');
+                const url = URL.createObjectURL(blob);
+                ready.set(src, url);
+                if (ready.size > MAX_READY) {
+                    const oldest = ready.keys().next().value;
+                    URL.revokeObjectURL(ready.get(oldest));
+                    ready.delete(oldest);
+                }
+                return url;
+            } catch (e) {
+                lastErr = e;
+            }
         }
-    };
+        throw lastErr;
+    })();
+
+    pending.set(src, job);
+    const done = () => pending.delete(src);
+    job.then(done, done);
+    return job;
+}
+
+// Call on sign-out so one person's photo never lingers for the next.
+export function clearAvatarCache() {
+    ready.forEach((u) => URL.revokeObjectURL(u));
+    ready.clear();
+    pending.clear();
+}
+
+export default function AvatarPhoto({ src }) {
+    const [url, setUrl] = useState(() => (src && ready.get(src)) || '');
 
     useEffect(() => {
-        dropBlob();
-        retried.current = false;
-        setUrl(src || '');
-        setFailed(false);
-        setShown(false);
-        return dropBlob;
+        if (!src) { setUrl(''); return undefined; }
+        if (ready.has(src)) { setUrl(ready.get(src)); return undefined; }
+        let alive = true;
+        setUrl('');
+        load(src).then((u) => { if (alive) setUrl(u); }).catch(() => {});
+        return () => { alive = false; };
     }, [src]);
 
-    if (!src || failed) return null;
-
-    const onError = () => {
-        // First failure: fetch the bytes ourselves and show them from memory.
-        // This sidesteps iOS image-loader quirks (cache, range, decode) that
-        // plain <img src> / CSS backgrounds can hit.
-        if (retried.current) {
-            setFailed(true);
-            return;
-        }
-        retried.current = true;
-        fetch(src, { credentials: 'same-origin', cache: 'reload' })
-            .then((res) => {
-                if (!res.ok) throw new Error('bad status');
-                return res.blob();
-            })
-            .then((blob) => {
-                if (!blob || !blob.size) throw new Error('empty');
-                dropBlob();
-                blobRef.current = URL.createObjectURL(blob);
-                setUrl(blobRef.current);
-            })
-            .catch(() => setFailed(true));
-    };
+    if (!url) return null;
 
     return (
         <img
@@ -69,9 +86,6 @@ export default function AvatarPhoto({ src }) {
             alt=""
             decoding="async"
             draggable={false}
-            onLoad={() => setShown(true)}
-            onError={onError}
-            style={{ opacity: shown ? 1 : 0 }}
         />
     );
 }

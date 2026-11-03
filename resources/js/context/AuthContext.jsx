@@ -4,6 +4,7 @@ import { clearLoginMemory } from '../utils/welcome';
 import { getCurrentSubscription, disablePush } from '../utils/push';
 import { clearAllDrafts } from '../utils/autosave';
 import { clearImageCaches } from '../utils/imageCache';
+import { clearAvatarCache } from '../Components/shared/AvatarPhoto';
 
 const AuthContext = createContext(null);
 
@@ -225,6 +226,7 @@ export function AuthProvider({ children }) {
             clearStoredToken();
             clearLoginMemory();
             clearImageCaches(); // private photos must not linger for the next person
+            clearAvatarCache();
             setUser(null);
             setRoles([]);
         }
