@@ -1004,6 +1004,22 @@ const LEDGER_CSS = `
             padding: 18px 4px calc(env(safe-area-inset-bottom, 0px) + 16px);
             font-size: 11px; opacity: 0.62; line-height: 1.55;
         }
+
+        /* Compact mode (account setup) is built to fit a desktop screen. On a
+           phone it must not add top padding (that left a gap above the sticky
+           header) or lock scrolling (short phones could not reach the button
+           or the footer). Same rule for every phone, browser or installed PWA. */
+        .lg-wrap.is-compact .lg-stage {
+            overflow-y: auto; overflow-x: hidden; padding: 0;
+            -webkit-overflow-scrolling: touch; overscroll-behavior-y: contain;
+        }
+        .lg-wrap.is-compact .lg-appbar { top: 0; flex-shrink: 0; }
+        .lg-wrap.is-compact .lg-stage-inner { padding-bottom: 8px; }
+        .lg-wrap.is-compact .lg-card-foot {
+            padding: 16px 4px calc(env(safe-area-inset-bottom, 0px) + 20px);
+            font-size: 13px; line-height: 1.5; overflow-wrap: anywhere;
+        }
+        .lg-wrap.is-compact .lg-card-foot p { font-size: inherit !important; }
     }
 
     /* ============ GATE MODE (Login) ============

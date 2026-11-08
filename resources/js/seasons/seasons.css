@@ -1072,6 +1072,11 @@ html[data-season]:where(:not([data-season=""])) .lg-wrap .lg-mobile-brand .sx-ha
     html[data-season="christmas"] .lg-wrap.lg-wrap .lg-submit { background: var(--sx-grad); color: var(--sx-on-grad); }
 html[data-season="newyear"] .lg-wrap.lg-wrap .lg-submit { background: var(--sx-grad); color: var(--sx-on-grad); }
     html[data-season]:where(:not([data-season=""])) .lg-wrap .lg-stage-legal { padding-left: 90px; padding-right: 90px; }
+    /* keep the footer line ("Signed in as ... Not you?") above the scene's ground,
+       coffins and pumpkins instead of printing on top of them */
+    html[data-season]:where(:not([data-season=""])) .lg-wrap.is-compact .lg-card-foot {
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(120px, 21vh, 190px));
+    }
     /* the footer line sits on the dark graveyard ground in both modes */
     html[data-season="halloween"] .lg-wrap.lg-wrap .lg-stage-legal { color: #fff1de; opacity: 0.92; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7); }
     html[data-season="christmas"] .lg-wrap.lg-wrap .lg-stage-legal { color: #12372e; opacity: 0.9; text-shadow: none; }
