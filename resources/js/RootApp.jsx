@@ -19,6 +19,15 @@ const VERIFY_PATH = '/app/verify-email';
 // Pages only the Admin may open (staff are blocked on the server too).
 const ADMIN_ONLY_PATHS = ['/app/admin/requests', '/app/admin/audit-log', '/app/admin/activity'];
 
+// Each role's own landing page. Used by the role guard and the first-time setup
+// screen, so a Security Officer or Admin is never bounced through the student dashboard.
+function homeForRoles(roles) {
+    if (roles.includes('admin') || roles.includes('staff')) return '/app/admin/dashboard';
+    if (roles.includes('security_officer')) return '/app/security/dashboard';
+    if (roles.includes('student') || roles.includes('instructor')) return '/app/dashboard';
+    return '/app/profile'; // no known role: a page every account can open (avoids a redirect loop)
+}
+
 function ProtectedRoute({ children, requiredRoles }) {
     const { user, roles, loading, signedOut } = useAuth();
     const location = useLocation();
@@ -55,13 +64,7 @@ function ProtectedRoute({ children, requiredRoles }) {
         // Send them to THEIR own home, not a generic dashboard — otherwise a
         // staff/security account that hits a page it can't open lands on
         // the Student Portal.
-        const home = roles.includes('admin') || roles.includes('staff')
-            ? '/app/admin/dashboard'
-            : roles.includes('security_officer')
-                ? '/app/security/dashboard'
-                : (roles.includes('student') || roles.includes('instructor'))
-                    ? '/app/dashboard'
-                    : '/app/profile'; // no known role: a page every account can open (avoids a redirect loop)
+        const home = homeForRoles(roles);
         return <Navigate to={home} replace />;
     }
 
@@ -73,11 +76,11 @@ function ProtectedRoute({ children, requiredRoles }) {
 // pending — once it's done, revisiting this URL just bounces to the
 // dashboard instead of re-showing the form.
 function SetupRoute({ children }) {
-    const { user, loading } = useAuth();
+    const { user, roles, loading } = useAuth();
 
     if (loading) return <MainPage routing={false} />;
     if (!user) return <Navigate to="/login" replace />;
-    if (!user.must_setup_profile) return <Navigate to="/app/dashboard" replace />;
+    if (!user.must_setup_profile) return <Navigate to={homeForRoles(roles || [])} replace />;
 
     return children;
 }

@@ -1,5 +1,6 @@
 .sclf-scan-tabs {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-bottom: 18px;
     border-bottom: 1px solid rgba(27, 31, 59, 0.1);
@@ -7,6 +8,8 @@
 }
 
 .sclf-scan-tab {
+    max-width: 100%;
+    min-width: 0;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -275,3 +278,8 @@
 .sclf-block .sclf-stored-item { margin-top: 0; }
 
 @media (max-width: 480px) { .sclf-stored-item { flex-direction: column; } .sclf-stored-photo { width: 100%; height: 160px; } }
+
+/* Phones: the scan-mode tabs share the row evenly instead of running off the screen. */
+@media (max-width: 480px) {
+    .sclf-scan-tabs .sclf-scan-tab { flex: 1 1 0; justify-content: center; padding-left: 10px; padding-right: 10px; min-height: 44px; }
+}

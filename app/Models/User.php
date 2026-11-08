@@ -208,6 +208,40 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Short desk name for notification TITLES that other people read:
+     * "Security", "Admin" or "Staff". Follows the same priority as
+     * role_label (Admin > Staff > Security Officer) so a person is never
+     * announced as a role they do not hold. Falls back to "Security",
+     * the desk that handles lost & found, when the account has no role.
+     */
+    public function actorShortLabel(): string
+    {
+        return match (true) {
+            $this->hasRole('admin') => 'Admin',
+            $this->hasRole('staff') => 'Staff',
+            $this->hasRole('security_officer') => 'Security',
+            $this->hasRole('instructor') => 'Instructor',
+            default => 'Security',
+        };
+    }
+
+    /**
+     * Sentence-ready description of who did something, for notification
+     * BODIES: "A Security Officer", "The Admin" or "A Staff member".
+     * Never claims a role the person does not have (see actorShortLabel()).
+     */
+    public function actorPhrase(): string
+    {
+        return match (true) {
+            $this->hasRole('admin') => 'The Admin',
+            $this->hasRole('staff') => 'A Staff member',
+            $this->hasRole('security_officer') => 'A Security Officer',
+            $this->hasRole('instructor') => 'An Instructor',
+            default => 'Security',
+        };
+    }
+
+    /**
      * Whether 2FA is actually turned on (confirmed), not just mid-setup.
      * Kept off $appends deliberately — AuthController::userPayload()
      * decides when this belongs in a response rather than it riding along

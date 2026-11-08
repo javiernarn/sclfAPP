@@ -1064,7 +1064,7 @@ body { overflow: hidden; }
    sit side by side, so the space fills naturally as locations are added
    and there's nothing to stretch awkwardly when there's just one. */
 .ds-location-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
     gap: 12px; align-items: stretch;
 }
 .ds-location-card { padding: 18px 20px; border-radius: 14px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
@@ -1214,7 +1214,7 @@ body { overflow: hidden; }
    full-width row with a wall of empty space trailing after them; collapses
    to one column automatically once a row no longer fits two. */
 .ds-legend-grid {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
     gap: 10px 20px;
 }
 .ds-legend-row { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 6px 10px; }

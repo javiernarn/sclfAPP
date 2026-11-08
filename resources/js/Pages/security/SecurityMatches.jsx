@@ -104,20 +104,23 @@ function Detail({ detail, loading, error }) {
                 <Photo src={found.image_url} caption="FOUND item photo" />
             </div>
 
+            {/* Wide table on tablets/desktop; on phones the CSS stacks every field into its own
+                small card (Lost / Found one under the other) so nothing needs sideways scrolling.
+                The roles keep it a table for screen readers either way. */}
             <div className="mc-table-wrap">
-                <table className="mc-table">
-                    <thead><tr><th>Field</th><th>Lost report</th><th>Found item</th><th>Result</th><th>Points</th></tr></thead>
-                    <tbody>
+                <table className="mc-table" role="table">
+                    <thead role="rowgroup"><tr role="row"><th role="columnheader">Field</th><th role="columnheader">Lost report</th><th role="columnheader">Found item</th><th role="columnheader">Result</th><th role="columnheader">Points</th></tr></thead>
+                    <tbody role="rowgroup">
                         {Object.values(analysis.fields).map((f) => (
-                            <tr key={f.key}>
-                                <td className="k">{f.label}</td>
-                                <td className="val">{f.lost || <span className="none">—</span>}</td>
-                                <td className="val">{f.found || <span className="none">—</span>}</td>
-                                <td>
+                            <tr key={f.key} role="row" data-status={f.status}>
+                                <td role="cell" className="k">{f.label}</td>
+                                <td role="cell" className="val mc-c-lost" data-label="Lost">{f.lost || <span className="none">—</span>}</td>
+                                <td role="cell" className="val mc-c-found" data-label="Found">{f.found || <span className="none">—</span>}</td>
+                                <td role="cell" className="mc-c-res">
                                     <span className={`mc-chip ${f.status}`}>{STATUS_MARK[f.status]} {STATUS_WORD[f.status]}</span>
                                     {f.note && <span className="note">{f.note}</span>}
                                 </td>
-                                <td className="mc-pts">{f.status === 'unknown' ? '—' : `${f.points} / ${f.weight}`}</td>
+                                <td role="cell" className="mc-pts">{f.status === 'unknown' ? '—' : `${f.points} / ${f.weight}`}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -318,12 +321,14 @@ export default function SecurityMatches() {
 
             <div className="ds-card mc">
                 <div className="mc-toolbar">
-                    {TABS.map((t) => (
-                        <button key={t.key} type="button" className={`ds-btn ${tab === t.key ? 'ds-btn-primary' : 'ds-btn-secondary'}`}
-                            onClick={() => { setTab(t.key); setPage(1); setOpenId(null); }} aria-pressed={tab === t.key}>
-                            {t.label}
-                        </button>
-                    ))}
+                    <div className="mc-tabs" role="group" aria-label="Match status">
+                        {TABS.map((t) => (
+                            <button key={t.key} type="button" className={`ds-btn ${tab === t.key ? 'ds-btn-primary' : 'ds-btn-secondary'}`}
+                                onClick={() => { setTab(t.key); setPage(1); setOpenId(null); }} aria-pressed={tab === t.key}>
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
                     {model?.enabled && (
                         <span className={`mc-ai${model.trained ? '' : ' is-off'}`}
                             title={model.trained
@@ -332,11 +337,11 @@ export default function SecurityMatches() {
                             {model.trained ? `AI on · ${Math.round((model.metrics?.accuracy || 0) * 100)}% accurate` : 'AI not trained'}
                         </span>
                     )}
-                    <span style={{ marginLeft: 'auto' }} className={`mc-live${live.ok ? '' : ' is-err'}`} title="Checks for changes every few seconds and updates the list when something moves">
+                    <span className={`mc-live mc-live-pos${live.ok ? '' : ' is-err'}`} title="Checks for changes every few seconds and updates the list when something moves">
                         {live.ok ? `Live${live.at ? ` · checked ${clock(live.at)}` : ''}` : 'Reconnecting…'}
                     </span>
                 </div>
-                <div className="mc-toolbar">
+                <div className="mc-toolbar mc-filters">
                     <select name="level" value={level} onChange={(e) => resetTo(setLevel)(e.target.value)} aria-label="Filter by match level">
                         <option value="">All levels</option>
                         <option value="very_high">Very high (90+)</option>
@@ -346,7 +351,7 @@ export default function SecurityMatches() {
                     </select>
                     <NumberStepper name="min_score" min={0} max={100} placeholder="Min score" value={minScore}
                         onChange={resetTo(setMinScore)} aria-label="Minimum score" />
-                    <ClearableSearch name="query" placeholder="Search name, brand or model…" value={query} style={{ marginLeft: 'auto' }}
+                    <ClearableSearch name="query" placeholder="Search name, brand or model…" value={query} className="mc-search"
                         onChange={(v) => { setQuery(v); setPage(1); }} aria-label="Search matches" />
                 </div>
 
@@ -358,7 +363,7 @@ export default function SecurityMatches() {
                 )}
 
                 {rows.length > 0 && (
-                    <div className={`mc-list${loading ? ' is-refreshing' : ''}`} aria-busy={loading} style={{ display: 'grid', gap: 12 }}>
+                    <div className={`mc-list${loading ? ' is-refreshing' : ''}`} aria-busy={loading}>
                         {rows.map((m) => {
                             const isOpen = openId === m.id;
                             const actionable = m.status === 'pending' || m.status === 'notified';

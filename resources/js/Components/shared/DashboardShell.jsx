@@ -45,6 +45,8 @@ import "./MobileUserApp.css";
 // Admin / Staff / Security phone app: same app look, card-style tables, staff quick actions.
 import "./MobileStaffApp.css";
 import "./MobileListFix.css";
+// Last: stops any wide child from pushing a card off the screen on small phones (see file header).
+import "./PhoneSafety.css";
 import RoleText from "./RoleText";
 import {
     LayoutDashboard,

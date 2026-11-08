@@ -114,6 +114,39 @@ class MatchQueueTest extends TestCase
         $this->assertSame(ItemMatch::STATUS_NOTIFIED, $match->fresh()->status);
     }
 
+    /**
+     * The owner must be told WHO reviewed their match. This used to say "A staff member"
+     * no matter who acted, so a student saw "Security found..." with a body naming Staff.
+     *
+     * @dataProvider actingRoles
+     */
+    public function test_the_owner_notification_names_the_role_that_actually_acted(string $role, string $title, string $who): void
+    {
+        Notification::fake();
+
+        $owner = $this->makeUser('student');
+        $match = $this->makeMatch([], [], $owner);
+
+        $this->actingAs($this->makeUser($role))->postJson("/api/matches/{$match->id}/notify-owner")->assertOk();
+
+        Notification::assertSentTo($owner, SclfNotification::class, function ($n) use ($owner, $title, $who) {
+            $data = $n->toArray($owner);
+
+            return $data['title'] === $title
+                && str_starts_with($data['message'], $who . ' reviewed')
+                // never claim a role the person does not have
+                && ($who === 'A Staff member' || !str_contains($data['message'], 'staff member'));
+        });
+    }
+
+    public static function actingRoles(): array
+    {
+        return [
+            'security officer' => ['security_officer', 'Security found a possible match', 'A Security Officer'],
+            'admin' => ['admin', 'Admin found a possible match', 'The Admin'],
+        ];
+    }
+
     public function test_a_dismissed_match_cannot_be_sent_to_the_owner(): void
     {
         Notification::fake();

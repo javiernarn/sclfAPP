@@ -728,7 +728,7 @@ export default function AdminUsers() {
                                                         </button>
                                                     </Tooltip>
                                                     {isSelf ? (
-                                                        <Tooltip label="You can't disable your own account — ask another admin if you need this account disabled">
+                                                        <Tooltip label="You can't disable your own account.">
                                                             <span className="ds-badge ds-badge-default">This is you</span>
                                                         </Tooltip>
                                                     ) : u.is_active ? (
@@ -802,7 +802,7 @@ export default function AdminUsers() {
                                             </button>
                                         </Tooltip>
                                         {isSelf ? (
-                                            <Tooltip label="You can't disable your own account — ask another admin if you need this account disabled">
+                                            <Tooltip label="You can't disable your own account.">
                                                 <span className="ds-badge ds-badge-default">This is you</span>
                                             </Tooltip>
                                         ) : u.is_active ? (

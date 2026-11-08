@@ -1,0 +1,37 @@
+/*
+ * PhoneSafety.css  (imported LAST by DashboardShell)
+ * ---------------------------------------------------
+ * A safety net for every page inside <DashboardShell> (Admin, Security, Staff,
+ * Student, Instructor) so a wide child can never push a card off the screen.
+ *
+ * The bug this prevents (seen on an iPhone XR in Security > Matches): a grid
+ * or flex parent whose children default to `min-width: auto` grows to fit its
+ * widest child - e.g. a table with `min-width: 560px` - so the card became
+ * wider than the phone and its text, chips and buttons ran off the right edge.
+ *
+ * Nothing here changes how a page looks when it already fits.
+ */
+
+/* 1. A grid with no column template (inline `display: grid`) gets ONE column
+      that is allowed to shrink, instead of an `auto` column that grows. */
+.ds-shell [style*="display: grid"]:not([style*="grid-template"]) {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+/* 2. Blocks directly inside the page or a card may shrink below their content
+      width; wide things (tables, code) scroll inside their own wrapper. */
+.ds-shell .ds-main > *,
+.ds-shell .ds-card > * {
+    min-width: 0;
+    max-width: 100%;
+}
+.ds-shell .ds-main img,
+.ds-shell .ds-main video,
+.ds-shell .ds-main canvas { max-width: 100%; }
+
+/* 3. Phones: the page itself never pans sideways. Anything wider than the
+      screen must scroll inside its own box (tables already do). */
+@media (max-width: 640px) {
+    .ds-shell .ds-main { overflow-x: hidden; }
+    .ds-shell .ds-card { max-width: 100%; box-sizing: border-box; }
+}

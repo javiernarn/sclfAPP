@@ -238,10 +238,14 @@ class MatchController extends Controller
             abort(422, 'The person who reported this lost item no longer has an account.');
         }
 
+        // Name the person who actually acted. This used to say "A staff member"
+        // for everyone, so a student whose item was matched by a Security Officer
+        // read a title that said Security and a body that said Staff.
+        $actor = auth()->user();
         $owner->notify(new SclfNotification(
             SclfNotification::TYPE_POTENTIAL_MATCH,
-            'Security found a possible match',
-            "A staff member reviewed \"{$match->lostItem->item_name}\" and thinks it may match \"{$match->foundItem->item_name}\". Open it to check and file a claim.",
+            ($actor?->actorShortLabel() ?? 'Security') . ' found a possible match',
+            ($actor?->actorPhrase() ?? 'Security') . " reviewed \"{$match->lostItem->item_name}\" and thinks it may match \"{$match->foundItem->item_name}\". Open it to check and file a claim.",
             LostItem::class,
             $match->lostItem->id,
         ));

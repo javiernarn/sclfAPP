@@ -141,7 +141,7 @@ export default function FoundItemDetail() {
             eyebrow="Lost & Found"
             title={item.item_name}
             subtitle={isCounterIntake
-                ? <>Logged at the counter by <RoleText text={roleAndName(item.finder, 'a staff member')} /></>
+                ? <>Logged at the counter by <RoleText text={roleAndName(item.finder, 'Security')} /></>
                 : <>Reported by <RoleText text={roleAndName(item.finder, 'a community member')} /></>}
             actions={(
                 <>
