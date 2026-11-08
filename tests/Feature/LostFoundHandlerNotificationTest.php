@@ -14,9 +14,11 @@ use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 /**
- * Whoever handles lost & found (security officer and staff — see
- * User::LOST_FOUND_HANDLER_ROLES; never the admin) must be told when a lost report or found
- * report is filed, and when the matcher turns up something worth reviewing.
+ * Whoever can act on lost & found (security officer, and the admin who covers
+ * when Security is off duty — see User::LOST_FOUND_NOTIFIED_ROLES) must be told
+ * when a lost report or found report is filed, and when the matcher turns up
+ * something worth reviewing. Staff can open the queues but need admin approval
+ * to act, so they are not alerted.
  */
 class LostFoundHandlerNotificationTest extends TestCase
 {
@@ -45,7 +47,7 @@ class LostFoundHandlerNotificationTest extends TestCase
             ->all();
     }
 
-    public function test_a_lost_report_notifies_security_and_staff_but_not_the_admin(): void
+    public function test_a_lost_report_notifies_security_and_admin_but_not_staff(): void
     {
         Notification::fake();
 
@@ -60,10 +62,10 @@ class LostFoundHandlerNotificationTest extends TestCase
             'description' => 'Leather wallet with school ID.',
         ])->assertCreated();
 
-        foreach ([$security, $staff] as $handler) {
+        foreach ([$security, $admin] as $handler) {
             $this->assertContains(SclfNotification::TYPE_LOST_REPORTED, $this->sentTypes($handler));
         }
-        $this->assertSame([], $this->sentTypes($admin));
+        $this->assertSame([], $this->sentTypes($staff));
         $this->assertSame([], $this->sentTypes($otherStudent));
         $this->assertNotContains(SclfNotification::TYPE_LOST_REPORTED, $this->sentTypes($student));
     }
@@ -83,7 +85,7 @@ class LostFoundHandlerNotificationTest extends TestCase
         ])->assertCreated();
 
         $this->assertContains(SclfNotification::TYPE_FOUND_REPORTED, $this->sentTypes($otherOfficer));
-        $this->assertSame([], $this->sentTypes($admin));
+        $this->assertContains(SclfNotification::TYPE_FOUND_REPORTED, $this->sentTypes($admin));
         $this->assertSame([], $this->sentTypes($filer));
         $this->assertSame([], $this->sentTypes($student));
     }
@@ -125,7 +127,7 @@ class LostFoundHandlerNotificationTest extends TestCase
 
         $this->assertContains(SclfNotification::TYPE_LOST_REPORTED, $this->sentTypes($mainOfficer));
         $this->assertContains(SclfNotification::TYPE_LOST_REPORTED, $this->sentTypes($unscopedOfficer));
-        $this->assertSame([], $this->sentTypes($admin));
+        $this->assertContains(SclfNotification::TYPE_LOST_REPORTED, $this->sentTypes($admin));
         $this->assertSame([], $this->sentTypes($annexOfficer));
     }
 
@@ -165,6 +167,7 @@ class LostFoundHandlerNotificationTest extends TestCase
     {
         $officer = $this->makeUser('security_officer');
         $admin = $this->makeUser('admin');
+        $staff = $this->makeUser('staff');
         $owner = $this->makeUser('student');
 
         $shared = [
@@ -193,7 +196,8 @@ class LostFoundHandlerNotificationTest extends TestCase
         app(InventoryService::class)->verify($found, $officer, true);
 
         $this->assertContains(SclfNotification::TYPE_MATCH_FOR_REVIEW, $this->sentTypes($officer));
-        $this->assertSame([], $this->sentTypes($admin));
+        $this->assertContains(SclfNotification::TYPE_MATCH_FOR_REVIEW, $this->sentTypes($admin));
+        $this->assertSame([], $this->sentTypes($staff));
         // The owner is not pinged by this path — a handler confirms the
         // match from the Matches queue first.
         $this->assertNotContains(SclfNotification::TYPE_MATCH_FOR_REVIEW, $this->sentTypes($owner));

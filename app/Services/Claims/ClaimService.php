@@ -126,7 +126,7 @@ class ClaimService
         // claimant (not staff) adds it.
         if ($submitter->id === $claim->claimant_id) {
             $typeLabel = str_replace('_', ' ', $data['type']);
-            foreach (User::role(['security_officer', 'admin'])->get() as $officer) {
+            foreach (User::role(User::LOST_FOUND_NOTIFIED_ROLES)->get() as $officer) {
                 $officer->notify(new SclfNotification(
                     SclfNotification::TYPE_CLAIM_SUBMITTED,
                     'New evidence on a claim',
@@ -261,7 +261,7 @@ class ClaimService
 
     protected function notifySecurityOfficers(Claim $claim): void
     {
-        $officers = User::role(['security_officer', 'admin'])->get();
+        $officers = User::role(User::LOST_FOUND_NOTIFIED_ROLES)->get();
 
         foreach ($officers as $officer) {
             $officer->notify(new SclfNotification(

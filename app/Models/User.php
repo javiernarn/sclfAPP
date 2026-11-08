@@ -44,10 +44,13 @@ class User extends Authenticatable implements MustVerifyEmail
 
     /**
      * The subset of handlers who get a notification-bell alert when
-     * something is reported. The Admin is deliberately left out so the bell
-     * isn't flooded — they can still open the queues and act on them.
+     * something needs action (new lost/found report, possible match, new
+     * claim, new evidence). These are the roles that can act directly:
+     * the Security Officer, and the Admin who covers when Security is off
+     * duty. Staff can open the same screens but their writes need Admin
+     * approval, so they are not pinged with alerts they cannot act on.
      */
-    public const LOST_FOUND_NOTIFIED_ROLES = ['security_officer', 'staff'];
+    public const LOST_FOUND_NOTIFIED_ROLES = ['security_officer', 'admin'];
 
     /**
      * The attributes that are mass assignable.
@@ -313,11 +316,11 @@ class User extends Authenticatable implements MustVerifyEmail
             ->role(self::LOST_FOUND_NOTIFIED_ROLES)
             ->when($exceptUserId, fn ($q) => $q->where('users.id', '!=', $exceptUserId))
             // A report with no campus reaches every handler. A report on a
-            // campus reaches Staff, officers with no campus, and
+            // campus reaches the Admin, officers with no campus, and
             // officers assigned to that campus.
             ->when($campusId, function ($q) use ($campusId) {
                 $q->where(function ($w) use ($campusId) {
-                    $w->whereHas('roles', fn ($r) => $r->whereIn('name', ['staff']))
+                    $w->whereHas('roles', fn ($r) => $r->whereIn('name', ['admin']))
                         ->orWhereNull('users.campus_id')
                         ->orWhere('users.campus_id', $campusId);
                 });
