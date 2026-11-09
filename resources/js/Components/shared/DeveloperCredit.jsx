@@ -3,6 +3,11 @@ import { createPortal } from "react-dom";
 import { useAppTheme, isDarkTheme } from "../../hooks/useAppTheme";
 import { Download, X, Check } from "../icons";
 import "./DeveloperCredit.css";
+// Imported (not referenced by a /images/... path) so Vite bundles them into
+// /build/assets with a hashed name, exactly like site-logo.png. That way they
+// ship with every `npm run build` and can never 404 on the deployed server.
+import developerPhoto from "../../assets/images/developer.jpg";
+import gcashQr from "../../assets/images/gcash-qr.jpg";
 
 // ---------------------------------------------------------------------------
 // Developer credit
@@ -17,7 +22,7 @@ import "./DeveloperCredit.css";
 //     swipe down, and safe-area padding for the home indicator.
 //
 // Facebook lives inside the card. The GCash QR is a pre-cropped image
-// (public/images/gcash-qr.jpg, User ID removed) with a Download button.
+// (assets/images/gcash-qr.jpg, User ID removed) with a Download button.
 // ---------------------------------------------------------------------------
 
 const DEV = {
@@ -31,8 +36,8 @@ const DEV = {
         "The goal was simple, getting lost belongings back to their owners faster.",
     facebook: "https://www.facebook.com/EphemeralKun",
     facebookHandle: "EphemeralKun",
-    photo: "/images/developer.jpg",
-    qr: "/images/gcash-qr.jpg",
+    photo: developerPhoto,
+    qr: gcashQr,
     qrFile: "SCLF-developer-gcash-qr.jpg",
 };
 
