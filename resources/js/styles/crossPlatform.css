@@ -94,13 +94,24 @@ input[type="search"] {
    animations OFF, every CSS animation and transition finishes instantly.
    Near-zero duration (not "none") so elements that fade/slide in still
    land on their final, visible state. */
-html[data-animations="off"] *,
-html[data-animations="off"] *::before,
-html[data-animations="off"] *::after {
+html[data-animations="off"] *:not(:is(.hw-scene, .xm-scene, .ny-scene, .hw-scene *, .xm-scene *, .ny-scene *)),
+html[data-animations="off"] *:not(:is(.hw-scene, .xm-scene, .ny-scene, .hw-scene *, .xm-scene *, .ny-scene *))::before,
+html[data-animations="off"] *:not(:is(.hw-scene, .xm-scene, .ny-scene, .hw-scene *, .xm-scene *, .ny-scene *))::after {
     animation-duration: 0.001ms !important;
     animation-delay: 0s !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     transition-delay: 0s !important;
     scroll-behavior: auto !important;
+}
+
+/* Seasonal scenes (Halloween / Christmas / New Year) are PAUSED, not reset:
+   the picture freezes exactly where it was, and turning animations back ON
+   continues from that same frame. (Forcing the animations to finish instantly
+   would snap everything back to its starting pose.) */
+html[data-animations="off"] :is(.hw-scene, .xm-scene, .ny-scene),
+html[data-animations="off"] :is(.hw-scene, .xm-scene, .ny-scene) *,
+html[data-animations="off"] :is(.hw-scene, .xm-scene, .ny-scene) *::before,
+html[data-animations="off"] :is(.hw-scene, .xm-scene, .ny-scene) *::after {
+    animation-play-state: paused !important;
 }

@@ -21,10 +21,31 @@ export const animationsOn = () => {
     }
 };
 
+// Seasonal scenes pause (CSS: animation-play-state) instead of resetting. The
+// few that are driven from JS (Web Animations API, e.g. the Halloween skeleton
+// runner) are paused / resumed here so they also stop and continue in place.
+const SCENE = '.hw-scene, .xm-scene, .ny-scene';
+const setSceneMotion = (on) => {
+    if (typeof document === 'undefined' || typeof document.getAnimations !== 'function') return;
+    try {
+        document.getAnimations().forEach((a) => {
+            const css = (typeof CSSAnimation !== 'undefined' && a instanceof CSSAnimation) ||
+                (typeof CSSTransition !== 'undefined' && a instanceof CSSTransition);
+            if (css) return; // handled by CSS
+            const el = a.effect && a.effect.target;
+            if (!el || !el.closest || !el.closest(SCENE)) return;
+            if (on) { if (a.playState === 'paused') a.play(); } else if (a.playState === 'running') a.pause();
+        });
+    } catch {
+        // older browsers — scene simply keeps its CSS pause
+    }
+};
+
 const apply = (on) => {
     if (typeof document === 'undefined') return;
     if (on) document.documentElement.removeAttribute('data-animations');
     else document.documentElement.setAttribute('data-animations', 'off');
+    setSceneMotion(on);
 };
 
 export const setAnimationsOn = (on) => {
