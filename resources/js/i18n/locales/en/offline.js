@@ -24,4 +24,12 @@ export default {
     staleTitle: 'The system was just updated',
     staleText: "A new version of SCLF was released and your device still has the old one. Reload to get the latest version — your reports and saved work are safe.",
     staleRetry: 'Reload now',
+    // Whole-site screens (SCLF_SYSTEM_MODE)
+    maintTitle: "We'll be right back",
+    maintText: "SCLF is down for scheduled maintenance while we make improvements. Please check back in a little while. Your reports and saved work are safe.",
+    maintNote: 'Thank you for your patience.',
+    maintRetry: 'Check again',
+    sysErrorText: "SCLF is having a problem on our side right now. This is not your internet. Your reports and saved work are safe.",
+    sysErrorStep1: 'Wait a few minutes, then tap Try again.',
+    sysErrorStep2: 'Still not working? Contact the system administrator.',
 };

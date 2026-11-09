@@ -2,6 +2,24 @@
 
 return [
 
+    /*
+    |--------------------------------------------------------------------------
+    | Whole-site screen switch  (SCLF_SYSTEM_MODE)
+    |--------------------------------------------------------------------------
+    |
+    | false       -> OFF. The app works normally (normal error handling stays).
+    | true        -> ON.  Every page shows ONLY the default "No connection" screen.
+    | maintenance -> Every page shows ONLY the Maintenance screen.
+    | error       -> Every page shows ONLY the "Oops! Something went wrong" screen.
+    |
+    | Runtime setting: after changing .env run `php artisan config:clear`
+    | (no rebuild). Anything unrecognised is treated as false, so a typo can
+    | never lock everyone out. See resources/views/app.blade.php and
+    | resources/js/utils/systemMode.js.
+    |
+    */
+    'system_mode' => env('SCLF_SYSTEM_MODE', 'false'),
+
     // Refresh token in an HttpOnly cookie (see App\Support\RefreshCookie and
     // SECURITY_PHASES/PHASE_6.md). Turn off with SCLF_REFRESH_COOKIE=false to
     // return to the old mode without rebuilding the frontend.

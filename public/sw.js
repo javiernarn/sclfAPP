@@ -48,6 +48,8 @@ async function saveShell(cache, key, res) {
         if (!res || !res.ok || res.redirected || res.type !== 'basic') return;
         const text = await res.clone().text();
         if (text.includes('@vite/client') || text.includes('/@react-refresh')) return;
+        // SCLF_SYSTEM_MODE screen (maintenance / error / on): never keep it as the offline page.
+        if (text.includes('data-system-mode=')) return;
         await cache.put(key, res.clone());
     } catch (e) { /* best effort */ }
 }

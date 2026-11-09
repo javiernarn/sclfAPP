@@ -26,9 +26,17 @@
         $sclfBarColor = $sclfTheme === 'black' ? '#0b0f2e' : '#b45309';
     }
     $sclfStatusBarStyle = $sclfTheme === 'black' ? 'black' : 'default';
+    // Whole-site screen switch: SCLF_SYSTEM_MODE = false | true | maintenance | error.
+    // Laravel turns a bare true/false into a boolean, hence '1' and '' below.
+    $sclfSystemMode = match (strtolower(trim((string) config('sclf.system_mode', 'false')))) {
+        'true', '1', 'on', 'yes', 'default' => 'default',
+        'maintenance', 'maint' => 'maintenance',
+        'error' => 'error',
+        default => 'off',
+    };
 @endphp
 <!DOCTYPE html>
-<html lang="en" data-season="{{ $sclfSeason === 'default' ? '' : $sclfSeason }}" data-theme="{{ $sclfTheme === 'black' ? 'black' : '' }}" style="background:{{ $sclfThemeColor }}; overscroll-behavior-y: none; touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adjust: 100%;">
+<html lang="en"@if ($sclfSystemMode !== 'off') data-system-mode="{{ $sclfSystemMode }}"@endif data-season="{{ $sclfSeason === 'default' ? '' : $sclfSeason }}" data-theme="{{ $sclfTheme === 'black' ? 'black' : '' }}" style="background:{{ $sclfThemeColor }}; overscroll-behavior-y: none; touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adjust: 100%;">
 
 <head>
     <meta charset="UTF-8">

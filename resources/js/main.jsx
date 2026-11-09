@@ -19,6 +19,8 @@ import './utils/pwaInstall'; // start listening for the browser's install event 
 import InstallPrompt from './Components/shared/InstallPrompt';
 import OfflineNotice from './Components/shared/OfflineNotice';
 import UpdateNotice from './Components/shared/UpdateNotice';
+import SystemScreen from './Components/shared/SystemScreen';
+import { getSystemMode } from './utils/systemMode';
 import { applySeason } from './seasons/season';
 import './seasons/seasonSurfaces.css'; // season colours for pop-ups, buttons, charts, tooltips, help panel (loads on every screen)
 applySeason(); // FIRST/SECOND theme (see .env APP_SEASON) before first paint
@@ -30,14 +32,21 @@ import siteLogo from './assets/images/site-logo.png';
 // before React mounts so it is never seen popping in.
 preloadImage(siteLogo);
 
-// Registering here (rather than only when the user flips the settings
-// toggle on) means the worker is already installed and ready by the time
-// they do turn notifications on, so enablePush() in usePushNotifications
-// doesn't have to wait on a fresh registration mid-click. Registering
-// never itself prompts for permission — that only happens in enablePush().
-registerServiceWorker();
+// SCLF_SYSTEM_MODE (.env): false = normal app; true / maintenance / error = ONLY
+// that one screen, nothing else (no router, login check, API call or page).
+const systemMode = getSystemMode();
+const root = ReactDOM.createRoot(document.getElementById('app'));
 
-ReactDOM.createRoot(document.getElementById('app')).render(
+if (systemMode !== 'off') {
+    root.render(<SystemScreen mode={systemMode} />);
+} else {
+    // Registering here (rather than only when the user flips the settings
+    // toggle on) means the worker is already installed and ready by the time
+    // they do turn notifications on, so enablePush() in usePushNotifications
+    // doesn't have to wait on a fresh registration mid-click. Registering
+    // never itself prompts for permission — that only happens in enablePush().
+    registerServiceWorker();
+    root.render(
     <React.StrictMode>
         <BrowserRouter>
             {/* ToastProvider/ConfirmProvider sit above everything else so
@@ -63,4 +72,5 @@ ReactDOM.createRoot(document.getElementById('app')).render(
             </ToastProvider>
         </BrowserRouter>
     </React.StrictMode>
-);
+    );
+}
