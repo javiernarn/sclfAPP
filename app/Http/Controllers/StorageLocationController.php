@@ -67,11 +67,28 @@ class StorageLocationController extends Controller
         return response()->json($locations);
     }
 
+    /**
+     * Inventory text fields are always stored in ALL CAPS, so the same
+     * shelf can't exist twice as "Box 5" and "BOX 5".
+     */
+    protected function normalizeText(Request $request): void
+    {
+        $clean = [];
+        foreach (['code', 'label', 'room', 'cabinet', 'shelf', 'box'] as $field) {
+            if ($request->has($field) && is_string($request->input($field))) {
+                $clean[$field] = mb_strtoupper(trim($request->input($field)));
+            }
+        }
+        $request->merge($clean);
+    }
+
     public function store(Request $request)
     {
         if (!$request->user()->hasAnyRole(['security_officer', 'admin', 'staff'])) {
             abort(403);
         }
+
+        $this->normalizeText($request);
 
         $validated = $request->validate([
             'campus_id' => 'required|exists:campuses,id',
@@ -149,6 +166,8 @@ class StorageLocationController extends Controller
         if (!$request->user()->canOperateInCampus($storageLocation->campus_id)) {
             abort(403, 'That storage location belongs to a different campus than your account.');
         }
+
+        $this->normalizeText($request);
 
         $validated = $request->validate([
             'label' => 'nullable|string|max:100|required_if:type,' . StorageLocation::TYPE_COUNTER,

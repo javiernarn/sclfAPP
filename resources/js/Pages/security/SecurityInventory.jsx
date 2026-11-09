@@ -14,6 +14,19 @@ import { UserCircle, PackageCheck, PackageOpen, QrCode, CheckCircle2, Archive, A
 // gone. `found_items_count` alone can't answer that: storage_location_id is
 // kept on a found item's record even after it's released, so a location
 // that looks "full" from the raw count may really be empty on the shelf.
+// Inventory typing rules: every text field is ALL CAPS, every number gets one
+// leading zero (1 -> 01, 10 -> 010, 123 -> 0123) so it reads digit by digit. Same rules are enforced again on the server.
+const UPPER_PROPS = { autoCapitalize: 'characters', autoCorrect: 'off', spellCheck: false, style: { textTransform: 'uppercase' } };
+const upper = (v) => String(v ?? '').toUpperCase();
+const digitsOnly = (v) => String(v ?? '').replace(/\D/g, '').slice(0, 5);
+const pad2 = (v) => {
+    // Always ONE leading zero so it reads digit by digit: 1 -> 01, 10 -> 010, 123 -> 0123.
+    // Existing leading zeros are dropped first, so re-padding never stacks them (010 stays 010).
+    const d = digitsOnly(v).replace(/^0+/, '');
+    return d === '' ? '' : '0' + d;
+};
+const NUM_PROPS = { type: 'text', inputMode: 'numeric', pattern: '[0-9]*', autoComplete: 'off' };
+
 function LocationStatusChips({ location }) {
     const onShelf = location.on_shelf_count || 0;
     const claimed = location.claimed_count || 0;
@@ -73,7 +86,7 @@ function CapacityBadge({ location }) {
 
     return (
         <span className={`ds-badge ${location.is_at_capacity ? 'ds-badge-rejected' : 'ds-badge-default'} ds-badge-icon`}>
-            <Archive size={12} /> {occupied}/{location.capacity} slots {location.is_at_capacity ? '— full' : 'used'}
+            <Archive size={12} /> {pad2(occupied) || '00'}/{pad2(location.capacity)} slots {location.is_at_capacity ? '— full' : 'used'}
         </span>
     );
 }
@@ -83,7 +96,7 @@ function CapacityBadge({ location }) {
 // not required at creation, since an officer measuring actual shelf slots
 // usually happens later than initial setup.
 function CapacityEditor({ location, onSaved, compact = false }) {
-    const [value, setValue] = useState(location.capacity ?? '');
+    const [value, setValue] = useState(pad2(location.capacity));
     const [saving, setSaving] = useState(false);
     const toast = useToast();
 
@@ -91,7 +104,7 @@ function CapacityEditor({ location, onSaved, compact = false }) {
         setSaving(true);
         try {
             await axios.patch(`/storage-locations/${location.id}/capacity`, {
-                capacity: value === '' ? null : Number(value),
+                capacity: pad2(value) === '' ? null : Number(value),
             });
             toast.success('Capacity updated.', { title: 'Saved' });
             onSaved();
@@ -108,11 +121,11 @@ function CapacityEditor({ location, onSaved, compact = false }) {
             <div className="ds-loc-capacity-row">
                 <input
                     id={`cap-${location.id}`}
-                    type="number"
-                    min="1"
+                    {...NUM_PROPS}
                     placeholder="No limit"
                     value={value}
-                    onChange={(e) => setValue(e.target.value)}
+                    onChange={(e) => setValue(digitsOnly(e.target.value))}
+                    onBlur={() => setValue(pad2(value))}
                 />
                 <button type="button" className="ds-btn ds-btn-secondary ds-btn-sm" disabled={saving} onClick={save}>
                     {saving ? 'Saving…' : 'Set capacity'}
@@ -196,17 +209,17 @@ function LocationEditForm({ type, ed, className = 'ds-loc-edit' }) {
             <div className="ds-form-row ds-form-row-2">
                 <div className="ds-field">
                     <label>Code</label>
-                    <input name="code" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+                    <input name="code" {...UPPER_PROPS} value={form.code} onChange={(e) => setForm({ ...form, code: upper(e.target.value) })} />
                 </div>
                 {type === 'counter' ? (
                     <div className="ds-field">
                         <label>Label</label>
-                        <input name="label" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+                        <input name="label" {...UPPER_PROPS} value={form.label} onChange={(e) => setForm({ ...form, label: upper(e.target.value) })} />
                     </div>
                 ) : (
                     <div className="ds-field">
                         <label>Room</label>
-                        <input name="room" value={form.room} onChange={(e) => setForm({ ...form, room: e.target.value })} />
+                        <input name="room" {...UPPER_PROPS} value={form.room} onChange={(e) => setForm({ ...form, room: upper(e.target.value) })} />
                     </div>
                 )}
             </div>
@@ -214,11 +227,11 @@ function LocationEditForm({ type, ed, className = 'ds-loc-edit' }) {
                 <div className="ds-form-row ds-form-row-2">
                     <div className="ds-field">
                         <label>Cabinet</label>
-                        <input name="cabinet" value={form.cabinet} onChange={(e) => setForm({ ...form, cabinet: e.target.value })} />
+                        <input name="cabinet" {...UPPER_PROPS} value={form.cabinet} onChange={(e) => setForm({ ...form, cabinet: upper(e.target.value) })} />
                     </div>
                     <div className="ds-field">
                         <label>Shelf</label>
-                        <input name="shelf" value={form.shelf} onChange={(e) => setForm({ ...form, shelf: e.target.value })} />
+                        <input name="shelf" {...UPPER_PROPS} value={form.shelf} onChange={(e) => setForm({ ...form, shelf: upper(e.target.value) })} />
                     </div>
                 </div>
             )}
@@ -226,7 +239,7 @@ function LocationEditForm({ type, ed, className = 'ds-loc-edit' }) {
                 {type !== 'counter' && (
                     <div className="ds-field">
                         <label>Box</label>
-                        <input name="box" value={form.box} onChange={(e) => setForm({ ...form, box: e.target.value })} />
+                        <input name="box" {...UPPER_PROPS} value={form.box} onChange={(e) => setForm({ ...form, box: upper(e.target.value) })} />
                     </div>
                 )}
                 <div className="ds-field">
@@ -469,7 +482,7 @@ export default function SecurityInventory() {
         setError('');
         setFieldErrors({});
         try {
-            await axios.post('/storage-locations', { ...newLoc, capacity: newLoc.capacity === '' ? null : Number(newLoc.capacity) });
+            await axios.post('/storage-locations', { ...newLoc, capacity: pad2(newLoc.capacity) === '' ? null : Number(newLoc.capacity) });
             setNewLoc({ ...newLoc, label: '', room: '', cabinet: '', shelf: '', box: '', code: '', capacity: '' });
             toast.success('Storage location added.', { title: 'Location created' });
             load();
@@ -673,7 +686,7 @@ export default function SecurityInventory() {
                     <div className="ds-form-row ds-form-row-2">
                         <div className="ds-field">
                             <label>Code (unique) <span className="ds-required">*</span></label>
-                            <input name="code" value={newLoc.code} onChange={(e) => setNewLoc({ ...newLoc, code: e.target.value })}
+                            <input name="code" {...UPPER_PROPS} value={newLoc.code} onChange={(e) => setNewLoc({ ...newLoc, code: upper(e.target.value) })}
                                 placeholder={newLoc.type === 'counter' ? 'e.g. CTR-MAIN-02' : 'e.g. STORE-A-3-5'} aria-invalid={!!fieldErrors.code} required />
                             <p className="ds-field-hint">A short internal ID — nothing else on this campus can use the same code.</p>
                             {fieldErrors.code && <div className="ds-field-error">{fieldErrors.code}</div>}
@@ -681,7 +694,7 @@ export default function SecurityInventory() {
                         {newLoc.type === 'counter' && (
                             <div className="ds-field">
                                 <label>Label <span className="ds-required">*</span></label>
-                                <input name="label" value={newLoc.label} onChange={(e) => setNewLoc({ ...newLoc, label: e.target.value })}
+                                <input name="label" {...UPPER_PROPS} value={newLoc.label} onChange={(e) => setNewLoc({ ...newLoc, label: upper(e.target.value) })}
                                     placeholder="e.g. Counter 2 / Guard House Front Desk" aria-invalid={!!fieldErrors.label} required />
                                 <p className="ds-field-hint">A friendly name shown to students on their release notice.</p>
                                 {fieldErrors.label && <div className="ds-field-error">{fieldErrors.label}</div>}
@@ -693,32 +706,33 @@ export default function SecurityInventory() {
                             <div className="ds-form-row ds-form-row-2">
                                 <div className="ds-field">
                                     <label>Room</label>
-                                    <input name="room" value={newLoc.room} onChange={(e) => setNewLoc({ ...newLoc, room: e.target.value })} placeholder="e.g. Security Office" />
+                                    <input name="room" {...UPPER_PROPS} value={newLoc.room} onChange={(e) => setNewLoc({ ...newLoc, room: upper(e.target.value) })} placeholder="e.g. Security Office" />
                                     <p className="ds-field-hint">Optional — the room this location is inside.</p>
                                 </div>
                                 <div className="ds-field">
                                     <label>Cabinet</label>
-                                    <input name="cabinet" value={newLoc.cabinet} onChange={(e) => setNewLoc({ ...newLoc, cabinet: e.target.value })} placeholder="e.g. Cabinet 2" />
+                                    <input name="cabinet" {...UPPER_PROPS} value={newLoc.cabinet} onChange={(e) => setNewLoc({ ...newLoc, cabinet: upper(e.target.value) })} placeholder="e.g. Cabinet 2" />
                                     <p className="ds-field-hint">Optional — narrows it down further within the room.</p>
                                 </div>
                             </div>
                             <div className="ds-form-row ds-form-row-2">
                                 <div className="ds-field">
                                     <label>Shelf</label>
-                                    <input name="shelf" value={newLoc.shelf} onChange={(e) => setNewLoc({ ...newLoc, shelf: e.target.value })} placeholder="e.g. Shelf B" />
+                                    <input name="shelf" {...UPPER_PROPS} value={newLoc.shelf} onChange={(e) => setNewLoc({ ...newLoc, shelf: upper(e.target.value) })} placeholder="e.g. Shelf B" />
                                     <p className="ds-field-hint">Optional — leave blank if the cabinet has no shelves.</p>
                                 </div>
                                 <div className="ds-field">
                                     <label>Box</label>
-                                    <input name="box" value={newLoc.box} onChange={(e) => setNewLoc({ ...newLoc, box: e.target.value })} placeholder="e.g. Box 5" />
+                                    <input name="box" {...UPPER_PROPS} value={newLoc.box} onChange={(e) => setNewLoc({ ...newLoc, box: upper(e.target.value) })} placeholder="e.g. Box 5" />
                                     <p className="ds-field-hint">Optional — the most specific level, e.g. a labeled bin.</p>
                                 </div>
                             </div>
                             <div className="ds-form-row ds-form-row-2">
                                 <div className="ds-field">
                                     <label>Capacity</label>
-                                    <input name="capacity" type="number" min="1" value={newLoc.capacity}
-                                        onChange={(e) => setNewLoc({ ...newLoc, capacity: e.target.value })} placeholder="No limit" />
+                                    <input name="capacity" {...NUM_PROPS} value={newLoc.capacity}
+                                        onChange={(e) => setNewLoc({ ...newLoc, capacity: digitsOnly(e.target.value) })}
+                                        onBlur={() => setNewLoc((n) => ({ ...n, capacity: pad2(n.capacity) }))} placeholder="No limit" />
                                     <p className="ds-field-hint">Optional — max items this spot can hold. Leave blank for no limit; can be set later too.</p>
                                 </div>
                             </div>
