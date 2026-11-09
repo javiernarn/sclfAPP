@@ -21,50 +21,53 @@
  *
  * Theme class names (from DashboardShell.jsx):
  *   white  black  maroon  blue  yellow  dk-white  dk-blue  dk-yellow  dk-maroon
+ *
+ * The developer-credit card (DeveloperCredit.jsx, portaled to <body>) reads the
+ * same tokens through the .dc-layer.<theme> selectors above.
  */
 
 /* ============ 1. tokens ============ */
-.ds-shell.light, .ds-menu.light, .sclf-help-panel.light {
+.ds-shell.light, .ds-menu.light, .sclf-help-panel.light, .dc-layer.light {
     --tk-edge: #c3ccdb; --tk-surface: #ffffff; --tk-field: #f4f7fb; --tk-hover: #f4f7fb;
     --tk-accent: linear-gradient(135deg, #4338ca, #4f46e5 50%, #6366f1); --tk-accent-on: #fff;
     --tk-accent-text: #4f46e5; --tk-accent-rgb: 79, 70, 229; --tk-shadow: rgba(2, 6, 23, 0.16);
 }
-.ds-shell.dark, .ds-menu.dark, .sclf-help-panel.dark {
+.ds-shell.dark, .ds-menu.dark, .sclf-help-panel.dark, .dc-layer.dark {
     --tk-edge: #323b4a; --tk-surface: #12161f; --tk-field: #1a2029; --tk-hover: #1a2029;
     --tk-accent: linear-gradient(135deg, #4338ca, #4f46e5 50%, #6366f1); --tk-accent-on: #fff;
     --tk-accent-text: #a5b4fc; --tk-accent-rgb: 129, 140, 248; --tk-shadow: rgba(0, 0, 0, 0.5);
 }
-.ds-shell.maroon, .ds-menu.maroon, .sclf-help-panel.maroon {
+.ds-shell.maroon, .ds-menu.maroon, .sclf-help-panel.maroon, .dc-layer.maroon {
     --tk-edge: #e8b3bc; --tk-surface: #fffafb; --tk-field: #fdeef0; --tk-hover: #fbe4e8;
     --tk-accent: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); --tk-accent-on: #fff;
     --tk-accent-text: #9f1239; --tk-accent-rgb: 159, 18, 57; --tk-shadow: rgba(127, 29, 46, 0.20);
 }
-.ds-shell.blue, .ds-menu.blue, .sclf-help-panel.blue {
+.ds-shell.blue, .ds-menu.blue, .sclf-help-panel.blue, .dc-layer.blue {
     --tk-edge: #a9cdf5; --tk-surface: #f9fbff; --tk-field: #eaf2fd; --tk-hover: #dfeafb;
     --tk-accent: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); --tk-accent-on: #fff;
     --tk-accent-text: #1d4ed8; --tk-accent-rgb: 37, 99, 235; --tk-shadow: rgba(30, 64, 175, 0.18);
 }
-.ds-shell.yellow, .ds-menu.yellow, .sclf-help-panel.yellow {
+.ds-shell.yellow, .ds-menu.yellow, .sclf-help-panel.yellow, .dc-layer.yellow {
     --tk-edge: #e6c477; --tk-surface: #fffcf4; --tk-field: #fbf3dc; --tk-hover: #f7ebc8;
     --tk-accent: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); --tk-accent-on: #1c1408;
     --tk-accent-text: #b45309; --tk-accent-rgb: 217, 119, 6; --tk-shadow: rgba(180, 83, 9, 0.18);
 }
-.ds-shell.dk-white, .ds-menu.dk-white, .sclf-help-panel.dk-white {
+.ds-shell.dk-white, .ds-menu.dk-white, .sclf-help-panel.dk-white, .dc-layer.dk-white {
     --tk-edge: #2a2a2a; --tk-surface: #0a0a0a; --tk-field: #141414; --tk-hover: #1a1a1a;
     --tk-accent: linear-gradient(135deg, #ffffff, #e6e6e6 50%, #bdbdbd); --tk-accent-on: #000;
     --tk-accent-text: #f2f2f2; --tk-accent-rgb: 255, 255, 255; --tk-shadow: rgba(0, 0, 0, 0.7);
 }
-.ds-shell.dk-blue, .ds-menu.dk-blue, .sclf-help-panel.dk-blue {
+.ds-shell.dk-blue, .ds-menu.dk-blue, .sclf-help-panel.dk-blue, .dc-layer.dk-blue {
     --tk-edge: #2f5fae; --tk-surface: #060d1f; --tk-field: #0b1a3a; --tk-hover: rgba(56, 189, 248, 0.13);
     --tk-accent: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); --tk-accent-on: #fff;
     --tk-accent-text: #7dd3fc; --tk-accent-rgb: 56, 189, 248; --tk-shadow: rgba(0, 0, 0, 0.7);
 }
-.ds-shell.dk-yellow, .ds-menu.dk-yellow, .sclf-help-panel.dk-yellow {
+.ds-shell.dk-yellow, .ds-menu.dk-yellow, .sclf-help-panel.dk-yellow, .dc-layer.dk-yellow {
     --tk-edge: #a8761c; --tk-surface: #120b02; --tk-field: #24170a; --tk-hover: rgba(245, 158, 11, 0.15);
     --tk-accent: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); --tk-accent-on: #1c1408;
     --tk-accent-text: #fbbf24; --tk-accent-rgb: 245, 158, 11; --tk-shadow: rgba(0, 0, 0, 0.7);
 }
-.ds-shell.dk-maroon, .ds-menu.dk-maroon, .sclf-help-panel.dk-maroon {
+.ds-shell.dk-maroon, .ds-menu.dk-maroon, .sclf-help-panel.dk-maroon, .dc-layer.dk-maroon {
     --tk-edge: #b5485c; --tk-surface: #14060a; --tk-field: #2a0f17; --tk-hover: rgba(248, 113, 113, 0.14);
     --tk-accent: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); --tk-accent-on: #fff;
     --tk-accent-text: #fca5a5; --tk-accent-rgb: 248, 113, 113; --tk-shadow: rgba(0, 0, 0, 0.7);

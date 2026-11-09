@@ -67,13 +67,6 @@ function useCanHover() {
     return canHover;
 }
 
-const accentFor = (theme = "") => {
-    if (theme.includes("maroon")) return "maroon";
-    if (theme.includes("blue")) return "blue";
-    if (theme.includes("yellow")) return "yellow";
-    return "indigo";
-};
-
 const FacebookMark = () => (
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
         <path
@@ -176,7 +169,7 @@ function CardBody({ titleId }) {
                     src={DEV.qr}
                     alt="GCash InstaPay QR code"
                     width="124"
-                    height="153"
+                    height="144"
                     loading="lazy"
                     decoding="async"
                 />
@@ -209,9 +202,13 @@ function CardBody({ titleId }) {
 // Trigger + popover / sheet
 // ---------------------------------------------------------------------------
 export default function DeveloperCredit({ className = "" }) {
+    // Same class recipe as <DashboardShell> and its portaled menus, so the card
+    // follows the picked theme exactly (white, black, maroon, blue, yellow and
+    // the dark-* "Black / accent" themes). useAppTheme already collapses accent
+    // themes to plain light/dark while a seasonal theme is on, like the shell.
     const { theme } = useAppTheme();
     const dark = isDarkTheme(theme);
-    const accent = accentFor(theme);
+    const themeClass = `${theme} ${dark ? "dark" : "light"} ${theme.startsWith("dark-") ? `dk-${theme.slice(5)}` : ""}`.trim();
     const canHover = useCanHover();
 
     const [open, setOpen] = useState(false);
@@ -338,8 +335,6 @@ export default function DeveloperCredit({ className = "" }) {
         else sheetRef.current.style.transform = "";
     };
 
-    const layerProps = { "data-dark": dark ? "true" : "false", "data-accent": accent };
-
     return (
         <>
             <button
@@ -358,10 +353,9 @@ export default function DeveloperCredit({ className = "" }) {
 
             {open && canHover && createPortal(
                 <div
-                    {...layerProps}
                     id={panelId}
                     ref={popRef}
-                    className={`dc-layer dc-pop ${pos ? `is-placed is-${pos.placement}` : ""}`}
+                    className={`dc-layer dc-pop ${themeClass} ${pos ? `is-placed is-${pos.placement}` : ""}`}
                     role="dialog"
                     aria-labelledby={titleId}
                     style={pos ? { left: pos.left, top: pos.top } : undefined}
@@ -375,7 +369,7 @@ export default function DeveloperCredit({ className = "" }) {
             )}
 
             {open && !canHover && createPortal(
-                <div {...layerProps} className="dc-layer dc-sheet-root">
+                <div className={`dc-layer dc-sheet-root ${themeClass}`}>
                     <div className="dc-backdrop" onClick={() => close(true)} />
                     <div
                         id={panelId}
