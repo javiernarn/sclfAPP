@@ -1,0 +1,319 @@
+/* Developer credit: trigger, desktop popover, phone bottom sheet.
+   The card is portaled to <body>, so it carries its own tokens (set from the
+   active app theme through data-dark / data-accent) instead of inheriting
+   .ds-shell. */
+
+/* ---------- Trigger (lives in the footer and the phone sidebar) ---------- */
+
+.dc-trigger {
+    appearance: none;
+    background: none;
+    border: 0;
+    margin: 0;
+    padding: 2px 1px;
+    font: inherit;
+    font-weight: 600;
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    text-decoration-color: color-mix(in srgb, currentColor 55%, transparent);
+    border-radius: 4px;
+    transition: text-decoration-color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.dc-trigger:hover,
+.dc-trigger.is-open {
+    text-decoration-style: solid;
+    text-decoration-color: currentColor;
+}
+.dc-trigger:focus-visible {
+    outline: 2px solid var(--ds-focus, #6366f1);
+    outline-offset: 2px;
+}
+.ds-sidebar-credit .dc-trigger { padding: 6px 4px; }
+
+/* ---------- Tokens ---------- */
+
+.dc-layer {
+    --dc-bg: #ffffff;
+    --dc-fg: #0b1220;
+    --dc-muted: #566176;
+    --dc-line: #d9e0ea;
+    --dc-soft: #f3f6fa;
+    --dc-accent: #4f46e5;
+    --dc-accent-fg: #ffffff;
+    --dc-fb: #1877f2;
+    --dc-shadow: 0 22px 50px -14px rgba(8, 12, 24, 0.38), 0 2px 8px rgba(8, 12, 24, 0.10);
+    color: var(--dc-fg);
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+.dc-layer, .dc-layer * { box-sizing: border-box; }
+.dc-layer[data-accent="maroon"] { --dc-accent: #9b1c31; }
+.dc-layer[data-accent="blue"]   { --dc-accent: #1d6fd6; }
+.dc-layer[data-accent="yellow"] { --dc-accent: #a86a00; }
+
+.dc-layer[data-dark="true"] {
+    --dc-bg: #121620;
+    --dc-fg: #e7ecf3;
+    --dc-muted: #9aa6b8;
+    --dc-line: #2b3444;
+    --dc-soft: #1a2030;
+    --dc-accent: #7c83ff;
+    --dc-accent-fg: #0b0e18;
+    --dc-fb: #4c9bff;
+    --dc-shadow: 0 22px 50px -14px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+.dc-layer[data-dark="true"][data-accent="maroon"] { --dc-accent: #ef7d8d; }
+.dc-layer[data-dark="true"][data-accent="blue"]   { --dc-accent: #6aa8f0; }
+.dc-layer[data-dark="true"][data-accent="yellow"] { --dc-accent: #e8b64a; }
+
+/* ---------- Card content (shared) ---------- */
+
+.dc-head { display: flex; gap: 14px; align-items: center; }
+.dc-photo {
+    flex: none;
+    width: 84px;
+    height: 84px;
+    border-radius: 14px;
+    object-fit: cover;
+    object-position: 50% 20%;
+    background: var(--dc-soft);
+    box-shadow: 0 0 0 1px var(--dc-line);
+}
+.dc-id { min-width: 0; }
+.dc-name {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+    color: var(--dc-fg);
+}
+.dc-role { margin: 3px 0 0; font-size: 13px; font-weight: 600; color: var(--dc-accent); }
+.dc-school { margin: 1px 0 0; font-size: 12px; color: var(--dc-muted); }
+
+.dc-bio { margin: 14px 0 0; color: var(--dc-fg); opacity: 0.86; max-width: 62ch; }
+
+.dc-fb {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 8px 12px 8px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--dc-line);
+    color: var(--dc-fg);
+    text-decoration: none;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.dc-fb:hover { border-color: var(--dc-fb); background: var(--dc-soft); }
+.dc-fb:focus-visible, .dc-download:focus-visible, .dc-close:focus-visible {
+    outline: 2px solid var(--dc-accent);
+    outline-offset: 2px;
+}
+.dc-fb-mark {
+    flex: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    background: var(--dc-fb);
+    color: #fff;
+}
+.dc-fb-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.dc-fb-title { font-weight: 600; font-size: 13px; }
+.dc-fb-handle { font-size: 12px; color: var(--dc-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.dc-coffee {
+    display: grid;
+    grid-template-columns: 124px minmax(0, 1fr);
+    gap: 14px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--dc-line);
+    align-items: start;
+}
+.dc-qr {
+    display: block;
+    width: 124px;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 0 0 1px var(--dc-line);
+    background: #0a5af0;
+    -webkit-touch-callout: default; /* keep press-and-hold "Save image" on iOS */
+    user-select: none;
+}
+.dc-coffee-title {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 650;
+    letter-spacing: -0.005em;
+}
+.dc-coffee-title svg { color: var(--dc-accent); }
+.dc-coffee-copy { margin: 4px 0 0; color: var(--dc-muted); font-size: 12.5px; }
+
+.dc-download {
+    appearance: none;
+    margin-top: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 0 14px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--dc-accent);
+    color: var(--dc-accent-fg);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.08s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+.dc-download:hover { filter: brightness(1.08); }
+.dc-download:active { transform: translateY(1px); }
+.dc-download:disabled { opacity: 0.7; cursor: progress; }
+.dc-hint { margin: 8px 0 0; font-size: 11.5px; line-height: 1.4; color: var(--dc-muted); }
+
+/* ---------- Desktop / laptop popover ---------- */
+
+.dc-pop {
+    position: fixed;
+    z-index: 10100;
+    width: 392px;
+    max-width: calc(100vw - 24px);
+    padding: 18px;
+    border-radius: 16px;
+    background: var(--dc-bg);
+    border: 1px solid var(--dc-line);
+    box-shadow: var(--dc-shadow);
+    visibility: hidden; /* until measured, so it never flashes in the wrong spot */
+}
+.dc-pop.is-placed { visibility: visible; animation: dc-pop-in 0.16s ease-out both; }
+.dc-pop.is-above { transform-origin: 50% 100%; }
+.dc-pop.is-below { transform-origin: 50% 0; }
+
+/* Invisible bridge so moving the pointer from the name to the card
+   never crosses a dead gap that would close it. */
+.dc-pop::before { content: ""; position: absolute; left: 0; right: 0; height: 16px; }
+.dc-pop.is-above::before { bottom: -16px; }
+.dc-pop.is-below::before { top: -16px; }
+
+.dc-arrow {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    margin-left: -6px;
+    background: var(--dc-bg);
+    transform: rotate(45deg);
+}
+.dc-pop.is-above .dc-arrow { bottom: -7px; border-right: 1px solid var(--dc-line); border-bottom: 1px solid var(--dc-line); }
+.dc-pop.is-below .dc-arrow { top: -7px; border-left: 1px solid var(--dc-line); border-top: 1px solid var(--dc-line); }
+
+@keyframes dc-pop-in {
+    from { opacity: 0; transform: translateY(4px) scale(0.985); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ---------- Phone / tablet / installed-PWA bottom sheet ---------- */
+
+.dc-sheet-root { position: fixed; inset: 0; z-index: 10100; }
+.dc-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(6, 9, 18, 0.55);
+    animation: dc-fade 0.2s ease both;
+}
+.dc-sheet {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0 auto;
+    width: 100%;
+    max-width: 520px;
+    max-height: min(92vh, 92dvh);
+    display: flex;
+    flex-direction: column;
+    background: var(--dc-bg);
+    border: 1px solid var(--dc-line);
+    border-bottom: 0;
+    border-radius: 20px 20px 0 0;
+    box-shadow: var(--dc-shadow);
+    animation: dc-sheet-in 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
+    transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.dc-grab {
+    flex: none;
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 6px;
+    touch-action: none;
+    cursor: grab;
+}
+.dc-grab-bar { width: 38px; height: 4px; border-radius: 4px; background: var(--dc-line); }
+.dc-close {
+    appearance: none;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: var(--dc-soft);
+    color: var(--dc-muted);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+.dc-sheet-scroll {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px max(18px, env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+}
+.dc-sheet .dc-head { padding-right: 38px; }
+.dc-sheet .dc-fb { min-height: 48px; }
+.dc-sheet .dc-download { min-height: 44px; width: 100%; }
+.dc-sheet .dc-coffee { grid-template-columns: 132px minmax(0, 1fr); }
+.dc-sheet .dc-qr { width: 132px; }
+
+@keyframes dc-sheet-in { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes dc-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* Narrow phones: stack the QR above the text so nothing gets cramped. */
+@media (max-width: 360px) {
+    .dc-sheet .dc-coffee { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+    .dc-sheet .dc-coffee-title { justify-content: center; }
+    .dc-sheet .dc-qr { width: min(180px, 62vw); }
+    .dc-photo { width: 72px; height: 72px; }
+}
+
+/* Landscape phones: the sheet becomes a two-column panel so it fits the short viewport. */
+@media (max-height: 500px) and (orientation: landscape) {
+    .dc-sheet { max-width: 720px; max-height: 100vh; max-height: 100dvh; border-radius: 16px 16px 0 0; }
+    .dc-sheet-scroll { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 22px; align-items: start; }
+    .dc-sheet-scroll > .dc-head,
+    .dc-sheet-scroll > .dc-bio,
+    .dc-sheet-scroll > .dc-fb { grid-column: 1; }
+    .dc-sheet-scroll > .dc-coffee { grid-column: 2; grid-row: 1 / span 3; margin-top: 0; padding-top: 0; border-top: 0; }
+    .dc-sheet .dc-bio { margin-top: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .dc-pop.is-placed, .dc-sheet, .dc-backdrop { animation: none; }
+    .dc-sheet { transition: none; }
+}

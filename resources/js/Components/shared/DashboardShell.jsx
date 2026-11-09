@@ -34,6 +34,7 @@ import MobileBottomNav from "./MobileBottomNav";
 import MobileQuickActions, { QuickActionsContext, QUICK_ACTIONS_BY_ROLE } from "./MobileQuickActions";
 import { useNotifications } from "../../context/NotificationContext";
 import DotLogo from "./DotLogo";
+import DeveloperCredit from "./DeveloperCredit";
 // One compact, consistent phone layout for every page (no dead space).
 // Last on purpose: its rules are all scoped under `.ds-shell` and sit inside
 // phone media queries, so they only ever refine what came before.
@@ -763,14 +764,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                         <div className="ds-sidebar-credit">
                             <span className="ds-footer-credit">
                                 {"</> "}{t("shell.developedBy")}{" "}
-                                <a
-                                    href="https://antiquina-folio.vercel.app/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="ds-footer-credit-link"
-                                >
-                                    {"</> "}Antiquina, Jonee John R.
-                                </a>
+                                <DeveloperCredit />
                             </span>
                         </div>
                     )}
@@ -1041,14 +1035,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                         <div className="ds-footer-inner">
                             <span className="ds-footer-credit">
                                 {"</> "}{t("shell.developedBy")}{" "}
-                                <a
-                                    href="https://antiquina-folio.vercel.app/"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="ds-footer-credit-link"
-                                >
-                                    {"</> "}Antiquina, Jonee John R.
-                                </a>
+                                <DeveloperCredit />
                             </span>
 
                             <span className="ds-footer-sep ds-footer-extra" aria-hidden="true">|</span>
