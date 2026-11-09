@@ -59,7 +59,7 @@ import {
     ChevronUp,
     UserCircle,
     Palette,
-    Languages,
+    Globe,
     Check,
     ClipboardCheck,
     Bell,
@@ -193,7 +193,7 @@ const LanguagePicker = ({ open, onToggle, onPick, t, side = "right", align = "to
                 aria-haspopup="true"
                 aria-expanded={open}
             >
-                <Languages size={16} />
+                <Globe size={16} />
                 {t("shell.language")}
                 <span className="ds-theme-pill">English</span>
             </button>

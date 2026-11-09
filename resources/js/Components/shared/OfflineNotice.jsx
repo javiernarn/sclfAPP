@@ -136,13 +136,58 @@ export default function OfflineNotice() {
     );
 }
 
+// Wipes the service worker + its saved copies so a reload gets the freshest
+// build (a stale cached build after a deploy is a common cause of a crash).
+async function hardReload() {
+    try {
+        if ("serviceWorker" in navigator) {
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map((r) => r.unregister()));
+        }
+        if (window.caches) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((k) => caches.delete(k)));
+        }
+    } catch (e) { /* best effort */ }
+    window.location.reload();
+}
+
+// What kind of failure was it?
+//   "offline" — the device really has no internet
+//   "stale"   — online, but a page file is missing (new deploy, old cached build)
+//   "error"   — the screen itself crashed (a bug / bad data / server problem)
+function classifyError(error) {
+    const msg = String(error?.message || "");
+    const chunkFailure = /dynamically imported module|Loading chunk|Importing a module script failed|Failed to fetch|error loading dynamically/i.test(msg);
+    const online = typeof navigator === "undefined" ? true : navigator.onLine !== false;
+    if (chunkFailure && !online) return "offline";
+    if (chunkFailure) return "stale";
+    return "error";
+}
+
 /**
  * ConnectionErrorScreen — shown instead of a blank page when a screen crashes
- * or a page chunk fails to download (what a dropped connection looks like to
- * React). Offers a retry.
+ * or a page chunk fails to download. The wording depends on the real cause:
+ * no internet, a just-deployed update, or an actual error in the system.
  */
-export function ConnectionErrorScreen({ onRetry }) {
+export function ConnectionErrorScreen({ onRetry, error }) {
     const { t } = useTranslation();
+    const [busy, setBusy] = useState(false);
+    const kind = error ? classifyError(error) : "offline";
+    const code = error ? `${error.name || "Error"}: ${String(error.message || "").slice(0, 160)}` : "";
+
+    const copy = {
+        offline: { icon: "📡", title: t("offline.screenTitle"), text: t("offline.screenText"), btn: t("offline.retry") },
+        stale: { icon: "🔄", title: t("offline.staleTitle"), text: t("offline.staleText"), btn: t("offline.staleRetry") },
+        error: { icon: "⚠️", title: t("offline.errorTitle"), text: t("offline.errorText"), btn: t("offline.retry") },
+    }[kind];
+
+    const retry = () => {
+        setBusy(true);
+        if (kind === "offline") onRetry?.();
+        else hardReload();
+    };
+
     return (
         <div
             role="alert"
@@ -153,29 +198,59 @@ export function ConnectionErrorScreen({ onRetry }) {
                 background: "var(--ds-bg, #f8fafc)", color: "var(--ds-text, #0b1220)",
             }}
         >
-            <div style={{ fontSize: 44, lineHeight: 1 }} aria-hidden="true">📡</div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>{t("offline.screenTitle")}</h1>
-            <p style={{ margin: 0, maxWidth: 420, fontSize: 14.5, lineHeight: 1.6, opacity: 0.75 }}>
-                {t("offline.screenText")}
+            <div style={{ fontSize: 44, lineHeight: 1 }} aria-hidden="true">{copy.icon}</div>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>{copy.title}</h1>
+            <p style={{ margin: 0, maxWidth: 440, fontSize: 14.5, lineHeight: 1.6, opacity: 0.75 }}>
+                {copy.text}
             </p>
-            <button
-                type="button"
-                onClick={onRetry}
-                style={{
-                    marginTop: 6, padding: "10px 22px", borderRadius: 12, border: "none",
-                    background: "var(--sx-brand-grad, #2563eb)", color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer",
-                }}
-            >
-                {t("offline.retry")}
-            </button>
+            {kind === "error" && (
+                <ol style={{ margin: "4px 0 0", padding: 0, listStylePosition: "inside", maxWidth: 440, fontSize: 13.5, lineHeight: 1.7, opacity: 0.8, textAlign: "left" }}>
+                    <li>{t("offline.errorStep1")}</li>
+                    <li>{t("offline.errorStep2")}</li>
+                    <li>{t("offline.errorStep3")}</li>
+                </ol>
+            )}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center", marginTop: 6 }}>
+                <button
+                    type="button"
+                    onClick={retry}
+                    disabled={busy}
+                    style={{
+                        padding: "10px 22px", borderRadius: 12, border: "none",
+                        background: "var(--sx-brand-grad, #2563eb)", color: "#fff", fontWeight: 700, fontSize: 14,
+                        cursor: busy ? "default" : "pointer", opacity: busy ? 0.7 : 1,
+                    }}
+                >
+                    {busy ? t("offline.errorRetrying") : copy.btn}
+                </button>
+                {kind === "error" && (
+                    <button
+                        type="button"
+                        onClick={() => { window.location.href = "/"; }}
+                        style={{
+                            padding: "10px 22px", borderRadius: 12, fontWeight: 700, fontSize: 14, cursor: "pointer",
+                            background: "transparent", color: "inherit", border: "1.5px solid currentColor", opacity: 0.8,
+                        }}
+                    >
+                        {t("offline.errorHome")}
+                    </button>
+                )}
+            </div>
+            {kind === "error" && code && (
+                <p style={{ margin: "10px 0 0", maxWidth: 520, fontSize: 12, opacity: 0.55, wordBreak: "break-word" }}>
+                    {t("offline.errorCode")}: <code>{code}</code>
+                </p>
+            )}
         </div>
     );
 }
 
 /**
  * ConnectionBoundary — catches render/chunk-load errors around the routes and
- * swaps the empty screen for ConnectionErrorScreen. Retry re-renders the tree;
- * if the failure was a stale/missing chunk it reloads the page instead.
+ * swaps the blank screen for ConnectionErrorScreen, worded for the real cause.
+ * Retry: a plain re-render only when truly offline; otherwise a hard reload
+ * (clears the service worker + saved copies) because re-rendering a crashed
+ * screen would just crash again — which is why "Try again" used to do nothing.
  */
 export class ConnectionBoundary extends React.Component {
     constructor(props) {
@@ -194,17 +269,11 @@ export class ConnectionBoundary extends React.Component {
     }
 
     retry() {
-        const msg = String(this.state.error?.message || "");
-        const chunkFailure = /dynamically imported module|Loading chunk|Importing a module script failed|Failed to fetch/i.test(msg);
-        if (chunkFailure) {
-            window.location.reload();
-            return;
-        }
         this.setState({ error: null });
     }
 
     render() {
-        if (this.state.error) return <ConnectionErrorScreen onRetry={this.retry} />;
+        if (this.state.error) return <ConnectionErrorScreen error={this.state.error} onRetry={this.retry} />;
         return this.props.children;
     }
 }
