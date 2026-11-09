@@ -31,6 +31,13 @@ return [
     'season' => env('APP_SEASON', 'default'),
 
     /*
+    | Search-engine ownership tags. Paste the "content" value Google Search Console
+    | (HTML tag method) / Bing Webmaster Tools gives you into .env.
+    */
+    'google_site_verification' => env('GOOGLE_SITE_VERIFICATION'),
+    'bing_site_verification' => env('BING_SITE_VERIFICATION'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------

@@ -26,6 +26,13 @@ class Seo
         '/register' => 'Register | SCLF - Opol Community College',
     ];
 
+    /** Per-page meta descriptions (unique text per URL; Google rewrites duplicates). */
+    public const DESCRIPTIONS = [
+        '/' => 'SCLF is the Smart Campus Lost & Found system of Opol Community College. Report a lost item, browse found items and claim what is yours, all in one place.',
+        '/login' => 'Sign in to SCLF, the Opol Community College Lost & Found system, to report lost items, check found items and track your claims.',
+        '/register' => 'Create your SCLF account for Opol Community College to report lost items, search found items and claim them with a verified student account.',
+    ];
+
     /** Public pages that should stay out of search results but may be followed. */
     public const NOINDEX_FOLLOW = ['/forgot-password'];
 
@@ -70,8 +77,11 @@ class Seo
 
         return [
             'title' => $title,
-            'description' => self::DESCRIPTION,
+            'description' => self::DESCRIPTIONS[$path] ?? self::DESCRIPTION,
             'robots' => $robots,
+            // Search Console / Bing Webmaster ownership tags (set in .env, see config/app.php).
+            'googleVerification' => config('app.google_site_verification'),
+            'bingVerification' => config('app.bing_site_verification'),
             'indexable' => $indexable,
             // Only indexable pages declare a canonical URL.
             'canonical' => $indexable ? $base . ($path === '/' ? '/' : $path) : null,
@@ -117,6 +127,13 @@ class Seo
                     'inLanguage' => 'en-PH',
                     'image' => $base . '/images/og-image.png',
                     'publisher' => ['@id' => $base . '/#organization'],
+                    'creator' => [
+                        '@type' => 'Person',
+                        'name' => 'Jonee John R. Antiquina',
+                        'sameAs' => ['https://www.facebook.com/EphemeralKun'],
+                    ],
+                    'isAccessibleForFree' => true,
+                    'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'PHP'],
                 ],
             ],
         ];

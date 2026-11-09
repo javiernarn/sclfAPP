@@ -42,6 +42,12 @@
     <meta name="robots" content="{{ $seo['robots'] }}">
     <meta name="application-name" content="SCLF - Opol Community College">
     <meta name="author" content="Opol Community College">
+    @if (!empty($seo['googleVerification']))
+    <meta name="google-site-verification" content="{{ $seo['googleVerification'] }}">
+    @endif
+    @if (!empty($seo['bingVerification']))
+    <meta name="msvalidate.01" content="{{ $seo['bingVerification'] }}">
+    @endif
     <meta name="keywords" content="SCLF, Opol Community College, Lost and Found, OCC Lost and Found, Campus Lost and Found, report lost item, claim found item">
     @if ($seo['canonical'])
     <link rel="canonical" href="{{ $seo['canonical'] }}">
@@ -111,12 +117,24 @@
     @vite('resources/js/main.jsx')
 </head>
 <body style="margin:0; background:{{ $sclfThemeColor }}; overscroll-behavior-y: none; touch-action: pan-x pan-y; min-height: 100vh; min-height: 100dvh;">
-    <div id="app"></div>
+    <div id="app">
+        @if ($seo['indexable'])
+        {{-- Crawlable copy for search engines and link-preview bots that do not run JavaScript.
+             Visually hidden; React replaces it the moment the app mounts. --}}
+        <div style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">
+            <h1>SCLF - Smart Campus Lost &amp; Found of Opol Community College</h1>
+            <p>{{ $seo['description'] }}</p>
+            <nav aria-label="SCLF">
+                <a href="{{ $seo['base'] }}/login">Login to SCLF</a>
+                <a href="{{ $seo['base'] }}/register">Create an SCLF account</a>
+            </nav>
+        </div>
+        @endif
+    </div>
     <noscript>
         <div style="font-family: Arial, Helvetica, sans-serif; padding: 24px; color: #111; background: #fff;">
             <h1>SCLF - Opol Community College</h1>
             <p>Smart Campus Lost &amp; Found system for Opol Community College.</p>
-            <p>What a boring  inspect developer HAHAHHAHAHAHA</p>
             <p>JavaScript is required to use SCLF. Please enable JavaScript in your browser, then reload this page.</p>
         </div>
     </noscript>

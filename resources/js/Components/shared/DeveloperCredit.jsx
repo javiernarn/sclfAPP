@@ -27,9 +27,8 @@ import gcashQr from "../../assets/images/gcash-qr.jpg";
 
 const DEV = {
     label: "Antiquina, Jonee John R.",
-    fullName: "Jonee John R. Antiquina",
-    role: "OCCian developer",
-    school: "Opol Community College",
+    fullName: "Antiquina, Jonee John R.",
+    school: "An OCCian BSIT Student of Opol Community College",
     bio:
         "A student of Opol Community College who designed and built SCLF end to end: " +
         "the web app, the installable phone app, item matching and QR release. " +
@@ -153,7 +152,6 @@ function CardBody({ titleId }) {
                 />
                 <div className="dc-id">
                     <h2 className="dc-name" id={titleId}>{DEV.fullName}</h2>
-                    <p className="dc-role">{DEV.role}</p>
                     <p className="dc-school">{DEV.school}</p>
                 </div>
             </header>
