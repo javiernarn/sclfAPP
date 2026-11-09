@@ -59,6 +59,7 @@ import {
     ChevronUp,
     UserCircle,
     Palette,
+    Languages,
     Check,
     ClipboardCheck,
     Bell,
@@ -168,6 +169,52 @@ const ThemePicker = ({ open, onToggle, current, onPick, t, side = "right", align
                         >
                             <span className={`ds-theme-swatch ds-theme-swatch-${o.swatch || o.key}`} />
                             {t(o.labelKey)}
+                            {current === o.key && <Check size={15} className="ds-theme-check" />}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+// English-only language picker. The app ships a single language, so the
+// list has one entry; it stays so the account menu keeps its Language row.
+const LANGUAGE_OPTIONS = [{ key: "en", label: "English" }];
+const LanguagePicker = ({ open, onToggle, onPick, t, side = "right", align = "top" }) => {
+    const current = "en";
+    return (
+        <div className="ds-theme-row-wrap">
+            <button
+                type="button"
+                className="ds-menu-item"
+                onClick={onToggle}
+                role="menuitem"
+                aria-haspopup="true"
+                aria-expanded={open}
+            >
+                <Languages size={16} />
+                {t("shell.language")}
+                <span className="ds-theme-pill">English</span>
+            </button>
+            {open && (
+                <div
+                    className={`ds-theme-popover ds-theme-popover-side-${side} ds-theme-popover-align-${align}`}
+                    role="menu"
+                >
+                    <div className="ds-theme-popover-head">
+                        <div className="ds-theme-popover-title">{t("shell.chooseLanguage")}</div>
+                    </div>
+                    {LANGUAGE_OPTIONS.map((o) => (
+                        <button
+                            key={o.key}
+                            type="button"
+                            className="ds-theme-option"
+                            onClick={() => onPick(o.key)}
+                            role="menuitemradio"
+                            aria-checked={current === o.key}
+                        >
+                            {o.label}
                             {current === o.key && <Check size={15} className="ds-theme-check" />}
                         </button>
                     ))}
@@ -330,6 +377,8 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     const [sidebarMenuOpen, setSidebarMenuOpen] = useState(false);
     const [themePickerOpen, setThemePickerOpen] = useState(false);
     const [sidebarThemePickerOpen, setSidebarThemePickerOpen] = useState(false);
+    const [langPickerOpen, setLangPickerOpen] = useState(false);
+    const [sidebarLangPickerOpen, setSidebarLangPickerOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
     const [collapsed, setCollapsed] = useState(() => {
         if (typeof window === "undefined") return false;
@@ -597,6 +646,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     useEffect(() => {
         if (!menuOpen) {
             setThemePickerOpen(false);
+            setLangPickerOpen(false);
             return;
         }
         const onClick = (e) => {
@@ -619,6 +669,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     useEffect(() => {
         if (!sidebarMenuOpen) {
             setSidebarThemePickerOpen(false);
+            setSidebarLangPickerOpen(false);
             return;
         }
         const onClick = (e) => {
@@ -788,7 +839,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                 offset={12}
                                 width={isDesktop ? 220 : 260}
                                 theme={menuTheme}
-                                flyoutOpen={sidebarThemePickerOpen}
+                                flyoutOpen={sidebarThemePickerOpen || sidebarLangPickerOpen}
                                 className="ds-menu ds-sidebar-menu"
                             >
                                 <div className="ds-menu-name">{user?.name || t("shell.account")}</div>
@@ -805,9 +856,17 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                 <ThemePicker
                                         seasonal={seasonal}
                                     open={sidebarThemePickerOpen}
-                                    onToggle={() => { setSidebarThemePickerOpen((v) => !v); }}
+                                    onToggle={() => { setSidebarThemePickerOpen((v) => !v); setSidebarLangPickerOpen(false); }}
                                     current={theme}
                                     onPick={(key) => setTheme(key)}
+                                    t={t}
+                                    side="right"
+                                    align="bottom"
+                                />
+                                <LanguagePicker
+                                    open={sidebarLangPickerOpen}
+                                    onToggle={() => { setSidebarLangPickerOpen((v) => !v); setSidebarThemePickerOpen(false); }}
+                                    onPick={() => setSidebarLangPickerOpen(false)}
                                     t={t}
                                     side="right"
                                     align="bottom"
@@ -931,9 +990,17 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     <ThemePicker
                                         seasonal={seasonal}
                                         open={themePickerOpen}
-                                        onToggle={() => { setThemePickerOpen((v) => !v); }}
+                                        onToggle={() => { setThemePickerOpen((v) => !v); setLangPickerOpen(false); }}
                                         current={theme}
                                         onPick={(key) => setTheme(key)}
+                                        t={t}
+                                        side="left"
+                                        align="top"
+                                    />
+                                    <LanguagePicker
+                                        open={langPickerOpen}
+                                        onToggle={() => { setLangPickerOpen((v) => !v); setThemePickerOpen(false); }}
+                                        onPick={() => setLangPickerOpen(false)}
                                         t={t}
                                         side="left"
                                         align="top"

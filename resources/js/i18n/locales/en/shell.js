@@ -18,6 +18,8 @@ export default {
     profile: 'Profile',
     theme: 'Theme',
     chooseTheme: 'Choose Theme',
+    language: 'Language',
+    chooseLanguage: 'Choose Language',
     themeBlack: 'Black',
     themeWhite: 'White',
     themeBackToWhite: 'Back to the white themes',
