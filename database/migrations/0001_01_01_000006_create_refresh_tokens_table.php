@@ -14,6 +14,8 @@ return new class extends Migration
             $table->string('token_hash', 64)->unique();
             $table->uuid('family_id');
             $table->unsignedBigInteger('access_token_id')->nullable();
+            // true = the person ticked "Keep this session open" at login.
+            $table->boolean('remember')->default(false);
             $table->timestamp('expires_at');
             $table->timestamp('rotated_at')->nullable();
             $table->timestamp('revoked_at')->nullable();

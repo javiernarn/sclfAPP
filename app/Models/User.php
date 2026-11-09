@@ -306,8 +306,8 @@ class User extends Authenticatable implements MustVerifyEmail
      * Active accounts that handle lost & found reports and matches.
      *
      * Security officers tied to a campus are only included for reports on
-     * that campus (or reports with no campus); officers with no campus, the
-     * Admin and Staff see everything — same rule as User::canOperateInCampus().
+     * that campus (or reports with no campus); officers with no campus, and the
+     * Admin see everything — same rule as User::canOperateInCampus().
      */
     public function scopeLostFoundHandlers($query, ?int $campusId = null, ?int $exceptUserId = null)
     {

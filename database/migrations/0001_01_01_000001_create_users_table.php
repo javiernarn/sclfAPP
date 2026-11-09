@@ -48,6 +48,12 @@ return new class extends Migration
             $table->boolean('must_setup_profile')->default(false);
             $table->timestamp('last_login_at')->nullable();
 
+            // Preferences
+            // Email copy of in-app notifications (on by default, opt-out from the avatar menu).
+            $table->boolean('email_notifications')->default(true);
+            // Auto Save for report forms, stored on the account so it is the same on every device.
+            $table->boolean('auto_save')->default(false);
+
             $table->timestamps();
             $table->softDeletes();
         });

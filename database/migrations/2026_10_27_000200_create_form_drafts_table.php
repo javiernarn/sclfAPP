@@ -7,18 +7,12 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Auto Save, account-wide:
-     *  - users.auto_save: the avatar-menu switch, now stored on the account so
-     *    it is the same on every device (off by default, like before).
-     *  - form_drafts: one draft per account per form, so a half-written report
-     *    started on a phone can be finished on a laptop.
+     * Account-wide Auto Save drafts: one draft per account per form, so a
+     * half-written report started on a phone can be finished on a laptop.
+     * (The on/off switch itself is users.auto_save.)
      */
     public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->boolean('auto_save')->default(false);
-        });
-
         Schema::create('form_drafts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -36,8 +30,5 @@ return new class extends Migration
     public function down(): void
     {
         Schema::dropIfExists('form_drafts');
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('auto_save');
-        });
     }
 };
