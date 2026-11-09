@@ -157,7 +157,7 @@ html.vp-root, html.vp-root body { height: 100%; overflow: hidden; background: #f
     .vp-bar-inner { grid-template-columns: 1fr 1fr; }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .vp-card { animation: none; }
     .vp-btn { transition: none; }
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { RefreshCw } from '../icons';
 import { useToast } from '../../context/ToastContext';
-import useRoleTranslation from '../../hooks/useRoleTranslation';
+import { useTranslation } from '../../i18n';
 
 /**
  * Manual "reload the data" button for pages whose data can lag behind the
@@ -10,7 +10,7 @@ import useRoleTranslation from '../../hooks/useRoleTranslation';
  */
 export default function RefreshButton({ onRefresh, loading = false, label }) {
     const toast = useToast();
-    const { t } = useRoleTranslation();
+    const { t } = useTranslation();
     const text = label || t('common.refresh');
     const [busy, setBusy] = useState(false);
     const spinning = busy || loading;

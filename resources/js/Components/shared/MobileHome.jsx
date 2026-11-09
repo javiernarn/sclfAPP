@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuickActions } from "./MobileQuickActions";
 import { ChevronRight, Plus, CircleCheck, Hourglass, ClipboardList, Handshake } from "../icons";
 import { useAuth } from "../../context/AuthContext";
-import useRoleTranslation from "../../hooks/useRoleTranslation";
+import { useTranslation } from "../../i18n";
 import { greetingFor, firstNameOf, useOpolWeather, describeWeather } from "./DashboardGreeting";
 import AvatarPhoto from "./AvatarPhoto";
 import logo from "../../assets/images/site-logo.png";
@@ -26,7 +26,7 @@ const initialsOf = (name) =>
 
 export default function MobileHome({ name, role = "Student", kpis, campus }) {
     const { user } = useAuth();
-    const { t, locale } = useRoleTranslation();
+    const { t, locale } = useTranslation();
     const quick = useQuickActions();
     const { weather } = useOpolWeather();
     const [wText, wIcon] = weather ? describeWeather(weather.code, weather.isDay, t) : [];

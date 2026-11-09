@@ -237,6 +237,6 @@
     .ds-phone .sx-actions .ds-btn { width: auto; flex: 1 1 0; }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .sx-panel, .sx-otp-box, .sx-otp-box[aria-invalid="true"] { animation: none !important; transition: none !important; }
 }

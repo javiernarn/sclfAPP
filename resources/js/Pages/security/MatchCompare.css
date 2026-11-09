@@ -152,4 +152,4 @@
 /* filters changed: keep the cards, just fade them until the new list arrives */
 .mc-list { transition: opacity .15s ease; }
 .mc-list.is-refreshing { opacity: .55; pointer-events: none; }
-@media (prefers-reduced-motion: reduce) { .mc-list { transition: none; } }
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ { .mc-list { transition: none; } }

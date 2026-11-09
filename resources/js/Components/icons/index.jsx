@@ -144,6 +144,8 @@ import {
     ZoomIn as ZoomInGlyph,
     ZoomOut as ZoomOutGlyph,
     Image as ImageGlyph,
+    Zap as ZapGlyph,
+    ZapOff as ZapOffGlyph,
 } from 'lucide-react';
 
 // ---------------------------------------------------------------------------
@@ -296,6 +298,8 @@ export const ListOrdered = animatedStatic(ListOrderedGlyph, 'ListOrdered');
 export const LogIn = animatedStatic(LogInGlyph, 'LogIn');
 export const Mail = animatedStatic(MailGlyph, 'Mail');
 export const Save = animatedStatic(SaveGlyph, 'Save');
+export const Zap = animatedStatic(ZapGlyph, 'Zap');
+export const ZapOff = animatedStatic(ZapOffGlyph, 'ZapOff');
 export const Megaphone = animatedStatic(MegaphoneGlyph, 'Megaphone');
 export const Menu = animatedStatic(MenuGlyph, 'Menu');
 export const Package = animatedStatic(PackageGlyph, 'Package');

@@ -74,7 +74,7 @@
     100% { box-shadow: 0 8px 24px rgba(27, 31, 59, 0.14), 0 0 0 0 rgba(212, 167, 61, 0); }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .sclf-qr-canvas.is-ready {
         animation: none;
     }

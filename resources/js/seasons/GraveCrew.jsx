@@ -2,6 +2,7 @@ import React, { useEffect, useId, useImperativeHandle, useRef, useState, forward
 import { flushSync } from 'react-dom';
 import { HW } from './art';
 import SkeletonArt from './SkeletonArt';
+import { animationsOn } from '../utils/animationsPref';
 
 /**
  * GraveCrew — skeletons that dig themselves out of buried coffins, grab a sack
@@ -265,8 +266,7 @@ export default function GraveCrew({ variant = 'auth' }) {
     }, []);
 
     useEffect(() => {
-        const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (reduce) return undefined;
+        // Seasonal effects stay on even when the phone has Reduce Motion enabled.
         let dead = false;
         const timers = [];
         const sleep = (ms) => new Promise((res) => timers.push(setTimeout(res, ms)));
@@ -276,7 +276,7 @@ export default function GraveCrew({ variant = 'auth' }) {
         (async () => {
             await sleep(quiet ? 3500 : 1400);
             while (!dead) {
-                if (document.hidden) { await sleep(1200); continue; }
+                if (document.hidden || !animationsOn()) { await sleep(1200); continue; }
                 const all = refs.current.filter(Boolean);
                 const busy = all.filter((g) => g.busy()).length;
                 const idle = all.filter((g) => !g.busy() && g.visible());

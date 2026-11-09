@@ -206,6 +206,6 @@
     .ds-shell.ds-staff-app .ds-list-item:has(> .ds-claim-delete-btn) .ds-list-item-main { padding-right: 42px; }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .ds-shell.ds-staff-app.ds-phone .ds-table tbody tr { transition: none; }
 }

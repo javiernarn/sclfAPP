@@ -301,7 +301,7 @@
     .dc-sheet .dc-bio { margin-top: 10px; }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .dc-pop.is-placed, .dc-sheet, .dc-backdrop { animation: none; }
     .dc-sheet { transition: none; }
 }

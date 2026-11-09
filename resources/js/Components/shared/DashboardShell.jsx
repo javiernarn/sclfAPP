@@ -5,7 +5,6 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useAppTheme, isDarkTheme } from "../../hooks/useAppTheme";
 import { useTranslation } from "../../i18n";
-import { LanguagePicker } from "./LanguagePicker";
 import { useToast } from "../../context/ToastContext";
 import { loginToast } from "../../utils/welcome";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
@@ -306,11 +305,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     // light or dark while a season is on.
     const seasonal = isSeasonal(useSeason());
     const theme = seasonal ? (isDarkTheme(pickedTheme) ? "black" : "white") : pickedTheme;
-    // Translation is for students and instructors only. Admin / staff /
-    // security accounts always get the English interface, even on a browser
-    // where a student previously picked another language.
-    const studentUi = !(Array.isArray(roles) && (roles.includes("admin") || roles.includes("staff") || roles.includes("security_officer")));
-    const { t, lang, setLanguage } = useTranslation(studentUi);
+    const { t } = useTranslation();
     const toast = useToast();
     // Right-click / DevTools / browser-zoom guard — same behavior as the
     // public auth pages. See usePreventInspect.jsx to toggle site-wide.
@@ -335,8 +330,6 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     const [sidebarMenuOpen, setSidebarMenuOpen] = useState(false);
     const [themePickerOpen, setThemePickerOpen] = useState(false);
     const [sidebarThemePickerOpen, setSidebarThemePickerOpen] = useState(false);
-    const [langPickerOpen, setLangPickerOpen] = useState(false);
-    const [sidebarLangPickerOpen, setSidebarLangPickerOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(false); // mobile overlay
     const [collapsed, setCollapsed] = useState(() => {
         if (typeof window === "undefined") return false;
@@ -604,7 +597,6 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     useEffect(() => {
         if (!menuOpen) {
             setThemePickerOpen(false);
-            setLangPickerOpen(false);
             return;
         }
         const onClick = (e) => {
@@ -627,7 +619,6 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     useEffect(() => {
         if (!sidebarMenuOpen) {
             setSidebarThemePickerOpen(false);
-            setSidebarLangPickerOpen(false);
             return;
         }
         const onClick = (e) => {
@@ -797,7 +788,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                 offset={12}
                                 width={isDesktop ? 220 : 260}
                                 theme={menuTheme}
-                                flyoutOpen={sidebarThemePickerOpen || sidebarLangPickerOpen}
+                                flyoutOpen={sidebarThemePickerOpen}
                                 className="ds-menu ds-sidebar-menu"
                             >
                                 <div className="ds-menu-name">{user?.name || t("shell.account")}</div>
@@ -814,24 +805,13 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                 <ThemePicker
                                         seasonal={seasonal}
                                     open={sidebarThemePickerOpen}
-                                    onToggle={() => { setSidebarLangPickerOpen(false); setSidebarThemePickerOpen((v) => !v); }}
+                                    onToggle={() => { setSidebarThemePickerOpen((v) => !v); }}
                                     current={theme}
                                     onPick={(key) => setTheme(key)}
                                     t={t}
                                     side="right"
                                     align="bottom"
                                 />
-                                {(
-                                    <LanguagePicker
-                                        open={sidebarLangPickerOpen}
-                                        onToggle={() => { setSidebarThemePickerOpen(false); setSidebarLangPickerOpen((v) => !v); }}
-                                        t={t}
-                                        lang={lang}
-                                        onPick={(code) => setLanguage(code)}
-                                        side="right"
-                                        align="bottom"
-                                    />
-                                )}
                                 <MenuToggles t={t} />
                                 <div className="ds-menu-divider" />
                                 <button
@@ -951,24 +931,13 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                                     <ThemePicker
                                         seasonal={seasonal}
                                         open={themePickerOpen}
-                                        onToggle={() => { setLangPickerOpen(false); setThemePickerOpen((v) => !v); }}
+                                        onToggle={() => { setThemePickerOpen((v) => !v); }}
                                         current={theme}
                                         onPick={(key) => setTheme(key)}
                                         t={t}
                                         side="left"
                                         align="top"
                                     />
-                                    {(
-                                        <LanguagePicker
-                                            open={langPickerOpen}
-                                            onToggle={() => { setThemePickerOpen(false); setLangPickerOpen((v) => !v); }}
-                                            t={t}
-                                            lang={lang}
-                                            onPick={(code) => setLanguage(code)}
-                                            side="left"
-                                            align="top"
-                                        />
-                                    )}
                                     <MenuToggles t={t} />
                                     <div className="ds-menu-divider" />
                                     <button

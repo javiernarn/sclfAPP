@@ -108,7 +108,7 @@
     .sq-view { aspect-ratio: 1 / 1; }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .sq-sheet { animation: none; }
     .sq-view.is-live .sq-sweep { animation: none; top: 50%; }
 }

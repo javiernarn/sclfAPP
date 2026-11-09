@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Sun, Moon, ShieldCheck, Eye, EyeOff, CheckCircle2, XCircle } from "../icons";
+import { Sun, Moon, Zap, ZapOff, ShieldCheck, Eye, EyeOff, CheckCircle2, XCircle } from "../icons";
 import { useAppTheme, isDarkTheme } from "../../hooks/useAppTheme";
+import { useAnimationsPref } from "../../utils/animationsPref";
 import usePreventInspect, { guardImageEvents, ZoomWarningModal } from "../../hooks/usePreventInspect";
 import { useTranslation } from "../../i18n";
 import logo from "../../assets/images/site-logo.png";
@@ -91,6 +92,7 @@ export default function AuthShell({
     const { t } = useTranslation();
     const [gateOpen, setGateOpen] = useState(gateDefaultOpen || gateOpenMemory);
     const { theme, toggleTheme } = useAppTheme();
+    const { animations, toggleAnimations } = useAnimationsPref();
     const isDark = isDarkTheme(theme);
     const [caseNumber] = useState(() => buildCaseNumber(caseSeed));
     const [now, setNow] = useState(() => new Date());
@@ -171,9 +173,14 @@ export default function AuthShell({
                             <SeasonHat />
                             <span>{t("auth.brandOffice")}<span>Opol Community College</span></span>
                         </Link>
-                        <button type="button" className="lg-theme-toggle" onClick={toggleTheme} aria-label={t("auth.toggleTheme")}>
-                            {isDark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
-                        </button>
+                        <div className="lg-toggle-group">
+                            <button type="button" className="lg-theme-toggle" onClick={toggleAnimations} aria-pressed={animations} aria-label={t("auth.toggleAnimations")} title={t("auth.toggleAnimations")}>
+                                {animations ? <Zap size={15} strokeWidth={2} /> : <ZapOff size={15} strokeWidth={2} />}
+                            </button>
+                            <button type="button" className="lg-theme-toggle" onClick={toggleTheme} aria-label={t("auth.toggleTheme")}>
+                                {isDark ? <Sun size={15} strokeWidth={2} /> : <Moon size={15} strokeWidth={2} />}
+                            </button>
+                        </div>
                     </header>
 
                     {gate ? (
@@ -575,6 +582,7 @@ const LEDGER_CSS = `
     .lg-stage-inner { position: relative; width: 100%; max-width: 420px; margin: auto; display: flex; flex-direction: column; align-items: center; }
 
     .lg-appbar { position: absolute; top: 14px; right: 14px; z-index: 3; display: flex; align-items: center; }
+    .lg-toggle-group { display: inline-flex; align-items: center; gap: 8px; }
     .lg-theme-toggle {
         flex-shrink: 0;
         width: 32px; height: 32px; border-radius: 10px; cursor: pointer;
@@ -852,7 +860,7 @@ const LEDGER_CSS = `
         .lg-card-body { padding: 12px 22px 18px; }
         .lg-subtitle { display: none; }
     }
-    @media (prefers-reduced-motion: reduce) { .lg-card, .lg-rail-blob { animation: none !important; } }
+    @media (min-width: 99999px) /* Reduce Motion ignored on purpose */ { .lg-card, .lg-rail-blob { animation: none !important; } }
 
     /* ============ Fit mode (register wizard) — desktop & laptop only ============
        No legal text under the card, tighter spacing, scrollbar hidden.
@@ -1151,7 +1159,7 @@ const LEDGER_CSS = `
     @media (max-width: 700px) {
         .lg-gate-welcome { white-space: normal; }
     }
-    @media (prefers-reduced-motion: reduce) {
+    @media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
         .lg-gate-panel, .lg-gate-chevron { transition: none !important; }
     }
 `;

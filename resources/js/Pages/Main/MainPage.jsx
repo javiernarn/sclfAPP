@@ -323,7 +323,7 @@ const MainPage = ({ routing = true }) => {
                     from { opacity: 0; transform: translateY(14px); }
                     to   { opacity: 1; transform: translateY(0); }
                 }
-                @media (prefers-reduced-motion: reduce) {
+                @media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
                     .mp-blob, .mp-logo-wrap, .mp-logo-wrap::before,
                     .mp-card, .mp-loader::before, .mp-loading-text .dot {
                         animation: none !important;

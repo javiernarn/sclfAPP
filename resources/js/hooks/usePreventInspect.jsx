@@ -354,7 +354,7 @@ const ZOOM_MODAL_CSS = `
     from { opacity: 0; transform: scale(0.94) translateY(6px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .pi-zoom-backdrop, .pi-zoom-card { animation: none; }
 }
 `;

@@ -130,6 +130,6 @@
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .sclf-confirm-backdrop, .sclf-confirm-card { animation: none; }
 }

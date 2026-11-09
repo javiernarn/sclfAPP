@@ -164,7 +164,7 @@
     .ch-donut-legend { flex-basis: 100%; }
     .ch-toolbar { justify-content: space-between; }
 }
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .ch-card, .ch-kpi, .ch-feed-item { animation: none; }
     .ch-pulse, .ch-live-dot::after, .ch-skel { animation: none; }
 }

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { animationsOn } from '../../utils/animationsPref';
 
 const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
 
-export const prefersReducedMotion = () =>
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+// "Reduced motion" here means the person turned Animations OFF (account menu / login).
+export const prefersReducedMotion = () => !animationsOn();
 
 /**
  * Smoothly animates an array of numbers toward `target`.

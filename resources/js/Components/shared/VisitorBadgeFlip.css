@@ -37,7 +37,7 @@
     transition: background 0.4s ease;
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .vbf-inner { transition-duration: 0.01s; }
     .vbf-num { animation: none; }
 }

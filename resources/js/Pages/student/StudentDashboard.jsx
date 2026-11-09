@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import useRoleTranslation from '../../hooks/useRoleTranslation';
+import { useTranslation } from '../../i18n';
 import { rich, tOr } from '../../i18n';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
@@ -21,7 +21,7 @@ export default function StudentDashboard() {
     const { user, roles } = useAuth();
     const { token } = useParams();
     const isPhone = useIsPhone();
-    const { t } = useRoleTranslation();
+    const { t } = useTranslation();
     const printAccess = usePrintAccess(); // admin switch for Print / Save as PDF
     const isInstructor = Array.isArray(roles) && roles.includes('instructor');
     const { data, loading, error, updatedAt, refresh } = usePolling('/analytics/me', { interval: 20000 });

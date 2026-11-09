@@ -49,4 +49,4 @@
     .ip-wrap { justify-content: flex-end; padding-right: 20px; top: 16px; }
     .ip-card { max-width: 380px; }
 }
-@media (prefers-reduced-motion: reduce) { .ip-card { animation: none; } }
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ { .ip-card { animation: none; } }

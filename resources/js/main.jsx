@@ -1,4 +1,5 @@
 import './utils/devtoolsGuard'; // hide the UI while DevTools is open (runs before React mounts)
+import './utils/animationsPref'; // applies the saved Animations on/off before first paint
 import './utils/touchFocusGuard'; // iOS: skip page-load autoFocus so tapping a field opens the keyboard
 
 

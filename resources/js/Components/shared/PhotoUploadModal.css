@@ -274,4 +274,4 @@
     .pum-btn { min-height: 46px; }
 }
 @media (hover: none) { .pum-btn.primary:hover:not(:disabled) { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .pum-card, .pum-backdrop, .pum-spin, .pum-scan { animation: none; transition: none; } }
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ { .pum-card, .pum-backdrop, .pum-spin, .pum-scan { animation: none; transition: none; } }

@@ -278,7 +278,7 @@ body { overflow: hidden; }
         transition: opacity 0.2s ease, visibility 0s linear 0.2s;
     }
 }
-@media (prefers-reduced-motion: reduce) { .ds-dotlogo { transition: none !important; } }
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ { .ds-dotlogo { transition: none !important; } }
 .ds-shell.maroon .ds-dotlogo { --dl-color: #7f1d2e; }
 .ds-shell.blue .ds-dotlogo { --dl-color: #1e40af; }
 .ds-shell.yellow .ds-dotlogo { --dl-color: #b45309; }
@@ -387,7 +387,7 @@ body { overflow: hidden; }
     }
     .ds-shell:not(.ds-phone) .ds-sidebar.collapsed ~ .ds-content { margin-left: 68px; }
 }
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .ds-shell:not(.ds-phone) .ds-content { transition: none; }
 }
 /* Header never scrolls with the page — it's a fixed, non-scrolling
@@ -809,7 +809,7 @@ body { overflow: hidden; }
 .ds-collapse.open { grid-template-rows: 1fr; opacity: 1; transform: none; }
 .ds-collapse-inner { overflow: hidden; min-height: 0; visibility: hidden; transition: visibility 0s .35s; }
 .ds-collapse.open .ds-collapse-inner { visibility: visible; transition-delay: 0s; }
-@media (prefers-reduced-motion: reduce) { .ds-collapse, .ds-collapse-inner { transition: none; } }
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ { .ds-collapse, .ds-collapse-inner { transition: none; } }
 /* Reusable building blocks shared by every authenticated page */
 .ds-card {
     border-radius: 18px;
@@ -1184,7 +1184,7 @@ body { overflow: hidden; }
 .ds-skel-avatar { width: 56px; height: 56px; border-radius: 14px; flex-shrink: 0; }
 .ds-skel-name-lg { width: 150px; height: 18px; margin-bottom: 8px; }
 .ds-skel-email-lg { width: 190px; height: 13px; }
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .ds-menu, .ds-skeleton, .ds-skel, .ds-route-progress { animation: none !important; }
 }
 
@@ -1325,7 +1325,7 @@ body { overflow: hidden; }
 .ds-match.is-ok { color: #16a34a; }
 .ds-match.is-bad { color: #ef4444; }
 
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .ds-strength-ticks span { transition: none !important; }
 }
 
@@ -2049,17 +2049,6 @@ button.ds-back-btn:focus-visible { outline: 2px solid currentColor; outline-offs
        keep their normal table layout. (Cards view above still stacks.) */
 }
 
-/* ── Language picker (student / instructor account menus) ───────────────── */
-.ds-lang-popover { width: 236px; }
-.ds-lang-chip {
-    display: inline-flex; align-items: center; justify-content: center;
-    min-width: 30px; height: 20px; padding: 0 5px; border-radius: 6px; flex-shrink: 0;
-    font-size: 10px; font-weight: 800; letter-spacing: 0.04em;
-    border: 1px solid rgba(120,120,120,0.35);
-}
-.ds-menu.light .ds-lang-chip { background: #f4f7fb; color: #334155; }
-.ds-menu.dark .ds-lang-chip { background: #1a2029; color: #cbd5e1; }
-
 /* ==========================================================================
    Stat cards, laptop / desktop — big solid icon on the right.
    The icon is no longer a small tile stacked above the number (which left an
@@ -2110,7 +2099,7 @@ button.ds-back-btn:focus-visible { outline: 2px solid currentColor; outline-offs
     /* loading placeholder: no icon block, so no dead space while loading either */
     .ds-shell.ds-layout:not(.ds-phone) .ds-stat-card .ds-skel-icon { display: none; }
 }
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .ds-shell.ds-layout .ds-stat-card, .ds-shell.ds-layout .ds-stat-card .ds-stat-icon { transition: none !important; }
 }
 
@@ -2214,7 +2203,7 @@ button.ds-back-btn:focus-visible { outline: 2px solid currentColor; outline-offs
     .ds-shell.ds-shell.ds-shell input[type="checkbox"], .ds-shell.ds-shell.ds-shell input[type="radio"] { width: 24px; min-width: 24px; height: 24px; min-height: 0; }
     .ds-shell.ds-shell.ds-shell input[type="checkbox"]::before { width: 14px; height: 14px; }
 }
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .ds-shell.ds-shell.ds-shell input[type="checkbox"], .ds-shell.ds-shell.ds-shell input[type="radio"],
     .ds-shell.ds-shell.ds-shell input[type="checkbox"]::before, .ds-shell.ds-shell.ds-shell input[type="radio"]::before { transition: none; }
 }
@@ -2295,7 +2284,7 @@ button.ds-back-btn:focus-visible { outline: 2px solid currentColor; outline-offs
 }
 .ds-autosave-note svg { flex-shrink: 0; margin-top: 2px; }
 @keyframes ds-autosave-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .ds-autosave-chip-icon.is-spinning { animation: none; } }
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ { .ds-autosave-chip-icon.is-spinning { animation: none; } }
 
 /* Phones: the chip drops under the text so nothing gets squeezed, and the
    card hugs the screen edge like a native app notice. */

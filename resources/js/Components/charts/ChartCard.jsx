@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { timeAgo } from './utils';
-import useRoleTranslation from '../../hooks/useRoleTranslation';
+import { useTranslation } from '../../i18n';
 
 // "● Live · updated 4s ago" — flips amber + "Reconnecting…" if a poll fails.
 export function LiveBadge({ updatedAt, error }) {
-    const { t } = useRoleTranslation();
+    const { t } = useTranslation();
     const [, tick] = useState(0);
     useEffect(() => {
         const t = setInterval(() => tick((n) => n + 1), 1000);

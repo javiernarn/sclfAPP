@@ -203,7 +203,7 @@
     .ds-bottomnav-icon { width: 44px; }
 }
 
-@media (prefers-reduced-motion: reduce) {
+@media (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .ds-bottomnav,
     .ds-bottomnav.is-hidden { transition: opacity 0.01s linear, visibility 0s linear; }
     .ds-bottomnav.is-hidden { transform: none; }

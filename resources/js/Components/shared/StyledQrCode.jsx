@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { Download } from '../icons';
 import siteLogo from '../../assets/images/site-logo.png';
 import './StyledQrCode.css';
+import { animationsOn } from '../../utils/animationsPref';
 
 /**
  * Renders a QR code styled to match the school's official branded QR
@@ -362,9 +363,7 @@ async function renderStyledQr({ canvas, value, title, subtitle, size, color, log
         }
     };
 
-    const prefersReducedMotion = typeof window !== 'undefined'
-        && window.matchMedia
-        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const prefersReducedMotion = !animationsOn(); // Animations switch (account menu / login)
 
     if (prefersReducedMotion) {
         drawFrame(dots.length, true);

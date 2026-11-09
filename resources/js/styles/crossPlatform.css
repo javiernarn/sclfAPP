@@ -89,3 +89,18 @@ input[type="search"] {
 /* Safe areas: notches (iOS) and gesture bars / cut-outs (Android PWA). */
 .safe-pad-top    { padding-top: env(safe-area-inset-top, 0px); }
 .safe-pad-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Animations switch (account menu + login pages): when a person turns
+   animations OFF, every CSS animation and transition finishes instantly.
+   Near-zero duration (not "none") so elements that fade/slide in still
+   land on their final, visible state. */
+html[data-animations="off"] *,
+html[data-animations="off"] *::before,
+html[data-animations="off"] *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+}

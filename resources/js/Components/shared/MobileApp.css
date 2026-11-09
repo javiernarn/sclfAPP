@@ -206,7 +206,7 @@
     .ds-shell .ds-main > * { animation: m-fade 0.14s ease-out both; }
 }
 
-@media (max-width: 600px) and (prefers-reduced-motion: reduce) {
+@media (max-width: 600px) and (min-width: 99999px) /* Reduce Motion ignored on purpose */ {
     .ds-shell .ds-main > *,
     .sclf-confirm-card.sclf-confirm-card, .ds-edit-card.ds-edit-card, .ds-nd-card.ds-nd-card,
     .ds-shell .srd-card, .sq-sheet.sq-sheet, .pr-modal.pr-modal { animation: none; }

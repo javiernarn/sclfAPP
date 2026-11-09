@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, PackageCheck, AlertTriangle, Wrench, X, ChevronRight, QrCode, UserCheck, ListOrdered, UserCircle } from "../icons";
-import useRoleTranslation from "../../hooks/useRoleTranslation";
+import { useTranslation } from "../../i18n";
 import "./MobileQuickActions.css";
 
 // The raised "+" tab on the student/instructor tab bar opens this sheet:
@@ -77,7 +77,7 @@ export const QUICK_ACTIONS_BY_ROLE = {
 };
 
 export default function MobileQuickActions({ open, onClose, actions = QUICK_ACTIONS, title = "What do you need?" }) {
-    const { t } = useRoleTranslation();
+    const { t } = useTranslation();
     // Esc closes it (external keyboards / emulators) and the page behind
     // doesn't scroll while the sheet is up.
     useEffect(() => {

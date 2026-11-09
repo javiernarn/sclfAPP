@@ -4,7 +4,8 @@ import { useAuth } from '../../context/AuthContext';
 import { usePreferences } from '../../context/PreferencesContext';
 import { useToast } from '../../context/ToastContext';
 import usePushNotifications from '../../hooks/usePushNotifications';
-import { Bell, Mail, Save } from '../icons';
+import { Bell, Mail, Save, Zap, ZapOff } from '../icons';
+import { useAnimationsPref } from '../../utils/animationsPref';
 
 /**
  * One row of the avatar menu: icon, label, small hint and an ON/OFF switch.
@@ -43,6 +44,8 @@ function SwitchRow({ icon: Icon, label, hint, checked, busy = false, onToggle })
  *    account, so it follows them to every device.
  *  - Auto Save — keeps report drafts safe while typing (see
  *    useAutoSaveDraft). Saved on the account, so it follows them to every device.
+ *  - Animations — turns every animation in the app on or off. Saved on this
+ *    device (it also works on the login pages), see utils/animationsPref.
  */
 export default function MenuToggles({ t }) {
     const { roles, user, updateUser } = useAuth();
@@ -50,6 +53,7 @@ export default function MenuToggles({ t }) {
     const toast = useToast();
     const push = usePushNotifications();
     const [emailBusy, setEmailBusy] = useState(false);
+    const { animations, toggleAnimations } = useAnimationsPref();
 
     const canEmail = Array.isArray(roles) && (roles.includes('student') || roles.includes('instructor'));
     const emailOn = user?.email_notifications !== false;
@@ -120,6 +124,13 @@ export default function MenuToggles({ t }) {
                 hint={t('shell.autoSaveHint')}
                 checked={autoSave}
                 onToggle={handleAutoSave}
+            />
+            <SwitchRow
+                icon={animations ? Zap : ZapOff}
+                label={t('shell.animations')}
+                hint={t('shell.animationsHint')}
+                checked={animations}
+                onToggle={toggleAnimations}
             />
         </>
     );

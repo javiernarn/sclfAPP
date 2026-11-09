@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { MapPin } from "../icons";
-import useRoleTranslation from "../../hooks/useRoleTranslation";
+import { useTranslation } from "../../i18n";
 import "./DashboardGreeting.css";
 import RoleText, { RoleBadge } from './RoleText';
 
@@ -107,7 +107,7 @@ export const firstNameOf = (full) => String(full || "").trim().split(/\s+/)[0] |
 export default function DashboardGreeting({ eyebrow, name, subtitle }) {
     const [now, setNow] = useState(() => new Date());
     const { weather, failed } = useOpolWeather();
-    const { t, locale } = useRoleTranslation();
+    const { t, locale } = useTranslation();
     const dateFmt = useMemo(() => makeDateFmt(locale), [locale]);
     const timeFmt = useMemo(() => makeTimeFmt(locale), [locale]);
 
