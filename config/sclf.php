@@ -8,7 +8,7 @@ return [
     |--------------------------------------------------------------------------
     |
     | false       -> OFF. The app works normally (normal error handling stays).
-    | true        -> ON.  Every page shows ONLY the default "No connection" screen.
+    | true        -> ON.  Every page shows ONLY the "System not available" screen.
     | maintenance -> Every page shows ONLY the Maintenance screen.
     | error       -> Every page shows ONLY the "Oops! Something went wrong" screen.
     |

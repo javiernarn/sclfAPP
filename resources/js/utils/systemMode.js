@@ -1,7 +1,7 @@
 // systemMode.js — the whole-site screen switch.
 //
 //   off         -> normal app (SCLF_SYSTEM_MODE=false)
-//   default     -> ONLY the default "No connection" screen   (SCLF_SYSTEM_MODE=true)
+//   default     -> ONLY the "System not available" screen   (SCLF_SYSTEM_MODE=true)
 //   maintenance -> ONLY the Maintenance screen               (SCLF_SYSTEM_MODE=maintenance)
 //   error       -> ONLY the "Oops! Something went wrong"     (SCLF_SYSTEM_MODE=error)
 //

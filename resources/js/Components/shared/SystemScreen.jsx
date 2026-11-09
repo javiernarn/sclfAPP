@@ -6,7 +6,7 @@ import { useTranslation } from "../../i18n";
 // notifications, API call or page chunk runs underneath it. It therefore must
 // not use any context (toast, auth, preferences…).
 //
-//   mode="default"     -> the "No connection" screen
+//   mode="default"     -> the "System not available" screen (turned off by the administrator)
 //   mode="maintenance" -> the Maintenance screen
 //   mode="error"       -> the "Oops! Something went wrong" screen
 
@@ -36,10 +36,11 @@ export default function SystemScreen({ mode }) {
 
     const copy = {
         default: {
-            icon: "📡",
-            title: t("offline.screenTitle"),
-            text: t("offline.screenText"),
-            btn: t("offline.retry"),
+            icon: "⏸️",
+            title: t("offline.offTitle"),
+            text: t("offline.offText"),
+            note: t("offline.offNote"),
+            btn: t("offline.offRetry"),
         },
         maintenance: {
             icon: "🛠️",
@@ -50,7 +51,7 @@ export default function SystemScreen({ mode }) {
         },
         error: {
             icon: "⚠️",
-            title: t("offline.errorTitle"),
+            title: t("offline.sysErrorTitle"),
             text: t("offline.sysErrorText"),
             steps: [t("offline.sysErrorStep1"), t("offline.sysErrorStep2")],
             btn: t("offline.retry"),
