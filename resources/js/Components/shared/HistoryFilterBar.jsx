@@ -16,7 +16,7 @@ function SearchField({ value, onChange, placeholder, label }) {
     const clear = () => { onChange(''); ref.current?.focus(); };
     return (
         <div className="hf-field hf-search">
-            <Search size={17} className="hf-icon" aria-hidden="true" />
+            <span className="hf-icon" aria-hidden="true"><Search size={17} /></span>
             <input
                 ref={ref}
                 type="search"
@@ -50,7 +50,7 @@ function DateField({ name, caption, value, onChange, min, max }) {
         <div className="hf-dategroup">
             <span className="hf-cap">{caption}</span>
             <div className={`hf-field hf-date ${value ? 'has-value' : ''}`}>
-                <Calendar size={16} className="hf-icon" aria-hidden="true" />
+                <span className="hf-icon" aria-hidden="true"><Calendar size={16} /></span>
                 <input
                     ref={ref}
                     type="date"
