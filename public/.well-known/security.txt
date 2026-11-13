@@ -1,0 +1,5 @@
+# Report security problems with SCLF (Smart Campus Lost & Found) to this address.
+Contact: mailto:occ.antiquina.joneejohn@gmail.com
+Expires: 2027-11-14T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://sclfapp.ethiodeploy.app/.well-known/security.txt

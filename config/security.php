@@ -22,6 +22,15 @@ return [
         'csp' => env('SECURITY_CSP', 'report-only'),
         'hsts' => env('SECURITY_HSTS', false),
         'hsts_max_age' => env('SECURITY_HSTS_MAX_AGE', 31536000),
+        // Adds ;includeSubDomains. Turn on only when EVERY subdomain of this host
+        // serves HTTPS. ;preload is for your own apex domain only (not a platform
+        // subdomain like *.ethiodeploy.app) and is very hard to undo.
+        'hsts_subdomains' => env('SECURITY_HSTS_SUBDOMAINS', false),
+        'hsts_preload' => env('SECURITY_HSTS_PRELOAD', false),
+
+        // Cross-origin isolation headers (set to '' to disable either one).
+        'coop' => env('SECURITY_COOP', 'same-origin'),
+        'corp' => env('SECURITY_CORP', 'same-origin'),
 
         // Extra CSP sources, space separated. Leave empty unless you need them.
         // e.g. SECURITY_CSP_SCRIPT_SRC="https://static.cloudflareinsights.com"

@@ -45,10 +45,24 @@ class SecurityHeaders
         $headers->set('Permissions-Policy', 'camera=(self), microphone=(), geolocation=(), payment=(), usb=()');
 
         if ($request->isSecure() && config('security.headers.hsts')) {
-            $headers->set(
-                'Strict-Transport-Security',
-                'max-age=' . (int) config('security.headers.hsts_max_age', 31536000)
-            );
+            $hsts = 'max-age=' . (int) config('security.headers.hsts_max_age', 31536000);
+            if (config('security.headers.hsts_subdomains')) {
+                $hsts .= '; includeSubDomains';
+                if (config('security.headers.hsts_preload')) {
+                    $hsts .= '; preload';
+                }
+            }
+            $headers->set('Strict-Transport-Security', $hsts);
+        }
+
+        // Keep other sites' windows and embeds from sharing this app's browsing
+        // context (COOP) or loading its files cross-origin (CORP). COEP is left
+        // off on purpose: it would block Google Fonts and other third-party files.
+        if ($coop = config('security.headers.coop')) {
+            $headers->set('Cross-Origin-Opener-Policy', $coop);
+        }
+        if ($corp = config('security.headers.corp')) {
+            $headers->set('Cross-Origin-Resource-Policy', $corp);
         }
 
         if ($cspActive && $this->isHtml($response)) {

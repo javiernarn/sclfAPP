@@ -40,6 +40,18 @@ class Phase4HardeningTest extends TestCase
         $this->getJson('https://localhost/api/me')->assertHeaderMissing('Strict-Transport-Security');
     }
 
+    public function test_cross_origin_headers_and_hsts_options(): void
+    {
+        $this->getJson('/api/me')
+            ->assertHeader('Cross-Origin-Opener-Policy', 'same-origin')
+            ->assertHeader('Cross-Origin-Resource-Policy', 'same-origin');
+
+        config(['security.headers.hsts' => true, 'security.headers.hsts_subdomains' => true]);
+        $value = $this->getJson('https://localhost/api/me')->headers->get('Strict-Transport-Security');
+        $this->assertStringContainsString('includeSubDomains', $value);
+        $this->assertStringNotContainsString('preload', $value);
+    }
+
     public function test_csp_is_report_only_by_default_and_only_on_html_pages(): void
     {
         $page = $this->withoutVite()->get('/login');
