@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { Children, cloneElement, isValidElement, useEffect, useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { Sun, Moon, Zap, ZapOff, ShieldCheck, Eye, EyeOff, CheckCircle2, XCircle } from "../icons";
 import { useAppTheme, isDarkTheme } from "../../hooks/useAppTheme";
@@ -292,15 +292,25 @@ export function LedgerRow({
     hint,
     error,
     twoUp = false,
+    htmlFor,
 }) {
+    // Tie the visible label to its field so screen readers announce it.
+    // Uses the field's own id when it has one, otherwise gives it a generated id.
+    const autoId = useId();
+    const kids = Children.toArray(children);
+    const field = isValidElement(kids[0]) ? kids[0] : null;
+    const fieldId = htmlFor ?? field?.props?.id ?? (field ? autoId : undefined);
+    const content = field && !field.props.id && !htmlFor
+        ? [cloneElement(field, { id: fieldId }), ...kids.slice(1)]
+        : children;
     return (
         <div className={`lg-row${twoUp ? " lg-row--compact" : ""}`}>
             <span className="lg-row-index">{String(index).padStart(2, "0")}</span>
             <div className="lg-row-body">
-                <label className="lg-row-label">
+                <label className="lg-row-label" htmlFor={fieldId}>
                     {Icon && <Icon size={12} strokeWidth={2.5} />} {label}
                 </label>
-                {children}
+                {content}
                 {error ? (
                     <span className="lg-row-hint lg-row-error-text">{error}</span>
                 ) : (

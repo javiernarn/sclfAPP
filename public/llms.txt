@@ -1,0 +1,14 @@
+# SCLF - Smart Campus Lost & Found
+
+> SCLF is the lost and found web system of Opol Community College (OCC), Philippines. Students and staff can report lost items, browse items found on campus, see suggested matches between lost and found reports, and submit and track claims. An account is required to use most features.
+
+## Public pages
+
+- [Home](https://sclfapp.ethiodeploy.app/): Overview of SCLF at Opol Community College.
+- [Login](https://sclfapp.ethiodeploy.app/login): Sign in to report lost items, check found items and track claims.
+- [Register](https://sclfapp.ethiodeploy.app/register): Create an SCLF account.
+
+## Notes
+
+- Everything after sign-in is private and not meant for crawling.
+- Also searched as: OCC SCLF, SCLF OCC, Smart Campus Lost and Found, OCC Lost and Found.
