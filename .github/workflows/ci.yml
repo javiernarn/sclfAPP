@@ -42,7 +42,7 @@ jobs:
       # The tests do not read secrets: a throw-away key is enough.
       - name: Prepare a throw-away environment
         run: |
-          cp .env.example .env
+          if [ -f .env.example ]; then cp .env.example .env; else touch .env; fi
           php artisan key:generate --ansi
 
       - name: Run the test suite
