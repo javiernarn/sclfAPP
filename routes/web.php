@@ -94,6 +94,17 @@ XML;
 // All real logic (login, lost items, roles, etc.) now lives in
 // routes/api.php instead, and is called from React using axios.
 
+// TEMPORARY diagnostic: shows which IP headers the host's proxy forwards.
+// DELETE this route after checking.
+Route::get('/_ip', fn (\Illuminate\Http\Request $r) => [
+    'ip'          => $r->ip(),
+    'REMOTE_ADDR' => $_SERVER['REMOTE_ADDR'] ?? null,
+    'xff'         => $r->header('X-Forwarded-For'),
+    'x_real_ip'   => $r->header('X-Real-IP'),
+    'cf'          => $r->header('CF-Connecting-IP'),
+    'all_headers' => $r->headers->all(),
+]);
+
 Route::get('/{any}', function (\Illuminate\Http\Request $request) {
     $seo = Seo::forRequest($request);
 
@@ -103,3 +114,4 @@ Route::get('/{any}', function (\Illuminate\Http\Request $request) {
         ->view('app', ['seo' => $seo])
         ->header('X-Robots-Tag', $seo['robots']);
 })->where('any', '.*');
+
