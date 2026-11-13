@@ -15,7 +15,7 @@ export default {
     roleInstructor: 'Instructor',
     account: 'Account',
     accountMenu: 'Account menu',
-    profile: 'Profile',
+    profile: 'Profile Settings',
     theme: 'Theme',
     chooseTheme: 'Choose Theme',
     language: 'Language',

@@ -91,6 +91,40 @@ class TwoFactorController extends Controller
         ]);
     }
 
+    /** How many unused recovery codes are left (never returns the codes). */
+    public function status(Request $request)
+    {
+        $user = $request->user();
+
+        return response()->json([
+            'enabled' => $this->twoFactor->isEnabled($user),
+            'recovery_codes_remaining' => $this->twoFactor->remainingRecoveryCodes($user),
+        ]);
+    }
+
+    /** Issue a brand-new set of recovery codes. Password required; old codes are invalidated. */
+    public function regenerateRecoveryCodes(Request $request)
+    {
+        $validated = $request->validate([
+            'password' => ['required', 'string'],
+        ]);
+
+        $user = $request->user();
+
+        if (!$this->twoFactor->isEnabled($user)) {
+            throw ValidationException::withMessages(['password' => ['Two-factor authentication is not enabled.']]);
+        }
+
+        if (!Hash::check($validated['password'], $user->password)) {
+            throw ValidationException::withMessages(['password' => ['Your password is incorrect.']]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'recovery_codes' => $this->twoFactor->regenerateRecoveryCodes($user),
+        ]);
+    }
+
     /**
      * Step 3 of a 2FA login: exchange the temporary pending token + a
      * valid TOTP/recovery code for a real access+refresh token pair.
@@ -131,7 +165,7 @@ class TwoFactorController extends Controller
         // TwoFactorAuthService::generateRecoveryCodes) vs. a plain 6-digit
         // TOTP code, so which check to run is unambiguous from the shape
         // of what was submitted.
-        $verified = str_contains($code, '-')
+        $verified = $this->twoFactor->looksLikeRecoveryCode($code)
             ? $this->twoFactor->verifyRecoveryCode($user, $code)
             : $this->twoFactor->verifyCode($user, $code);
 

@@ -84,7 +84,7 @@ export default function ProfilePage() {
     return (
         <DashboardShell
             eyebrow="Account"
-            title="Profile"
+            title="Profile Settings"
             subtitle="Your account details for SCLF."
         >
             {pageLoading ? (

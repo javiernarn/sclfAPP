@@ -37,6 +37,8 @@ export default function LoginPage() {
     // it's scoped to server-side (see RequireFullAccess middleware).
     const [twoFactorChallenge, setTwoFactorChallenge] = useState(null); // { tempToken } | null
     const [code, setCode] = useState('');
+    // 'app' = 6-digit number keypad; 'recovery' = full keyboard for XXXX-XXXX codes.
+    const [codeMode, setCodeMode] = useState('app');
     const { login, verifyTwoFactor, user: currentUser, roles, loading: authLoading } = useAuth();
     const toast = useToast();
     const { t } = useTranslation();
@@ -265,11 +267,26 @@ export default function LoginPage() {
                         <LedgerInput
                             id="code"
                             type="text"
-                            inputMode="numeric"
+                            inputMode={codeMode === 'app' ? 'numeric' : 'text'}
+                            enterKeyHint="go"
+                            autoCapitalize={codeMode === 'app' ? 'off' : 'characters'}
+                            autoCorrect="off"
+                            spellCheck={false}
+                            maxLength={codeMode === 'app' ? 6 : 9}
                             value={code}
-                            onChange={(e) => { setCode(e.target.value); setError(''); }}
-                            autoComplete="one-time-code"
-                            placeholder="123456"
+                            onChange={(e) => {
+                                const raw = e.target.value;
+                                if (codeMode === 'app') {
+                                    setCode(raw.replace(/\D/g, '').slice(0, 6));
+                                } else {
+                                    // Uppercase, drop anything odd, auto-insert the dash: ABCD-EFGH
+                                    const clean = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8);
+                                    setCode(clean.length > 4 ? `${clean.slice(0, 4)}-${clean.slice(4)}` : clean);
+                                }
+                                setError('');
+                            }}
+                            autoComplete={codeMode === 'app' ? 'one-time-code' : 'off'}
+                            placeholder={codeMode === 'app' ? '123456' : 'ABCD-EFGH'}
                             aria-invalid={!!error}
                             required
                             autoFocus={canAutoFocus}
@@ -284,7 +301,16 @@ export default function LoginPage() {
                         type="button"
                         className="lg-forgot"
                         style={{ display: 'block', marginTop: 14, background: 'none', border: 'none', cursor: 'pointer' }}
-                        onClick={() => { setTwoFactorChallenge(null); setCode(''); setError(''); }}
+                        onClick={() => { setCodeMode((m) => (m === 'app' ? 'recovery' : 'app')); setCode(''); setError(''); }}
+                    >
+                        {codeMode === 'app' ? 'Use a recovery code instead' : 'Use authenticator app code instead'}
+                    </button>
+
+                    <button
+                        type="button"
+                        className="lg-forgot"
+                        style={{ display: 'block', marginTop: 14, background: 'none', border: 'none', cursor: 'pointer' }}
+                        onClick={() => { setTwoFactorChallenge(null); setCode(''); setCodeMode('app'); setError(''); }}
                     >
                         &larr; {t('login.backToSignIn')}
                     </button>

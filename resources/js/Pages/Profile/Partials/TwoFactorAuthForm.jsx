@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
 import {
     ShieldCheck, ShieldOff, Smartphone, Copy, Check, Eye, EyeOff,
@@ -9,17 +9,15 @@ import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { useDiscardConfirm } from '../../../context/ConfirmContext';
 import { PasswordField, OtpInput, Steps, Banner, Actions } from './SecurityParts';
+import { saveText, saveBlob, copyText, codesToPngBlob } from '../../../utils/saveFile';
 
 // Copy button used by the manual key and each recovery code.
 const CopyBtn = ({ value, label }) => {
     const [copied, setCopied] = useState(false);
     const copy = async () => {
-        try {
-            await navigator.clipboard.writeText(value);
+        if (await copyText(value)) {
             setCopied(true);
             setTimeout(() => setCopied(false), 1500);
-        } catch (e) {
-            // clipboard unavailable (older in-app browsers) — ignore
         }
     };
     return (
@@ -38,7 +36,9 @@ export default function TwoFactorAuthForm() {
     const discardConfirm = useDiscardConfirm();
     const enabled = !!user?.two_factor_enabled;
 
-    const [phase, setPhase] = useState('idle'); // idle | enroll | recovery | disable
+    const [phase, setPhase] = useState('idle'); // idle | enroll | recovery | disable | regen
+    const [isRegen, setIsRegen] = useState(false);
+    const [remaining, setRemaining] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -54,7 +54,17 @@ export default function TwoFactorAuthForm() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
 
+    // How many recovery codes are still unused (shown on the collapsed row).
+    const loadStatus = async () => {
+        try {
+            const res = await axios.get('/2fa/status', { silent: true });
+            setRemaining(res.data.recovery_codes_remaining);
+        } catch (e) { /* non-critical */ }
+    };
+    useEffect(() => { if (enabled && phase === 'idle') loadStatus(); }, [enabled, phase]);
+
     const reset = () => {
+        setIsRegen(false);
         setPhase('idle');
         setError('');
         setQrDataUrl('');
@@ -112,23 +122,61 @@ export default function TwoFactorAuthForm() {
     };
 
     const finishRecovery = () => {
+        const wasRegen = isRegen;
         reset();
-        toast.success('Two-factor authentication is now on for your account.', { title: '2FA enabled' });
+        if (wasRegen) toast.success('Your new recovery codes are active. The old ones no longer work.', { title: 'Recovery codes replaced' });
+        else toast.success('Two-factor authentication is now on for your account.', { title: '2FA enabled' });
     };
 
-    const downloadRecoveryCodes = () => {
-        const blob = new Blob(
-            [`SCLF recovery codes — ${user?.email || ''}\nGenerated ${new Date().toLocaleString()}\n\n${recoveryCodes.join('\n')}\n\nEach code works once. Keep this somewhere safe.\n`],
-            { type: 'text/plain' }
-        );
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'sclf-recovery-codes.txt';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    const handleRegen = async (e) => {
+        e.preventDefault();
+        setError('');
+        if (!password) {
+            setError('Enter your current password to confirm.');
+            return;
+        }
+        setLoading(true);
+        try {
+            const res = await axios.post('/2fa/recovery-codes', { password }, { silent: true });
+            setRecoveryCodes(res.data.recovery_codes || []);
+            setPassword('');
+            setShowPassword(false);
+            setIsRegen(true);
+            setPhase('recovery');
+        } catch (err) {
+            setError(err.response?.data?.errors?.password?.[0]
+                || err.response?.data?.message
+                || 'Could not create new recovery codes. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const codesText = () =>
+        `SCLF recovery codes — ${user?.email || ''}\nGenerated ${new Date().toLocaleString()}\n\n${recoveryCodes.join('\n')}\n\nEach code works once. Keep this somewhere safe.\n`;
+
+    // Opens the phone's share sheet ("Save to Files", AirDrop, Drive…) instead of
+    // the iOS text preview; desktop gets a normal download.
+    const downloadRecoveryCodes = async () => {
+        const result = await saveText(codesText(), 'sclf-recovery-codes.txt', { title: 'SCLF recovery codes' });
+        if (result === 'downloaded') toast.success('Saved to your Downloads.', { title: 'Recovery codes' });
+    };
+
+    const saveCodesImage = async () => {
+        const blob = await codesToPngBlob({
+            title: 'SCLF recovery codes',
+            subtitle: user?.email || '',
+            codes: recoveryCodes,
+            footer: 'Each code works once. Keep this somewhere safe.',
+        });
+        if (!blob) return;
+        const result = await saveBlob(blob, 'sclf-recovery-codes.png', { title: 'SCLF recovery codes' });
+        if (result === 'downloaded') toast.success('Saved to your Downloads.', { title: 'Recovery codes' });
+    };
+
+    const copyAllCodes = async () => {
+        if (await copyText(recoveryCodes.join('\n'))) toast.success('All codes copied.', { title: 'Recovery codes' });
+        else toast.error('Could not copy. Use Save instead.');
     };
 
     const handleCancelEnroll = async () => {
@@ -184,12 +232,24 @@ export default function TwoFactorAuthForm() {
                             <div className={`sx-row-meta${enabled ? ' is-on' : ''}`}>
                                 {enabled ? 'On — a code from your authenticator app is needed at sign-in' : 'Off — add a second step when you sign in'}
                             </div>
+                            {enabled && remaining !== null && (
+                                <div className="sx-row-meta" style={remaining <= 2 ? { color: '#b45309' } : undefined}>
+                                    {remaining === 0
+                                        ? 'No recovery codes left — create new ones now.'
+                                        : `${remaining} recovery code${remaining === 1 ? '' : 's'} left${remaining <= 2 ? ' — create new ones soon' : ''}`}
+                                </div>
+                            )}
                         </div>
                     </div>
                     {enabled ? (
-                        <button type="button" className="ds-btn ds-btn-secondary" onClick={() => setPhase('disable')}>
-                            <ShieldOff size={15} /> Turn off
-                        </button>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                            <button type="button" className="ds-btn ds-btn-secondary" onClick={() => setPhase('regen')}>
+                                <KeyRound size={15} /> New recovery codes
+                            </button>
+                            <button type="button" className="ds-btn ds-btn-secondary" onClick={() => setPhase('disable')}>
+                                <ShieldOff size={15} /> Turn off
+                            </button>
+                        </div>
                     ) : (
                         <button type="button" className="ds-btn ds-btn-secondary" onClick={startEnroll} disabled={loading}>
                             <Smartphone size={15} /> {loading ? 'Starting…' : 'Set up 2FA'}
@@ -254,7 +314,7 @@ export default function TwoFactorAuthForm() {
     if (phase === 'recovery') {
         return (
             <div className="sx-root sx-panel">
-                {header('Two-factor is on', 'One last thing: keep your recovery codes.')}
+                {header(isRegen ? 'New recovery codes' : 'Two-factor is on', isRegen ? 'Your old codes no longer work.' : 'One last thing: keep your recovery codes.')}
                 <Steps labels={['Scan', 'Verify', 'Save codes']} current={2} />
 
                 <Banner tone="warn">
@@ -271,9 +331,17 @@ export default function TwoFactorAuthForm() {
                     ))}
                 </div>
 
-                <button type="button" className="ds-btn ds-btn-secondary" onClick={downloadRecoveryCodes} style={{ marginBottom: 12 }}>
-                    <Download size={15} /> Download as .txt
-                </button>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
+                    <button type="button" className="ds-btn ds-btn-secondary" onClick={downloadRecoveryCodes}>
+                        <Download size={15} /> Save file
+                    </button>
+                    <button type="button" className="ds-btn ds-btn-secondary" onClick={saveCodesImage}>
+                        <Download size={15} /> Save as image
+                    </button>
+                    <button type="button" className="ds-btn ds-btn-secondary" onClick={copyAllCodes}>
+                        <Copy size={15} /> Copy all
+                    </button>
+                </div>
 
                 <label className="sx-check">
                     <input name="saved_ack" type="checkbox" checked={savedAck} onChange={(e) => setSavedAck(e.target.checked)} />
@@ -284,6 +352,34 @@ export default function TwoFactorAuthForm() {
                     <button type="button" className="ds-btn ds-btn-primary" onClick={finishRecovery} disabled={!savedAck}>Done</button>
                 </Actions>
             </div>
+        );
+    }
+
+    // ---------- Regenerate recovery codes ----------
+    if (phase === 'regen') {
+        return (
+            <form className="sx-root sx-panel" onSubmit={handleRegen} noValidate>
+                {header('Create new recovery codes?', 'Your old codes will stop working immediately.', KeyRound)}
+                {error && <Banner tone="error">{error}</Banner>}
+                <PasswordField
+                    id="tfa-regen-password"
+                    label="Current password"
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                    show={showPassword}
+                    onToggle={() => setShowPassword((v) => !v)}
+                    autoComplete="current-password"
+                    autoFocus
+                    hint="Type it yourself to confirm. Autofill and paste are turned off."
+                    manual
+                />
+                <Actions>
+                    <button type="button" className="ds-btn ds-btn-secondary" onClick={reset} disabled={loading}>Cancel</button>
+                    <button type="submit" className="ds-btn ds-btn-primary" disabled={loading || !password}>
+                        {loading ? 'Creating…' : 'Create new codes'}
+                    </button>
+                </Actions>
+            </form>
         );
     }
 

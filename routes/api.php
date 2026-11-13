@@ -139,6 +139,8 @@ Route::middleware(['auth:sanctum', 'account.active', 'require.full_access', 'pro
     Route::post('/2fa/setup', [TwoFactorController::class, 'setup']);
     Route::middleware('throttle:10,1')->post('/2fa/confirm', [TwoFactorController::class, 'confirm']);
     Route::middleware('throttle:5,1')->post('/2fa/disable', [TwoFactorController::class, 'disable']);
+    Route::get('/2fa/status', [TwoFactorController::class, 'status']);
+    Route::middleware('throttle:5,1')->post('/2fa/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes']);
 
     // Lost Items — any authenticated user may browse/search; create is
     // restricted to student/instructor via LostItemPolicy inside the controller.

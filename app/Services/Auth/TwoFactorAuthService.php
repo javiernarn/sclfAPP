@@ -124,7 +124,7 @@ class TwoFactorAuthService
         }
 
         $hashes = json_decode($user->two_factor_recovery_codes, true) ?: [];
-        $code = strtoupper(trim($code));
+        $code = $this->normalizeRecoveryCode($code);
 
         foreach ($hashes as $i => $hash) {
             if (Hash::check($code, $hash)) {
@@ -146,10 +146,67 @@ class TwoFactorAuthService
         return false;
     }
 
+    /**
+     * Phones often type recovery codes without the dash, with spaces, or in
+     * lowercase. Normalize everything to the stored XXXX-XXXX form.
+     */
+    public function normalizeRecoveryCode(string $code): string
+    {
+        $clean = strtoupper(preg_replace('/[^A-Za-z0-9]/', '', $code) ?? '');
+
+        return strlen($clean) === 8
+            ? substr($clean, 0, 4) . '-' . substr($clean, 4)
+            : $clean;
+    }
+
+    /** True when the submitted text looks like a recovery code, not a 6-digit TOTP code. */
+    public function looksLikeRecoveryCode(string $code): bool
+    {
+        $clean = preg_replace('/[\s-]/', '', $code) ?? '';
+
+        return !preg_match('/^\d{6}$/', $clean);
+    }
+
+    public function remainingRecoveryCodes(User $user): int
+    {
+        if (!$user->two_factor_recovery_codes) {
+            return 0;
+        }
+
+        return count(json_decode($user->two_factor_recovery_codes, true) ?: []);
+    }
+
+    /**
+     * Replace ALL recovery codes with a fresh batch (old ones stop working).
+     * Plaintext is returned once, only hashes are stored.
+     */
+    public function regenerateRecoveryCodes(User $user): array
+    {
+        $codes = $this->generateRecoveryCodes();
+
+        $user->forceFill([
+            'two_factor_recovery_codes' => json_encode(array_map(fn ($c) => Hash::make($c), $codes)),
+        ])->save();
+
+        $this->audit->log('auth.2fa_recovery_regenerated', $user, "Recovery codes regenerated for user #{$user->id}.");
+
+        return $codes;
+    }
+
     private function generateRecoveryCodes(): array
     {
+        // No 0/O/1/I so codes are easy to read and type on a phone.
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        $part = function () use ($alphabet) {
+            $out = '';
+            for ($i = 0; $i < 4; $i++) {
+                $out .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+            }
+            return $out;
+        };
+
         return collect(range(1, self::RECOVERY_CODE_COUNT))
-            ->map(fn () => strtoupper(Str::random(4) . '-' . Str::random(4)))
+            ->map(fn () => $part() . '-' . $part())
             ->all();
     }
 }

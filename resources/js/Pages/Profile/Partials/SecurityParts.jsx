@@ -15,7 +15,14 @@ import './SecurityForms.css';
  * and pasting or dropping text into it is refused.
  */
 export function PasswordField({ id, label, value, onChange, show, onToggle, autoComplete, autoFocus, hint, invalid, manual, error }) {
-    const [locked, setLocked] = useState(!!manual);
+    // The read-only "autofill blocker" breaks phones: iOS/Android will not open the
+    // keyboard for a field that is read-only at the moment it is tapped, and
+    // unlocking it afterwards is too late. So on touch devices the field is never
+    // locked (keyboard always opens); the lock is only used with a mouse.
+    const isTouch = typeof window !== 'undefined'
+        && typeof window.matchMedia === 'function'
+        && (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(hover: none)').matches);
+    const [locked, setLocked] = useState(!!manual && !isTouch);
     const stop = manual ? (e) => e.preventDefault() : undefined;
     return (
         <div className="sx-field">

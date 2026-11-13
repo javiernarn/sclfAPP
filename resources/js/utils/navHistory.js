@@ -113,7 +113,7 @@ const LABELS = [
     [/^\/app\/claims\/[^/]+$/, 'Claim'],
     [/^\/app\/claims$/, 'Claims'],
     [/^\/app\/notifications$/, 'Notifications'],
-    [/^\/app\/profile$/, 'Profile'],
+    [/^\/app\/profile$/, 'Profile Settings'],
     [/^\/app\/incidents\/report$/, 'Report Incident'],
     [/^\/app\/incidents\/[^/]+$/, 'Incident'],
     [/^\/app\/incidents$/, 'Incidents'],
