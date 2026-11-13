@@ -51,6 +51,9 @@ return Application::configure(basePath: dirname(__DIR__))
             );
         }
 
+        // Real visitor IP behind Cloudflare + host proxy (see the class docblock).
+        $middleware->prepend(\App\Http\Middleware\UseCloudflareClientIp::class);
+
         // Browser security headers on every response (see config/security.php).
         $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
 
