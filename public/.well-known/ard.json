@@ -1,0 +1,15 @@
+{
+  "entries": [
+    {
+      "identifier": "urn:air:sclfapp.ethiodeploy.app:docs:llms",
+      "displayName": "SCLF - Smart Campus Lost & Found overview",
+      "type": "text/plain",
+      "url": "https://sclfapp.ethiodeploy.app/llms.txt",
+      "representativeQueries": [
+        "What is SCLF at Opol Community College?",
+        "How do I report a lost item at Opol Community College?",
+        "Where can I check found items at OCC?"
+      ]
+    }
+  ]
+}
