@@ -143,6 +143,11 @@ class SecurityCheck extends Command
                 $exposed[] = $name;
             }
         }
+        // Source maps hold the original source code: `npm run build` moves them to
+        // storage/app/private/sourcemaps. One left under public/build is downloadable.
+        if ((glob(public_path('build/*.map')) ?: []) !== [] || (glob(public_path('build/assets/*.map')) ?: []) !== []) {
+            $exposed[] = 'build/**/*.map (source maps)';
+        }
 
         $exposed === []
             ? $this->add('pass', 'No sensitive files inside public/')

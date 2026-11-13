@@ -1,6 +1,71 @@
 import { defineConfig } from 'vite';
 import laravel from 'laravel-vite-plugin';
 import react from '@vitejs/plugin-react';
+import fs from 'node:fs';
+import path from 'node:path';
+
+// Source maps turn a minified crash location (main-C7U8P8xH.js:1:48213) back
+// into the real file and line. They contain the original source code, so they
+// must NEVER be served to visitors:
+//   - build.sourcemap is 'hidden': the .map files are written, but the bundles
+//     carry no "//# sourceMappingURL" comment, so no browser or DevTools asks
+//     for them;
+//   - this plugin then MOVES every .map out of public/ into
+//     storage/app/private/sourcemaps/, which the web server cannot reach;
+//   - `php artisan client-errors:decode` reads them from there.
+// Set SCLF_SOURCEMAPS=false to build without maps at all.
+const SOURCEMAPS_ENABLED = process.env.SCLF_SOURCEMAPS !== 'false';
+const SOURCEMAP_KEEP_DAYS = 30; // old bundles stay in users' caches for a while
+
+function privateSourceMaps() {
+    let outDir = '';
+    let root = '';
+
+    const walk = (dir) => fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+        const full = path.join(dir, e.name);
+        return e.isDirectory() ? walk(full) : [full];
+    });
+
+    return {
+        name: 'sclf-private-source-maps',
+        apply: 'build',
+        enforce: 'post',
+        configResolved(config) {
+            root = config.root;
+            outDir = path.resolve(config.root, config.build.outDir);
+        },
+        closeBundle() {
+            if (!SOURCEMAPS_ENABLED || !fs.existsSync(outDir)) return;
+
+            const target = path.resolve(root, 'storage/app/private/sourcemaps');
+            fs.mkdirSync(target, { recursive: true });
+
+            let moved = 0;
+            for (const file of walk(outDir).filter((f) => f.endsWith('.map'))) {
+                const dest = path.join(target, path.basename(file));
+                try {
+                    fs.renameSync(file, dest);
+                } catch {
+                    // rename fails across drives/volumes: copy, then remove the public one
+                    fs.copyFileSync(file, dest);
+                    fs.unlinkSync(file);
+                }
+                moved += 1;
+            }
+
+            // File names carry a content hash, so maps of older builds never clash with
+            // new ones. Drop the ones nobody can still be running.
+            const cutoff = Date.now() - SOURCEMAP_KEEP_DAYS * 86_400_000;
+            for (const f of fs.readdirSync(target)) {
+                const full = path.join(target, f);
+                if (f.endsWith('.map') && fs.statSync(full).mtimeMs < cutoff) fs.unlinkSync(full);
+            }
+
+            // eslint-disable-next-line no-console
+            console.log(`[sclf] ${moved} source map(s) moved to storage/app/private/sourcemaps (not public)`);
+        },
+    };
+}
 
 // lucide-animated ships one big file in which every icon is a top-level
 // `var XIcon = forwardRef(...)` call, and its package.json does not say it is
@@ -37,8 +102,10 @@ export default defineConfig({
             refresh: true,
         }),
         react(),
+        privateSourceMaps(),
     ],
     build: {
+        sourcemap: SOURCEMAPS_ENABLED ? 'hidden' : false,
         // The face-detection library (~1.3 MB, loaded only when someone opens the
         // profile-photo pop-up) is deliberately its own lazy file; everything else
         // stays well under 500 kB, so a limit just above it keeps the warning

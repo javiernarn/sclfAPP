@@ -28,7 +28,19 @@ class ClientTelemetry
         $s = (string) preg_replace('~(https?://[^\s)\'"?#]+)[?#][^\s)\'"]*~i', '$1', $s);
         $s = (string) preg_replace('/[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}/i', '[email]', $s);
         $s = (string) preg_replace('/\b[A-Za-z0-9_\-]{32,}\b/', '[token]', $s);
+
+        // Minified bundles are one very long line, so a frame such as
+        // "main-C7U8P8xH.js:1:148213" has a 6-digit column that the phone-number
+        // mask below would wipe, making the crash impossible to decode. Keep the
+        // line:column of script frames; every other long digit run is still masked.
+        $frames = [];
+        $s = (string) preg_replace_callback('~(\.(?:m?js|jsx)):(\d{1,6}):(\d{1,8})(?=[)\s]|$)~', function (array $m) use (&$frames) {
+            $frames[] = $m[1] . ':' . $m[2] . ':' . $m[3];
+
+            return "\u{27E6}" . (count($frames) - 1) . "\u{27E7}";
+        }, $s);
         $s = (string) preg_replace('/\d{6,}/', '[num]', $s);
+        $s = (string) preg_replace_callback('/\x{27E6}(\d+)\x{27E7}/u', fn (array $m) => $frames[(int) $m[1]] ?? '', $s);
 
         return mb_substr($s, 0, $max);
     }

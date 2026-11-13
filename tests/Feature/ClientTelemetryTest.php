@@ -170,6 +170,17 @@ class ClientTelemetryTest extends TestCase
         $this->assertSame(0, UserActivity::count());
     }
 
+    public function test_stack_frame_columns_survive_but_phone_numbers_do_not(): void
+    {
+        // Minified bundles are one long line: the column can have 6+ digits and must stay
+        // readable, or the crash cannot be decoded with its source map.
+        $out = ClientTelemetry::text('at https://app.test/build/assets/main-Abc123.js:1:148213 user 09171234567', 300);
+
+        $this->assertStringContainsString('main-Abc123.js:1:148213', $out);
+        $this->assertStringNotContainsString('09171234567', $out);
+        $this->assertStringContainsString('[num]', $out);
+    }
+
     public function test_scrub_helpers(): void
     {
         $this->assertSame('/app/lost/:id/edit', ClientTelemetry::path('/app/lost/123/edit?a=1'));

@@ -65,6 +65,18 @@ jobs:
       - name: Production build
         run: npm run build
 
+      # Source maps contain the original source code. The build must move them
+      # out of the web root (storage/app/private/sourcemaps) and leave none behind.
+      - name: Source maps are private
+        run: |
+          if find public/build -name '*.map' | grep -q .; then
+            echo "::error::source maps were left in public/build"; exit 1
+          fi
+          if grep -rl 'sourceMappingURL' public/build/assets --include='*.js' | grep -q .; then
+            echo "::error::a bundle still points browsers at a source map"; exit 1
+          fi
+          ls storage/app/private/sourcemaps/*.map > /dev/null
+
       - name: JS unit tests
         run: node --test tests/js/*.test.mjs
 

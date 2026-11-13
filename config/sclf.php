@@ -133,6 +133,9 @@ return [
         'enabled' => env('SCLF_CLIENT_TELEMETRY', true),
         'dedupe_minutes' => env('SCLF_CLIENT_TELEMETRY_DEDUPE', 10),
         'max_per_minute' => env('SCLF_CLIENT_TELEMETRY_MAX_PER_MIN', 300),
+        // Where `npm run build` leaves the source maps (private, never under public/).
+        // Used only by `php artisan client-errors:decode`.
+        'sourcemap_path' => storage_path('app/private/sourcemaps'),
     ],
 
     /*
