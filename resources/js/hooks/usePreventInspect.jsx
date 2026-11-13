@@ -22,6 +22,7 @@
 // ============================================================
 import React, { useEffect, useState, useCallback } from "react";
 import { AlertTriangle } from "../Components/icons";
+import { useAppTheme, isDarkTheme } from "./useAppTheme";
 
 // Controlled by VITE_ENABLE_INSPECT_PROTECTION in .env (true | false).
 // Unset or anything other than "false" => protection ON (safe default).
@@ -247,12 +248,16 @@ export default function usePreventInspect() {
 // can never pop it open.
 // ============================================================
 export function ZoomWarningModal({ open, onClose }) {
+    // Follows the picked app theme (same cookie the dashboard + auth pages use),
+    // so the popup matches Light / Dark / Maroon / Blue / Yellow / Custom.
+    const { theme } = useAppTheme();
     if (!INSPECT_PROTECTION_ENABLED || !open) return null;
+    const themeClass = `pz-${theme || "white"} ${isDarkTheme(theme) ? "pz-dark" : "pz-light"}`;
 
     return (
         <>
             <style>{ZOOM_MODAL_CSS}</style>
-            <div className="pi-zoom-backdrop" role="presentation">
+            <div className={`pi-zoom-backdrop ${themeClass}`} role="presentation">
                 <div
                     className="pi-zoom-card"
                     role="alertdialog"
@@ -295,6 +300,22 @@ export function ZoomWarningModal({ open, onClose }) {
 }
 
 const ZOOM_MODAL_CSS = `
+/* ---- theme tokens (mirror themes.css so this works on auth pages too) ---- */
+.pi-zoom-backdrop {
+    --pz-surface: #ffffff; --pz-edge: #c3ccdb; --pz-fg: #0b1220; --pz-shadow: rgba(2, 6, 23, 0.35);
+    --pz-accent: linear-gradient(135deg, #4338ca, #4f46e5 50%, #6366f1); --pz-on: #fff;
+    --pz-text: #4f46e5; --pz-rgb: 79, 70, 229;
+}
+.pz-black { --pz-surface: #12161f; --pz-edge: #323b4a; --pz-fg: #e7ecf3; --pz-text: #a5b4fc; --pz-rgb: 129, 140, 248; --pz-shadow: rgba(0, 0, 0, 0.6); }
+.pz-maroon { --pz-surface: #fffafb; --pz-edge: #e8b3bc; --pz-accent: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); --pz-text: #9f1239; --pz-rgb: 159, 18, 57; }
+.pz-blue { --pz-surface: #f9fbff; --pz-edge: #a9cdf5; --pz-accent: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); --pz-text: #1d4ed8; --pz-rgb: 37, 99, 235; }
+.pz-yellow { --pz-surface: #fffcf4; --pz-edge: #e6c477; --pz-fg: #1c1408; --pz-accent: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); --pz-on: #1c1408; --pz-text: #b45309; --pz-rgb: 217, 119, 6; }
+.pz-dark-white { --pz-surface: #0a0a0a; --pz-edge: #2a2a2a; --pz-fg: #f2f2f2; --pz-accent: linear-gradient(135deg, #ffffff, #e6e6e6 50%, #bdbdbd); --pz-on: #000; --pz-text: #f2f2f2; --pz-rgb: 255, 255, 255; --pz-shadow: rgba(0, 0, 0, 0.7); }
+.pz-dark-blue { --pz-surface: #060d1f; --pz-edge: #2f5fae; --pz-fg: #e7ecf3; --pz-accent: linear-gradient(135deg, #1e40af, #2563eb 50%, #38bdf8); --pz-text: #7dd3fc; --pz-rgb: 56, 189, 248; --pz-shadow: rgba(0, 0, 0, 0.7); }
+.pz-dark-yellow { --pz-surface: #120b02; --pz-edge: #a8761c; --pz-fg: #f6ead2; --pz-accent: linear-gradient(135deg, #b45309, #d97706 50%, #f59e0b); --pz-on: #1c1408; --pz-text: #fbbf24; --pz-rgb: 245, 158, 11; --pz-shadow: rgba(0, 0, 0, 0.7); }
+.pz-dark-maroon { --pz-surface: #14060a; --pz-edge: #b5485c; --pz-fg: #f8e7ea; --pz-accent: linear-gradient(135deg, #7f1d2e, #9f1239 50%, #dc2626); --pz-text: #fca5a5; --pz-rgb: 248, 113, 113; --pz-shadow: rgba(0, 0, 0, 0.7); }
+.pz-dark { background: rgba(0, 0, 0, 0.66) !important; }
+
 .pi-zoom-backdrop {
     position: fixed;
     inset: 0;
@@ -311,14 +332,15 @@ const ZOOM_MODAL_CSS = `
 .pi-zoom-card {
     width: 100%;
     max-width: 380px;
-    background: #fff;
+    background: var(--pz-surface);
+    border: 1.5px solid var(--pz-edge);
     border-radius: 16px;
     padding: 26px 24px 22px;
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 24px 60px var(--pz-shadow), 0 0 0 4px rgba(var(--pz-rgb), 0.14);
     text-align: center;
     animation: pi-zoom-pop 0.2s cubic-bezier(0.22, 1, 0.36, 1) both;
     font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    color: #1b1f3b;
+    color: var(--pz-fg);
 }
 .pi-zoom-icon {
     width: 44px;
@@ -328,8 +350,9 @@ const ZOOM_MODAL_CSS = `
     align-items: center;
     justify-content: center;
     margin: 0 auto 14px;
-    background: rgba(245, 158, 11, 0.14);
-    color: #b5842e;
+    background: rgba(var(--pz-rgb), 0.16);
+    border: 1.5px solid rgba(var(--pz-rgb), 0.4);
+    color: var(--pz-text);
 }
 .pi-zoom-title { font-size: 17px; font-weight: 800; margin: 0 0 10px; }
 .pi-zoom-text { font-size: 13.5px; line-height: 1.55; opacity: 0.75; margin: 0 0 6px; }
@@ -342,11 +365,12 @@ const ZOOM_MODAL_CSS = `
     font-size: 13.5px;
     font-weight: 700;
     cursor: pointer;
-    background: #1b1f3b;
-    color: #fff;
+    background: var(--pz-accent);
+    color: var(--pz-on);
     transition: opacity 0.15s ease, transform 0.1s ease;
 }
 .pi-zoom-btn:hover { opacity: 0.9; }
+.pi-zoom-btn:focus-visible { outline: 2px solid var(--pz-text); outline-offset: 2px; }
 .pi-zoom-btn:active { transform: translateY(1px); }
 
 @keyframes pi-zoom-fade { from { opacity: 0; } to { opacity: 1; } }
