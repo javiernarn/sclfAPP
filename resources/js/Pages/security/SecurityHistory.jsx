@@ -7,12 +7,12 @@ import {
     PackageCheck,
     QrCode,
     UserCheck,
-    Search,
     ChevronLeft,
     ChevronRight,
 } from '../../Components/icons';
 import { roleAndName } from '../../utils/roleLabel';
 import RoleText from '../../Components/shared/RoleText';
+import HistoryFilterBar from '../../Components/shared/HistoryFilterBar';
 
 // Two tabs, mirroring the two release flows that actually exist in the
 // backend (see HistoryController):
@@ -24,6 +24,12 @@ import RoleText from '../../Components/shared/RoleText';
 const TABS = [
     { key: 'counter', label: 'Counter Release History', icon: PackageCheck },
     { key: 'lost-found', label: 'Lost & Found Release History', icon: History },
+];
+
+const COUNTER_STATUS = [
+    { value: '', label: 'All' },
+    { value: 'released', label: 'Released' },
+    { value: 'pending', label: 'Not yet released' },
 ];
 
 function ReleaseMethodBadge({ method }) {
@@ -125,22 +131,15 @@ function CounterHistoryTab() {
                 audited actions, even when the same officer does both.
             </p>
 
-            <div className="ds-filter-row" style={{ alignItems: 'center' }}>
-                <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
-                    <Search size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', opacity: 0.5, pointerEvents: 'none' }} />
-                    <input name="q"
-                        value={q}
-                        onChange={(e) => setQ(e.target.value)}
-                        placeholder="Search item, owner name, or school ID…"
-                        style={{ paddingLeft: 32, width: '100%' }}
-                    />
-                </div>
-                <button type="button" className={`ds-filter-chip ${status === '' ? 'is-active' : ''}`} onClick={() => setStatus('')}>All</button>
-                <button type="button" className={`ds-filter-chip ${status === 'released' ? 'is-active' : ''}`} onClick={() => setStatus('released')}>Released</button>
-                <button type="button" className={`ds-filter-chip ${status === 'pending' ? 'is-active' : ''}`} onClick={() => setStatus('pending')}>Not yet released</button>
-                <input name="date_from" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} title="Checked in from" />
-                <input name="date_to" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} title="Checked in to" />
-            </div>
+            <HistoryFilterBar
+                q={q} onQ={setQ}
+                searchPlaceholder="Search item, owner or school ID…"
+                searchLabel="Search counter check-ins"
+                statusOptions={COUNTER_STATUS} status={status} onStatus={setStatus}
+                dateFrom={dateFrom} dateTo={dateTo} onDateFrom={setDateFrom} onDateTo={setDateTo}
+                fromCaption="Checked in from" toCaption="Checked in to"
+                onReset={() => { setQ(''); setStatus(''); setDateFrom(''); setDateTo(''); }}
+            />
 
             {loading && <div className="ds-skeleton" />}
             {!loading && rows.length === 0 && <div className="ds-empty">No counter check-ins match these filters.</div>}
@@ -300,19 +299,14 @@ function LostFoundHistoryTab() {
                 <code> ::manualRelease()</code> (an officer override with a required reason).
             </p>
 
-            <div className="ds-filter-row" style={{ alignItems: 'center' }}>
-                <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
-                    <Search size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', opacity: 0.5, pointerEvents: 'none' }} />
-                    <input name="q"
-                        value={q}
-                        onChange={(e) => setQ(e.target.value)}
-                        placeholder="Search item, claimant name, or school ID…"
-                        style={{ paddingLeft: 32, width: '100%' }}
-                    />
-                </div>
-                <input name="date_from" type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} title="Released from" />
-                <input name="date_to" type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} title="Released to" />
-            </div>
+            <HistoryFilterBar
+                q={q} onQ={setQ}
+                searchPlaceholder="Search item, claimant or school ID…"
+                searchLabel="Search completed releases"
+                dateFrom={dateFrom} dateTo={dateTo} onDateFrom={setDateFrom} onDateTo={setDateTo}
+                fromCaption="Released from" toCaption="Released to"
+                onReset={() => { setQ(''); setDateFrom(''); setDateTo(''); }}
+            />
 
             {loading && <div className="ds-skeleton" />}
             {!loading && rows.length === 0 && <div className="ds-empty">No completed releases match these filters.</div>}

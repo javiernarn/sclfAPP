@@ -1,0 +1,107 @@
+/* History filter bar (see HistoryFilterBar.jsx).
+   Colours come from the theme tokens (--tk-*, --ds-*), so every light / dark /
+   seasonal theme is followed automatically. Works on iOS Safari, Android Chrome,
+   Samsung Internet, Firefox and desktop Chromium. */
+
+.hf-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 18px; }
+
+/* ---------- shared field look ---------- */
+.hf-field {
+    position: relative; display: flex; align-items: center; box-sizing: border-box;
+    min-height: 46px; border-radius: 14px;
+    border: 1.5px solid var(--ds-edge-input, var(--tk-edge, #c3ccdb));
+    background: var(--tk-field, #f4f7fb); color: inherit;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.hf-field:hover { border-color: rgba(var(--tk-accent-rgb, 79, 70, 229), .55); }
+.hf-field:focus-within {
+    border-color: var(--ds-focus, #6366f1);
+    box-shadow: 0 0 0 3px rgba(var(--tk-accent-rgb, 79, 70, 229), .22);
+}
+.hf-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); opacity: .6; pointer-events: none; flex: none; }
+
+.hf-field input {
+    -webkit-appearance: none; appearance: none;
+    flex: 1 1 auto; min-width: 0; width: 100%; height: 100%; min-height: 43px; box-sizing: border-box;
+    margin: 0; border: 0; border-radius: inherit; outline: 0; box-shadow: none;
+    background: transparent; color: inherit; font: inherit; font-size: 14px; line-height: 1.3;
+    padding: 0 40px 0 40px; text-align: left;
+}
+.hf-field input::placeholder { color: inherit; opacity: .5; text-overflow: ellipsis; }
+.hf-field input:focus { box-shadow: none; outline: 0; }
+
+/* ---------- search ---------- */
+.hf-search { flex: 1 1 280px; min-width: 0; }
+.hf-search input::-webkit-search-cancel-button,
+.hf-search input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+.hf-search input::-ms-clear { display: none; }
+
+/* ---------- clear (x) button ---------- */
+.hf-clear {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%); z-index: 3;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%;
+    background: rgba(127, 127, 127, .18); color: inherit; cursor: pointer; opacity: .85;
+}
+.hf-clear:hover { opacity: 1; background: rgba(var(--tk-accent-rgb, 79, 70, 229), .25); }
+.hf-clear:focus-visible { outline: 2px solid var(--ds-focus, #6366f1); outline-offset: 1px; }
+
+/* ---------- status chips ---------- */
+.hf-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-height: 46px; }
+.hf-chips .ds-filter-chip { min-height: 40px; }
+
+/* ---------- dates ---------- */
+.hf-dates { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.hf-dategroup { display: flex; flex-direction: column; gap: 4px; }
+.hf-cap { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; opacity: .6; padding-left: 4px; }
+.hf-date { width: 190px; }
+
+/* Native date text: left-aligned and vertically centred on iOS + Android WebKit. */
+.hf-date input { min-width: 0; }
+.hf-date input::-webkit-date-and-time-value { text-align: left; min-height: 1.3em; margin: 0; }
+.hf-date input::-webkit-datetime-edit { padding: 0; }
+.hf-date input::-webkit-datetime-edit-fields-wrapper { padding: 0; }
+.hf-date input::-webkit-inner-spin-button { display: none; }
+/* Whole field is the tap/click target for the calendar (Chrome, Samsung, Android). */
+.hf-date input::-webkit-calendar-picker-indicator {
+    position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0;
+    opacity: 0; cursor: pointer; background: transparent;
+}
+/* Empty: show our own "Any date" instead of dd/mm/yyyy (which also differs per phone). */
+.hf-placeholder { position: absolute; left: 40px; top: 50%; transform: translateY(-50%); font-size: 14px; opacity: .5; pointer-events: none; }
+.hf-date:not(.has-value):not(:focus-within) input { color: transparent; }
+.hf-date:not(.has-value):not(:focus-within) input::-webkit-datetime-edit { color: transparent; }
+.hf-date:focus-within .hf-placeholder { display: none; }
+/* Native picker popup matches the theme (dark calendar in dark themes). */
+.ds-shell.light .hf-date input { color-scheme: light; }
+.ds-shell.dark .hf-date input { color-scheme: dark; }
+
+.hf-reset {
+    display: inline-flex; align-items: center; gap: 6px; min-height: 46px; padding: 0 14px;
+    border: 1.5px dashed var(--ds-edge-input, var(--tk-edge, #c3ccdb)); border-radius: 14px;
+    background: transparent; color: var(--tk-accent-text, #4f46e5);
+    font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.hf-reset:hover { background: rgba(var(--tk-accent-rgb, 79, 70, 229), .12); }
+.hf-reset:focus-visible { outline: 2px solid var(--ds-focus, #6366f1); outline-offset: 2px; }
+
+/* ---------- phones / narrow windows ---------- */
+@media (max-width: 640px) {
+    .hf-bar { flex-direction: column; align-items: stretch; gap: 12px; }
+    .hf-search { flex: none; width: 100%; min-height: 50px; border-radius: 99px; }
+    .hf-search input { font-size: 16px; padding-left: 44px; }       /* 16px: no auto-zoom on iOS / Android */
+    .hf-search .hf-icon { left: 16px; }
+    /* chips: one scrollable line instead of wrapping into a messy block */
+    .hf-chips { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; margin: 0 -2px; padding: 2px; }
+    .hf-chips::-webkit-scrollbar { display: none; }
+    .hf-chips .ds-filter-chip { flex: none; min-height: 42px; border-radius: 99px; }
+    /* two equal date columns, reset below */
+    .hf-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; }
+    .hf-dategroup { min-width: 0; }
+    .hf-date { width: 100%; min-height: 50px; }
+    .hf-date input { font-size: 16px; min-height: 47px; padding-left: 38px; padding-right: 36px; }
+    .hf-date .hf-icon { left: 12px; }
+    .hf-placeholder { left: 38px; font-size: 15px; }
+    .hf-reset { grid-column: 1 / -1; justify-content: center; min-height: 44px; }
+}
+@media (pointer: coarse) { .hf-clear { width: 30px; height: 30px; } }
