@@ -35,7 +35,7 @@
 }
 .sclf-confirm-icon-default,
 .sclf-confirm-icon-discard { background: rgba(212, 167, 61, 0.14); color: #b5842e; }
-.sclf-confirm-icon-danger { background: rgba(226, 84, 58, 0.12); color: #e2543a; }
+.sclf-confirm-icon-danger { background: rgba(220, 38, 38, 0.12); color: #dc2626; }
 
 .sclf-confirm-title { font-size: 17px; font-weight: 800; margin: 0 0 8px; }
 .sclf-confirm-message { font-size: 13.5px; line-height: 1.55; opacity: 0.72; margin: 0 0 22px; }
@@ -45,8 +45,8 @@
 .sclf-confirm-phrase {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-weight: 800;
-    background: rgba(226, 84, 58, 0.12);
-    color: #c43d24;
+    background: rgba(220, 38, 38, 0.12);
+    color: #b91c1c;
     padding: 1px 6px;
     border-radius: 6px;
     user-select: all;
@@ -61,7 +61,7 @@
     background: transparent;
     color: inherit;
 }
-.sclf-confirm-typed input:focus { outline: none; border-color: #e2543a; box-shadow: 0 0 0 3px rgba(226, 84, 58, 0.18); }
+.sclf-confirm-typed input:focus { outline: none; border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.18); }
 .sclf-confirm-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .sclf-confirm-actions { display: flex; gap: 10px; }
@@ -80,7 +80,7 @@
 .sclf-confirm-btn-ghost:hover { background: rgba(27, 31, 59, 0.1); }
 .sclf-confirm-btn-primary { background: #1b1f3b; color: #fff; }
 .sclf-confirm-btn-primary:hover { opacity: 0.9; }
-.sclf-confirm-btn-danger { background: #e2543a; color: #fff; }
+.sclf-confirm-btn-danger { background: #dc2626; color: #fff; }
 .sclf-confirm-btn-danger:hover { opacity: 0.9; }
 
 /* ---------- compact "read this first" notice ---------- */
@@ -94,8 +94,8 @@
     font-size: 13px; line-height: 1.45;
 }
 .sclf-notice-ico { flex: none; margin-top: 1px; display: inline-flex; opacity: 0.75; }
-.sclf-notice-danger { background: rgba(226, 84, 58, 0.1); }
-.sclf-notice-danger .sclf-notice-ico { color: #e2543a; opacity: 1; }
+.sclf-notice-danger { background: rgba(220, 38, 38, 0.1); }
+.sclf-notice-danger .sclf-notice-ico { color: #dc2626; opacity: 1; }
 .sclf-notice-warn { background: rgba(212, 167, 61, 0.14); }
 .sclf-notice-warn .sclf-notice-ico { color: #b5842e; opacity: 1; }
 .sclf-notice-copy strong { font-weight: 800; }
@@ -122,7 +122,7 @@
 
 .sclf-confirm-timer { margin: 0 0 14px; text-align: left; font-size: 12px; font-weight: 600; opacity: 0.85; }
 .sclf-confirm-timer-track { height: 5px; border-radius: 99px; background: rgba(27, 31, 59, 0.12); overflow: hidden; margin-bottom: 6px; }
-.sclf-confirm-timer-fill { height: 100%; border-radius: 99px; background: #e2543a; transition: width 1s linear; }
+.sclf-confirm-timer-fill { height: 100%; border-radius: 99px; background: #dc2626; transition: width 1s linear; }
 
 @keyframes sclf-confirm-fade { from { opacity: 0; } to { opacity: 1; } }
 @keyframes sclf-confirm-pop {

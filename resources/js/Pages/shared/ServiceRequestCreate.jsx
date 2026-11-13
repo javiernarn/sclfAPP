@@ -103,7 +103,6 @@ export default function ServiceRequestCreate() {
             message: 'Once submitted, this service request can no longer be edited or deleted by you. Only the Administrator can edit or remove it. Please double-check everything before you continue.',
             confirmLabel: 'Yes, submit request',
             cancelLabel: 'Go back',
-            tone: 'danger',
         });
         if (!understood) return;
         setError('');

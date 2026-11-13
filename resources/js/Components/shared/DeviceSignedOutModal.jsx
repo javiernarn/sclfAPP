@@ -59,7 +59,7 @@ export default function DeviceSignedOutModal() {
     const dark = isDarkTheme(theme);
 
     return (
-        <div className={`ios-alert-backdrop${dark ? ' ios-dark' : ''}`} role="presentation">
+        <div className={`ios-alert-backdrop${dark ? ' ios-dark' : ''}`} data-sclf-theme={theme} role="presentation">
             <div
                 className="ios-alert"
                 role="alertdialog"

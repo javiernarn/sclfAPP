@@ -82,6 +82,11 @@
     background: var(--pt-bg); color: var(--pt-fg); border-color: var(--pt-edge);
 }
 
+.sclf-popup .sclf-confirm-btn-ghost { border: 1.5px solid var(--pt-edge); }
+.sclf-popup .sclf-confirm-btn-danger { background: #dc2626; color: #fff; }
+.sclf-popup .sclf-confirm-btn:focus-visible { outline: 2px solid var(--pt-accent-solid); outline-offset: 2px; }
+.sclf-popup .sclf-confirm-typed input:focus { border-color: var(--pt-accent-solid); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pt-accent-solid) 22%, transparent); }
+
 /* dropdown inside the confirm dialog (e.g. "Reason") */
 .sclf-confirm-field { text-align: left; margin: -8px 0 18px; }
 .sclf-confirm-field label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; opacity: 0.8; }
@@ -99,8 +104,9 @@
 
 /* compact notice rows follow the theme too */
 .sclf-popup .sclf-notice-row { background: color-mix(in srgb, var(--pt-fg) 6%, transparent); }
-.sclf-popup .sclf-notice-danger { background: color-mix(in srgb, #e2543a 14%, transparent); }
-.sclf-popup .sclf-notice-warn { background: color-mix(in srgb, #d4a73d 18%, transparent); }
+.sclf-popup .sclf-notice-danger { background: color-mix(in srgb, #dc2626 14%, transparent); }
+.sclf-popup .sclf-notice-warn { background: color-mix(in srgb, var(--pt-accent-solid) 14%, transparent); }
+.sclf-popup .sclf-notice-warn .sclf-notice-ico { color: var(--pt-accent-solid); }
 .sclf-popup .sclf-notice-link { border-color: var(--pt-edge); }
 .sclf-popup .sclf-confirm-timer-track { background: color-mix(in srgb, var(--pt-fg) 14%, transparent); }
 .sclf-popup .sclf-confirm-timer-fill { background: var(--pt-accent-solid); }
@@ -114,13 +120,45 @@
 }
 .sclf-toast-viewport[data-sclf-theme] .sclf-toast-icon { opacity: 0.75; }
 .sclf-toast-viewport[data-sclf-theme] .sclf-toast-close:hover { background: color-mix(in srgb, var(--pt-fg) 10%, transparent); }
-/* Only the background and text follow the theme. The outline keeps its
-   meaning: green = success, red = error, amber = warning, blue = info. */
-.sclf-toast-viewport[data-sclf-theme] .sclf-toast-success { border-color: #16a34a !important; }
-.sclf-toast-viewport[data-sclf-theme] .sclf-toast-error   { border-color: #ef4444 !important; }
-.sclf-toast-viewport[data-sclf-theme] .sclf-toast-warning { border-color: #f59e0b !important; }
-.sclf-toast-viewport[data-sclf-theme] .sclf-toast-info    { border-color: #0ea5e9 !important; }
+/* Same outline as every other popup (theme edge); beats the per-type !important in Toast.css. */
+.sclf-toast-viewport[data-sclf-theme] .sclf-toast { border-color: var(--pt-edge) !important; }
+/* Same outline as every other popup (theme edge). The meaning of a toast is
+   carried by its icon: green = success, red = error, theme accent = warning / info. */
+.sclf-toast-viewport[data-sclf-theme] .sclf-toast-success .sclf-toast-icon { color: #16a34a; opacity: 1; }
+.sclf-toast-viewport[data-sclf-theme] .sclf-toast-error .sclf-toast-icon   { color: #dc2626; opacity: 1; }
+.sclf-toast-viewport[data-sclf-theme] .sclf-toast-warning .sclf-toast-icon,
+.sclf-toast-viewport[data-sclf-theme] .sclf-toast-info .sclf-toast-icon    { color: var(--pt-accent-solid); opacity: 1; }
+.sclf-toast-viewport[data-sclf-theme] .sclf-undo-btn { color: var(--pt-accent-solid); }
 
 /* Other popups that sit outside the shell (own look, just outlined). */
 .pr-modal { border: 1.5px solid #c3ccdb; }
-.ios-alert { border: 1.5px solid #3a4457; }
+
+/* "Signed out" alert: iOS shape, app colours. */
+.ios-alert-backdrop[data-sclf-theme] {
+    --ios-bg: var(--pt-bg); --ios-text: var(--pt-fg);
+    --ios-secondary: color-mix(in srgb, var(--pt-fg) 62%, transparent);
+    --ios-divider: var(--pt-edge); --ios-blue: var(--pt-accent-solid);
+    --ios-track: color-mix(in srgb, var(--pt-fg) 14%, transparent);
+}
+.ios-alert { border: 1.5px solid var(--pt-edge, #3a4457); box-shadow: var(--pt-shadow, 0 10px 40px rgba(0, 0, 0, 0.25)); }
+
+/* "Install the app" banner */
+.ip-card[data-sclf-theme] { --ip-bg: var(--pt-bg); --ip-fg: var(--pt-fg); --ip-edge: var(--pt-edge); --ip-soft: color-mix(in srgb, var(--pt-fg) 7%, var(--pt-bg)); box-shadow: var(--pt-shadow); }
+.ip-card[data-sclf-theme] .ip-go { background: var(--pt-accent); color: var(--pt-accent-fg); box-shadow: none; }
+.ip-card[data-sclf-theme] .ip-later:focus-visible, .ip-card[data-sclf-theme] .ip-go:focus-visible, .ip-card[data-sclf-theme] .ip-x:focus-visible { outline-color: var(--pt-accent-solid); }
+
+/* ---------- scan student QR popup ---------- */
+.sq-sheet[data-sclf-theme] {
+    background: var(--pt-bg); color: var(--pt-fg);
+    border: 1.5px solid var(--pt-edge); box-shadow: var(--pt-shadow);
+}
+.sq-sheet[data-sclf-theme] .sq-sub { color: color-mix(in srgb, var(--pt-fg) 68%, transparent); }
+.sq-sheet[data-sclf-theme] .sq-paste input { background: var(--pt-bg); color: var(--pt-fg); border-color: var(--pt-edge); }
+.sq-sheet[data-sclf-theme] .sq-paste input::placeholder { color: color-mix(in srgb, var(--pt-fg) 50%, transparent); }
+.sq-sheet[data-sclf-theme] .sq-paste input:focus { border-color: var(--pt-accent-solid); }
+.sq-sheet[data-sclf-theme] .sq-paste button { background: var(--pt-accent); color: var(--pt-accent-fg); border-color: transparent; }
+.sq-sheet[data-sclf-theme] .sq-paste button:hover:not(:disabled) { background: var(--pt-accent); border-color: transparent; opacity: .9; }
+.sq-sheet[data-sclf-theme] .sq-paste button:disabled { background: color-mix(in srgb, var(--pt-fg) 12%, transparent); color: color-mix(in srgb, var(--pt-fg) 45%, transparent); border-color: transparent; }
+.sq-sheet[data-sclf-theme] .sq-upload { color: var(--pt-accent-solid); }
+.sq-sheet[data-sclf-theme] .sq-dot-live { background: var(--pt-accent-solid); }
+.sq-sheet[data-sclf-theme] .sq-sweep { background: linear-gradient(90deg, transparent, var(--pt-accent-solid) 20%, var(--pt-accent-solid) 80%, transparent); }

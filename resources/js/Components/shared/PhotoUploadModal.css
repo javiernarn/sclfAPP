@@ -17,7 +17,7 @@
 @keyframes pum-fade { from { opacity: 0; } to { opacity: 1; } }
 
 .pum-card {
-    --pum-ok: #16a34a; --pum-bad: #e2543a;
+    --pum-ok: #16a34a; --pum-bad: #dc2626;
     --pum-soft: color-mix(in srgb, var(--pt-fg) 6%, transparent);
     --pum-line: color-mix(in srgb, var(--pt-edge) 55%, transparent);
     --pum-muted: color-mix(in srgb, var(--pt-fg) 66%, transparent);

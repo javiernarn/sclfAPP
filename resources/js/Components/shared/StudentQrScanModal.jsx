@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, X } from '../icons';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import './StudentQrScanModal.css';
+import './Popups.css';
 
 /**
  * Reads the QR code printed at the bottom of a student's/instructor's
@@ -22,6 +24,7 @@ export function extractStudentToken(text) {
 }
 
 export default function StudentQrScanModal({ open, onClose }) {
+    const { theme } = useAppTheme();
     const navigate = useNavigate();
     const videoRef = useRef(null);
     const fileRef = useRef(null);
@@ -123,7 +126,7 @@ export default function StudentQrScanModal({ open, onClose }) {
 
     return (
         <div className="sq-backdrop" role="dialog" aria-modal="true" aria-label="Scan student QR" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-            <div className="sq-sheet">
+            <div className="sq-sheet" data-sclf-theme={theme}>
                 <div className={`sq-view is-${camState} ${miss ? 'is-miss' : ''}`}>
                     <video ref={videoRef} playsInline muted />
                     <div className="sq-frame" aria-hidden="true">

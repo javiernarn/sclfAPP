@@ -7,6 +7,8 @@ import {
     promptInstall, snooze, subscribe,
 } from "../../utils/pwaInstall";
 import "./InstallPrompt.css";
+import "./Popups.css";
+import { useAppTheme } from "../../hooks/useAppTheme";
 
 // "Install the app" banner. Shows once per device until the person either
 // installs (never shown again on that device) or taps "Not now" (asked again
@@ -21,6 +23,7 @@ const HIDE_ON = [/^\/app\/print\//, /print-report$/];
 const SHOW_DELAY_MS = 2500;      // let the page settle before asking
 
 export default function InstallPrompt() {
+    const { theme } = useAppTheme();
     const { pathname } = useLocation();
     const [, force] = useState(0);
     const [ready, setReady] = useState(false);
@@ -43,7 +46,7 @@ export default function InstallPrompt() {
 
     return (
         <div className="ip-wrap" role="region" aria-label="Install the app">
-            <div className="ip-card">
+            <div className="ip-card" data-sclf-theme={theme}>
                 <img className="ip-logo" src={logo} alt="" width="44" height="44" />
                 <div className="ip-text">
                     <b>Install SCLF</b>

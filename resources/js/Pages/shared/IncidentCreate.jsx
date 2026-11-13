@@ -112,7 +112,6 @@ export default function IncidentCreate() {
             message: 'Once submitted, this incident report can no longer be edited or deleted by you. Only the Administrator can edit or remove it. Please double-check everything before you continue.',
             confirmLabel: 'Yes, submit report',
             cancelLabel: 'Go back',
-            tone: 'danger',
         });
         if (!understood) return;
         setError('');
