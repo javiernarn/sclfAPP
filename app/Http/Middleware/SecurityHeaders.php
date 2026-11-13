@@ -97,6 +97,13 @@ class SecurityHeaders
             "frame-ancestors 'none'",
         ];
 
+        // Violations are posted to our own collector (written to
+        // storage/logs/client.log as "csp_violation"), so the report-only period
+        // yields real data from real browsers before enforcing.
+        if (config('sclf.telemetry.enabled', true)) {
+            $directives[] = 'report-uri /api/client-errors';
+        }
+
         // Browsers ignore this directive (and print a console warning) in a
         // report-only policy, so only send it when the policy is enforced.
         if ($enforcing && $request->isSecure()) {

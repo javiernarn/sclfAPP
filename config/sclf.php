@@ -112,7 +112,27 @@ return [
             'api/notifications/unread-count',
             'api/notifications',
             'api/counter/queue/mine',
+            // Browser error / Web Vitals beacons: not user actions, and they fire on every page view.
+            'api/client-errors',
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Browser telemetry (POST /api/client-errors)
+    |--------------------------------------------------------------------------
+    |
+    | Crashes, Web Vitals and CSP violation reports from the browser, written to
+    | storage/logs/client.log. No user id, IP address or query string is logged.
+    | `dedupe_minutes`: the same error is logged once per window.
+    | `max_per_minute`: hard ceiling on logged events for the whole site, so a
+    | flood from many addresses cannot fill the disk.
+    |
+    */
+    'telemetry' => [
+        'enabled' => env('SCLF_CLIENT_TELEMETRY', true),
+        'dedupe_minutes' => env('SCLF_CLIENT_TELEMETRY_DEDUPE', 10),
+        'max_per_minute' => env('SCLF_CLIENT_TELEMETRY_MAX_PER_MIN', 300),
     ],
 
     /*

@@ -1,3 +1,6 @@
+import { installGlobalErrorReporting } from './utils/telemetry';
+import { startWebVitals } from './utils/webVitals';
+installGlobalErrorReporting(); // crashes -> POST /api/client-errors (before React mounts, so startup crashes count)
 import './utils/devtoolsGuard'; // hide the UI while DevTools is open (runs before React mounts)
 import './utils/animationsPref'; // applies the saved Animations on/off before first paint
 import './utils/touchFocusGuard'; // iOS: skip page-load autoFocus so tapping a field opens the keyboard
@@ -46,6 +49,7 @@ if (systemMode !== 'off') {
     // doesn't have to wait on a fresh registration mid-click. Registering
     // never itself prompts for permission — that only happens in enablePush().
     registerServiceWorker();
+    startWebVitals(); // LCP / INP / CLS / TTFB, sent once when the page is hidden
     root.render(
     <React.StrictMode>
         <BrowserRouter>

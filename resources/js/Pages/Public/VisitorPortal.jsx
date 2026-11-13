@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import axios from '../../config/axiosConfig';
 import logo from '../../assets/images/site-logo.png';
 import './VisitorPortal.css';
+import SkipLink, { MAIN_CONTENT_ID } from '../../Components/shared/SkipLink';
 
 /**
  * Public page opened by scanning the QR code on a visitor badge (/visitor/:token).
@@ -42,6 +43,7 @@ function Shell({ children, portal, footer = null, hero = false }) {
     const college = portal?.college || 'Opol Community College';
     return (
         <div className="vp-page">
+            <SkipLink />
             <header className="vp-appbar">
                 <img src={logo} alt="" width="40" height="40" />
                 <div className="vp-appbar-text">
@@ -51,7 +53,7 @@ function Shell({ children, portal, footer = null, hero = false }) {
             </header>
             {/* Only this area scrolls; the app bar above and the action bar below stay put. */}
             <div className="vp-scroll" id="vp-scroll">
-                <main className={`vp-main${hero ? ' has-hero' : ''}`}>
+                <main id={MAIN_CONTENT_ID} tabIndex={-1} className={`vp-main${hero ? ' has-hero' : ''}`}>
                     <div className="vp-card" key={hero ? 'hero' : 'plain'}>
                         {children}
                     </div>

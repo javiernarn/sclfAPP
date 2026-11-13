@@ -48,6 +48,7 @@ import "./MobileListFix.css";
 // Last: stops any wide child from pushing a card off the screen on small phones (see file header).
 import "./PhoneSafety.css";
 import RoleText from "./RoleText";
+import SkipLink, { MAIN_CONTENT_ID } from "./SkipLink";
 import {
     LayoutDashboard,
     PackageSearch,
@@ -703,6 +704,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
     return (
         <>
         <div className={`ds-shell ds-layout ${seasonal ? "ds-seasonal" : ""} ${theme} ${isDark ? "dark" : "light"} ${theme.startsWith("dark-") ? `dk-${theme.slice(5)}` : ""} ${isPhone ? "ds-phone" : ""} ${isPhone ? "ds-user-app" : ""} ${isPhone && navRole !== "student" ? "ds-staff-app" : ""}`}>
+                <SkipLink />
                 <SeasonBackdrop variant="dashboard" isDark={isDark} />
                 {isPhone && (
                     <MobileQuickActions
@@ -1020,7 +1022,7 @@ const DashboardShell = ({ title, subtitle, eyebrow, actions, onRefresh, refreshi
                         </div>
                     </header>
 
-                    <main className="ds-main">
+                    <main className="ds-main" id={MAIN_CONTENT_ID} tabIndex={-1}>
                         <BackLink />
                         {(title || greeting || actions || onRefresh) && (
                             <div className={`ds-header ${greeting ? "ds-header-greeting" : ""}`}>

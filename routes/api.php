@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\UserActivityController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ClientTelemetryController;
 use App\Http\Controllers\Api\EmailChangeController;
 use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\PasswordResetController;
@@ -36,6 +37,10 @@ use Illuminate\Support\Facades\Route;
 // Public routes — no login required
 Route::middleware('throttle:login-ip')->post('/login', [AuthController::class, 'login']);
 Route::middleware('throttle:refresh')->post('/token/refresh', [AuthController::class, 'refreshToken']);
+
+// Browser crashes, Web Vitals and CSP violation reports. Public + throttled +
+// size-limited; logs no personal data. See ClientTelemetryController.
+Route::middleware('throttle:client-errors')->post('/client-errors', [ClientTelemetryController::class, 'store']);
 
 // Mid-login 2FA challenge: authenticated only by the short-lived
 // "2fa-pending" token issued from login() above, not a full session — so

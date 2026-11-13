@@ -73,6 +73,16 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Browser errors, Web Vitals and CSP reports sent to POST /api/client-errors.
+        // Its own file so it never drowns laravel.log (or security:watch's view of it).
+        'client' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/client.log'),
+            'level' => 'debug',
+            'days' => env('LOG_CLIENT_DAYS', 14),
+            'replace_placeholders' => false,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),

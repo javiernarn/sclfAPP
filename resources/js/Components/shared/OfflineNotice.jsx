@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "../../i18n";
+import { reportClientError } from "../../utils/telemetry";
 
 // Tracks the browser's online/offline state.
 export function useOnlineStatus() {
@@ -263,9 +264,11 @@ export class ConnectionBoundary extends React.Component {
         return { error };
     }
 
-    componentDidCatch(error) {
+    componentDidCatch(error, info) {
         // eslint-disable-next-line no-console
         console.error("Screen failed to render:", error);
+        // Stale-deploy / offline chunk failures are filtered out inside reportClientError.
+        reportClientError({ type: "boundary", error, componentStack: info?.componentStack });
     }
 
     retry() {

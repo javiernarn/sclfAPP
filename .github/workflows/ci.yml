@@ -1,0 +1,96 @@
+# Runs on every push and pull request:
+#   php      PHPUnit (in-memory SQLite, no MySQL needed: see phpunit.xml)
+#   frontend vite build + JS unit tests
+#   audit    npm audit + composer audit (advisory: see the note on that job)
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  php:
+    name: PHPUnit
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, intl, gd, zip, bcmath, curl, pdo_sqlite, sqlite3, xml
+          coverage: none
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - run: composer install --no-interaction --no-progress --prefer-dist
+
+      # The tests do not read secrets: a throw-away key is enough.
+      - name: Prepare a throw-away environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate --ansi
+
+      - name: Run the test suite
+        run: php artisan test --compact
+
+  frontend:
+    name: Build and JS tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci --no-audit --no-fund
+
+      - name: Production build
+        run: npm run build
+
+      - name: JS unit tests
+        run: node --test tests/js/*.test.mjs
+
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # Fails the build only for HIGH / CRITICAL advisories in anything that is
+      # installed. Moderate and low ones are listed but do not block a release.
+      - name: npm audit
+        run: npm audit --audit-level=high
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          coverage: none
+
+      # Advisory only (does not fail the build): PHP advisories often have no
+      # fixed version yet. Read the output; fix when a patched release exists.
+      - name: composer audit
+        run: composer audit --locked || true

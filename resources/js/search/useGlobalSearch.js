@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { isCancel } from 'axios';
 import axios from '../config/axiosConfig';
 import { useAuth } from '../context/AuthContext';
 import { filterQuickLinks, quickLinksFor } from './searchConfig';
@@ -60,13 +61,16 @@ export default function useGlobalSearch({ onNavigate, enabled = true } = {}) {
 
         setLoading(true);
         const seq = ++searchSeq.current;
+        // Typing on cancels the previous request for real (the server stops
+        // working on it); the seq check stays as a second guard.
+        const controller = new AbortController();
         const t = setTimeout(() => {
-            axios.get('/search', { params: { q: trimmed }, silent: true })
+            axios.get('/search', { params: { q: trimmed }, silent: true, signal: controller.signal })
                 .then((res) => { if (seq === searchSeq.current) setResults(res.data.data); })
-                .catch(() => { if (seq === searchSeq.current) setResults(null); })
+                .catch((e) => { if (!isCancel(e) && seq === searchSeq.current) setResults(null); })
                 .finally(() => { if (seq === searchSeq.current) setLoading(false); });
         }, DEBOUNCE_MS);
-        return () => clearTimeout(t);
+        return () => { clearTimeout(t); controller.abort(); };
     }, [trimmed, enabled]);
 
     // Suggestions — immediately useful, so they're fetched for an empty box
@@ -74,12 +78,13 @@ export default function useGlobalSearch({ onNavigate, enabled = true } = {}) {
     useEffect(() => {
         const seq = ++suggestSeq.current;
         if (!enabled) return undefined;
+        const controller = new AbortController();
         const t = setTimeout(() => {
-            axios.get('/search/suggestions', { params: { q: trimmed }, silent: true })
+            axios.get('/search/suggestions', { params: { q: trimmed }, silent: true, signal: controller.signal })
                 .then((res) => { if (seq === suggestSeq.current) setSuggestions(res.data.data || []); })
-                .catch(() => { if (seq === suggestSeq.current) setSuggestions([]); });
+                .catch((e) => { if (!isCancel(e) && seq === suggestSeq.current) setSuggestions([]); });
         }, trimmed ? 150 : 0);
-        return () => clearTimeout(t);
+        return () => { clearTimeout(t); controller.abort(); };
     }, [trimmed, enabled]);
 
     // Saved on the server. The list updates instantly (moved to the top) and

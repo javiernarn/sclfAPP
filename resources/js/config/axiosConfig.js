@@ -334,6 +334,14 @@ instance.interceptors.response.use(
         return response;
     },
     async (error) => {
+        // A request the app cancelled on purpose (AbortController: a newer search
+        // keystroke, a page that closed). Not a failure: no offline copy, no
+        // toast, no session handling. Without this, the check below would treat
+        // it as "server unreachable" and answer with an old saved copy.
+        if (axios.isCancel(error)) {
+            return Promise.reject(error);
+        }
+
         const statusCode = error.response?.status || null;
         const originalRequest = error.config;
 

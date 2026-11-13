@@ -9,6 +9,7 @@ import logo from "../../assets/images/site-logo.png";
 import occBg from "../../assets/images/occ.webp";
 import SeasonBackdrop from "../../seasons/SeasonBackdrop";
 import SeasonHat from "../../seasons/SeasonHat";
+import SkipLink, { MAIN_CONTENT_ID } from "./SkipLink";
 
 /**
  * ============================================================================
@@ -116,6 +117,7 @@ export default function AuthShell({
 
             <div className={`lg-wrap ${isDark ? "dark" : "light"}${compact ? " is-compact" : ""}${fit ? " is-fit" : ""}`}>
                 {/* FIRST / SECOND theme animated background (nothing on the default theme) */}
+                <SkipLink />
                 <SeasonBackdrop variant="auth" isDark={isDark} />
                 {/* ============ LEFT: LEDGER RAIL ============ */}
                 <aside className="lg-rail">
@@ -161,6 +163,8 @@ export default function AuthShell({
 
                 {/* ============ RIGHT: RECORD CARD ============ */}
                 <main
+                    id={MAIN_CONTENT_ID}
+                    tabIndex={-1}
                     className={`lg-stage${bgImage ? " has-bg" : ""}${gate ? " has-gate" : ""}`}
                     style={bgImage ? { "--lg-stage-img": `url(${bgImage})` } : undefined}
                 >

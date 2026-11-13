@@ -342,9 +342,14 @@ class AuthController extends Controller
     {
         $this->audit->log('auth.logout', $request->user(), "User #{$request->user()->id} logged out.");
 
-        $accessTokenId = $request->user()->currentAccessToken()->id;
-        $this->tokens->revokeForAccessToken($accessTokenId);
-        $request->user()->currentAccessToken()->delete();
+        // A real login has a PersonalAccessToken. Session/test auth (actingAs)
+        // yields a TransientToken with no id and no delete(), so guard it
+        // instead of crashing (laravel.log: "TransientToken::$id").
+        $token = $request->user()->currentAccessToken();
+        if ($token instanceof \Laravel\Sanctum\PersonalAccessToken) {
+            $this->tokens->revokeForAccessToken($token->getKey());
+            $token->delete();
+        }
 
         return RefreshCookie::forget($request, response()->json(['message' => 'Logged out successfully']));
     }
@@ -390,8 +395,15 @@ class AuthController extends Controller
         // Revoke every other active token (other devices/sessions) and keep
         // only the one used to make this request, so a changed password
         // actually locks out anyone who might have an old session.
-        $currentTokenId = $user->currentAccessToken()?->id;
-        $user->tokens()->where('id', '!=', $currentTokenId)->delete();
+        // With a TransientToken there is no id to keep, and the old
+        // `where id != null` matched nothing, so no session was revoked.
+        $currentToken = $user->currentAccessToken();
+        $currentTokenId = $currentToken instanceof \Laravel\Sanctum\PersonalAccessToken
+            ? $currentToken->getKey()
+            : null;
+        $user->tokens()
+            ->when($currentTokenId, fn ($q) => $q->where('id', '!=', $currentTokenId))
+            ->delete();
         $this->tokens->revokeAllForUser($user, $currentTokenId);
 
         return response()->json([

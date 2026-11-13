@@ -136,6 +136,12 @@ class AppServiceProvider extends ServiceProvider
             ->by('reports|' . $userOrIp($request))
             ->response($tooMany('You have submitted a lot of reports in a short time. Please try again later.')));
 
+        // Browser error / Web Vitals beacons. Unauthenticated on purpose (a crash
+        // on the login page must be reportable). Generous per address because a
+        // whole campus can share one IP; the controller adds a site-wide ceiling.
+        RateLimiter::for('client-errors', fn (Request $request) => Limit::perMinute(120)
+            ->by('client-errors|' . $request->ip()));
+
         // File uploads (evidence photos, attachments).
         RateLimiter::for('uploads', fn (Request $request) => Limit::perMinute(20)
             ->by('uploads|' . $userOrIp($request))

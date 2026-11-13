@@ -17,6 +17,10 @@
 .rnd
 openssl.cnf
 
+# Personal server/production notes holding real secrets (file name starts with '#', so it must be escaped)
+\# SCLF*.txt
+/\# SCLF*
+
 # ---- Markdown / internal notes & docs ----------------------
 *.md
 # Uncomment the next line if you want a README on GitHub:

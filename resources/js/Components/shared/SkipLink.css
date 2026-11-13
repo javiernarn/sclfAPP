@@ -1,0 +1,29 @@
+/* "Skip to main content": invisible until a keyboard user tabs to it. */
+.sclf-skip-link {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 100000;
+    padding: 10px 16px;
+    border-radius: 10px;
+    background: #0b1220;
+    color: #fff;
+    font: 600 14px/1.2 inherit;
+    text-decoration: none;
+    box-shadow: 0 0 0 2px #fff, 0 6px 20px rgba(0, 0, 0, 0.35);
+    /* Off-screen (not display:none) so it stays focusable. */
+    transform: translateY(-200%);
+}
+.sclf-skip-link:focus,
+.sclf-skip-link:focus-visible {
+    transform: none;
+    outline: 3px solid #f59e0b;
+    outline-offset: 2px;
+}
+/* The target is focused by script, so it does not need a visible ring. */
+#main-content:focus {
+    outline: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+    .sclf-skip-link { transition: transform 0.12s ease-out; }
+}

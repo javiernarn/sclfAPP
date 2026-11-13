@@ -45,6 +45,7 @@ export default {
     animations: 'Animations',
     animationsHint: 'Motion and effects on this device',
     logout: 'Log out',
+    skipToContent: 'Skip to main content',
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
     menu: 'Menu',
