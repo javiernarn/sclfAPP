@@ -31,9 +31,9 @@ class PwaManifestController extends Controller
         $isBlack = $theme === 'black';
 
         $manifest = [
-            'name' => 'SCLF - Opol Community College',
+            'name' => 'SCLF - Smart Campus Lost & Found',
             'short_name' => 'SCLF',
-            'description' => 'Smart Campus Lost & Found system for Opol Community College.',
+            'description' => 'SCLF (Smart Campus Lost & Found), the lost and found system of Opol Community College.',
             // Scope is the whole site ('/'), not just /app/. With '/app/', the
             // installed app left its scope every time it opened /login,
             // /register or /forgot-password (first launch while signed out,

@@ -48,7 +48,7 @@
     <title>{{ $seo['title'] }}</title>
     <meta name="description" content="{{ $seo['description'] }}">
     <meta name="robots" content="{{ $seo['robots'] }}">
-    <meta name="application-name" content="SCLF - Opol Community College">
+    <meta name="application-name" content="SCLF">
     <meta name="author" content="Opol Community College">
     @if (!empty($seo['googleVerification']))
     <meta name="google-site-verification" content="{{ $seo['googleVerification'] }}">
@@ -56,7 +56,7 @@
     @if (!empty($seo['bingVerification']))
     <meta name="msvalidate.01" content="{{ $seo['bingVerification'] }}">
     @endif
-    <meta name="keywords" content="SCLF, Opol Community College, Lost and Found, OCC Lost and Found, Campus Lost and Found, report lost item, claim found item">
+    <meta name="keywords" content="SCLF, OCC SCLF, SCLF OCC, Smart Campus Lost and Found, Opol Community College, OCC Lost and Found, Campus Lost and Found, report lost item, claim found item">
     @if ($seo['canonical'])
     <link rel="canonical" href="{{ $seo['canonical'] }}">
     @endif
@@ -64,7 +64,7 @@
     <!-- Open Graph / social preview -->
     <meta property="og:type" content="website">
     <meta property="og:locale" content="en_PH">
-    <meta property="og:site_name" content="SCLF - Opol Community College">
+    <meta property="og:site_name" content="SCLF - Smart Campus Lost &amp; Found">
     <meta property="og:title" content="{{ $seo['title'] }}">
     <meta property="og:description" content="{{ $seo['description'] }}">
     <meta property="og:url" content="{{ $seo['canonical'] ?? $seo['base'] . '/' }}">
@@ -88,6 +88,8 @@
     <link rel="icon" href="{{ asset('favicon.ico') }}" sizes="any">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/favicon-32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('images/favicon-16.png') }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ asset('images/icon-48.png') }}">
+    <link rel="icon" type="image/png" sizes="96x96" href="{{ asset('images/icon-96.png') }}">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/icon-192.png') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('images/apple-touch-icon.png') }}">
 
@@ -130,8 +132,9 @@
         {{-- Crawlable copy for search engines and link-preview bots that do not run JavaScript.
              Visually hidden; React replaces it the moment the app mounts. --}}
         <div style="position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0">
-            <h1>SCLF - Smart Campus Lost &amp; Found of Opol Community College</h1>
+            <h1>SCLF - Smart Campus Lost &amp; Found of Opol Community College (OCC)</h1>
             <p>{{ $seo['description'] }}</p>
+            <p>SCLF, also searched as OCC SCLF or SCLF OCC, lets students and staff of Opol Community College report lost items, browse items found on campus, see suggested matches between lost and found reports, and submit and track claims.</p>
             <nav aria-label="SCLF">
                 <a href="{{ $seo['base'] }}/login">Login to SCLF</a>
                 <a href="{{ $seo['base'] }}/register">Create an SCLF account</a>
@@ -141,8 +144,8 @@
     </div>
     <noscript>
         <div style="font-family: Arial, Helvetica, sans-serif; padding: 24px; color: #111; background: #fff;">
-            <h1>SCLF - Opol Community College</h1>
-            <p>Smart Campus Lost &amp; Found system for Opol Community College.</p>
+            <h1>SCLF - Smart Campus Lost &amp; Found</h1>
+            <p>The lost and found system of Opol Community College (OCC).</p>
             <p>JavaScript is required to use SCLF. Please enable JavaScript in your browser, then reload this page.</p>
         </div>
     </noscript>

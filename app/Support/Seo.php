@@ -15,22 +15,25 @@ use Illuminate\Http\Request;
  */
 class Seo
 {
-    public const SITE_NAME = 'SCLF - Opol Community College';
+    public const SITE_NAME = 'SCLF - Smart Campus Lost & Found | Opol Community College';
 
-    public const DESCRIPTION = 'Smart Campus Lost & Found system for Opol Community College. Report, search, and claim lost or found items on campus.';
+    /** Short brand + other names people search for (used as the WebSite alternateName). */
+    public const ALTERNATE_NAMES = ['SCLF', 'OCC SCLF', 'SCLF OCC', 'Smart Campus Lost and Found', 'OCC Lost and Found'];
+
+    public const DESCRIPTION = 'SCLF (Smart Campus Lost & Found) is the official lost and found system of Opol Community College (OCC). Report lost items, browse found items, get match suggestions and track your claims.';
 
     /** Public pages that belong in search results (and in sitemap.xml). */
     public const INDEXABLE = [
-        '/' => 'SCLF - Opol Community College | Smart Campus Lost & Found',
-        '/login' => 'Login | SCLF - Opol Community College',
-        '/register' => 'Register | SCLF - Opol Community College',
+        '/' => 'SCLF - Smart Campus Lost & Found | Opol Community College (OCC)',
+        '/login' => 'Login | SCLF - Smart Campus Lost & Found, Opol Community College',
+        '/register' => 'Register | SCLF - Smart Campus Lost & Found, Opol Community College',
     ];
 
     /** Per-page meta descriptions (unique text per URL; Google rewrites duplicates). */
     public const DESCRIPTIONS = [
-        '/' => 'SCLF is the Smart Campus Lost & Found system of Opol Community College. Report a lost item, browse found items and claim what is yours, all in one place.',
-        '/login' => 'Sign in to SCLF, the Opol Community College Lost & Found system, to report lost items, check found items and track your claims.',
-        '/register' => 'Create your SCLF account for Opol Community College to report lost items, search found items and claim them with a verified student account.',
+        '/' => 'SCLF (Smart Campus Lost & Found) is the lost and found system of Opol Community College (OCC). Report a lost item, browse found items, see suggested matches and track your claim, all in one place.',
+        '/login' => 'Sign in to SCLF (Smart Campus Lost & Found) of Opol Community College to report lost items, check found items and track your claims.',
+        '/register' => 'Create your SCLF (Smart Campus Lost & Found) account for Opol Community College to report lost items, search found items and claim them.',
     ];
 
     /** Public pages that should stay out of search results but may be followed. */
@@ -88,6 +91,7 @@ class Seo
             'base' => $base,
             'image' => $base . '/images/og-image.png',
             'imageAlt' => 'SCLF - Smart Campus Lost & Found, Opol Community College',
+            'siteName' => self::SITE_NAME,
             'jsonLd' => $indexable ? self::jsonLd($base) : null,
         ];
     }
@@ -105,6 +109,7 @@ class Seo
                     '@type' => 'CollegeOrUniversity',
                     '@id' => $base . '/#organization',
                     'name' => 'Opol Community College',
+                    'alternateName' => ['OCC'],
                     'logo' => $base . '/images/icon-512.png',
                 ],
                 [
@@ -112,6 +117,7 @@ class Seo
                     '@id' => $base . '/#website',
                     'url' => $base . '/',
                     'name' => 'SCLF - Smart Campus Lost & Found',
+                    'alternateName' => self::ALTERNATE_NAMES,
                     'description' => self::DESCRIPTION,
                     'inLanguage' => 'en-PH',
                     'publisher' => ['@id' => $base . '/#organization'],
@@ -120,7 +126,8 @@ class Seo
                     '@type' => 'WebApplication',
                     '@id' => $base . '/#app',
                     'url' => $base . '/',
-                    'name' => 'SCLF - Opol Community College',
+                    'name' => 'SCLF - Smart Campus Lost & Found',
+                    'alternateName' => self::ALTERNATE_NAMES,
                     'description' => self::DESCRIPTION,
                     'applicationCategory' => 'EducationalApplication',
                     'operatingSystem' => 'Any',
